@@ -1,13 +1,13 @@
 {
- "version": "20261026-195127",
- "notes": "Today's 14 new motions, and Doodle Studio now updates itself.",
+ "version": "20261026-213702",
+ "notes": "New template cards: narrow animated previews, a name bar, mouse-wheel scrolling, and a Dances tab with 16 new Bunny moves.",
  "runtime": "44.9.0",
- "published": "2026-10-26T15:17:36.388Z",
+ "published": "2026-10-26T16:08:18.892Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "4cb858adcd6fa12ba6b3170508a2354b82aa77ce53658e0c99b297773fd9d8b7",
-   "size": 90768384,
-   "gz": "files/4cb858adcd6fa12ba6b3170508a2354b82aa77ce53658e0c99b297773fd9d8b7.gz"
+   "sha256": "4431000b45613b70b3cd3da1915469cdd5da969296e599a91461b1655011fa8b",
+   "size": 90896896,
+   "gz": "files/4431000b45613b70b3cd3da1915469cdd5da969296e599a91461b1655011fa8b.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
