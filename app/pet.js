@@ -2,9 +2,9 @@
 // notebook, board (your own words), lunch/tea/meeting signs, focus timers and water log.
 const B=window.bunny,$=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d',{willReadFrequently:true}),bubble=$('bubble'),chip=$('chip'),board=$('board'),radial=$('radial'),panel=$('panel'),meters=$('meters'),fx=$('fx');
-const GAITS={walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5,prance:1.3,naruto:2.8,phonewalk:0.7};
-const isWalk=a=>/^(walk|march|jog|tiptoe|skip|prance|naruto|phonewalk)_(right|left)$/.test(a);
-const FPS=12,LOOPS=new Set(['flop','readwalk','readwalk_side_right','readwalk_side_left','phonewalk_right','phonewalk_left','phone','sit_drowsy','sleep_side','guitar','dance_twirl','dance_bounce','dance_disco','dance_step','dance_wiggle','sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
+const GAITS={shuffle:0.45,walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5,prance:1.3,naruto:2.8,phonewalk:0.7};
+const isWalk=a=>/^(shuffle|walk|march|jog|tiptoe|skip|prance|naruto|phonewalk)_(right|left)$/.test(a);
+const FPS=12,LOOPS=new Set(['dance_party_bounce','dance_party_disco','sit_chin','foot_tap','hiccup','pole_right','pole_left','ear_stuck','shuffle_right','shuffle_left','flop','readwalk','readwalk_side_right','readwalk_side_left','phonewalk_right','phonewalk_left','phone','sit_drowsy','sleep_side','guitar','dance_twirl','dance_bounce','dance_disco','dance_step','dance_wiggle','sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
   ...Object.keys(GAITS).flatMap(g=>[g+'_right',g+'_left'])]);
 // where things sit in a frame, as fractions of its height: hands while hanging, feet when standing, seat when sitting
 const HAND_Y=0.728,HAND_BACK_Y=0.742,FEET_Y=0.936,SEAT_Y=0.89;
@@ -28,7 +28,13 @@ function resetFrames(){if(oldCache)for(const l of oldCache.values())l.forEach(b=
   clearTimeout(oldTimer);oldTimer=setTimeout(()=>{if(oldCache)for(const l of oldCache.values())l.forEach(b=>b&&b.close());oldCache=null;drawn='';},2500);}
 let pendingWalk=null;
 const DANCES=['dance','dance_twirl','dance_bounce','dance_disco','dance_step','dance_wiggle'];
-function play(a,loops){if(a==='dance')a=pick(DANCES.filter(d=>meta[d]));if(!meta[a])a='idle';
+const FEST={'01-01':'Happy New Year!','01-26':'Happy Republic Day!','08-15':'Happy Independence Day!','12-25':'Merry Christmas!','12-31':'Last day of the year!',
+  '2026-11-08':'Happy Diwali!','2026-11-09':'Diwali vibes!','2027-03-22':'Happy Holi!','2027-10-29':'Happy Diwali!'};
+function festival(){const d=new Date(),k=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');return FEST[d.getFullYear()+'-'+k]||FEST[k]||null;}
+function festGreet(){const f=festival();if(!f||action==='sleep'||action==='sleep_side'||(settings.nightSleep&&night())||dragging||perch||falling)return;const k='fest-'+new Date().toDateString();
+  try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1');}catch(e){if(window.__fest===k)return;window.__fest=k;}
+  play(pick(['dance_party_bounce','dance_party_disco']),3);say(f,3000);}
+function play(a,loops){if(a==='dance')a=pick((festival()?['dance_party_bounce','dance_party_disco']:DANCES).filter(d=>meta[d]));if(!meta[a])a='idle';
   // changing walking direction: a quick full-body turn first, then the walk carries on
   if(isWalk(a)&&isWalk(action)&&a.split('_')[1]!==action.split('_')[1]&&meta['turn_'+a.split('_')[1]]){pendingWalk=[a,loops];a='turn_'+a.split('_')[1];loops=1;}
   else if(!a.startsWith('turn_'))pendingWalk=null;
@@ -50,12 +56,12 @@ function block(){
   if(night())return {acts:['sleep'],th:['Zzz…','Five more minutes…']};
   if(isHome()&&!weekend()&&!inRange(m,at('evening'),at('bed')))return {acts:['read','dance','look','idle','hop','paint','popcorn','drink','laugh'],th:['Home sweet home.','Fetch? Pleeease?','Let\'s make something.','Snack o\'clock?','No emails here.']};
   if(weekend())return {acts:['read','dance','look','idle','hop','drink','spin','turn_back'],th:['Weekend mode!','No emails today','One more chapter']};
-  if(inRange(m,at('wake'),at('office')))return {acts:['coffee','look','yawn','read','idle'],th:['Coffee first.','Then the world.','Big day ahead?']};
+  if(inRange(m,at('wake'),at('office')))return {acts:['coffee','look','yawn','read','idle','stretch','sip'],th:['Coffee first.','Then the world.','Big day ahead?']};
   if(inRange(m,at('lunch')-15,at('lunch')+45))return {acts:['eat','dance','drink','laugh','idle','spin'],th:['Lunch!!','Burger o\'clock','Food is happiness']};
   if(inRange(m,at('tea'),at('tea')+30))return {acts:['tea','idle','look','tea'],th:['Chai break','Tea time!','Biscuit, anyone?']};
   if(inRange(m,at('pack'),at('evening')))return {acts:['pack','wave','hop'],th:['Packing up!','Good work today','Home time']};
-  if(inRange(m,at('evening'),at('bed')))return {acts:['read','yawn','idle','dance','look','turn_back'],th:['Cozy evening','What\'s for dinner?','Movie night?']};
-  return {acts:['write','think','coffee','scratch','look','read','idle','idle','turn_back'],th:['Taking notes…','Hmm, emails','Big idea incoming','Focus, Bunny','Ship it!']};
+  if(inRange(m,at('evening'),at('bed')))return {acts:['read','yawn','idle','dance','look','turn_back','stretch_side','stretch_side'],th:['Cozy evening','What\'s for dinner?','Movie night?']};
+  return {acts:['write','think','coffee','scratch','look','read','idle','idle','turn_back','knuckles','sip','foot_tap','stretch'],th:['Taking notes…','Hmm, emails','Big idea incoming','Focus, Bunny','Ship it!']};
 }
 function ambient(){
   if(sign)return 'sign';
@@ -64,10 +70,12 @@ function ambient(){
   if(doodle)return 'paint';
   if(settings.nightSleep&&night())return 'sleep';
   if(battery&&!battery.charging&&battery.level<=.15)return pick(['tired','sleep']);
-  if(perch)return pick(['sit_idle','sit_look','sit_look','sit_read','sit_snooze']);
+  if(perch)return pick(['sit_idle','sit_look','sit_look','sit_read','sit_snooze','sit_chin']);
   const bA=routine&&routine.length?null:brainAmbient();if(bA)return bA;
   const tA=routine&&routine.length?null:traitAct();if(tA)return tA;
   if(routine&&routine.length)return routine.shift();
+  // now and then something unplanned: a sneeze, the hiccups, a juggling go; a sulk when he's been ignored, a fist bump when he's happy
+  if(Math.random()<.12){const r=Math.random();if(mood<30&&r<.5)return 'sulk';if(mood>75&&r<.3)return 'fist_bump';return pick(['sneeze','hiccup','juggle','stretch','knuckles']);}
   let a=pick(block().acts);for(let i=0;i<8&&lastActs.includes(a)&&block().acts.length>2;i++)a=pick(block().acts);
   if(battery&&battery.charging&&Math.random()<.1)a='dance';
   lastActs=[a,...lastActs].slice(0,2);return a;
@@ -81,7 +89,8 @@ function next(finished){
   if(finished==='flop'){play('pushup',1);return;}
   if(finished==='pushup'){if(perch){perch.state='sit';play('sit_look',1);say(pick(['Made it!','Ta-da. Totally meant that.','Phew. Comfy up here.']),2000);}
     else{play('look',1);say(pick(['I\'m okay!','Nobody saw that.','Ten out of ten landing.','Who moved the floor?']),2000);}return;}
-  if(perch&&perch.state==='hang'){if(finished==='hang1_back'){if(Math.random()<.12)return letGo('Nope, can\'t hold on!');// three ways up, picked at random: swing over the top, swing into a gymnast dismount, or the two-hand pull-up
+  if(perch&&perch.state==='hang'&&finished==='hang1_back'&&perch.peek){perch.peek=false;play('hang_peek',1);say(pick(['What\'s up here?','Anyone home?','Ooh, nice view.']),1500);return;}
+  if(perch&&perch.state==='hang'){if(finished==='hang1_back'||finished==='hang_peek'){if(Math.random()<.12)return letGo('Nope, can\'t hold on!');// three ways up, picked at random: swing over the top, swing into a gymnast dismount, or the two-hand pull-up
     const way=Math.random();if(way<1/3)return startSwing(false);if(way<2/3)return startSwing(true);play('hang_back',1);say(pick(['Two hands!','Hnnngh…','Hold… on…']),1200);return;}
     Math.random()<.8?startClimb():letGo('Nope, can\'t hold on!');return;}
   if(perch&&perch.state==='drowsy'){if(finished==='sit_drowsy'){perch.state='doze';perch.dozeAt=Date.now();play('sit_snooze',99);say('Zzz…',1500);}else play('sit_drowsy',1);return;}
@@ -94,18 +103,28 @@ function next(finished){
   if(sign){play('sign',99);return;}
   if(hold){play('hold_pip',99);return;}
   if(!perch&&wantPip()&&grabPip())return;
+  if(!perch&&cursorMode()!=='off'&&!game&&Date.now()-cursorMoved<6000&&maybeLeap())return;
   if(!perch&&cursorMode()==='watch'&&Date.now()-cursorMoved<6000&&Math.random()<.9){play('watch');return;}
   if(!perch&&cursorMode()==='follow'&&followCursor())return;
   if(!perch&&!settings.stayPut&&cursorMode()!=='follow'&&!away&&focus.mode!=='focus'&&!(routine&&routine.length)&&!(settings.nightSleep&&night())&&!isWalk(finished)&&!panelOpen()&&Math.random()<.25){walkSomewhere();return;}
   play(ambient());
 }
 const cursorMode=()=>game?(game.kind==='snack'?'follow':'off'):settings.cursor||'off';
-function gait(){const m=mins();if(wk.cat==='whatsapp')return 'phonewalk';if(settings.nightSleep&&night())return 'tiptoe';const mg=moodGait();if(mg)return mg;
+function gait(){const m=mins();if(wk.cat==='whatsapp')return 'phonewalk';if(!isHome()&&inRange(m,at('wake'),at('office')+30)&&Math.random()<.7)return 'shuffle';if(settings.nightSleep&&night())return 'tiptoe';const mg=moodGait();if(mg)return mg;
   if(inRange(m,at('lunch')-15,at('lunch')+45))return pick(['skip','skip','walk','jog']);
   if(inRange(m,at('evening'),at('bed')))return pick(['walk','tiptoe','walk']);
   return pick(['walk','walk','march','jog','tiptoe','skip','prance','naruto']);}
 function walkTo(x,g){targetX=x;if(!g&&wk.cat!=='whatsapp'&&Math.abs(x-pos.x)>area.width*0.4&&!(settings.nightSleep&&night())&&Math.random()<.35)g='naruto';play((g||gait())+(targetX>pos.x?'_right':'_left'),99);}
-function walkSomewhere(){const margin=20,span=area.width-window.innerWidth-2*margin;walkTo(area.x+margin+Math.random()*Math.max(1,span));}
+function walkSomewhere(){const margin=20,span=area.width-window.innerWidth-2*margin;
+  if(Math.random()<.08&&!(settings.nightSleep&&night()))return startCart();
+  walkTo(area.x+margin+Math.random()*Math.max(1,span));}
+// cartwheel: the star pose wheels over along the floor, rolling like a wheel (hands, then feet, on the ground)
+let cart=null;
+function startCart(){const half=window.innerWidth/2,m=size.bw/2,lo=area.x-half+m,hi=area.x+area.width-half-m,dist=size.bh*0.42*2*Math.PI*1.0;
+  const dir=pos.x+dist<hi?(pos.x-dist>lo&&Math.random()<.5?-1:1):-1;if((dir>0&&pos.x+dist>hi)||(dir<0&&pos.x-dist<lo))return walkTo(area.x+20+Math.random()*Math.max(1,area.width-window.innerWidth-40));
+  cart={t0:performance.now(),dir,x0:pos.x,dist,ms:1100,ang:0};play('cartwheel',1);say(pick(['Wheee!','Cartwheel!','Ta-daaa!']),1400);}
+function cartTick(now){const q=Math.min(1,(now-cart.t0)/cart.ms),e=q<.5?2*q*q:1-2*(1-q)*(1-q);cart.ang=cart.dir*360*e;pos.x=cart.x0+cart.dir*cart.dist*e;
+  if(frame>=frames('cartwheel')-1)frame=frames('cartwheel')-1;sendPos();if(q>=1){cart=null;play('land',1);say(pick(['Stuck it!','Ten!','And… pose.']),1500);}}
 
 // ---------------- signs: lunch, tea, meeting and your own board ----------------
 const SIGNS={lunch:['GONE FOR LUNCH','be right back'],tea:['GONE FOR TEA','be right back'],meeting:['IN A MEETING','back soon']};
@@ -146,7 +165,7 @@ const handLine=y=>y+top0()+size.bh*HAND_BACK_Y;
 const midX=x=>x+window.innerWidth/2;
 const yFor=(edge,frac)=>edge-top0()-size.bh*frac;
 const PH=window.PHYS||{lie:{},hand:{}},handFrac=a=>{const t=PH.hand[a];return t&&t.length?t[Math.min(frame,t.length-1)]:HAND_BACK_Y;};
-const fracFor=a=>a==='hang'?HAND_Y:PH.hand[a]?handFrac(a):(a==='hang_back'||a==='hang1_back'||a==='climb_back')?HAND_BACK_Y:(a.startsWith('sit_')||a==='perch_turn')?SEAT_Y:FEET_Y;
+const fracFor=a=>a==='hang'?HAND_Y:PH.hand[a]?handFrac(a):(a==='hang_back'||a==='hang1_back'||a==='climb_back'||a==='hang_peek')?HAND_BACK_Y:(a.startsWith('sit_')||a==='perch_turn')?SEAT_Y:FEET_Y;
 const onScreen=w=>area&&w[3]>area.x+40&&w[1]<area.x+area.width-40&&w[2]>area.y-20&&w[2]<area.y+area.height-40;
 function clampX(){const half=window.innerWidth/2,m=size.bw/2;pos.x=Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,pos.x));}
 function maximised(w){return area&&w[1]<=area.x+6&&w[2]<=area.y+6&&w[3]>=area.x+area.width-6;}
@@ -167,20 +186,22 @@ function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);cons
   const stretch=falling?Math.max(-0.16,Math.min(0.12,-Math.abs(vy)*0.07)):0,lean=falling?Math.max(-10,Math.min(10,vx*24)):0;
   sqv+=(-170*(sq-stretch)-11*sqv)*t;sq+=sqv*t;tiltv+=(-120*(tilt-lean)-9*tiltv)*t;tilt+=tiltv*t;
   const chub=Math.max(0,bodyOf())/100,fit=Math.max(0,-bodyOf())/100,bx=1+0.07*chub+0.025*fit,by=1-0.02*chub+0.025*fit,runLean=/^naruto_/.test(action)?(action.endsWith('_right')?14:-14):0,sw=swingAng;
-  if(!runLean&&!sw&&Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling&&!lie&&bx===1&&by===1){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
+  if(!cart&&!runLean&&!sw&&Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling&&!lie&&bx===1&&by===1){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
   const sy=1-sq,sx=1+sq*0.55,sn=Math.sin(lie*Math.PI/180);
   // lying, leaning into a run and swinging from a ledge all pivot about a contact point: his feet, or his gripping hand
   // the canvas transforms about its bottom centre, so contact points are measured up from the bottom edge
   const fy=((PH.feet||[0.5,0.932])[1]-1)*size.bh,about=(x,y,a)=>`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${a.toFixed(2)}deg) translate(${(-x).toFixed(1)}px,${(-y).toFixed(1)}px) `;
   const ss=PH.sleepSide,pr=proneAt(),rest=action==='sleep_side'&&ss?`translateY(${(-ss.lift*size.bh*Math.min(1,lie/ss.ang)).toFixed(1)}px) `:
     pr&&pr[1]?`translateY(${(-pr[1]*size.bh*(pr[0]>1?Math.min(1,lie/pr[0]):1)).toFixed(1)}px) `:'';
-  const flat=lie?rest+about(0,fy,lieDir*lie)+(lieDir<0?'scaleX(-1) ':''):'',run=runLean?about(0,fy,runLean):'',sp=PH.swingPivot||[0.716,0.742],
+  const cw=cart&&PH.cart?(()=>{const a=((cart.ang%360)+360)%360,t=PH.cart,k=a/10,i=Math.floor(k)%36,j=(i+1)%36,u=k-Math.floor(k),l=t.lift[i]+(t.lift[j]-t.lift[i])*u;
+    return `translateY(${(-l*size.bh).toFixed(1)}px) `+about(0,(t.c[1]-1)*size.bh,cart.ang);})():'';
+  const flat=cw||(lie?rest+about(0,fy,lieDir*lie)+(lieDir<0?'scaleX(-1) ':''):''),run=runLean?about(0,fy,runLean):'',sp=PH.swingPivot||[0.716,0.742],
     swing=sw?about((sp[0]-0.5)*size.bw,(sp[1]-1)*size.bh,sw):'';
   cv.style.transform=`translateX(-50%) ${run}${swing}${flat}rotate(${tilt.toFixed(2)}deg) scale(${(sx*bx).toFixed(3)},${(sy*by).toFixed(3)})`;}
 function impact(v){sqv+=v*4.2;tiltv+=(Math.random()-.5)*60;}
 function startFall(msg,throwV){falling=true;vy=throwV?Math.max(-0.9,Math.min(0.6,throwV.y)):0;vx=throwV?Math.max(-1.2,Math.min(1.2,throwV.x)):0;bounces=0;walls=0;thrown=Math.abs(vx)>0.55||vy<-0.5;thrownAt=performance.now();fallFrom=pos.y;targetX=null;clampX();play('fall',99);if(msg)say(msg,1500);}
 function catchLedge(w){B.send('log','caught '+JSON.stringify(w));falling=false;vy=0;perch={id:w[0],dx:midX(pos.x)-w[1],state:'hang'};pos.y=yFor(w[2],HAND_BACK_Y);
-  play('hang1_back',1);say(pick(['Gotcha!','One hand!','Whoa whoa whoa!']),1500);}
+  play('hang1_back',1);say(pick(['Gotcha!','One hand!','Whoa whoa whoa!']),1500);perch.peek=Math.random()<.5;}
 function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='climb';
   climb={t0:performance.now(),ms:frames('climb_back')*1000/FPS,edge:w[2],settle:0};play('climb_back',1);}
 function startSwing(gym){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='swing';
@@ -190,7 +211,8 @@ function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos
   if(sign){play('sign',99);return;}
   const dir=faceplant?faceplant:vx?Math.sign(vx):Math.random()<.5?1:-1;
   // a big landing doesn't always end face down: sometimes he windmills his arms, wobbles and rebalances on his feet
-  if(faceplant||(thrown&&(walls>0||bounces>=3))||h>size.bh*0.5||bounces>=2){faceplant=0;thrown=false;targetX=null;balance(dir);return;}
+  if(thrown&&walls>0){thrown=false;targetX=null;play('bonk',1);say(pick(['Ow! Wall!','Who put that there?','Seeing stars…']),1600);return;}
+  if(faceplant||(thrown&&bounces>=3)||h>size.bh*0.5||bounces>=2){faceplant=0;thrown=false;targetX=null;balance(dir);return;}
   if(h>size.bh*0.25||bounces){play('land',1);say(pick(['Oof!','I\'m okay! I\'m okay.']),1600);}
   else play(pick(['hop','look']),1);}
 
@@ -212,11 +234,18 @@ function teeterOn(w,side){falling=false;vy=0;vx=0;perch={id:w[0],dx:midX(pos.x)-
 function teeterEnd(){const side=perch.side||1,chance=Math.max(0.1,0.35+0.5*Math.max(0,bodyOf())/100-0.2*Math.max(0,-bodyOf())/100);
   if(Math.random()<chance){const id=perch.id;B.send('perch-lost');skipWin=id;perch=null;faceplant=side;startFall(pick(['Aaaah!','Nooo!','Too much snack!']),{x:side*0.28,y:-0.12});return;}
   perch.dx-=side*size.bw*0.3;perch.state='sit';play('sit_look',1);say(pick(['Phew! Caught myself.','Totally meant to do that.','Heart. Racing.']),2000);}
+let pole=null,earStuck=0;
+// he swings round the window's corner and hugs its side edge like a fireman's pole, then slides down it, faster and faster
+function startPole(w,side){const id=w[0];B.send('perch-lost');skipWin=id;perch=null;const edgeX=side>0?w[3]:w[1];
+  pole={id,x:edgeX+side*size.bw*0.16-window.innerWidth/2,v:0.05,bottom:w[4]};pos.x=pole.x;play(side>0?'pole_left':'pole_right',99);say(pick(['Fire drill!','Wheee!','Down the pole!']),1400);}
+function poleTick(dt){const w=wins.find(o=>o[0]===pole.id);if(w)pole.bottom=w[4];pole.v=Math.min(0.9,pole.v+0.0012*dt);pos.y+=pole.v*dt;pos.x=pole.x;
+  const feet=feetLine(pos.y);if(feet>=Math.min(pole.bottom,groundY()+top0()+size.bh*FEET_Y)){pole=null;if(feet>=groundY()+top0()+size.bh*FEET_Y-2){pos.y=groundY();landed();}else startFall(pick(['End of the pole!','Jump!']));}sendPos();}
 function strollOnWindow(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='stand';
   perch.dir=perch.dx<(w[3]-w[1])/2?1:-1;perch.until=Date.now()+3000+Math.random()*7000;play(perch.dir>0?'readwalk_side_right':'readwalk_side_left',99);
   say(pick(['Just one more page…','Ooh, plot twist.','Walking and reading. Multitasking!']),2200);}
 function strollStep(dt){const w=wins.find(o=>o[0]===perch.id);if(!w)return;
   perch.dx+=perch.dir*size.bw*0.00018*dt;const cx=w[1]+perch.dx,m=size.bw*0.14;
+  if((cx>w[3]-m||cx<w[1]+m)&&Math.random()<.35&&w[4]<groundY()+top0()+size.bh*0.9-20){return startPole(w,cx>w[3]-m?1:-1);}
   if(cx>w[3]-m||cx<w[1]+m){perch.dx=Math.max(m,Math.min(w[3]-w[1]-m,perch.dx));perch.state='teeter';perch.side=perch.dir;play(perch.dir>0?'teeter_r':'teeter_l',1);
     say(pick(['Wait—where\'s the floor?!','Whoa whoa whoa!','Should\'ve looked up!']),1600);return;}
   if(Date.now()>perch.until){perch.state='sit';play('sit_idle',1);}}
@@ -260,7 +289,8 @@ function physics(now,dt){
       else{impact(Math.min(0.4,vy*0.35));falling=false;vy=0;vx=0;landed();}}
     sendPos();return;}
   if(perch){const w=wins.find(o=>o[0]===perch.id);if(perch.id!==tracked){tracked=perch.id;B.send('track-win',tracked);}
-    if(!w||maximised(w)||!onScreen(w)){letGo(pick(['Hey! Where did it go?','Whoa, it vanished!']));return;}
+    if(!w||maximised(w)||!onScreen(w)){if(perch.state==='sit'&&Math.random()<.3){B.send('perch-lost');skipWin=perch.id;perch=null;earStuck=performance.now();play('ear_stuck',3);say(pick(['Ow ow ow! My ear!','It\'s got my ear!','Let gooo!']),1500);return;}
+      letGo(pick(['Hey! Where did it go?','Whoa, it vanished!']));return;}
     const x=w[1]+perch.dx-window.innerWidth/2,y=yFor(w[2],fracFor(action));
     if(Math.abs(x-pos.x)>.5||Math.abs(y-pos.y)>.5){pos.x=x;pos.y=y;sendPos();}}
 }
@@ -270,6 +300,12 @@ const gameWatch=()=>!!game&&(game.kind==='fetch'?!!(game.ball&&game.ball.moving&
 function watchFrame(){const c=gameWatch()?(game.kind==='fetch'?game.ball:game.snack):cursor;if(!c)return 7;const dx=c.x-midX(pos.x),dy=c.y-(pos.y+top0()+size.bh*0.4);
   const col=Math.max(0,Math.min(4,Math.round(2+2.4*Math.tanh(dx/(size.bw*1.4)))));const row=dy<-size.bh*0.35?0:dy>size.bh*0.35?2:1;return row*5+col;}
 function followTarget(){const half=window.innerWidth/2,m=size.bw/2;return Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,cursor.x-half));}
+let leapT=null;
+function maybeLeap(){if(!cursor||leapT||perch||falling||dragging||sign||hold)return false;const mx=midX(pos.x),top=pos.y+top0();
+  if(Math.abs(cursor.x-mx)>size.bw*0.35||cursor.y<top+size.bh*0.55||cursor.y>top+size.bh*1.05||Math.random()>.35)return false;
+  const dir=cursor.x>mx?1:-1,half=window.innerWidth/2,m=size.bw/2,lo=area.x-half+m,hi=area.x+area.width-half-m;const x1=Math.max(lo,Math.min(hi,pos.x+dir*size.bw*1.25));
+  leapT={t0:performance.now(),x0:pos.x,x1,y0:pos.y};targetX=null;play('leap',1);say(pick(['Leapfrog!','Boing!','Hup!']),1200);return true;}
+function leapTick(now){const t=now-leapT.t0,q=Math.max(0,Math.min(1,(t-330)/620));pos.x=leapT.x0+(leapT.x1-leapT.x0)*(q*q*(3-2*q));pos.y=leapT.y0-size.bh*0.38*Math.sin(Math.PI*q);sendPos();if(t>=1200){pos.y=leapT.y0;leapT=null;sendPos();}}
 function followCursor(){const snack=game&&game.kind==='snack';if(!cursor||(settings.stayPut&&!snack)||sign||away)return false;const dx=cursor.x-midX(pos.x);
   if(Math.abs(dx)>size.bw*(snack?0.2:0.7)){walkTo(followTarget(),snack||Math.abs(dx)>size.bw*3?'jog':'walk');return true;}
   if(Date.now()-cursorMoved<6000){play('watch');return true;}
@@ -288,14 +324,20 @@ function step(now){
     const far=cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*(game?0.25:1.2);
     if(game&&game.kind==='snack'?(far||!gameWatch()&&Date.now()-cursorMoved>6000):game&&game.kind==='fetch'?!gameWatch():(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&far)))next('watch');}
   else while(acc>=1000/FPS){acc-=1000/FPS;frame++;if(frame>=frames(action)){if(--loopsLeft>0)frame=0;else{frame=frames(action)-1;const done=action;next(done);}}}
-  spring(dt);if(game)gameTick();
+  spring(dt);if(game)gameTick();if(cart&&!dragging){cartTick(now);draw();return;}if(leapT&&!dragging){leapTick(now);}
   if(perch&&perch.state==='stand'&&action.startsWith('readwalk')&&!dragging)strollStep(dt);
   if(!perch&&tracked){tracked=0;B.send('track-win',0);}
+  if(pole&&!dragging){poleTick(dt);draw();return;}
+  if(earStuck&&!dragging){if(now-earStuck>1600){earStuck=0;startFall('Pop!');}else{draw();return;}}
   if(!dragging&&(climb||swing||falling||perch))physics(now,dt);
   else if(targetX!==null&&isWalk(action)&&!dragging){const g=action.split('_')[0];
     if(cursorMode()==='follow'&&cursor){targetX=followTarget();const want=g+(targetX>pos.x?'_right':'_left');if(want!==action&&Math.abs(targetX-pos.x)>4)play(want,99);}
     const dir=action.endsWith('_right')?1:-1,catchUp=game?Math.max(1.4,Math.min(5,Math.abs(targetX-pos.x)/(size.bw*1.2))):cursorMode()==='follow'?Math.max(1,Math.min(4,Math.abs(targetX-pos.x)/(size.bw*1.5))):1;pos.x+=dir*size.bw*0.0004*GAITS[g]*catchUp*dt;
-    if((dir>0&&pos.x>=targetX)||(dir<0&&pos.x<=targetX)){targetX=null;next('arrived');}sendPos();}
+    if((dir>0&&pos.x>=targetX)||(dir<0&&pos.x<=targetX)){targetX=null;
+      if(g==='naruto'&&Math.random()<.3){play(dir>0?'trip_right':'trip_left',1);say(pick(['My ear!','Tripped on my own ear…','Nobody saw that.']),1600);}
+      else if(g==='walk'&&Math.random()<.06){play('slip',1);say(pick(['Banana!','Whoa—who left that there?!']),1600);}
+      else next('arrived');}
+    sendPos();}
   draw();
   if(sign&&boardEcho&&action==='sign'&&!panelOpen()&&(!bubble.classList.contains('show')||now>bubbleUntil-200))say(boardEcho,4000);
   if(bubbleUntil&&now>bubbleUntil){bubble.classList.remove('show');bubbleUntil=0;}
@@ -464,7 +506,7 @@ function uiAt(x,y){const e=document.elementFromPoint(x,y);return !!(e&&e.closest
 window.addEventListener('mousemove',e=>{
   if(dragging){const t=performance.now();trail.push([t,e.screenX,e.screenY]);while(trail.length&&t-trail[0][0]>120)trail.shift();}
   const hit=dragging||opaqueAt(e.clientX,e.clientY)||uiAt(e.clientX,e.clientY);if(hit!==over){over=hit;B.send('hit',hit);}
-  if(downPt&&!dragging&&Math.hypot(e.screenX-downPt.sx,e.screenY-downPt.sy)>5){dragging=true;clearTimeout(holdTimer);closeRadial();targetX=null;falling=false;perch=null;climb=null;swing=null;swingAng=0;skipWin=null;play('dangle',50);say('Whoa!',1200);B.send('drag-start',{x:downPt.x,y:downPt.y});}
+  if(downPt&&!dragging&&Math.hypot(e.screenX-downPt.sx,e.screenY-downPt.sy)>5){dragging=true;cart=null;leapT=null;pole=null;earStuck=0;clearTimeout(holdTimer);closeRadial();targetX=null;falling=false;perch=null;climb=null;swing=null;swingAng=0;skipWin=null;play('dangle',50);say('Whoa!',1200);B.send('drag-start',{x:downPt.x,y:downPt.y});}
 });
 window.addEventListener('mousedown',e=>{if(e.button!==0)return;
   if(!opaqueAt(e.clientX,e.clientY)){if(!uiAt(e.clientX,e.clientY)){closeRadial();if(panelKind&&panelKind!=='notes'&&panelKind!=='board')closePanel();}return;}
@@ -646,7 +688,7 @@ function carryPip(){if(!hold||!wk.pip)return;
   const pl=pipPlace();if(!pl)return;const x=Math.round(pl.x),y=Math.round(pl.y);
   if(Math.abs(x-hold.x)>2||Math.abs(y-hold.y)>2){hold.x=x;hold.y=y;hold.sent=Date.now();B.send('move-win',{id:hold.id,x,y});}}
 setInterval(()=>{if(!settings||!size)return;moodTick();tallyDay();},60000);
-setInterval(()=>{if(!settings||!size)return;try{perchSleepTick();floorSleepTick();tryPip();proactive();carryPip();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
+setInterval(()=>{if(!settings||!size)return;try{perchSleepTick();floorSleepTick();tryPip();proactive();carryPip();festGreet();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
 B.on('context',c=>{try{onContext(c||{});}catch(e){B.send('log','context: '+(e&&e.message));}});
 
 // ---------------- home: play, make things, celebrate ----------------
@@ -716,7 +758,7 @@ B.on('play-ev',e=>{if(!e)return;if(e.type==='closed'){if(game){game=null;play('l
   else if(e.type==='grab'){game.touched=Date.now();if(game.phase!=='wait'){game.phase='wait';targetX=null;play('look',1);}}
   else if(e.type==='snack'){game.score=e.score;game.left=e.left;if(e.caught){love(1.5);if(Math.random()<.35)say(pick(['Nom!','Yum!','Mmm!','Crunch!']),700);}}
   else if(e.type==='over'){const n=e.score||0,best=settings.snackBest||0;game=null;B.send('play-stop');targetX=null;bump('snacks',n);love(Math.min(25,n*2),'play');
-    if(n>=5)fedAt=Date.now();if(n>best)saveS({snackBest:n});routine=[n>=10?'dance':'happy'];play('eat',1);if(n>best&&n>0)confetti();
+    if(n>=5)fedAt=Date.now();if(n>best)saveS({snackBest:n});routine=n>best&&n>0?['eat',n>=10?'dance':'happy']:[n>=10?'dance':'happy'];play(n>best&&n>0?'fist_bump':'eat',1);if(n>best&&n>0)confetti();
     say(n===0?'Zero snacks?! I\'m starving now.':n>best&&best?`${n} snacks! New record!`:`${n} snacks! ${n>=5?'That counts as dinner.':'More next time?'}`,4000);}});
 
 // ---- doodle prompt of the day: he paints at his easel next to you while the timer runs ----
@@ -761,7 +803,7 @@ function showIdea(intro){const ideas=settings.ideas||[];if(!ideas.length)return 
 
 // ---- render party: a new render in your folder gets a dance and confetti ----
 B.on('render',r=>{const n=bump('renders');if(away)return;targetX=null;if(sign&&sign!=='banner')return say('Render done: '+r.name,6000);if(sign)dropSign();
-  confetti(36);routine=['happy'];play('dance',2);love(6,'make');say(`Render done! ${r.name}. That's ${n} this week.`,6000);});
+  confetti(36);routine=['dance'];play('fist_bump',1);love(6,'make');say(`Render done! ${r.name}. That's ${n} this week.`,6000);});
 
 // at home he invites you to play now and then, and offers an old idea when you've been creating for a while
 function homeNudge(onFor){if(!isHome()||game||doodle)return false;const lonelyM=(Date.now()-lastLove)/60000;
@@ -888,7 +930,7 @@ B.on('routine',k=>{if(sign||away)return;targetX=null;
   if(k==='pack'){const open=(settings.notes||[]).filter(n=>!n.done);routine=['wave'];play('pack',1);
     say(open.length?`Packing up! ${open.length} note${open.length>1?'s':''} still open: ${open.map(n=>n.text).join(', ')}`:'Packing up! Notebook is clear. Good work today!',9000);}});
 B.on('away',v=>{if(v===away)return;away=v;if(sign)return;if(v){targetX=null;closeRadial();closePanel();play('sleep',99);}else{play('wave',1);say(pick(['Welcome back!','Oh, you\'re back!','Hi again!']),2500);}});
-B.on('focus',f=>{focus=f;if(sign)return;if(f.mode==='focus'){targetX=null;play('read',99);say('Focus mode. I\'ll read quietly.',3000);}else if(f.mode==='break'){play('yawn',1);}else if(f.mode==='off')play('idle');});
+B.on('focus',f=>{focus=f;if(sign)return;if(f.mode==='focus'){targetX=null;play('read',99);say('Focus mode. I\'ll read quietly.',3000);}else if(f.mode==='break'){routine=['stretch'];play('fist_bump',1);say(pick(['Focus done. Fist bump!','Nailed it. Bump!']),2500);}else if(f.mode==='off')play('idle');});
 B.on('meeting',m=>{meeting=m;});
 function recover(a){if(a)area=a;if(!area||!Number.isFinite(groundY())){B.invoke('bounds').then(r=>{area=r.area;if(Number.isFinite(groundY()))recover();});return;}perch=null;climb=null;falling=false;vy=0;vx=0;targetX=null;if(a)area=a;
   pos.x=Number.isFinite(pos.x)?Math.max(area.x,Math.min(area.x+area.width-window.innerWidth,pos.x)):area.x+area.width*0.7-window.innerWidth/2;pos.y=groundY();sentX=NaN;sendPos();drawn='';play('look',1);}
