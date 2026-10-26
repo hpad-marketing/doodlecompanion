@@ -28,7 +28,7 @@ const icon=()=>nativeImage.createFromPath(path.join(__dirname,'icon.png'));
 const MIN_BW=90,MAX_BW=360;
 /** Bunny's canvas sits at the bottom centre; the space above holds his bubble, radial menu and panels. */
 function dims(){const bw=Math.max(MIN_BW,Math.min(MAX_BW,Math.round(S.bw||150))),bh=Math.round(bw*497/360);
-  return {bw,bh,w:Math.max(460,Math.round(bw*2.4)),h:bh+380};}
+  return {bw,bh,w:Math.max(580,Math.round(bw*2.6)),h:bh+380};}
 
 function createPet(){
   const d=dims(),wa=screen.getPrimaryDisplay().workArea;
@@ -98,17 +98,28 @@ ipcMain.on('cursor-mode',()=>applyCursor());
 ipcMain.on('windows-mode',()=>applyWindows());
 
 // ---- what's on screen: your open windows (for grabbing and perching) and the cursor (for watching and following) ----
-let winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0;
+let winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0,ctxLast='';
+const cmdFile=()=>path.join(app.getPath('temp'),'bunny-cmd-'+process.pid+'.txt');
+const toDip=([id,l,t,r,b])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height];};
+// The watcher always runs on Windows: window climbing can be switched off, but he still notices what you're working in.
 function applyWindows(){
-  const want=process.platform==='win32'&&S.windows!==false;
-  if(!want){if(winProc){winProc.kill();winProc=null;}winLast='';toPet('windows',[]);return;}
-  if(winProc)return;
-  try{winProc=spawn('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'windows.ps1'),String(process.pid)],{windowsHide:true});}catch{winProc=null;return;}
+  if(process.platform!=='win32'){toPet('windows',[]);return;}
+  if(winProc){winLast='';if(S.windows===false)toPet('windows',[]);return;}
+  try{winProc=spawn('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'windows.ps1'),String(process.pid),cmdFile()],{windowsHide:true});}catch{winProc=null;return;}
   let buf='';winProc.stdout.setEncoding('utf8');
   winProc.stdout.on('data',d=>{buf+=d;let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line||line===winLast)continue;winLast=line;
-    try{const list=JSON.parse(line).map(([id,l,t,r,b])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height];});const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',list);winFails=0;if(gone)reassert('a window closed or minimised');if(++winLogged<200)log('windows '+line.slice(0,600));}catch{}}});
-  winProc.on('exit',()=>{winProc=null;if(S.windows!==false&&++winFails<5)setTimeout(applyWindows,3000);});
+    try{const o=JSON.parse(line),list=Array.isArray(o)?o.map(toDip):(o.w||[]).map(toDip);
+      const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',S.windows===false?[]:list);winFails=0;if(gone)reassert('a window closed or minimised');
+      if(!Array.isArray(o)){const c={title:String(o.fg&&o.fg.t||'').slice(0,200),proc:String(o.fg&&o.fg.p||'').slice(0,60),pip:o.pip?toDip(o.pip):null},k=JSON.stringify(c);if(k!==ctxLast){ctxLast=k;toPet('context',c);}}
+      if(++winLogged<60)log('windows '+JSON.stringify(list).slice(0,400));}catch(e){log('windows parse: '+e.message);}}});
+  winProc.stderr.on('data',d=>log('windows.ps1: '+String(d).slice(0,300)));
+  winProc.on('exit',()=>{winProc=null;if(++winFails<5)setTimeout(applyWindows,3000);});
 }
+// carrying a picture-in-picture video: Bunny asks for it to be moved next to his hand (positions in DIP, Windows wants pixels)
+ipcMain.on('move-win',(_e,m)=>{if(process.platform!=='win32'||!m||!Number.isFinite(+m.x)||!Number.isFinite(+m.y))return;
+  const p=screen.dipToScreenPoint({x:Math.round(+m.x),y:Math.round(+m.y)});
+  try{fs.appendFileSync(cmdFile(),`move ${String(m.id).replace(/\D/g,'')} ${Math.round(p.x)} ${Math.round(p.y)}\n`);}catch(e){log('move-win: '+e.message);}
+  if(pet&&S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}});
 function applyCursor(){
   clearInterval(timers.cursor);if(!S.cursor||S.cursor==='off')return;let last='';
   timers.cursor=setInterval(()=>{if(!pet||!pet.isVisible())return;const c=screen.getCursorScreenPoint(),k=c.x+','+c.y;if(k===last)return;last=k;toPet('cursor',c);},80);

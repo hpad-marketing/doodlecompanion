@@ -4,14 +4,14 @@ const B=window.bunny,$=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d',{willReadFrequently:true}),bubble=$('bubble'),chip=$('chip'),board=$('board'),radial=$('radial'),panel=$('panel');
 const GAITS={walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5};
 const isWalk=a=>/^(walk|march|jog|tiptoe|skip)_(right|left)$/.test(a);
-const FPS=12,LOOPS=new Set(['idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
+const FPS=12,LOOPS=new Set(['sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
   ...Object.keys(GAITS).flatMap(g=>[g+'_right',g+'_left'])]);
 // where things sit in a frame, as fractions of its height: hands while hanging, feet when standing, seat when sitting
-const HAND_Y=0.728,HAND_BACK_Y=0.687,FEET_Y=0.933,SEAT_Y=0.89;
+const HAND_Y=0.728,HAND_BACK_Y=0.742,FEET_Y=0.933,SEAT_Y=0.89;
 let meta={},size,settings,area,pos={x:0,y:0},action='idle',frame=0,loopsLeft=2,acc=0,last=0,targetX=null,falling=false,vy=0,away=false,
   focus={mode:'off'},meeting=null,bubbleUntil=0,sign=null,bannerDismissed=0,lastActs=[],routine=null,nextThought=0,
   wins=[],perch=null,fallFrom=0,skipWin=null,cursor=null,cursorMoved=0,climb=null;
-const cache=new Map();let cacheW=0;
+let cache=new Map(),oldCache=null,oldTimer=0;let cacheW=0;
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function frames(a){return meta[a]?.frames||1;}
 const KEEP=new Set(['idle','fall','land','bounce','look','dangle']);
@@ -22,8 +22,10 @@ function load(a){if(cache.has(a)){const v=cache.get(a);cache.delete(a);cache.set
   // keep memory small: the newest dozen actions plus the ones he needs instantly
   for(const k of [...cache.keys()]){if(cache.size<=14)break;if(k!==a&&!KEEP.has(k)&&!isWalk(k)&&k!==action){cache.get(k).forEach(b=>b&&b.close());cache.delete(k);}}
   return list;}
-function img(a,i){return load(a)[i];}
-function resetFrames(){for(const l of cache.values())l.forEach(b=>b&&b.close());cache.clear();cacheW=cv.width;drawn='';for(const a of KEEP)load(a);}
+// while new-size frames decode, the old ones are stretched in, so a resize never flashes blank
+function img(a,i){return load(a)[i]||(oldCache&&oldCache.get(a)?.[i]);}
+function resetFrames(){if(oldCache)for(const l of oldCache.values())l.forEach(b=>b&&b.close());oldCache=cache;cache=new Map();cacheW=cv.width;drawn='';for(const a of KEEP)load(a);
+  clearTimeout(oldTimer);oldTimer=setTimeout(()=>{if(oldCache)for(const l of oldCache.values())l.forEach(b=>b&&b.close());oldCache=null;drawn='';},2500);}
 function play(a,loops){if(!meta[a])a='idle';action=a;frame=0;acc=0;loopsLeft=LOOPS.has(a)?(loops??2+Math.floor(Math.random()*3)):1;img(a,0);showBoard();}
 function say(text,ms=3500){bubble.textContent=text;bubble.classList.add('show');bubbleUntil=performance.now()+ms;layout();}
 function groundY(){return area.y+area.height-window.innerHeight;}
@@ -55,6 +57,7 @@ function ambient(){
   if(settings.nightSleep&&night())return 'sleep';
   if(battery&&!battery.charging&&battery.level<=.15)return pick(['tired','sleep']);
   if(perch)return pick(['sit_idle','sit_look','sit_look','sit_read','sit_snooze']);
+  const bA=routine&&routine.length?null:brainAmbient();if(bA)return bA;
   if(routine&&routine.length)return routine.shift();
   let a=pick(block().acts);for(let i=0;i<8&&lastActs.includes(a)&&block().acts.length>2;i++)a=pick(block().acts);
   if(battery&&battery.charging&&Math.random()<.1)a='dance';
@@ -65,13 +68,15 @@ function next(finished){
   if(falling){play(vy<0?'bounce':'fall',vy<0?1:99);return;}
   if(perch&&perch.state==='hang'){Math.random()<.75?startClimb():letGo('Nope, can\'t hold on!');return;}
   if(sign){play('sign',99);return;}
+  if(hold){play('hold_pip',99);return;}
+  if(!perch&&wantPip()&&grabPip())return;
   if(!perch&&cursorMode()==='watch'&&Date.now()-cursorMoved<6000&&Math.random()<.7){play('watch');return;}
   if(!perch&&cursorMode()==='follow'&&followCursor())return;
   if(!perch&&!settings.stayPut&&cursorMode()!=='follow'&&!away&&focus.mode!=='focus'&&!(routine&&routine.length)&&!(settings.nightSleep&&night())&&!isWalk(finished)&&!panelOpen()&&Math.random()<.25){walkSomewhere();return;}
   play(ambient());
 }
 const cursorMode=()=>settings.cursor||'off';
-function gait(){const m=mins();if(settings.nightSleep&&night())return 'tiptoe';
+function gait(){const m=mins();if(settings.nightSleep&&night())return 'tiptoe';const mg=moodGait();if(mg)return mg;
   if(inRange(m,at('lunch')-15,at('lunch')+45))return pick(['skip','skip','walk','jog']);
   if(inRange(m,at('evening'),at('bed')))return pick(['walk','tiptoe','walk']);
   return pick(['walk','walk','march','jog','tiptoe','skip']);}
@@ -127,7 +132,7 @@ function ledgeBetween(a,b){if(settings.windows===false)return null;const cx=midX
 let bounces=0;
 // squash, stretch and tilt are springs on the canvas, so every drop and bounce wobbles a little differently
 let walls=0,thrown=false,thrownAt=0,vx=0,sq=0,sqv=0,tilt=0,tiltv=0,trail=[];
-function spring(dt){const t=Math.min(0.05,dt/1000);
+function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);
   const stretch=falling?Math.max(-0.16,Math.min(0.12,-Math.abs(vy)*0.07)):0,lean=falling?Math.max(-10,Math.min(10,vx*24)):0;
   sqv+=(-170*(sq-stretch)-11*sqv)*t;sq+=sqv*t;tiltv+=(-120*(tilt-lean)-9*tiltv)*t;tilt+=tiltv*t;
   if(Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
@@ -202,19 +207,19 @@ function step(now){
   draw();
   if(sign&&boardEcho&&action==='sign'&&!panelOpen()&&(!bubble.classList.contains('show')||now>bubbleUntil-200))say(boardEcho,4000);
   if(bubbleUntil&&now>bubbleUntil){bubble.classList.remove('show');bubbleUntil=0;}
-  if(settings.chatty&&!sign&&!away&&!panelOpen()&&Date.now()>nextThought){if(nextThought)say(pick(block().th),3500);nextThought=Date.now()+(180+Math.random()*240)*1000;}
+  if(settings.chatty&&!sign&&!away&&!panelOpen()&&Date.now()>nextThought){if(nextThought&&!hold)say(moodThought(),3500);nextThought=Date.now()+(180+Math.random()*240)*1000;}
   const parts=[];
   if(focus.mode!=='off'){const left=Math.max(0,focus.end-Date.now());parts.push((focus.label||'Focus')+' '+Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0'));}
   if(meeting){const left=Math.max(0,meeting.at-Date.now());parts.push('Meeting in '+Math.ceil(left/60000)+' min');}
   if(parts.length){chip.style.display='block';chip.textContent=parts.join(' · ');}else chip.style.display='none';
 }
 let drawn='',sentX=NaN,sentY=NaN;
-function draw(){const key=action+':'+frame;if(key===drawn)return;const b=img(action,frame);if(!b)return;ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(b,0,0);drawn=key;}
+function draw(){const key=action+':'+frame;if(key===drawn)return;const b=img(action,frame);if(!b)return;ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(b,0,0,cv.width,cv.height);drawn=b.width===cv.width?key:'';}
 function sendPos(){if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)){B.send('log','bad pos '+JSON.stringify({pos,falling,perch,action,vy,vx,area}));recover();return;}const x=Math.round(pos.x),y=Math.round(pos.y);if(x===sentX&&y===sentY)return;sentX=x;sentY=y;B.send('set-pos',{x,y});}
 
 // ---------------- radial menu (double-click) ----------------
 const ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
-  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
+  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
 function buildRadial(){radial.innerHTML='';for(const [label,fn] of ITEMS){const b=document.createElement('button');b.className='hit';b.textContent=typeof label==='function'?label():label;
   b.onclick=e=>{e.stopPropagation();closeRadial();fn();};radial.append(b);}}
 function toggleStay(){const on=!settings.stayPut;saveS({stayPut:on,...(on&&settings.cursor==='follow'?{cursor:'off'}:{})});
@@ -223,7 +228,7 @@ function setCursorMode(m){const v=settings.cursor===m?'off':m;saveS({cursor:v,..
   say(v==='watch'?'I\'ll keep an eye on your cursor.':v==='follow'?'Lead the way!':'Back to my own thing.',2000);if(v==='off'&&action==='watch')next('watch');}
 function openRadial(){
   closePanel();buildRadial();layout();bubble.classList.remove('show');bubbleUntil=0;
-  const r=cv.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.62,rx=Math.max(178,size.bw*0.8),ry=Math.max(150,size.bw*0.72);
+  const r=cv.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.62,rx=Math.min(window.innerWidth/2-40,Math.max(240,size.bw*1.05)),ry=Math.min(cy-40,Math.max(205,size.bw*0.95));
   // an arc from his left, over his head, to his right, clear of his ears
   [...radial.children].forEach((b,i)=>{const a=Math.PI*(1.0+i/(ITEMS.length-1));b.style.left=(cx+rx*Math.cos(a))+'px';b.style.top=(cy+ry*Math.sin(a))+'px';b.style.transitionDelay=(i*18)+'ms';});
   requestAnimationFrame(()=>radial.classList.add('open'));if(!sign)play('look',1);
@@ -309,7 +314,7 @@ function openFocus(){
 }
 async function logWater(){const w=await B.invoke('water-log',1);targetX=null;if(!sign)play('drink',1);say(w.count>=w.goal?`${w.count} of ${w.goal} glasses. Goal done!`:`${w.count} of ${w.goal} glasses today`,3000);}
 function openMore(){
-  openPanel('more','Bunny','',p=>{
+  openPanel('more','Bunny','Feeling '+moodName(),p=>{
     el('div',{className:'hint',textContent:'Size'},p);const s=el('input',{type:'range',min:90,max:360,step:5,value:settings.bw},p);
     s.onchange=()=>{saveS({bw:+s.value});};
     const r=el('div',{className:'row'},p);
@@ -323,6 +328,7 @@ function openMore(){
     btn(mv,'Stay put',()=>{toggleStay();redraw();},settings.stayPut?'on':'');
     btn(mv,'Watch my cursor',()=>{setCursorMode('watch');redraw();},settings.cursor==='watch'?'on':'');
     btn(mv,'Follow my cursor',()=>{setCursorMode('follow');redraw();},settings.cursor==='follow'?'on':'');
+    btn(mv,'Hold my videos',()=>{saveS({holdPip:settings.holdPip===false});if(settings.holdPip===false&&hold){pipLetGo=hold.id;hold=null;play('look',1);}redraw();},settings.holdPip!==false?'on':'');
     btn(mv,'Climb on windows',()=>{saveS({windows:settings.windows===false});B.send('windows-mode',settings.windows!==false);redraw();},settings.windows!==false?'on':'');
     el('div',{className:'hint',textContent:'Drag him above a window and let go: he grabs the edge and climbs up. Tip: hold Ctrl and scroll over him to resize.'},p);
   });
@@ -351,7 +357,7 @@ window.addEventListener('mousemove',e=>{
 window.addEventListener('mousedown',e=>{if(e.button!==0)return;
   if(!opaqueAt(e.clientX,e.clientY)){if(!uiAt(e.clientX,e.clientY)){closeRadial();if(panelKind&&panelKind!=='notes'&&panelKind!=='board')closePanel();}return;}
   downAt=performance.now();downPt={x:e.clientX,y:e.clientY,sx:e.screenX,sy:e.screenY};
-  holdTimer=setTimeout(()=>{if(!dragging){if(!sign&&!perch)play('pet',1);say('♥',1500);downPt=null;}},650);});
+  holdTimer=setTimeout(()=>{if(!dragging){if(!sign&&!perch&&!hold)play('pet',1);say('♥',1500);love(8,'pet');downPt=null;}},650);});
 window.addEventListener('mouseup',async e=>{
   if(e.button!==0)return;clearTimeout(holdTimer);
   if(dragging){dragging=false;B.send('drag-end');const r=await B.invoke('bounds');pos={x:r.bounds.x,y:r.bounds.y};area=r.area;
@@ -368,12 +374,125 @@ window.addEventListener('mouseup',async e=>{
     if(panelKind==='notes'){if(action==='write'){play('read',99);say('Reading it back…',1500);}else{closePanel();say('Saved in my notebook.',1500);}return;}
     if(panelOpen()){closePanel();return;}
     if(perch){if(perch.state==='sit')play('sit_look',1);say(pick(['Hi from up here!','I like it up here.','Nice view!']),1500);return;}
+    love(4,'tickle');if(hold){say(pick(['Careful, I\'m holding your video!','Hehe, not now, I\'m on duty!']),1600);return;}
     play(night()?'yawn':'tickle',1);say(night()?'Mmh… sleeping…':pick(['Hehe! That tickles!','Stop it, haha!','Not the belly!','Hee hee!']),1600);
   },260);
 });
-window.addEventListener('wheel',e=>{if(!e.ctrlKey||!opaqueAt(e.clientX,e.clientY))return;e.preventDefault();saveS({bw:Math.max(90,Math.min(360,Math.round(settings.bw-e.deltaY*0.2)))});},{passive:false});
+// Ctrl+scroll resize: the canvas scales instantly on screen, and the real resize happens once you pause scrolling
+let wheelBw=null,wheelTimer=0;
+window.addEventListener('wheel',e=>{if(!e.ctrlKey||(!opaqueAt(e.clientX,e.clientY)&&wheelBw===null))return;e.preventDefault();
+  wheelBw=Math.max(90,Math.min(360,(wheelBw??settings.bw)-e.deltaY*0.2));
+  const k=Math.min(wheelBw/size.bw,(window.innerHeight)/size.bh,window.innerWidth/size.bw);cv.style.transform=`translateX(-50%) scale(${k.toFixed(3)})`;
+  clearTimeout(wheelTimer);wheelTimer=setTimeout(()=>{const v=Math.round(wheelBw);wheelBw=null;if(v!==Math.round(settings.bw))saveS({bw:v});else cv.style.transform='';},220);},{passive:false});
 window.addEventListener('contextmenu',e=>{e.preventDefault();B.send('menu');});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeRadial();closePanel();}});
+
+// ---------------- his heart and head: mood, hunger, and what you're up to (all worked out on this PC) ----------------
+// mood runs 0–100. Attention and food lift it; being ignored lets it sink, and his face, posture, walk and words follow it.
+let mood=60,lastLove=Date.now(),fedAt=Date.now(),moodSaved=0,wk={cat:null,title:'',proc:'',pip:null},ctxSince=Date.now(),ctxReacted=null,
+  hold=null,pipLetGo=null,switchLog=[],lastFg='',day={d:'',cats:{}},lastNudge={},catTick=Date.now();
+const MOODS=[[75,'happy'],[45,'okay'],[20,'sad'],[0,'blue']];
+const moodName=()=>MOODS.find(([m])=>mood>=m)[1];
+function love(n,why){const was=moodName();mood=Math.max(0,Math.min(100,mood+n));if(n>0)lastLove=Date.now();
+  if(was!=='happy'&&moodName()==='happy'&&n>0)setTimeout(()=>{if(!sign&&!away&&!hold)say(pick(['You\'re the best.','Okay, I feel loved now.','Best. Day. Ever.']),2500);},1800);
+  if((was==='sad'||was==='blue')&&n>0&&why)say(pick(['Oh! You remembered me.','Hi… thanks for noticing me.','That helped. A lot.']),2500);
+  saveMood();}
+function saveMood(force){if(!force&&Date.now()-moodSaved<120000)return;moodSaved=Date.now();saveS({mood:Math.round(mood),lastLove,fedAt,day});}
+function feed(){targetX=null;closeRadial();if(sign)dropSign();const hungry=Date.now()-fedAt>3*3600000;fedAt=Date.now();love(hungry?22:12,'food');
+  play('eat',1);say(hungry?pick(['FOOD. Thank you. I was wasting away.','Nom nom nom. You saved me.']):pick(['Ooh, a snack!','Nom!','You spoil me.']),2600);saveMood(true);}
+// every minute: the slow drift. A couple of quiet hours without a word and he's sad; fed and fussed over, he glows.
+function moodTick(){const idle=(Date.now()-lastLove)/60000,hungry=(Date.now()-fedAt)/3600000;
+  if(away||(settings.nightSleep&&night()))return;
+  if(idle>25)mood-=idle>120?1.2:0.6;if(hungry>4)mood-=0.4;if(idle<10&&hungry<3)mood+=0.15;
+  mood=Math.max(0,Math.min(100,mood));saveMood();}
+// what kind of thing you're doing, from the active window's app and title (nothing is stored or sent anywhere)
+const CATS=[
+  ['video',/youtube|netflix|prime video|hotstar|disney\+|jiocinema|vimeo|twitch|zee5|sonyliv|crunchyroll|mubi|\bvlc\b|media player|movies & tv|plex/i,/^(vlc|wmplayer|potplayer.*|mpc-hc.*|mpv|plex)$/i],
+  ['design',/canva|figma|affinity|cavalry|photoshop|illustrator|after effects|premiere|procreate|krita|blender|davinci|lightroom|framer|spline/i,/^(designer|photo|publisher|affinity.*|cavalry|photoshop|illustrator|afterfx|adobe premiere pro|krita|blender|resolve|figma|indesign)$/i],
+  ['chatbot',/claude|chatgpt|gemini|copilot|perplexity|deepseek|mistral|grok/i,/^(claude|chatgpt)$/i],
+  ['code',/visual studio|vs code|github|stack overflow|\.py\b|\.js\b|\.ts\b/i,/^(code|devenv|idea64|pycharm64|webstorm64|sublime_text|notepad\+\+|windowsterminal|cmd|powershell)$/i],
+  ['sheets',/excel|google sheets|\.xlsx|\.csv/i,/^excel$/i],
+  ['mail',/outlook|gmail|inbox|mail/i,/^(outlook|olk|thunderbird)$/i],
+  ['music',/spotify|apple music|soundcloud|youtube music|wynk|gaana|jiosaavn/i,/^(spotify|applemusic)$/i],
+  ['docs',/word|google docs|notion|obsidian|onenote|\.docx/i,/^(winword|notion|obsidian|onenote)$/i],
+  ['slides',/powerpoint|google slides|keynote|\.pptx/i,/^powerpnt$/i],
+];
+function categorise(c){const t=c.title||'',p=(c.proc||'').toLowerCase();
+  // the browser name alone says nothing; the tab title decides
+  for(const [k,tre,pre] of CATS)if(pre.test(p)||tre.test(t))return k;return null;}
+const CTX={
+  video:{act:'popcorn',say:['Popcorn time!','Ooh, what are we watching?','Shh, the good part.','I brought popcorn.']},
+  design:{act:'paint',say:['Art time! I\'ll paint too.','Pretty! Mine\'s more abstract.','Colour me impressed.','Two artists, one desk.']},
+  chatbot:{act:'robot',say:['Beep boop. Fellow robot spotted.','Say hi to the bot for me!','I can do the robot too.','01001000 01001001!']},
+  code:{act:'think',say:['Rubber duck mode. Explain it to me.','Have you tried turning it off and on?','Missing semicolon, probably.']},
+  sheets:{act:'think',say:['Numbers! My favourite is 7.','Sum it up for me later.','So many little boxes.']},
+  mail:{act:'write',say:['Inbox zero. You can do it.','Reply-all with caution.','Taking notes on your emails.']},
+  music:{act:'dance',say:['Is this a bop? It\'s a bop.','Turn it up!','Dance break!']},
+  docs:{act:'write',say:['Writing? I\'ll take notes too.','Big words. Love it.']},
+  slides:{act:'read',say:['Slide 1 of many…','Bullet points, assemble!']},
+};
+// called from the windows watcher (every half second, only when something changes)
+function onContext(c){const cat=categorise(c);
+  if(c.title!==lastFg){lastFg=c.title;switchLog.push(Date.now());switchLog=switchLog.filter(t=>Date.now()-t<600000);}
+  if(cat!==wk.cat){ctxSince=Date.now();ctxReacted=null;}
+  wk={cat,title:c.title,proc:c.proc,pip:c.pip};
+  if(!wk.pip&&hold){hold=null;if(action==='hold_pip'){play('wave',1);say(pick(['Show\'s over!','That was a good one.']),2000);}}
+  if(wk.pip&&pipLetGo&&pipLetGo!==wk.pip[0])pipLetGo=null;}
+function tallyDay(){const today=new Date().toDateString();if(day.d!==today)day={d:today,cats:{}};
+  const k=wk.cat||'other';const dm=(Date.now()-catTick)/60000;catTick=Date.now();if(!away&&dm<5)day.cats[k]=(day.cats[k]||0)+dm;}
+const fmt=m=>m>=60?`${Math.floor(m/60)}h${Math.round(m%60)?' '+Math.round(m%60)+'m':''}`:`${Math.round(m)}m`;
+function daySummary(){const names={video:'watching',design:'designing',chatbot:'chatting with bots',code:'coding',sheets:'in spreadsheets',mail:'on email',music:'with music on',docs:'writing',slides:'on slides'};
+  const top=Object.entries(day.cats).filter(([k,m])=>names[k]&&m>=10).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return top.length?'Today: '+top.map(([k,m])=>fmt(m)+' '+names[k]).join(', ')+'.':'';}
+// a nudge at most once per kind per window of time, and never while he's busy holding something up
+function nudge(kind,everyMin,text,act){if(Date.now()-(lastNudge[kind]||0)<everyMin*60000)return false;lastNudge[kind]=Date.now();targetX=null;if(act)play(act,1);say(text,6000);return true;}
+function proactive(){
+  if(sign||away||panelOpen()||radialOpen()||dragging||falling||perch||climb||hold)return;
+  const m=mins(),onFor=(Date.now()-ctxSince)/60000,hungryH=(Date.now()-fedAt)/3600000,lonelyM=(Date.now()-lastLove)/60000;
+  // react to a new kind of work within a few seconds of you switching to it
+  if(wk.cat&&CTX[wk.cat]&&ctxReacted!==wk.cat&&onFor>0.08){ctxReacted=wk.cat;if(moodName()!=='blue'){targetX=null;play(CTX[wk.cat].act,3);say(pick(CTX[wk.cat].say),3000);return;}}
+  if(hungryH>4&&nudge('hungry',45,pick(['I\'m sooo hungry… feed me? (double-click → Feed)','*tummy rumbles* Snack, please?']),'sad'))return;
+  if(lonelyM>90&&nudge('lonely',40,pick(['Hey… remember me?','It\'s quiet down here. Say hi?','*sigh* Nobody\'s talked to me in ages.']),'sad'))return;
+  if(wk.cat==='video'&&onFor>25&&!weekend()&&inRange(m,at('office'),at('pack'))&&nudge('video',60,pick(['Is this… research?','One more video, then back to work?']),'think'))return;
+  if(switchLog.length>30&&nudge('switch',30,'Lots of window-hopping. Want a focus timer? Double-click → Focus.','think'))return;
+  if(wk.cat&&wk.cat!=='video'&&wk.cat!=='music'&&onFor>100&&nudge('long',90,`You've been at this ${fmt(onFor)} straight. Stretch with me?`,'yawn'))return;
+  if(inRange(m,at('evening'),at('bed'))&&wk.cat&&['code','sheets','mail','docs','slides','design'].includes(wk.cat)&&!weekend()&&nudge('late',60,pick(['Still working? Go home, hero.','The work will be there tomorrow. Promise.']),'yawn'))return;
+  if(inRange(m,at('pack'),at('pack')+5)&&nudge('summary',600,daySummary()||'Good work today!','wave'))return;
+}
+// the brain's say in what he does next: holding your video, then mood, then what you're working in
+function brainAmbient(){
+  if(hold)return 'hold_pip';
+  const md=moodName();
+  if(md==='blue')return pick(['sad','sad','tired','sad']);
+  if(md==='sad'&&Math.random()<.55)return pick(['sad','sad','tired','think']);
+  if(wk.cat&&CTX[wk.cat]&&Math.random()<.55)return CTX[wk.cat].act;
+  if(md==='happy'&&Math.random()<.3)return pick(['happy','happy','dance','hop','laugh']);
+  return null;}
+function moodThought(){const md=moodName();
+  if(md==='blue')return pick(['*sigh*','Nobody plays with me…','I\'ll just… sit here.','Is it lunch yet? No? Okay.']);
+  if(md==='sad')return pick(['Bit lonely down here.','A snack would help…','Hmm.','Could use a hug.']);
+  if(md==='happy'&&Math.random()<.5)return pick(['Life is good!','Best desk buddy ever.','I could dance all day!','Feeling fantastic.']);
+  if(wk.cat&&CTX[wk.cat]&&Math.random()<.4)return pick(CTX[wk.cat].say);
+  return pick(block().th);}
+const moodGait=()=>{const md=moodName();return md==='blue'||md==='sad'?'walk':md==='happy'&&Math.random()<.5?'skip':null;};
+// ---- carrying your picture-in-picture video: he holds its edge out to his side and it goes where he goes ----
+const PIP_HAND=[108/384,0.797];
+function handPt(){const left=(window.innerWidth-size.bw)/2;return {x:pos.x+left+size.bw*PIP_HAND[0],y:pos.y+top0()+size.bh*PIP_HAND[1]};}
+function pipPlace(){const p=wk.pip;if(!p)return null;const w=p[3]-p[1],h=p[4]-p[2],hp=handPt();
+  return {x:hp.x-w+size.bw*0.03,y:Math.max(area.y,Math.min(area.y+area.height-h,hp.y-h*0.72)),w,h};}
+function wantPip(){return wk.pip&&settings.holdPip!==false&&pipLetGo!==wk.pip[0]&&!sign&&!away&&!perch&&!falling&&!climb&&!dragging;}
+function grabPip(){const pl=pipPlace();if(!pl)return false;
+  if(pl.x<area.x+8){walkTo(pos.x+(area.x+8-pl.x),'walk');return true;}
+  hold={id:wk.pip[0],x:Math.round(pl.x),y:Math.round(pl.y),sent:Date.now()};B.send('move-win',{id:hold.id,x:hold.x,y:hold.y});
+  targetX=null;play('hold_pip',99);say(pick(['I\'ll hold this for you!','Front row seat!','Your own personal screen stand.']),2500);return true;}
+function carryPip(){if(!hold||!wk.pip)return;
+  // you moved it yourself: he lets go and doesn't grab that one again
+  if(wk.pip[0]===hold.id&&(Math.abs(wk.pip[1]-hold.x)>30||Math.abs(wk.pip[2]-hold.y)>30)&&Date.now()-(hold.sent||0)>1500){pipLetGo=hold.id;hold=null;play('look',1);say('Okay, you take it!',1800);return;}
+  const pl=pipPlace();if(!pl)return;const x=Math.round(pl.x),y=Math.round(pl.y);
+  if(Math.abs(x-hold.x)>2||Math.abs(y-hold.y)>2){hold.x=x;hold.y=y;hold.sent=Date.now();B.send('move-win',{id:hold.id,x,y});}}
+setInterval(()=>{if(!settings||!size)return;moodTick();tallyDay();},60000);
+setInterval(()=>{if(!settings||!size)return;try{proactive();carryPip();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
+B.on('context',c=>{try{onContext(c||{});}catch(e){B.send('log','context: '+(e&&e.message));}});
 
 // ---------------- events from the app ----------------
 B.on('remind',r=>{if(sign)return say(r.text,9000);targetX=null;play(r.action,LOOPS.has(r.action)?2:1);say(r.text,9000);});
@@ -398,13 +517,13 @@ B.on('cursor',c=>{if(!cursor||Math.abs(c.x-cursor.x)>2||Math.abs(c.y-cursor.y)>2
 B.on('settings',s=>{settings=s.settings;resize(s.size);
   if(settings.stayPut&&isWalk(action)&&cursorMode()!=='follow'){targetX=null;play('idle');}
   if(settings.windows===false&&perch)letGo();});
-function resize(s){size=s;const dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=s.bw+'px';cv.style.height=s.bh+'px';
+function resize(s){size=s;if(wheelBw===null)cv.style.transform='';const dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=s.bw+'px';cv.style.height=s.bh+'px';
   const W=Math.round(s.bw*dpr),H=Math.round(s.bh*dpr);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}drawn='';if(cacheW!==W)resetFrames();bubble.style.fontSize=Math.max(13,Math.min(17,Math.round(s.bw*0.09)))+'px';draw();layout();
   B.invoke('bounds').then(r=>{area=r.area;if(!falling&&!perch&&!climb&&!dragging){pos={x:r.bounds.x,y:groundY()};sendPos();}layout();});}
 
 (async()=>{
   meta=window.META;
-  const init=await B.invoke('init');settings=init.settings;area=init.area;pos={x:init.bounds.x,y:init.bounds.y};resize(init.size);
+  const init=await B.invoke('init');settings=init.settings;area=init.area;mood=+settings.mood||60;lastLove=+settings.lastLove||Date.now();fedAt=+settings.fedAt||Date.now();if(settings.day&&settings.day.d)day=settings.day;pos={x:init.bounds.x,y:init.bounds.y};resize(init.size);
   await document.fonts.load('20px "Patrick Hand"').catch(()=>{});
   play('wave',1);say(pick(['Hi! I\'m Bunny. Double-click me for my menu.','Hello! Let\'s have a good day.']),3500);
   nextThought=Date.now()+90000;
