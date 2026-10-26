@@ -368,7 +368,7 @@ function opaqueAt(x,y){const r=cv.getBoundingClientRect(),k=cv.width/r.width;con
 function uiAt(x,y){const e=document.elementFromPoint(x,y);return !!(e&&e.closest('.hit'));}
 window.addEventListener('mousemove',e=>{
   if(dragging){const t=performance.now();trail.push([t,e.screenX,e.screenY]);while(trail.length&&t-trail[0][0]>120)trail.shift();}
-  const hit=dragging||opaqueAt(e.clientX,e.clientY)||uiAt(e.clientX,e.clientY);if(hit!==over){over=hit;B.send('hit',hit);if(!radialOpen()&&!panelOpen())showMeters(hit&&!dragging);}
+  const hit=dragging||opaqueAt(e.clientX,e.clientY)||uiAt(e.clientX,e.clientY);if(hit!==over){over=hit;B.send('hit',hit);}
   if(downPt&&!dragging&&Math.hypot(e.screenX-downPt.sx,e.screenY-downPt.sy)>5){dragging=true;clearTimeout(holdTimer);closeRadial();targetX=null;falling=false;perch=null;climb=null;skipWin=null;play('dangle',50);say('Whoa!',1200);B.send('drag-start',{x:downPt.x,y:downPt.y});}
 });
 window.addEventListener('mousedown',e=>{if(e.button!==0)return;
@@ -410,7 +410,7 @@ let mood=60,lastLove=Date.now(),fedAt=Date.now(),moodSaved=0,wk={cat:null,title:
   hold=null,pipLetGo=null,switchLog=[],lastFg='',day={d:'',cats:{}},lastNudge={},catTick=Date.now();
 const MOODS=[[75,'happy'],[45,'okay'],[20,'sad'],[0,'blue']];
 const moodName=()=>MOODS.find(([m])=>mood>=m)[1];
-function love(n,why){const was=moodName();mood=Math.max(0,Math.min(100,mood+n));if(n>0)lastLove=Date.now();
+function love(n,why){const was=moodName();mood=Math.max(0,Math.min(100,mood+n));if(n>0)lastLove=Date.now();if(why&&n>0&&typeof flashMeters==='function')flashMeters();
   if(was!=='happy'&&moodName()==='happy'&&n>0)setTimeout(()=>{if(!sign&&!away&&!hold)say(pick(['You\'re the best.','Okay, I feel loved now.','Best. Day. Ever.']),2500);},1800);
   if((was==='sad'||was==='blue')&&n>0&&why)say(pick(['Oh! You remembered me.','Hi… thanks for noticing me.','That helped. A lot.']),2500);
   saveMood();}
@@ -521,9 +521,11 @@ function isHome(){const h=settings.home||'auto';if(h!=='auto')return h==='on';re
 // his two meters: Happy is his mood; Full drains over about five hours after a meal
 const fullness=()=>Math.max(0,Math.min(100,100-(Date.now()-fedAt)/3600000*20));
 let metersTimer=0;
-function showMeters(on){clearTimeout(metersTimer);
+// they show only while his menu is open, and flash for a moment when you feed, pet or tickle him
+function showMeters(on,ms=300){clearTimeout(metersTimer);
   if(on){$('mHappy').style.width=Math.round(mood)+'%';$('mFull').style.width=Math.round(fullness())+'%';meters.classList.add('show');layout();}
-  else metersTimer=setTimeout(()=>{if(!radialOpen()){meters.classList.remove('show');layout();}},1200);}
+  else metersTimer=setTimeout(()=>{if(!radialOpen()){meters.classList.remove('show');layout();}},ms);}
+function flashMeters(){if(radialOpen())return showMeters(true);showMeters(true);showMeters(false,2500);}
 // this week's tally: renders, doodles, ideas, fetches, snacks
 function weekKey(){const d=new Date(),j=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-'+Math.ceil(((d-j)/86400000+j.getDay()+1)/7);}
 function bump(k,n=1){const w=settings.week&&settings.week.k===weekKey()?{...settings.week}:{k:weekKey()};w[k]=(w[k]||0)+n;saveS({week:w});return w[k];}
