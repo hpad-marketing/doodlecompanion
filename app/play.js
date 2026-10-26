@@ -15,6 +15,7 @@ B.on('start',s=>{A=s.area;bun=s.bunny;game=s.game;snacks=[];bits=[];score=0;drib
   if(game==='snack'){endAt=performance.now()+30000;nextDrop=performance.now()+700;}
   last=performance.now();kick();});
 B.on('bunny',b=>{bun=b;});
+B.send('play-ready');
 B.on('cmd',c=>{if(!ball)return;
   if(c.cmd==='dribble'){dribble={x:ball.x};ball.vx=ball.vy=0;ball.thrown=false;}
   else if(c.cmd==='at'&&dribble)dribble.x=Math.max(R(),Math.min(innerWidth-R(),c.x-A.x));

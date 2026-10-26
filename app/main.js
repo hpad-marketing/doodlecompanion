@@ -65,6 +65,14 @@ ipcMain.on('set-pos',(_e,p)=>{if(!pet||dragging)return;const x=Math.round(+(p&&p
   if(playGame)sendPlay('bunny',bunnyRect());});
 process.on('uncaughtException',e=>{try{log('main error: '+(e&&e.stack||e));}catch{}});
 ipcMain.handle('bounds',()=>({bounds:pet.getBounds(),area:area()}));
+// Bunny's brain (memory bank, traits, optional local chat model); loaded on first use so start-up stays quick
+let brainMod=null;const brain=()=>brainMod||(brainMod=require('./brain.js')(app,{log,toPet,net}));
+ipcMain.handle('brain-chat',(_e,d)=>brain().chat(String(d&&d.q||'').slice(0,300),d&&d.ctx||{}).catch(e=>{log('brain chat: '+e.message);return {text:null};}));
+ipcMain.handle('brain-thought',(_e,c)=>brain().thought(c||{}).catch(()=>null));
+ipcMain.handle('brain-state',()=>brain().state());
+ipcMain.handle('brain-download',()=>brain().download());
+ipcMain.on('brain-event',(_e,t)=>{if(typeof t==='string')brain().event(t);});
+ipcMain.on('brain-forget',(_e,i)=>brain().forget(+i));
 ipcMain.on('drag-start',(_e,off)=>{if(!pet)return;dragging=off;pet.setIgnoreMouseEvents(false);
   const step=()=>{if(!dragging||!pet)return;const c=screen.getCursorScreenPoint();pet.setPosition(Math.round(c.x-dragging.x),Math.round(c.y-dragging.y));setTimeout(step,16);};step();});
 ipcMain.on('drag-end',()=>{dragging=null;});
@@ -141,10 +149,12 @@ function startPlay(game){
       alwaysOnTop:true,skipTaskbar:true,hasShadow:false,focusable:false,fullscreenable:false,maximizable:false,minimizable:false,backgroundColor:'#00000000',
       webPreferences:{preload:path.join(__dirname,'preload.js'),backgroundThrottling:false}});
     playWin.setIgnoreMouseEvents(true,{forward:true});playWin.loadFile(path.join(__dirname,'play.html'));
-    playWin.once('ready-to-show',()=>{if(!playWin)return;playWin.setAlwaysOnTop(true,'screen-saver');playWin.showInactive();if(pet){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}start();});
+    playWin.once('ready-to-show',()=>{if(!playWin)return;playWin.setAlwaysOnTop(true,'screen-saver');playWin.showInactive();if(pet){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}});
     playWin.on('closed',()=>{playWin=null;if(playGame){playGame=null;toPet('play-ev',{type:'closed'});}applyCursor();});}
   applyCursor();log('play '+game);}
 function stopPlay(){playGame=null;if(playWin&&!playWin.isDestroyed())playWin.close();applyCursor();}
+// the playground says when its script is listening, so the start message can't arrive before it is ready
+ipcMain.on('play-ready',()=>{if(playGame)sendPlay('start',{game:playGame,area:area(),bunny:bunnyRect()});});
 ipcMain.on('play-start',(_e,g)=>startPlay(g&&g.game));
 ipcMain.on('play-stop',()=>stopPlay());
 ipcMain.on('play-cmd',(_e,c)=>sendPlay('cmd',c));
