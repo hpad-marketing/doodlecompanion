@@ -1,6 +1,6 @@
 // Bunny Pet for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
 // lives a daily routine, and opens a radial menu (notes, his board, lunch, tea, meetings, focus, water) on double-click.
-const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage,net}=require('electron');
+const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage,net,dialog}=require('electron');
 const path=require('path'),fs=require('fs'),crypto=require('crypto'),{spawn}=require('child_process');
 // Self-update: a manifest of file hashes at UPDATE_BASE; only changed files are fetched, then Bunny restarts.
 const UPDATE_BASE=(()=>{try{return fs.readFileSync(path.join(__dirname,'update-url.txt'),'utf8').trim();}catch{return '';}})();
@@ -15,6 +15,7 @@ app.setAppUserModelId('com.deepindoodles.bunnypet');
 
 const DEFAULTS={bw:150,onTop:true,water:true,waterMin:60,waterGoal:8,stretch:true,stretchMin:120,eyes:false,eyesMin:20,routine:true,chatty:true,
   sleepAway:true,nightSleep:true,startup:false,toasts:true,breakMin:5,custom:[],notes:[],stayPut:false,cursor:'off',windows:true,
+  home:'auto',ideas:[],week:{},snackBest:0,renders:true,renderDirs:[],
   banner:{text:'Do not disturb. Unless snacks.',size:1,mode:'off',every:30,from:'13:30',to:'14:30'},waterLog:{day:'',count:0},
   schedule:{wake:'07:00',coffee:'08:30',office:'09:30',lunch:'13:30',tea:'15:30',pack:'18:30',evening:'19:15',bed:'23:00'}};
 const file=()=>path.join(app.getPath('userData'),'settings.json');
@@ -60,7 +61,8 @@ ipcMain.on('set-pos',(_e,p)=>{if(!pet||dragging)return;const x=Math.round(+(p&&p
   const v=screen.getAllDisplays().reduce((r,d)=>{const b=d.bounds;return {l:Math.min(r.l,b.x),t:Math.min(r.t,b.y),r:Math.max(r.r,b.x+b.width),b:Math.max(r.b,b.y+b.height)};},{l:1e9,t:1e9,r:-1e9,b:-1e9});
   const b=pet.getBounds();
   if(!Number.isFinite(x)||!Number.isFinite(y)||x<v.l-b.width||x>v.r||y<v.t-b.height*2||y>v.b){log('bad position '+JSON.stringify(p)+', rescuing');const a=area();toPet('rescue',{area:a});return;}
-  try{pet.setPosition(x,y);}catch(e){log('setPosition failed '+x+','+y+': '+e.message);}});
+  try{pet.setPosition(x,y);}catch(e){log('setPosition failed '+x+','+y+': '+e.message);}
+  if(playGame)sendPlay('bunny',bunnyRect());});
 process.on('uncaughtException',e=>{try{log('main error: '+(e&&e.stack||e));}catch{}});
 ipcMain.handle('bounds',()=>({bounds:pet.getBounds(),area:area()}));
 ipcMain.on('drag-start',(_e,off)=>{if(!pet)return;dragging=off;pet.setIgnoreMouseEvents(false);
@@ -124,9 +126,49 @@ ipcMain.on('move-win',(_e,m)=>{if(process.platform!=='win32'||!m||!Number.isFini
   try{fs.appendFileSync(cmdFile(),`move ${String(m.id).replace(/\D/g,'')} ${Math.round(p.x)} ${Math.round(p.y)}\n`);}catch(e){log('move-win: '+e.message);}
   if(pet&&S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}});
 function applyCursor(){
-  clearInterval(timers.cursor);if(!S.cursor||S.cursor==='off')return;let last='';
-  timers.cursor=setInterval(()=>{if(!pet||!pet.isVisible())return;const c=screen.getCursorScreenPoint(),k=c.x+','+c.y;if(k===last)return;last=k;toPet('cursor',c);},S.cursor==='follow'?40:80);
+  clearInterval(timers.cursor);const snack=playGame==='snack';if(!snack&&(!S.cursor||S.cursor==='off'))return;let last='';
+  timers.cursor=setInterval(()=>{if(!pet||!pet.isVisible())return;const c=screen.getCursorScreenPoint(),k=c.x+','+c.y;if(k===last)return;last=k;toPet('cursor',c);},snack?30:S.cursor==='follow'?40:80);
 }
+
+// ---- play: a see-through layer over the screen for his ball and the falling snacks, open only while you play ----
+let playWin=null,playGame=null;
+function bunnyRect(){if(!pet)return null;const b=pet.getBounds(),d=dims();return {x:b.x,y:b.y,w:b.width,h:b.height,bw:d.bw,bh:d.bh};}
+function sendPlay(ch,d){if(playWin&&!playWin.isDestroyed())playWin.webContents.send(ch,d);}
+function startPlay(game){
+  if(!pet||!['fetch','snack'].includes(game))return;playGame=game;const wa=area(),start=()=>sendPlay('start',{game,area:wa,bunny:bunnyRect()});
+  if(playWin&&!playWin.isDestroyed()){playWin.setBounds(wa);start();}
+  else{playWin=new BrowserWindow({x:wa.x,y:wa.y,width:wa.width,height:wa.height,show:false,transparent:true,frame:false,resizable:false,movable:false,
+      alwaysOnTop:true,skipTaskbar:true,hasShadow:false,focusable:false,fullscreenable:false,maximizable:false,minimizable:false,backgroundColor:'#00000000',
+      webPreferences:{preload:path.join(__dirname,'preload.js'),backgroundThrottling:false}});
+    playWin.setIgnoreMouseEvents(true,{forward:true});playWin.loadFile(path.join(__dirname,'play.html'));
+    playWin.once('ready-to-show',()=>{if(!playWin)return;playWin.setAlwaysOnTop(true,'screen-saver');playWin.showInactive();if(pet){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}start();});
+    playWin.on('closed',()=>{playWin=null;if(playGame){playGame=null;toPet('play-ev',{type:'closed'});}applyCursor();});}
+  applyCursor();log('play '+game);}
+function stopPlay(){playGame=null;if(playWin&&!playWin.isDestroyed())playWin.close();applyCursor();}
+ipcMain.on('play-start',(_e,g)=>startPlay(g&&g.game));
+ipcMain.on('play-stop',()=>stopPlay());
+ipcMain.on('play-cmd',(_e,c)=>sendPlay('cmd',c));
+ipcMain.on('play-ev',(_e,e)=>toPet('play-ev',e));
+ipcMain.on('play-hit',(_e,over)=>{if(playWin&&!playWin.isDestroyed())playWin.setIgnoreMouseEvents(!over,{forward:true});});
+
+// ---- render celebrations: a new video or image saved in your render folders gets a dance and confetti ----
+const MEDIA=/\.(mp4|mov|webm|mkv|gif|png|jpe?g)$/i;let renderWatchers=[];const renderSeen=new Map();
+function renderDirs(){const d=S.renderDirs&&S.renderDirs.length?S.renderDirs:[path.join(app.getPath('documents'),'DeepInDoodles')];
+  return d.filter(x=>{try{return fs.statSync(x).isDirectory();}catch{return false;}});}
+function applyRenders(){for(const w of renderWatchers)try{w.close();}catch{}renderWatchers=[];if(S.renders===false)return;
+  for(const dir of renderDirs()){try{const w=fs.watch(dir,(_ev,name)=>{if(name&&MEDIA.test(String(name)))checkRender(path.join(dir,String(name)));});w.on('error',e=>log('render watch: '+e.message));renderWatchers.push(w);}
+    catch(e){log('render watch '+dir+': '+e.message);}}}
+// a render counts once its size has stopped changing; an old file copied or touched (not freshly written) doesn't count
+function checkRender(f,lastSize){const seen=renderSeen.get(f);if(seen&&seen.done)return;if(seen)clearTimeout(seen.t);
+  const t=setTimeout(()=>{let st;try{st=fs.statSync(f);}catch{renderSeen.delete(f);return;}
+    if(lastSize===undefined&&Date.now()-st.mtimeMs>120000){renderSeen.delete(f);return;}
+    if(st.size>0&&st.size===lastSize){renderSeen.set(f,{done:true});const name=path.basename(f);log('render done '+name);
+      toPet('render',{name});notify('Render done!',`${name} is saved. Bunny is throwing confetti.`);return;}
+    checkRender(f,st.size);},3000);
+  renderSeen.set(f,{t});}
+ipcMain.handle('pick-render-dir',async()=>{const r=await dialog.showOpenDialog({title:'Folder Bunny watches for your renders',properties:['openDirectory'],defaultPath:renderDirs()[0]||app.getPath('documents')});
+  if(r.canceled||!r.filePaths[0])return null;S.renderDirs=[r.filePaths[0]];save();applyRenders();toPet('settings',{settings:S,size:dims()});return r.filePaths[0];});
+ipcMain.handle('render-dirs',()=>renderDirs());
 
 function notify(title,body){if(S.toasts&&Notification.isSupported())new Notification({title,body,icon:path.join(__dirname,'icon.png'),silent:false}).show();}
 function remind(action,text,title){if(away)return;toPet('remind',{action,text});notify(title||'Bunny',text);}
@@ -136,6 +178,9 @@ function every(name,on,minutes,fn){clearInterval(timers[name]);if(on)timers[name
 function daily(name,on,hhmm,fn,weekends){clearTimeout(timers[name]);if(!on)return;const [h,m]=String(hhmm).split(':').map(Number);const t=new Date();t.setHours(h||0,m||0,0,0);if(t<=new Date())t.setDate(t.getDate()+1);
   timers[name]=setTimeout(()=>{const day=new Date().getDay();if(weekends||(day!==0&&day!==6))fn();daily(name,on,hhmm,fn,weekends);},t-new Date());}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+// Home mode: on, off, or auto (weekends, and outside office hours on weekdays)
+function isHome(){const h=S.home||'auto';if(h!=='auto')return h==='on';const d=new Date(),day=d.getDay(),m=d.getHours()*60+d.getMinutes();
+  const tm=k=>{const [a,b]=String(S.schedule[k]).split(':').map(Number);return (a||0)*60+(b||0);};return day===0||day===6||m<tm('office')||m>=tm('pack');}
 function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function glasses(){if(S.waterLog.day!==today())S.waterLog={day:today(),count:0};return S.waterLog.count;}
 ipcMain.handle('water-log',(_e,add)=>{glasses();if(add){S.waterLog.count=Math.min(30,S.waterLog.count+add);save();}return {count:S.waterLog.count,goal:S.waterGoal};});
@@ -146,10 +191,13 @@ function applySettings(resized){
   every('stretch',S.stretch,S.stretchMin,()=>remind('yawn',pick(['Two hours in. Stand up and stretch with me!','Shoulders down, stretch it out.','Quick stretch? Your back will thank you.']),'Stretch break'));
   every('eyes',S.eyes,S.eyesMin,()=>remind('look',"Look at something far away for 20 seconds.",'Rest your eyes'));
   daily('lunch',S.routine,S.schedule.lunch,()=>{if(!away){toPet('routine','lunch');notify('Lunch','Lunch time! Bunny is already dancing.');}});
-  daily('tea',S.routine,S.schedule.tea,()=>{if(!away){toPet('routine','tea');notify('Tea time','Chai break? Bunny is having one.');}});
-  daily('pack',S.routine,S.schedule.pack,()=>{if(away)return;toPet('routine','pack');const open=(S.notes||[]).filter(n=>!n.done);
+  daily('tea',S.routine,S.schedule.tea,()=>{if(away)return;if(isHome()){toPet('routine','snack');notify('Snack time','Bunny is having a snack. Join him?');}
+    else{toPet('routine','tea');notify('Tea time','Chai break? Bunny is having one.');}},true);
+  daily('pack',S.routine,S.schedule.pack,()=>{if(away||isHome())return;toPet('routine','pack');const open=(S.notes||[]).filter(n=>!n.done);
     notify('Wrapping up',open.length?`Still open in Bunny's notebook:\n• ${open.map(n=>n.text).join('\n• ')}`:'Notebook is clear. Good work today!');});
-  scheduleCustom();applyOnTop();applyWindows();applyCursor();
+  const bed=(()=>{const [h,m]=String(S.schedule.bed).split(':').map(Number);const t=((h||0)*60+(m||0)-30+1440)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');})();
+  daily('winddown',S.routine&&S.home!=='off',bed,()=>{if(away||!isHome())return;toPet('routine','winddown');notify('Wind down','Half an hour to bed. Bunny is making tea.');},true);
+  scheduleCustom();applyOnTop();applyWindows();applyCursor();applyRenders();
   app.setLoginItemSettings({openAtLogin:!!S.startup});
   if(resized&&pet){const d=dims(),b=pet.getBounds(),wa=area();const cx=b.x+b.width/2,bottom=b.y+b.height;
     pet.setBounds({x:Math.round(cx-d.w/2),y:Math.min(bottom,wa.y+wa.height)-d.h,width:d.w,height:d.h});}
@@ -192,6 +240,10 @@ function setMeeting(m){
 function menuTemplate(){return [
   {label:pet&&pet.isVisible()?'Hide Bunny':'Show Bunny',click:()=>{if(!pet)createPet();else if(pet.isVisible()){hiddenByUser=true;pet.hide();}else{hiddenByUser=false;pet.showInactive();}rebuildMenu();}},
   {label:'Open his menu',click:()=>{if(pet){pet.showInactive();toPet('radial',true);}}},
+  {type:'separator'},
+  {label:'Home mode',submenu:[['Auto (evenings and weekends)','auto'],['On','on'],['Off','off']].map(([l,v])=>({label:l,type:'radio',checked:(S.home||'auto')===v,click:()=>{S.home=v;save();applySettings();}}))},
+  {label:'Play fetch',click:()=>toPet('play','fetch')},
+  {label:'Snack catch',click:()=>toPet('play','snack')},
   {type:'separator'},
   {label:'Gone for lunch',click:()=>toPet('sign','lunch')},
   {label:'Gone for tea',click:()=>toPet('sign','tea')},

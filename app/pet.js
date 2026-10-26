@@ -1,7 +1,7 @@
 // Bunny's brain and renderer: plays rig frames at 12 fps, lives his day, roams the taskbar, and runs his radial menu,
 // notebook, board (your own words), lunch/tea/meeting signs, focus timers and water log.
 const B=window.bunny,$=id=>document.getElementById(id);
-const cv=$('c'),ctx=cv.getContext('2d',{willReadFrequently:true}),bubble=$('bubble'),chip=$('chip'),board=$('board'),radial=$('radial'),panel=$('panel');
+const cv=$('c'),ctx=cv.getContext('2d',{willReadFrequently:true}),bubble=$('bubble'),chip=$('chip'),board=$('board'),radial=$('radial'),panel=$('panel'),meters=$('meters'),fx=$('fx');
 const GAITS={walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5};
 const isWalk=a=>/^(walk|march|jog|tiptoe|skip)_(right|left)$/.test(a);
 const FPS=12,LOOPS=new Set(['sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
@@ -42,6 +42,7 @@ let battery=null;navigator.getBattery?.().then(b=>battery=b).catch(()=>{});
 function block(){
   const m=mins();
   if(night())return {acts:['sleep'],th:['Zzz…','Five more minutes…']};
+  if(isHome()&&!weekend()&&!inRange(m,at('evening'),at('bed')))return {acts:['read','dance','look','idle','hop','paint','popcorn','drink','laugh'],th:['Home sweet home.','Fetch? Pleeease?','Let\'s make something.','Snack o\'clock?','No emails here.']};
   if(weekend())return {acts:['read','dance','look','idle','hop','drink','spin','turn_back'],th:['Weekend mode!','No emails today','One more chapter']};
   if(inRange(m,at('wake'),at('office')))return {acts:['coffee','look','yawn','read','idle'],th:['Coffee first.','Then the world.','Big day ahead?']};
   if(inRange(m,at('lunch')-15,at('lunch')+45))return {acts:['eat','dance','drink','laugh','idle','spin'],th:['Lunch!!','Burger o\'clock','Food is happiness']};
@@ -54,6 +55,7 @@ function ambient(){
   if(sign)return 'sign';
   if(away)return 'sleep';
   if(focus.mode==='focus')return pick(['read','read','write','think','drink']);
+  if(doodle)return 'paint';
   if(settings.nightSleep&&night())return 'sleep';
   if(battery&&!battery.charging&&battery.level<=.15)return pick(['tired','sleep']);
   if(perch)return pick(['sit_idle','sit_look','sit_look','sit_read','sit_snooze']);
@@ -67,6 +69,7 @@ function next(finished){
   if(dragging){play('dangle',50);return;}
   if(falling){play(vy<0?'bounce':'fall',vy<0?1:99);return;}
   if(perch&&perch.state==='hang'){Math.random()<.75?startClimb():letGo('Nope, can\'t hold on!');return;}
+  if(game&&gameNext(finished))return;
   if(sign){play('sign',99);return;}
   if(hold){play('hold_pip',99);return;}
   if(!perch&&wantPip()&&grabPip())return;
@@ -75,7 +78,7 @@ function next(finished){
   if(!perch&&!settings.stayPut&&cursorMode()!=='follow'&&!away&&focus.mode!=='focus'&&!(routine&&routine.length)&&!(settings.nightSleep&&night())&&!isWalk(finished)&&!panelOpen()&&Math.random()<.25){walkSomewhere();return;}
   play(ambient());
 }
-const cursorMode=()=>settings.cursor||'off';
+const cursorMode=()=>game?(game.kind==='snack'?'follow':'off'):settings.cursor||'off';
 function gait(){const m=mins();if(settings.nightSleep&&night())return 'tiptoe';const mg=moodGait();if(mg)return mg;
   if(inRange(m,at('lunch')-15,at('lunch')+45))return pick(['skip','skip','walk','jog']);
   if(inRange(m,at('evening'),at('bed')))return pick(['walk','tiptoe','walk']);
@@ -88,7 +91,7 @@ const SIGNS={lunch:['GONE FOR LUNCH','be right back'],tea:['GONE FOR TEA','be ri
 const AREA={x:130,y:343,w:124,h:103},MAX_TS=[20,27,36];
 function holdSign(kind){
   closeRadial();closePanel();targetX=null;sign=kind;play('sign',99);
-  if(kind!=='banner')say(kind==='lunch'?'Off you go. I\'ll guard the desk.':kind==='tea'?'Enjoy your chai!':'Shh. Meeting mode.',2500);
+  if(kind!=='banner'&&kind!=='idea')say(kind==='lunch'?'Off you go. I\'ll guard the desk.':kind==='tea'?'Enjoy your chai!':'Shh. Meeting mode.',2500);
 }
 function dropSign(msg){if(!sign)return;const was=sign;sign=null;if(was==='banner')bannerDismissed=Date.now();play('wave',1);if(msg)say(msg,2200);}
 function showBoard(){
@@ -96,6 +99,7 @@ function showBoard(){
   const k=size.bw/384,r=cv.getBoundingClientRect();
   Object.assign(board.style,{display:'flex',left:(r.left+AREA.x*k)+'px',top:(r.top+AREA.y*k)+'px',width:(AREA.w*k)+'px',height:(AREA.h*k)+'px'});
   if(sign==='banner'){board.textContent=settings.banner.text||'';fit(MAX_TS[settings.banner.size??1]*k,settings.banner.text);}
+  else if(sign==='idea'){const t=ideaText.split(/\s+/).slice(0,12).join(' ');board.textContent=t;fit(28*k,ideaText);}
   else{board.innerHTML='';const t=document.createElement('span');t.textContent=SIGNS[sign][0];const s=document.createElement('small');s.textContent=SIGNS[sign][1];
     const w=document.createElement('div');w.append(t,s);board.append(w);fit(30*k,SIGNS[sign][0][0]+SIGNS[sign][0].slice(1).toLowerCase()+', '+SIGNS[sign][1]+'!');}
 }
@@ -181,8 +185,8 @@ function physics(now,dt){
 function watchFrame(){if(!cursor)return 7;const dx=cursor.x-midX(pos.x),dy=cursor.y-(pos.y+top0()+size.bh*0.4);
   const col=Math.max(0,Math.min(4,Math.round(2+2.4*Math.tanh(dx/(size.bw*1.4)))));const row=dy<-size.bh*0.35?0:dy>size.bh*0.35?2:1;return row*5+col;}
 function followTarget(){const half=window.innerWidth/2,m=size.bw/2;return Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,cursor.x-half));}
-function followCursor(){if(!cursor||settings.stayPut||sign||away)return false;const dx=cursor.x-midX(pos.x);
-  if(Math.abs(dx)>size.bw*0.7){walkTo(followTarget(),Math.abs(dx)>size.bw*3?'jog':'walk');return true;}
+function followCursor(){const snack=game&&game.kind==='snack';if(!cursor||(settings.stayPut&&!snack)||sign||away)return false;const dx=cursor.x-midX(pos.x);
+  if(Math.abs(dx)>size.bw*(snack?0.2:0.7)){walkTo(followTarget(),snack||Math.abs(dx)>size.bw*3?'jog':'walk');return true;}
   if(Date.now()-cursorMoved<6000){play('watch');return true;}
   return false;}
 
@@ -196,13 +200,13 @@ let lastTick=0;setInterval(()=>{if(size&&performance.now()-lastTick>300){try{ste
 function step(now){
   const dt=Math.min(100,now-(last||now));last=now;acc+=dt;
   if(action==='watch'){acc=0;frame=watchFrame();
-    if(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*1.2))next('watch');}
+    if(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*(game?0.25:1.2)))next('watch');}
   else while(acc>=1000/FPS){acc-=1000/FPS;frame++;if(frame>=frames(action)){if(--loopsLeft>0)frame=0;else{frame=frames(action)-1;const done=action;next(done);}}}
-  spring(dt);
+  spring(dt);if(game)gameTick();
   if(!dragging&&(climb||falling||perch))physics(now,dt);
   else if(targetX!==null&&isWalk(action)&&!dragging){const g=action.split('_')[0];
     if(cursorMode()==='follow'&&cursor){targetX=followTarget();const want=g+(targetX>pos.x?'_right':'_left');if(want!==action&&Math.abs(targetX-pos.x)>4)play(want,99);}
-    const dir=action.endsWith('_right')?1:-1,catchUp=cursorMode()==='follow'?Math.max(1,Math.min(4,Math.abs(targetX-pos.x)/(size.bw*1.5))):1;pos.x+=dir*size.bw*0.0004*GAITS[g]*catchUp*dt;
+    const dir=action.endsWith('_right')?1:-1,catchUp=game?Math.max(1.4,Math.min(5,Math.abs(targetX-pos.x)/(size.bw*1.2))):cursorMode()==='follow'?Math.max(1,Math.min(4,Math.abs(targetX-pos.x)/(size.bw*1.5))):1;pos.x+=dir*size.bw*0.0004*GAITS[g]*catchUp*dt;
     if((dir>0&&pos.x>=targetX)||(dir<0&&pos.x<=targetX)){targetX=null;next('arrived');}sendPos();}
   draw();
   if(sign&&boardEcho&&action==='sign'&&!panelOpen()&&(!bubble.classList.contains('show')||now>bubbleUntil-200))say(boardEcho,4000);
@@ -211,6 +215,9 @@ function step(now){
   const parts=[];
   if(focus.mode!=='off'){const left=Math.max(0,focus.end-Date.now());parts.push((focus.label||'Focus')+' '+Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0'));}
   if(meeting){const left=Math.max(0,meeting.at-Date.now());parts.push('Meeting in '+Math.ceil(left/60000)+' min');}
+  if(doodle){const left=Math.max(0,doodle.end-Date.now());parts.push('Doodle '+Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0'));if(!left)doodleDone();}
+  if(game&&game.kind==='snack'&&game.left!=null)parts.push('Snacks '+game.score+' · 0:'+String(game.left).padStart(2,'0'));
+  if(game&&game.kind==='fetch'&&game.n)parts.push('Fetches '+game.n);
   if(parts.length){chip.style.display='block';chip.textContent=parts.join(' · ');}else chip.style.display='none';
 }
 let drawn='',sentX=NaN,sentY=NaN;
@@ -218,9 +225,12 @@ function draw(){const key=action+':'+frame;if(key===drawn)return;const b=img(act
 function sendPos(){if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)){B.send('log','bad pos '+JSON.stringify({pos,falling,perch,action,vy,vx,area}));recover();return;}const x=Math.round(pos.x),y=Math.round(pos.y);if(x===sentX&&y===sentY)return;sentX=x;sentY=y;B.send('set-pos',{x,y});}
 
 // ---------------- radial menu (double-click) ----------------
-const ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
+const WORK_ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
   ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
-function buildRadial(){radial.innerHTML='';for(const [label,fn] of ITEMS){const b=document.createElement('button');b.className='hit';b.textContent=typeof label==='function'?label():label;
+const HOME_ITEMS=[['Notes',()=>openNotes()],['Ideas',()=>openIdeas()],[()=>doodle?'Stop doodle':'Doodle',()=>doodle?stopDoodle():openDoodle()],[()=>game&&game.kind==='fetch'?'Stop fetch':'Fetch',()=>toggleGame('fetch')],
+  [()=>game&&game.kind==='snack'?'Stop snacks':'Snack catch',()=>toggleGame('snack')],['Feed',()=>feed()],['My board',()=>openBoard()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
+const items=()=>isHome()?HOME_ITEMS:WORK_ITEMS;
+function buildRadial(){radial.innerHTML='';for(const [label,fn] of items()){const b=document.createElement('button');b.className='hit';b.textContent=typeof label==='function'?label():label;
   b.onclick=e=>{e.stopPropagation();closeRadial();fn();};radial.append(b);}}
 function toggleStay(){const on=!settings.stayPut;saveS({stayPut:on,...(on&&settings.cursor==='follow'?{cursor:'off'}:{})});
   if(on){targetX=null;if(isWalk(action))play('idle');say('Staying right here.',1800);}else say('Free to roam!',1800);}
@@ -228,12 +238,12 @@ function setCursorMode(m){const v=settings.cursor===m?'off':m;saveS({cursor:v,..
   say(v==='watch'?'I\'ll keep an eye on your cursor.':v==='follow'?'Lead the way!':'Back to my own thing.',2000);if(v==='off'&&action==='watch')next('watch');}
 function openRadial(){
   closePanel();buildRadial();layout();bubble.classList.remove('show');bubbleUntil=0;
-  const r=cv.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.62,rx=Math.min(window.innerWidth/2-40,Math.max(240,size.bw*1.05)),ry=Math.min(cy-40,Math.max(205,size.bw*0.95));
+  const r=cv.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.62,rx=Math.min(window.innerWidth/2-40,Math.max(240,size.bw*1.05)),ry=Math.min(cy-40,Math.max(250,size.bw*0.95+45));
   // an arc from his left, over his head, to his right, clear of his ears
-  [...radial.children].forEach((b,i)=>{const a=Math.PI*(1.0+i/(ITEMS.length-1));b.style.left=(cx+rx*Math.cos(a))+'px';b.style.top=(cy+ry*Math.sin(a))+'px';b.style.transitionDelay=(i*18)+'ms';});
-  requestAnimationFrame(()=>radial.classList.add('open'));if(!sign)play('look',1);
+  [...radial.children].forEach((b,i)=>{const a=Math.PI*(1.0+i/(radial.children.length-1));b.style.left=(cx+rx*Math.cos(a))+'px';b.style.top=(cy+ry*Math.sin(a))+'px';b.style.transitionDelay=(i*18)+'ms';});
+  requestAnimationFrame(()=>radial.classList.add('open'));if(!sign&&!game)play('look',1);showMeters(true);
 }
-function closeRadial(){radial.classList.remove('open');}
+function closeRadial(){radial.classList.remove('open');showMeters(false);}
 const radialOpen=()=>radial.classList.contains('open');
 
 // ---------------- panels ----------------
@@ -323,6 +333,11 @@ function openMore(){
     btn(r,'Remind me…',()=>{closePanel();B.send('open-settings','remind');});
     btn(r,'Settings',()=>{closePanel();B.send('open-settings');});
     btn(r,'Hide',()=>{closePanel();B.send('hide');});
+    el('div',{className:'hint',textContent:'Home mode '+(isHome()?'(on now)':'(off now)')},p);const hm=el('div',{className:'row'},p);
+    for(const [l,v] of [['Auto','auto'],['On','on'],['Off','off']])btn(hm,l,()=>{saveS({home:v});redraw();},(settings.home||'auto')===v?'on':'');
+    el('div',{className:'hint',textContent:weekLine()},p);
+    const rr=el('div',{className:'row'},p);btn(rr,'Render folder…',async()=>{const d=await B.invoke('pick-render-dir');if(d)say('I\'ll watch '+d.split(/[\\/]/).pop()+' for renders.',2500);});
+    btn(rr,settings.renders!==false?'Render party: on':'Render party: off',()=>{saveS({renders:settings.renders===false});redraw();},settings.renders!==false?'on':'');
     el('div',{className:'hint',textContent:'Moves'},p);const mv=el('div',{className:'row'},p);
     const redraw=()=>{closePanel();openMore();};
     btn(mv,'Stay put',()=>{toggleStay();redraw();},settings.stayPut?'on':'');
@@ -340,7 +355,9 @@ function layout(){
   const r=cv.getBoundingClientRect(),top=r.top+size.bh*0.04;
   bubble.style.bottom=(window.innerHeight-top+8)+'px';
   panel.style.bottom=(window.innerHeight-top+8)+'px';
+  meters.style.bottom=(window.innerHeight-top+8)+'px';
   if(panelOpen()&&bubble.classList.contains('show'))bubble.style.bottom=(window.innerHeight-top+panel.offsetHeight+18)+'px';
+  else if(meters.classList.contains('show'))bubble.style.bottom=(window.innerHeight-top+meters.offsetHeight+16)+'px';
   chip.style.bottom=(size.bh*0.45)+'px';chip.style.right=Math.max(8,(window.innerWidth-size.bw)/2-60)+'px';
   showBoard();
 }
@@ -351,7 +368,7 @@ function opaqueAt(x,y){const r=cv.getBoundingClientRect(),k=cv.width/r.width;con
 function uiAt(x,y){const e=document.elementFromPoint(x,y);return !!(e&&e.closest('.hit'));}
 window.addEventListener('mousemove',e=>{
   if(dragging){const t=performance.now();trail.push([t,e.screenX,e.screenY]);while(trail.length&&t-trail[0][0]>120)trail.shift();}
-  const hit=dragging||opaqueAt(e.clientX,e.clientY)||uiAt(e.clientX,e.clientY);if(hit!==over){over=hit;B.send('hit',hit);}
+  const hit=dragging||opaqueAt(e.clientX,e.clientY)||uiAt(e.clientX,e.clientY);if(hit!==over){over=hit;B.send('hit',hit);if(!radialOpen()&&!panelOpen())showMeters(hit&&!dragging);}
   if(downPt&&!dragging&&Math.hypot(e.screenX-downPt.sx,e.screenY-downPt.sy)>5){dragging=true;clearTimeout(holdTimer);closeRadial();targetX=null;falling=false;perch=null;climb=null;skipWin=null;play('dangle',50);say('Whoa!',1200);B.send('drag-start',{x:downPt.x,y:downPt.y});}
 });
 window.addEventListener('mousedown',e=>{if(e.button!==0)return;
@@ -447,15 +464,16 @@ function daySummary(){const names={video:'watching',design:'designing',chatbot:'
 // a nudge at most once per kind per window of time, and never while he's busy holding something up
 function nudge(kind,everyMin,text,act){if(Date.now()-(lastNudge[kind]||0)<everyMin*60000)return false;lastNudge[kind]=Date.now();targetX=null;if(act)play(act,1);say(text,6000);return true;}
 function proactive(){
-  if(sign||away||panelOpen()||radialOpen()||dragging||falling||perch||climb||hold)return;
+  if(sign||away||panelOpen()||radialOpen()||dragging||falling||perch||climb||hold||game||doodle)return;
   // while you're steering him with the cursor, the cursor wins over app reactions and nudges
   if(cursorMode()!=='off'&&Date.now()-cursorMoved<8000)return;
   const m=mins(),onFor=(Date.now()-ctxSince)/60000,hungryH=(Date.now()-fedAt)/3600000,lonelyM=(Date.now()-lastLove)/60000;
   // react to a new kind of work within a few seconds of you switching to it
   if(wk.cat&&CTX[wk.cat]&&ctxReacted!==wk.cat&&onFor>0.08){ctxReacted=wk.cat;if(moodName()!=='blue'){targetX=null;play(CTX[wk.cat].act,3);say(pick(CTX[wk.cat].say),3000);return;}}
+  if(homeNudge(onFor))return;
   if(hungryH>4&&nudge('hungry',45,pick(['I\'m sooo hungry… feed me? (double-click → Feed)','*tummy rumbles* Snack, please?']),'sad'))return;
   if(lonelyM>90&&nudge('lonely',40,pick(['Hey… remember me?','It\'s quiet down here. Say hi?','*sigh* Nobody\'s talked to me in ages.']),'sad'))return;
-  if(wk.cat==='video'&&onFor>25&&!weekend()&&inRange(m,at('office'),at('pack'))&&nudge('video',60,pick(['Is this… research?','One more video, then back to work?']),'think'))return;
+  if(wk.cat==='video'&&onFor>25&&!isHome()&&inRange(m,at('office'),at('pack'))&&nudge('video',60,pick(['Is this… research?','One more video, then back to work?']),'think'))return;
   if(switchLog.length>30&&nudge('switch',30,'Lots of window-hopping. Want a focus timer? Double-click → Focus.','think'))return;
   if(wk.cat&&wk.cat!=='video'&&wk.cat!=='music'&&onFor>100&&nudge('long',90,`You've been at this ${fmt(onFor)} straight. Stretch with me?`,'yawn'))return;
   if(inRange(m,at('evening'),at('bed'))&&wk.cat&&['code','sheets','mail','docs','slides','design'].includes(wk.cat)&&!weekend()&&nudge('late',60,pick(['Still working? Go home, hero.','The work will be there tomorrow. Promise.']),'yawn'))return;
@@ -496,6 +514,123 @@ setInterval(()=>{if(!settings||!size)return;moodTick();tallyDay();},60000);
 setInterval(()=>{if(!settings||!size)return;try{proactive();carryPip();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
 B.on('context',c=>{try{onContext(c||{});}catch(e){B.send('log','context: '+(e&&e.message));}});
 
+// ---------------- home: play, make things, celebrate ----------------
+// Home mode is on, off, or auto: weekends, and outside office hours on weekdays. At home his menu swaps the office tools
+// for games and creative ones.
+function isHome(){const h=settings.home||'auto';if(h!=='auto')return h==='on';return weekend()||!inRange(mins(),at('office'),at('pack'));}
+// his two meters: Happy is his mood; Full drains over about five hours after a meal
+const fullness=()=>Math.max(0,Math.min(100,100-(Date.now()-fedAt)/3600000*20));
+let metersTimer=0;
+function showMeters(on){clearTimeout(metersTimer);
+  if(on){$('mHappy').style.width=Math.round(mood)+'%';$('mFull').style.width=Math.round(fullness())+'%';meters.classList.add('show');layout();}
+  else metersTimer=setTimeout(()=>{if(!radialOpen()){meters.classList.remove('show');layout();}},1200);}
+// this week's tally: renders, doodles, ideas, fetches, snacks
+function weekKey(){const d=new Date(),j=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-'+Math.ceil(((d-j)/86400000+j.getDay()+1)/7);}
+function bump(k,n=1){const w=settings.week&&settings.week.k===weekKey()?{...settings.week}:{k:weekKey()};w[k]=(w[k]||0)+n;saveS({week:w});return w[k];}
+function weekLine(){const w=settings.week&&settings.week.k===weekKey()?settings.week:{};const bits=[['renders','render'],['doodles','doodle'],['ideas','idea'],['fetches','fetch'],['snacks','snack']]
+    .filter(([k])=>w[k]).map(([k,one])=>`${w[k]} ${w[k]===1?one:k}`);return bits.length?'This week: '+bits.join(', ')+'.':'This week: nothing yet. Let\'s make something!';}
+
+// confetti: little ink and ochre squiggles in his own line weight, only animating while they fall
+let bits=[],fxRaf=0,fxLast=0;
+function confetti(n=28){const d=Math.min(2,devicePixelRatio||1);if(fx.width!==Math.round(innerWidth*d)){fx.width=Math.round(innerWidth*d);fx.height=Math.round(innerHeight*d);}
+  const r=cv.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*0.25;
+  for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=0.35+Math.random()*0.45;bits.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:Math.random()*6,vr:(Math.random()-.5)*0.02,c:i%2?'#1F1F1D':'#E0A64B',k:i%3,t:0});}
+  if(!fxRaf){fxLast=performance.now();fxRaf=requestAnimationFrame(fxFrame);}}
+function fxFrame(now){fxRaf=0;const dt=Math.min(40,now-fxLast);fxLast=now;const d=fx.width/innerWidth,s=size.bw/384,lw=5.7*s;
+  const c=fx.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,innerWidth,innerHeight);c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';
+  for(const b of bits){b.t+=dt;b.vy+=0.0011*dt;b.vx*=0.995;b.x+=b.vx*dt;b.y+=b.vy*dt;b.r+=b.vr*dt;
+    c.save();c.globalAlpha=Math.max(0,1-b.t/2200);c.translate(b.x,b.y);c.rotate(b.r);c.strokeStyle=b.c;c.beginPath();const L=size.bw*0.05;
+    if(b.k===0){c.moveTo(-L,0);c.lineTo(L,0);}else if(b.k===1){c.moveTo(-L,0);c.quadraticCurveTo(0,-L,L,0);}else{c.moveTo(-L,L*.4);c.lineTo(-L/3,-L*.4);c.lineTo(L/3,L*.4);c.lineTo(L,-L*.4);}
+    c.stroke();c.restore();}
+  bits=bits.filter(b=>b.t<2200&&b.y<innerHeight+40);if(bits.length)fxRaf=requestAnimationFrame(fxFrame);else c.clearRect(0,0,innerWidth,innerHeight);}
+
+// ---- games: fetch and snack catch, played across the whole screen ----
+let game=null;
+function toggleGame(kind){if(game){const was=game.kind;endGame(was==='fetch'?'Good game!':'Okay, no more snacks.');if(was===kind)return;}
+  if(perch||falling||climb){say('Let me get down first!',1800);return;}
+  if(sign)dropSign();if(doodle)stopDoodle(true);closePanel();targetX=null;
+  game={kind,phase:'wait',since:Date.now(),touched:Date.now(),n:0,score:0,left:null,ball:null,sentX:null};B.send('play-start',{game:kind});
+  if(kind==='fetch'){play('hop',1);say('Fetch! Grab the ball by my feet and throw it.',4000);}
+  else{play('happy',1);say('Snacks incoming! Move your mouse and I\'ll follow.',3500);}}
+function endGame(msg){if(!game)return;game=null;B.send('play-stop');targetX=null;if(msg){play('wave',1);say(msg,2500);}}
+B.on('play',k=>toggleGame(k));
+function gameTick(){if(!game||game.kind!=='fetch')return;const b=game.ball,half=window.innerWidth/2,m=size.bw/2;
+  const clamp=x=>Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,x));
+  if(game.phase==='chase'&&b){const d=b.x-midX(pos.x);
+    if(Math.abs(d)<size.bw*0.32&&b.ground&&Math.abs(b.vx)<0.5){game.phase='dribble';game.dir=Math.sign((b.from??midX(pos.x))-midX(pos.x))||1;B.send('play-cmd',{cmd:'dribble'});
+      say(pick(['Got it!','Mine!','Coming back!']),1200);walkTo(clamp((b.from??midX(pos.x))-half),'skip');return;}
+    const tx=clamp(b.x-half);if(!isWalk(action)){if(Math.abs(tx-pos.x)>4)walkTo(tx,'jog');}
+    else{targetX=tx;const want='jog'+(tx>pos.x?'_right':'_left');if(want!==action&&Math.abs(tx-pos.x)>6)play(want,99);}
+    if(Date.now()-game.since>25000){game.phase='wait';targetX=null;play('tired',1);say('Too far! You get it.',2200);}}
+  if(game.phase==='dribble'){const dir=action.endsWith('_left')?-1:action.endsWith('_right')?1:game.dir,x=Math.round(midX(pos.x)+dir*size.bw*0.34);
+    if(x!==game.sentX){game.sentX=x;B.send('play-cmd',{cmd:'at',x});}}
+  if(game.phase==='wait'&&Date.now()-game.touched>120000)endGame('That was fun! Again later?');}
+// when an animation finishes during a game, the game picks what comes next
+function gameNext(finished){
+  if(game.kind==='snack')return false;
+  if(game.phase==='chase'){game.since=game.since||Date.now();const b=game.ball;if(b&&Math.abs(b.x-midX(pos.x))>size.bw*0.32){walkTo(b.x-window.innerWidth/2,'jog');return true;}play('look',1);return true;}
+  if(game.phase==='dribble'&&targetX===null){B.send('play-cmd',{cmd:'drop'});game.phase='wait';game.n++;bump('fetches');love(5,'play');game.touched=Date.now();
+    play('happy',1);say(pick(['Again! Again!','Throw it further!','I\'m a very good bunny.','Fetch champion!']),2200);return true;}
+  if(game.phase==='wait'){play(pick(['look','idle','hop','look']),1);return true;}
+  return false;}
+B.on('play-ev',e=>{if(!e)return;if(e.type==='closed'){if(game){game=null;play('look',1);}return;}if(!game)return;
+  if(e.type==='ball'){game.ball=e;if(game.phase==='wait'&&e.thrown&&e.moving){game.phase='chase';game.since=Date.now();game.touched=Date.now();say(pick(['Ooh!','Wheee!','I\'ll get it!']),1000);gameTick();}}
+  else if(e.type==='grab'){game.touched=Date.now();if(game.phase!=='wait'){game.phase='wait';targetX=null;play('look',1);}}
+  else if(e.type==='snack'){game.score=e.score;game.left=e.left;if(e.caught){love(1.5);if(Math.random()<.35)say(pick(['Nom!','Yum!','Mmm!','Crunch!']),700);}}
+  else if(e.type==='over'){const n=e.score||0,best=settings.snackBest||0;game=null;B.send('play-stop');targetX=null;bump('snacks',n);love(Math.min(25,n*2),'play');
+    if(n>=5)fedAt=Date.now();if(n>best)saveS({snackBest:n});routine=[n>=10?'dance':'happy'];play('eat',1);if(n>best&&n>0)confetti();
+    say(n===0?'Zero snacks?! I\'m starving now.':n>best&&best?`${n} snacks! New record!`:`${n} snacks! ${n>=5?'That counts as dinner.':'More next time?'}`,4000);}});
+
+// ---- doodle prompt of the day: he paints at his easel next to you while the timer runs ----
+const PROMPTS=['A cat that thinks it\'s a lamp','Your breakfast, but heroic','A tiny door in a big tree','A cloud having a bad day','Your desk as a city',
+  'A robot learning to dance','The moon on holiday','A sandwich with feelings','A monster afraid of the dark','A plant that wants a walk',
+  'Your favourite song as a creature','A snail in a hurry','Two socks in love','A dragon who knits','The last cookie',
+  'A ghost at a birthday party','Your face as a mountain','A bird with a job','A shoe that grew wings','The world\'s smallest house',
+  'A chai cup that is also a volcano','A fish that can\'t swim','Your phone as a pet','A bus full of animals','A stormy teacup',
+  'An umbrella for a giant','A cactus who wants a hug','Rain made of letters','A tiger made of stripes only','A rocket powered by snacks',
+  'A map of your mood today','A lighthouse in a desert','A pencil drawing itself','A dog reading the news','A mushroom village',
+  'Your hands, five ways','A sleepy sun','A train through a book','A bunny astronaut','A pocket full of stars',
+  'Something you saw today, but huge','A knot that won\'t untie','An octopus office worker','A house on a turtle','A balloon that escaped',
+  'One line, no lifting the pen','A shadow with its own plans','A crown for a frog','The sound of thunder, drawn','A very proud potato'];
+let doodle=null,promptShift=0;
+const promptOf=()=>PROMPTS[(Math.floor(Date.now()/86400000)+promptShift)%PROMPTS.length];
+function openDoodle(){
+  openPanel('doodle','Doodle prompt',new Date().toLocaleDateString(undefined,{day:'numeric',month:'short'}),p=>{
+    el('div',{className:'prompt',textContent:promptOf()},p);
+    el('div',{className:'hint',textContent:'Draw it in any app. I\'ll paint at my easel and keep time.'},p);
+    const r=el('div',{className:'row'},p);for(const m of [5,10,20])btn(r,m+' min',()=>startDoodle(m),m===10?'p':'');
+    btn(r,'Another one',()=>{promptShift++;openDoodle();});});
+  if(!sign&&!game)play('think',1);}
+function startDoodle(min){closePanel();if(game)endGame();doodle={end:Date.now()+min*60000,prompt:promptOf(),min};targetX=null;play('paint',99);say('Go! "'+doodle.prompt+'"',4000);}
+function stopDoodle(quiet){if(!doodle)return;doodle=null;if(!quiet){play('wave',1);say('Paused. Come back to it later!',2000);}}
+function doodleDone(){const d=doodle;doodle=null;const n=bump('doodles');confetti();routine=['dance'];play('happy',1);love(8,'make');
+  say(`Time! Show me your "${d.prompt}". That's ${n} doodle${n>1?'s':''} this week.`,8000);B.send('notify',{title:'Doodle time is up',body:`"${d.prompt}". Bunny wants to see it!`});}
+
+// ---- idea catcher: tell him an idea, he writes it down; when you're stuck he holds one up ----
+let ideaText='',ideaTimer=0;
+function openIdeas(){const ideas=[...(settings.ideas||[])];
+  openPanel('ideas','Idea catcher',`${ideas.length} saved`,p=>{
+    const inp=el('input',{type:'text',placeholder:'Tell me an idea and press Enter',maxLength:140},p);
+    inp.onkeydown=e=>{if(e.key==='Enter'&&inp.value.trim()){ideas.push({t:inp.value.trim(),at:Date.now()});saveS({ideas:ideas.slice(-200)});bump('ideas');openIdeas();play('write',1);say(`Caught it! Idea #${ideas.length}.`,1800);}
+      if(e.key==='Escape')closePanel();};
+    const ul=el('ul',{},p);ideas.slice(-5).reverse().forEach(it=>{const li=el('li',{},ul);el('span',{textContent:it.t},li);
+      const x=el('button',{className:'x',textContent:'×',title:'Remove'},li);x.onclick=()=>{const i=ideas.indexOf(it);ideas.splice(i,1);saveS({ideas});openIdeas();};});
+    if(ideas.length){const r=el('div',{className:'row'},p);btn(r,'I\'m stuck',()=>{closePanel();showIdea('Here\'s one of yours:');},'p');}
+    else el('div',{className:'hint',textContent:'Nothing yet. Song lyrics, video hooks, doodles to try: anything.'},p);
+    setTimeout(()=>inp.focus(),60);},true);}
+function showIdea(intro){const ideas=settings.ideas||[];if(!ideas.length)return false;ideaText=pick(ideas).t;holdSign('idea');say(intro+' '+ideaText,9000);
+  clearTimeout(ideaTimer);ideaTimer=setTimeout(()=>{if(sign==='idea')dropSign();},20000);return true;}
+
+// ---- render party: a new render in your folder gets a dance and confetti ----
+B.on('render',r=>{const n=bump('renders');if(away)return;targetX=null;if(sign&&sign!=='banner')return say('Render done: '+r.name,6000);if(sign)dropSign();
+  confetti(36);routine=['happy'];play('dance',2);love(6,'make');say(`Render done! ${r.name}. That's ${n} this week.`,6000);});
+
+// at home he invites you to play now and then, and offers an old idea when you've been creating for a while
+function homeNudge(onFor){if(!isHome()||game||doodle)return false;const lonelyM=(Date.now()-lastLove)/60000;
+  if((wk.cat==='design'||wk.cat==='docs')&&onFor>45&&(settings.ideas||[]).length>=3&&Date.now()-(lastNudge.idea||0)>120*60000){lastNudge.idea=Date.now();return showIdea('Stuck? Here\'s an old idea of yours:');}
+  if(lonelyM>40&&!wk.cat&&nudge('play',120,pick(['Bored! Play fetch with me? (double-click → Fetch)','Snack catch? I\'m fast, promise.']),'hop'))return true;
+  return false;}
+
 // ---------------- events from the app ----------------
 B.on('remind',r=>{if(sign)return say(r.text,9000);targetX=null;play(r.action,LOOPS.has(r.action)?2:1);say(r.text,9000);});
 B.on('say',r=>{if(r.action&&!sign)play(r.action,1);say(r.text,r.ms);});
@@ -505,6 +640,8 @@ B.on('radial',()=>openRadial());
 B.on('routine',k=>{if(sign||away)return;targetX=null;
   if(k==='lunch'){routine=['eat','drink'];play('dance',2);say('Lunch time! Dance first, then burger.',4000);}
   if(k==='tea'){routine=['idle'];play('tea',1);say('Tea time! Chai, anyone?',3500);}
+  if(k==='snack'){routine=['happy'];play('eat',1);fedAt=Date.now();love(6);say(pick(['Snack time! Want one too?','Afternoon munchies. Join me?']),4000);}
+  if(k==='winddown'){routine=['yawn','read'];play('tea',1);say(pick(['Half an hour to bed. Save your work?','Winding down. One more thing, then sleep?']),6000);}
   if(k==='pack'){const open=(settings.notes||[]).filter(n=>!n.done);routine=['wave'];play('pack',1);
     say(open.length?`Packing up! ${open.length} note${open.length>1?'s':''} still open: ${open.map(n=>n.text).join(', ')}`:'Packing up! Notebook is clear. Good work today!',9000);}});
 B.on('away',v=>{if(v===away)return;away=v;if(sign)return;if(v){targetX=null;closeRadial();closePanel();play('sleep',99);}else{play('wave',1);say(pick(['Welcome back!','Oh, you\'re back!','Hi again!']),2500);}});
