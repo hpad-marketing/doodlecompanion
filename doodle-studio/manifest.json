@@ -1,13 +1,13 @@
 {
- "version": "20261026-223112",
- "notes": "Motion library refresh: 6 new Bunny moves (swing-up, phone texting, texting walk, drowsy nod, two new dances), updated runs, climbs and dances, side-view Naruto run and reading stroll.",
+ "version": "20261026-230155",
+ "notes": "Motions now bring their props: notepad, paint palette, popcorn, book, guitar, phone and screen. Walking legs now overlap the right way round.",
  "runtime": "44.9.0",
- "published": "2026-10-26T17:02:16.826Z",
+ "published": "2026-10-26T17:33:31.202Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "7546a198c2f2ed0771573d8573c5b43030d355476d4d86a46726c9118539b51f",
-   "size": 90977792,
-   "gz": "files/7546a198c2f2ed0771573d8573c5b43030d355476d4d86a46726c9118539b51f.gz"
+   "sha256": "490fad556f4c7b1cac091579da27998268da619561e80b4566a27dfbce16b45d",
+   "size": 91069440,
+   "gz": "files/490fad556f4c7b1cac091579da27998268da619561e80b4566a27dfbce16b45d.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
