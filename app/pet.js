@@ -126,14 +126,14 @@ function ledgeBetween(a,b){if(settings.windows===false)return null;const cx=midX
   return null;}
 let bounces=0;
 // squash, stretch and tilt are springs on the canvas, so every drop and bounce wobbles a little differently
-let vx=0,sq=0,sqv=0,tilt=0,tiltv=0,trail=[];
+let walls=0,thrown=false,thrownAt=0,vx=0,sq=0,sqv=0,tilt=0,tiltv=0,trail=[];
 function spring(dt){const t=Math.min(0.05,dt/1000);
   const stretch=falling?Math.max(-0.16,Math.min(0.12,-Math.abs(vy)*0.07)):0,lean=falling?Math.max(-10,Math.min(10,vx*24)):0;
   sqv+=(-170*(sq-stretch)-11*sqv)*t;sq+=sqv*t;tiltv+=(-120*(tilt-lean)-9*tiltv)*t;tilt+=tiltv*t;
   if(Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
   const sy=1-sq,sx=1+sq*0.55;cv.style.transform=`translateX(-50%) rotate(${tilt.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`;}
 function impact(v){sqv+=v*4.2;tiltv+=(Math.random()-.5)*60;}
-function startFall(msg,throwV){falling=true;vy=throwV?Math.max(-0.9,Math.min(0.6,throwV.y)):0;vx=throwV?Math.max(-1.2,Math.min(1.2,throwV.x)):0;bounces=0;fallFrom=pos.y;targetX=null;clampX();play('fall',99);if(msg)say(msg,1500);}
+function startFall(msg,throwV){falling=true;vy=throwV?Math.max(-0.9,Math.min(0.6,throwV.y)):0;vx=throwV?Math.max(-1.2,Math.min(1.2,throwV.x)):0;bounces=0;walls=0;thrown=Math.abs(vx)>0.55||vy<-0.5;thrownAt=performance.now();fallFrom=pos.y;targetX=null;clampX();play('fall',99);if(msg)say(msg,1500);}
 function catchLedge(w){B.send('log','caught '+JSON.stringify(w));falling=false;vy=0;perch={id:w[0],dx:midX(pos.x)-w[1],state:'hang'};pos.y=yFor(w[2],HAND_BACK_Y);
   play('hang_back',2);say(pick(['Gotcha!','Grabbed it!','Phew, caught it!']),1500);}
 function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='climb';
@@ -141,22 +141,30 @@ function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo()
 function letGo(msg){if(!perch)return;B.send('log','let go of '+perch.id+' at '+Math.round(pos.x)+','+Math.round(pos.y));skipWin=perch.id;perch=null;climb=null;startFall(msg);}
 function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos.y)+' ground '+Math.round(groundY()));skipWin=null;const h=pos.y-fallFrom;
   if(sign){play('sign',99);return;}
+  if(thrown&&(walls>0||bounces>=3)){thrown=false;routine=['tired'];play('land',1);say(pick(['I need a minute…','Never… again…','*wheeze*','So… dizzy…']),3000);return;}
   if(h>size.bh*0.5||bounces){play('land',1);say(pick(['Ow… my tail.','I\'m okay! I\'m okay.','Ten out of ten landing.','Who moved the floor?','Stars. I see stars.']),2000);}
   else play(pick(['hop','look']),1);}
 function physics(now,dt){
   if(climb){const k=Math.min(1,(now-climb.t0)/climb.ms),e=k*k*(3-2*k);pos.y=climb.y0+(climb.y1-climb.y0)*e;
     if(k>=1){climb=null;perch.state='sit';play('perch_turn',1);say(pick(['Nice view from up here.','My window now.','Comfy!']),2200);}
     sendPos();return;}
+  if(falling&&(!Number.isFinite(groundY())||pos.y>groundY()+50)){B.send('log','fell past the ground '+JSON.stringify({pos,area,h:window.innerHeight}));recover();return;}
   if(falling){const a=handLine(pos.y);vy+=0.0022*dt;pos.y+=vy*dt;
     // a sideways throw carries him along, slowed by air and bounced off the screen edges
-    pos.x+=vx*dt;vx*=Math.pow(0.9992,dt);const half=window.innerWidth/2,m=size.bw/2,lo=area.x-half+m,hi=area.x+area.width-half-m;
-    if(pos.x<lo){pos.x=lo;vx=Math.abs(vx)*0.5;impact(0.15);}else if(pos.x>hi){pos.x=hi;vx=-Math.abs(vx)*0.5;impact(0.15);}
+    pos.x+=vx*dt;vx*=Math.pow(thrown?0.99985:0.9992,dt);const half=window.innerWidth/2,m=size.bw/2,lo=area.x-half+m,hi=area.x+area.width-half-m;
+    // thrown hard, he pinballs: walls and the top of the screen send him back with most of his speed
+    const keep=thrown?0.86:0.5,wallHit=v=>{walls++;impact(Math.min(0.5,Math.abs(v)*0.5));tiltv+=(v>0?-1:1)*90;if(walls===1&&thrown)say(pick(['Wheee!','Whoaaa!','Not the wall!','Boing boing!']),1200);};
+    if(pos.x<lo){pos.x=lo;wallHit(vx);vx=Math.abs(vx)*keep;}else if(pos.x>hi){pos.x=hi;wallHit(vx);vx=-Math.abs(vx)*keep;}
+    const ceil=area.y-top0()-size.bh*0.18;if(pos.y<ceil&&vy<0){pos.y=ceil;vy=-vy*0.6;impact(0.3);walls++;}
     const w=vy>0?ledgeBetween(a,handLine(pos.y)):null;
     if(w){impact(Math.min(0.5,vy*0.3));catchLedge(w);}
     else if(pos.y>=groundY()){pos.y=groundY();
       // a real drop bounces a couple of times, each lower and a little different, before he settles
-      if(vy>0.42&&bounces<3&&!sign){bounces++;impact(Math.min(0.55,vy*0.32));vy=-vy*(bounces===1?0.4+Math.random()*0.08:0.26+Math.random()*0.08);vx*=0.55;play('bounce',1);
+      const fresh=thrown&&walls<4&&now-thrownAt<6000,maxB=thrown?10:3,minV=thrown?0.22:0.42;
+      if(vy>minV&&bounces<maxB&&!sign){bounces++;impact(Math.min(0.55,vy*0.32));
+        vy=-vy*(thrown?(fresh?0.74:0.5)+Math.random()*0.08:(bounces===1?0.4+Math.random()*0.08:0.26+Math.random()*0.08));vx*=thrown?(fresh?0.97:0.85):0.55;play('bounce',1);
         if(bounces===1)say(pick(['Oof!','Ow!','Boing!']),1200);}
+      else if(thrown&&Math.abs(vx)>0.08){vy=0;vx*=Math.pow(fresh?0.9993:0.996,dt);if(action!=='bounce')play('bounce',1);} // still skidding along the floor
       else{impact(Math.min(0.4,vy*0.35));falling=false;vy=0;vx=0;landed();}}
     sendPos();return;}
   if(perch){const w=wins.find(o=>o[0]===perch.id);
@@ -202,7 +210,7 @@ function step(now){
 }
 let drawn='',sentX=NaN,sentY=NaN;
 function draw(){const key=action+':'+frame;if(key===drawn)return;const b=img(action,frame);if(!b)return;ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(b,0,0);drawn=key;}
-function sendPos(){const x=Math.round(pos.x),y=Math.round(pos.y);if(x===sentX&&y===sentY)return;sentX=x;sentY=y;B.send('set-pos',{x,y});}
+function sendPos(){if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)){B.send('log','bad pos '+JSON.stringify({pos,falling,perch,action,vy,vx,area}));recover();return;}const x=Math.round(pos.x),y=Math.round(pos.y);if(x===sentX&&y===sentY)return;sentX=x;sentY=y;B.send('set-pos',{x,y});}
 
 // ---------------- radial menu (double-click) ----------------
 const ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
@@ -381,7 +389,9 @@ B.on('routine',k=>{if(sign||away)return;targetX=null;
 B.on('away',v=>{if(v===away)return;away=v;if(sign)return;if(v){targetX=null;closeRadial();closePanel();play('sleep',99);}else{play('wave',1);say(pick(['Welcome back!','Oh, you\'re back!','Hi again!']),2500);}});
 B.on('focus',f=>{focus=f;if(sign)return;if(f.mode==='focus'){targetX=null;play('read',99);say('Focus mode. I\'ll read quietly.',3000);}else if(f.mode==='break'){play('yawn',1);}else if(f.mode==='off')play('idle');});
 B.on('meeting',m=>{meeting=m;});
-B.on('rescue',r=>{perch=null;climb=null;falling=false;vy=0;targetX=null;if(r&&r.area)area=r.area;pos.x=Math.max(area.x,Math.min(area.x+area.width-window.innerWidth,pos.x));pos.y=groundY();sentX=NaN;sendPos();drawn='';play('look',1);});
+function recover(a){if(a)area=a;if(!area||!Number.isFinite(groundY())){B.invoke('bounds').then(r=>{area=r.area;if(Number.isFinite(groundY()))recover();});return;}perch=null;climb=null;falling=false;vy=0;vx=0;targetX=null;if(a)area=a;
+  pos.x=Number.isFinite(pos.x)?Math.max(area.x,Math.min(area.x+area.width-window.innerWidth,pos.x)):area.x+area.width*0.7-window.innerWidth/2;pos.y=groundY();sentX=NaN;sendPos();drawn='';play('look',1);}
+B.on('rescue',r=>recover(r&&r.area));
 B.on('area',a=>{area=a;if(perch||falling||climb)return;pos.y=groundY();sendPos();});
 B.on('windows',list=>{wins=list||[];});
 B.on('cursor',c=>{if(!cursor||Math.abs(c.x-cursor.x)>2||Math.abs(c.y-cursor.y)>2)cursorMoved=Date.now();cursor=c;});

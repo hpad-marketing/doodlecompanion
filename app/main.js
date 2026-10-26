@@ -54,7 +54,13 @@ ipcMain.handle('init',()=>({size:dims(),settings:S,area:area(),bounds:pet.getBou
 ipcMain.on('hit',(_e,over)=>{if(pet&&!dragging)pet.setIgnoreMouseEvents(!over,{forward:true});});
 // Typing in his notebook or on his board needs keyboard focus; the rest of the time he never steals it.
 ipcMain.on('focusable',(_e,on)=>{if(!pet)return;pet.setFocusable(!!on);if(on){pet.setIgnoreMouseEvents(false);pet.focus();}else pet.blur();});
-ipcMain.on('set-pos',(_e,p)=>{if(pet&&!dragging)pet.setPosition(Math.round(p.x),Math.round(p.y));});
+// never trust a position blindly: a bad number would crash the app, so it is logged and Bunny is put back on the ground
+ipcMain.on('set-pos',(_e,p)=>{if(!pet||dragging)return;const x=Math.round(+(p&&p.x)),y=Math.round(+(p&&p.y));
+  const v=screen.getAllDisplays().reduce((r,d)=>{const b=d.bounds;return {l:Math.min(r.l,b.x),t:Math.min(r.t,b.y),r:Math.max(r.r,b.x+b.width),b:Math.max(r.b,b.y+b.height)};},{l:1e9,t:1e9,r:-1e9,b:-1e9});
+  const b=pet.getBounds();
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<v.l-b.width||x>v.r||y<v.t-b.height*2||y>v.b){log('bad position '+JSON.stringify(p)+', rescuing');const a=area();toPet('rescue',{area:a});return;}
+  try{pet.setPosition(x,y);}catch(e){log('setPosition failed '+x+','+y+': '+e.message);}});
+process.on('uncaughtException',e=>{try{log('main error: '+(e&&e.stack||e));}catch{}});
 ipcMain.handle('bounds',()=>({bounds:pet.getBounds(),area:area()}));
 ipcMain.on('drag-start',(_e,off)=>{if(!pet)return;dragging=off;pet.setIgnoreMouseEvents(false);
   const step=()=>{if(!dragging||!pet)return;const c=screen.getCursorScreenPoint();pet.setPosition(Math.round(c.x-dragging.x),Math.round(c.y-dragging.y));setTimeout(step,16);};step();});
