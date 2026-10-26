@@ -51,7 +51,8 @@ function toPet(ch,data){if(pet&&!pet.isDestroyed())pet.webContents.send(ch,data)
 function area(){if(!pet)return screen.getPrimaryDisplay().workArea;const b=pet.getBounds();return screen.getDisplayNearestPoint({x:b.x+b.width/2,y:b.y+b.height-10}).workArea;}
 
 ipcMain.handle('init',()=>({size:dims(),settings:S,area:area(),bounds:pet.getBounds()}));
-ipcMain.on('hit',(_e,over)=>{if(pet&&!dragging)pet.setIgnoreMouseEvents(!over,{forward:true});});
+let mouseOver=false,reassertAt=0;
+ipcMain.on('hit',(_e,over)=>{mouseOver=!!over;if(pet&&!dragging)pet.setIgnoreMouseEvents(!over,{forward:true});});
 // Typing in his notebook or on his board needs keyboard focus; the rest of the time he never steals it.
 ipcMain.on('focusable',(_e,on)=>{if(!pet)return;pet.setFocusable(!!on);if(on){pet.setIgnoreMouseEvents(false);pet.focus();}else pet.blur();});
 // never trust a position blindly: a bad number would crash the app, so it is logged and Bunny is put back on the ground
@@ -88,10 +89,12 @@ setInterval(()=>{if(!pet||pet.isDestroyed()||hiddenByUser||dragging)return;
 },1500);
 // When a window closes or minimises, Windows hands focus to the next window and can drop Bunny's top-most spot
 // or stop painting him. Put him back on top straight away, then again once the minimise animation has finished.
-function reassert(why){if(!pet||pet.isDestroyed()||hiddenByUser)return;
-  log(why+': visible '+pet.isVisible()+', minimised '+pet.isMinimized()+', on top '+pet.isAlwaysOnTop()+', bounds '+JSON.stringify(pet.getBounds()));
-  const go=()=>{if(!pet||pet.isDestroyed()||hiddenByUser||dragging)return;if(pet.isMinimized())pet.restore();pet.showInactive();if(S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}pet.webContents.invalidate();};
-  go();setTimeout(go,300);setTimeout(go,900);setTimeout(go,2000);}
+function reassert(why){if(!pet||pet.isDestroyed()||hiddenByUser)return;const now=Date.now();if(now-reassertAt<3000)return;reassertAt=now;
+  log(why+': visible '+pet.isVisible()+', minimised '+pet.isMinimized()+', on top '+pet.isAlwaysOnTop());
+  // only touch what's actually wrong, then put click-through back exactly as it was, so he keeps answering the mouse
+  const go=()=>{if(!pet||pet.isDestroyed()||hiddenByUser||dragging)return;if(pet.isMinimized())pet.restore();if(!pet.isVisible())pet.showInactive();
+    if(S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}pet.setIgnoreMouseEvents(!mouseOver,{forward:true});};
+  go();setTimeout(go,700);}
 ipcMain.on('perch-lost',()=>reassert('perch window gone'));
 ipcMain.on('hide',()=>{hiddenByUser=true;if(pet)pet.hide();rebuildMenu();});
 ipcMain.on('cursor-mode',()=>applyCursor());
@@ -109,7 +112,7 @@ function applyWindows(){
   let buf='';winProc.stdout.setEncoding('utf8');
   winProc.stdout.on('data',d=>{buf+=d;let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line||line===winLast)continue;winLast=line;
     try{const o=JSON.parse(line),list=Array.isArray(o)?o.map(toDip):(o.w||[]).map(toDip);
-      const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',S.windows===false?[]:list);winFails=0;if(gone)reassert('a window closed or minimised');
+      const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',S.windows===false?[]:list);winFails=0;if(gone&&pet&&!pet.isDestroyed()&&(!pet.isVisible()||pet.isMinimized()))reassert('a window closed or minimised');
       if(!Array.isArray(o)){const c={title:String(o.fg&&o.fg.t||'').slice(0,200),proc:String(o.fg&&o.fg.p||'').slice(0,60),pip:o.pip?toDip(o.pip):null},k=JSON.stringify(c);if(k!==ctxLast){ctxLast=k;toPet('context',c);}}
       if(++winLogged<60)log('windows '+JSON.stringify(list).slice(0,400));}catch(e){log('windows parse: '+e.message);}}});
   winProc.stderr.on('data',d=>log('windows.ps1: '+String(d).slice(0,300)));
@@ -122,7 +125,7 @@ ipcMain.on('move-win',(_e,m)=>{if(process.platform!=='win32'||!m||!Number.isFini
   if(pet&&S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}});
 function applyCursor(){
   clearInterval(timers.cursor);if(!S.cursor||S.cursor==='off')return;let last='';
-  timers.cursor=setInterval(()=>{if(!pet||!pet.isVisible())return;const c=screen.getCursorScreenPoint(),k=c.x+','+c.y;if(k===last)return;last=k;toPet('cursor',c);},80);
+  timers.cursor=setInterval(()=>{if(!pet||!pet.isVisible())return;const c=screen.getCursorScreenPoint(),k=c.x+','+c.y;if(k===last)return;last=k;toPet('cursor',c);},S.cursor==='follow'?40:80);
 }
 
 function notify(title,body){if(S.toasts&&Notification.isSupported())new Notification({title,body,icon:path.join(__dirname,'icon.png'),silent:false}).show();}

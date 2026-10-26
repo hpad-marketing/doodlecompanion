@@ -202,7 +202,7 @@ function step(now){
   if(!dragging&&(climb||falling||perch))physics(now,dt);
   else if(targetX!==null&&isWalk(action)&&!dragging){const g=action.split('_')[0];
     if(cursorMode()==='follow'&&cursor){targetX=followTarget();const want=g+(targetX>pos.x?'_right':'_left');if(want!==action&&Math.abs(targetX-pos.x)>4)play(want,99);}
-    const dir=action.endsWith('_right')?1:-1;pos.x+=dir*size.bw*0.0004*GAITS[g]*dt;
+    const dir=action.endsWith('_right')?1:-1,catchUp=cursorMode()==='follow'?Math.max(1,Math.min(4,Math.abs(targetX-pos.x)/(size.bw*1.5))):1;pos.x+=dir*size.bw*0.0004*GAITS[g]*catchUp*dt;
     if((dir>0&&pos.x>=targetX)||(dir<0&&pos.x<=targetX)){targetX=null;next('arrived');}sendPos();}
   draw();
   if(sign&&boardEcho&&action==='sign'&&!panelOpen()&&(!bubble.classList.contains('show')||now>bubbleUntil-200))say(boardEcho,4000);
