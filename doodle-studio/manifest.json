@@ -1,8 +1,8 @@
 {
- "version": "20261026-213702",
- "notes": "New template cards: narrow animated previews, a name bar, mouse-wheel scrolling, and a Dances tab with 16 new Bunny moves.",
+ "version": "20261026-213702.1",
+ "notes": "Updates now replace files in place and keep their own bookkeeping in a hidden folder.",
  "runtime": "44.9.0",
- "published": "2026-10-26T16:08:18.892Z",
+ "published": "2026-10-26T16:40:13.500Z",
  "files": {
   "Doodle Studio.exe": {
    "sha256": "4431000b45613b70b3cd3da1915469cdd5da969296e599a91461b1655011fa8b",
@@ -35,9 +35,9 @@
    "gz": "files/68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8.gz"
   },
   "desktop/resources/app/updater.cjs": {
-   "sha256": "668e3ad2821ca55ee3060b501bd1da23237bda6d006679d9d5774d1c6634dd97",
-   "size": 5710,
-   "gz": "files/668e3ad2821ca55ee3060b501bd1da23237bda6d006679d9d5774d1c6634dd97.gz"
+   "sha256": "23022f3ec84dac0647d7a6a3201c7bd68314b98aaf1ce1c2a0d95ebb6a27b398",
+   "size": 6405,
+   "gz": "files/23022f3ec84dac0647d7a6a3201c7bd68314b98aaf1ce1c2a0d95ebb6a27b398.gz"
   }
  }
 }
