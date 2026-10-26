@@ -70,7 +70,7 @@ function next(finished){
   if(sign){play('sign',99);return;}
   if(hold){play('hold_pip',99);return;}
   if(!perch&&wantPip()&&grabPip())return;
-  if(!perch&&cursorMode()==='watch'&&Date.now()-cursorMoved<6000&&Math.random()<.7){play('watch');return;}
+  if(!perch&&cursorMode()==='watch'&&Date.now()-cursorMoved<6000&&Math.random()<.9){play('watch');return;}
   if(!perch&&cursorMode()==='follow'&&followCursor())return;
   if(!perch&&!settings.stayPut&&cursorMode()!=='follow'&&!away&&focus.mode!=='focus'&&!(routine&&routine.length)&&!(settings.nightSleep&&night())&&!isWalk(finished)&&!panelOpen()&&Math.random()<.25){walkSomewhere();return;}
   play(ambient());
@@ -448,6 +448,8 @@ function daySummary(){const names={video:'watching',design:'designing',chatbot:'
 function nudge(kind,everyMin,text,act){if(Date.now()-(lastNudge[kind]||0)<everyMin*60000)return false;lastNudge[kind]=Date.now();targetX=null;if(act)play(act,1);say(text,6000);return true;}
 function proactive(){
   if(sign||away||panelOpen()||radialOpen()||dragging||falling||perch||climb||hold)return;
+  // while you're steering him with the cursor, the cursor wins over app reactions and nudges
+  if(cursorMode()!=='off'&&Date.now()-cursorMoved<8000)return;
   const m=mins(),onFor=(Date.now()-ctxSince)/60000,hungryH=(Date.now()-fedAt)/3600000,lonelyM=(Date.now()-lastLove)/60000;
   // react to a new kind of work within a few seconds of you switching to it
   if(wk.cat&&CTX[wk.cat]&&ctxReacted!==wk.cat&&onFor>0.08){ctxReacted=wk.cat;if(moodName()!=='blue'){targetX=null;play(CTX[wk.cat].act,3);say(pick(CTX[wk.cat].say),3000);return;}}

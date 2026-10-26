@@ -1,6 +1,6 @@
 // Bunny Pet for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
 // lives a daily routine, and opens a radial menu (notes, his board, lunch, tea, meetings, focus, water) on double-click.
-const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage}=require('electron');
+const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage,net}=require('electron');
 const path=require('path'),fs=require('fs'),crypto=require('crypto'),{spawn}=require('child_process');
 // Self-update: a manifest of file hashes at UPDATE_BASE; only changed files are fetched, then Bunny restarts.
 const UPDATE_BASE=(()=>{try{return fs.readFileSync(path.join(__dirname,'update-url.txt'),'utf8').trim();}catch{return '';}})();
@@ -235,14 +235,21 @@ app.whenReady().then(()=>{
 });
 app.on('second-instance',()=>{if(pet){hiddenByUser=false;pet.showInactive();toPet('do','wave');}});
 function sha(f){try{return crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');}catch{return '';}}
+// Downloads go through Chromium's network stack (net.fetch), so office proxies and firewalls that let your browser
+// through let Bunny through too. Each file gets three tries before the update is put off.
+async function get(url){let err;for(let i=0;i<3;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;err=new Error(url+' '+r.status);}catch(e){err=e;}
+  await new Promise(r=>setTimeout(r,800*(i+1)));}throw err;}
+let updating=false;
 async function checkUpdate(manual){
+  if(updating){if(manual)toPet('say',{text:'Already updating, hang on…',ms:2500});return;}
   if(!UPDATE_BASE){if(manual)toPet('say',{text:'Updates aren\'t set up yet.',ms:2500});return;}
   try{
-    const res=await fetch(UPDATE_BASE+'manifest.json',{cache:'no-store'});if(!res.ok)throw new Error(res.status);const m=await res.json();
+    updating=true;const m=await (await get(UPDATE_BASE+'manifest.json')).json();
     const mine=require('./package.json').version;if(m.version===mine){if(manual)toPet('say',{text:`I'm up to date (v${mine}).`,ms:2500});return;}
     const todo=Object.entries(m.files).filter(([f,h])=>sha(path.join(__dirname,f))!==h);
     const tmp=path.join(app.getPath('userData'),'update');fs.rmSync(tmp,{recursive:true,force:true});
-    for(const [f,h] of todo){const r=await fetch(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'),{cache:'no-store'});if(!r.ok)throw new Error(f+' '+r.status);
+    if(todo.length>20)toPet('say',{text:`Downloading v${m.version}… (${todo.length} files)`,ms:4000});log('update '+mine+' → '+m.version+': '+todo.length+' files');
+    for(const [f,h] of todo){const r=await get(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'));
       const buf=Buffer.from(await r.arrayBuffer());if(crypto.createHash('sha256').update(buf).digest('hex')!==h)throw new Error('bad hash '+f);
       const out=path.join(tmp,f);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,buf);}
     // everything arrived intact: swap the files in, drop ones the new version no longer has, restart
@@ -251,7 +258,7 @@ async function checkUpdate(manual){
     fs.rmSync(tmp,{recursive:true,force:true});
     toPet('say',{text:`New tricks! Updating to v${m.version}…`,ms:2500,action:'spin'});notify('Bunny updated',`Version ${m.version}: ${m.notes||'new moves and fixes'}`);
     setTimeout(()=>{app.relaunch();app.exit(0);},2600);
-  }catch(e){if(manual)toPet('say',{text:'Couldn\'t reach the update server. I\'ll try later.',ms:3000});}
+  }catch(e){updating=false;log('update failed: '+(e&&(e.stack||e.message)||e));if(manual)toPet('say',{text:'Couldn\'t reach the update server ('+String(e&&e.message||e).slice(0,60)+'). I\'ll try later.',ms:5000});}
 }
 app.on('before-quit',()=>{if(winProc)winProc.kill();});
 app.on('window-all-closed',e=>e.preventDefault&&e.preventDefault());
