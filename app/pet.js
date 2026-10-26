@@ -76,7 +76,7 @@ function next(finished){
   if(dragging){play('dangle',50);return;}
   if(falling){play(vy<0?'bounce':'fall',vy<0?1:99);return;}
   if(finished&&finished.startsWith('turn_')&&pendingWalk&&targetX!==null){const [w,l]=pendingWalk;pendingWalk=null;play(w,l);return;}
-  if(rebalance&&finished&&finished.startsWith('teeter_')){rebalance=false;play('look',1);say(pick(['Ta-da!','Stuck the landing.','Totally meant that.']),1600);return;}
+  if(rebalance&&finished&&/^(teeter|flamingo|wheel)_/.test(finished)){rebalance=false;play('look',1);say(pick(['Ta-da!','Stuck the landing.','Totally meant that.']),1600);return;}
   if(swing&&finished==='air_twist')return;
   if(finished==='flop'){play('pushup',1);return;}
   if(finished==='pushup'){if(perch){perch.state='sit';play('sit_look',1);say(pick(['Made it!','Ta-da. Totally meant that.','Phew. Comfy up here.']),2000);}
@@ -190,13 +190,15 @@ function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos
   if(sign){play('sign',99);return;}
   const dir=faceplant?faceplant:vx?Math.sign(vx):Math.random()<.5?1:-1;
   // a big landing doesn't always end face down: sometimes he windmills his arms, wobbles and rebalances on his feet
-  if(!faceplant&&(h>size.bh*0.5||bounces>=2)&&Math.random()<.45){thrown=false;targetX=null;play(dir>0?'teeter_r':'teeter_l',1);rebalance=true;say(pick(['Whoa whoa whoa—','Nailed it! Almost.','Steady… steady…']),1600);return;}
-  if(faceplant||(thrown&&(walls>0||bounces>=3))||h>size.bh*0.5||bounces>=2){faceplant=0;thrown=false;flop(dir,pick(['Ow… my tail.','*face in floor*','So… dizzy…','Stars. I see stars.','Mmmph.']));return;}
+  if(faceplant||(thrown&&(walls>0||bounces>=3))||h>size.bh*0.5||bounces>=2){faceplant=0;thrown=false;targetX=null;balance(dir);return;}
   if(h>size.bh*0.25||bounces){play('land',1);say(pick(['Oof!','I\'m okay! I\'m okay.']),1600);}
   else play(pick(['hop','look']),1);}
 
 // ---- flat on his face, then a push-up; teetering on a window's edge; strolling along a window with his nose in a book ----
-function flop(dir,msg){lieDir=dir||1;targetX=null;play('flop',2);if(msg)say(msg,2200);}
+// a big landing never ends face down: he catches his balance, a different way each time (windmill, flamingo hop, wheel back)
+let balIdx=Math.floor(Math.random()*3);
+function balance(dir){const k=['teeter','flamingo','wheel'][balIdx++%3];play(k+(dir>0?'_r':'_l'),1);rebalance=true;
+  say(pick({teeter:['Whoa whoa whoa—','Nailed it! Almost.','Steady… steady…'],flamingo:['Wobble… wobble…','Flamingo mode!','Hup! Hup! Got it.'],wheel:['Whoa—back—back—','Nope, not falling.','Phew. Still standing.']}[k]),1600);}
 const feetLine=y=>y+top0()+size.bh*FEET_Y;
 // his feet come down on top of a window close to one of its ends: he lands, but only just
 function edgeBetween(a,b){if(settings.windows===false)return null;const cx=midX(pos.x),near=size.bw*0.5;
@@ -222,7 +224,7 @@ function physics(now,dt){
   if(climb){const w=wins.find(o=>o[0]===perch?.id);if(w)climb.edge=w[2];
     // his hands stay pinned to the ledge through the struggle and the press; then he tips forward onto the top and lies flat
     if(!climb.settle){pos.y=yFor(climb.edge,handFrac('climb_back'));
-      if(now-climb.t0>=climb.ms){climb.settle=now;climb.y0=pos.y;perch.state='stand';lieDir=Math.random()<.5?1:-1;play('flop',1);say(pick(['*pant pant*','Made… it…','Never… again…']),2000);}}
+      if(now-climb.t0>=climb.ms){climb.settle=now;climb.y0=pos.y;perch.state='stand';balance(Math.random()<.5?1:-1);say(pick(['*pant pant*','Made… it…','Never… again…']),2000);}}
     else{const q=Math.min(1,(now-climb.settle)/350),e=q*q*(3-2*q);pos.y=climb.y0+(yFor(climb.edge,FEET_Y)-climb.y0)*e;if(q>=1)climb=null;}
     sendPos();return;}
   if(swing){const w=wins.find(o=>o[0]===perch?.id);if(!w){swing=null;swingAng=0;return letGo();}const t=now-swing.t0,T=swing.n*swing.period;
@@ -484,6 +486,7 @@ window.addEventListener('mouseup',async e=>{
     if(panelKind==='notes'){if(action==='write'){play('read',99);say('Reading it back…',1500);}else{closePanel();say('Saved in my notebook.',1500);}return;}
     if(panelOpen()){closePanel();return;}
     if(perch){if(['drowsy','doze','sleep'].includes(perch.state)){wakeOnPerch();return;}if(perch.state==='sit')play('sit_look',1);say(pick(['Hi from up here!','I like it up here.','Nice view!']),1500);return;}
+    if(!perch&&action==='sleep_side'){floorSleepAt=Date.now();play('yawn',1);say(pick(['Huh? I\'m up! I\'m up!','Was I snoring?','Five more min… okay, fine.']),2000);return;}
     love(4,'tickle');if(hold){say(pick(['Careful, I\'m holding your video!','Hehe, not now, I\'m on duty!']),1600);return;}
     play(night()?'yawn':'tickle',1);say(night()?'Mmh… sleeping…':pick(['Hehe! That tickles!','Stop it, haha!','Not the belly!','Hee hee!']),1600);
   },260);
@@ -564,6 +567,10 @@ const CTX={
 let fgCtx={title:'',proc:'',pip:null};
 function perchCtx(){if(!perch)return null;const w=wins.find(o=>o[0]===perch.id);return w&&(w[5]||w[6])?{title:w[5]||'',proc:w[6]||''}:null;}
 // on a window you leave alone he gets drowsy after a minute, dozes, and after 30 s asleep curls up on his side under a blanket
+// asleep on the floor too: after 30 s he lies down on his side under his blanket, like on a window
+let floorSleepAt=0;
+function floorSleepTick(){if(perch||dragging||falling){floorSleepAt=0;return;}if(action!=='sleep'){if(action!=='sleep_side')floorSleepAt=0;return;}
+  const now=Date.now();if(!floorSleepAt)floorSleepAt=now;if(now-floorSleepAt>30000){lieDir=Math.random()<.5?1:-1;play('sleep_side',99);}}
 function perchSleepTick(){if(!perch||!['sit','drowsy','doze','sleep'].includes(perch.state))return;const w=wins.find(o=>o[0]===perch.id);if(!w)return;
   const now=Date.now(),using=!!w[5]&&(fgCtx.title||'').slice(0,120)===w[5];if(perch.usedAt===undefined)perch.usedAt=now;
   if(using||sign||hold||game||panelOpen()||radialOpen()){perch.usedAt=now;if(perch.state!=='sit')wakeOnPerch();return;}
@@ -576,7 +583,10 @@ function onContext(c){fgCtx=c;const pc=perchCtx();if(pc)c={...c,...pc};const cat
   if(cat!==wk.cat){ctxSince=Date.now();ctxReacted=null;}
   wk={cat,title:c.title,proc:c.proc,pip:c.pip};
   if(!wk.pip&&hold){hold=null;if(action==='hold_pip'){play('wave',1);say(pick(['Show\'s over!','That was a good one.']),2000);}}
-  if(wk.pip&&pipLetGo&&pipLetGo!==wk.pip[0])pipLetGo=null;}
+  if(wk.pip&&pipLetGo&&pipLetGo!==wk.pip[0])pipLetGo=null;
+  // a video popped out: go and hold it straight away, even from a nap (you're clearly up and watching)
+  tryPip();}
+function tryPip(){if(wk.pip&&!hold&&!away&&settings.holdPip!==false&&pipLetGo!==wk.pip[0]&&!sign&&!perch&&!falling&&!climb&&!dragging&&!game){if(action==='sleep')say('Ooh, a show!',1500);grabPip();}}
 function tallyDay(){const today=new Date().toDateString();if(day.d!==today)day={d:today,cats:{}};
   const k=wk.cat||'other';const dm=(Date.now()-catTick)/60000;catTick=Date.now();if(!away&&dm<5)day.cats[k]=(day.cats[k]||0)+dm;}
 const fmt=m=>m>=60?`${Math.floor(m/60)}h${Math.round(m%60)?' '+Math.round(m%60)+'m':''}`:`${Math.round(m)}m`;
@@ -636,7 +646,7 @@ function carryPip(){if(!hold||!wk.pip)return;
   const pl=pipPlace();if(!pl)return;const x=Math.round(pl.x),y=Math.round(pl.y);
   if(Math.abs(x-hold.x)>2||Math.abs(y-hold.y)>2){hold.x=x;hold.y=y;hold.sent=Date.now();B.send('move-win',{id:hold.id,x,y});}}
 setInterval(()=>{if(!settings||!size)return;moodTick();tallyDay();},60000);
-setInterval(()=>{if(!settings||!size)return;try{perchSleepTick();proactive();carryPip();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
+setInterval(()=>{if(!settings||!size)return;try{perchSleepTick();floorSleepTick();tryPip();proactive();carryPip();}catch(e){B.send('log','brain: '+(e&&e.message));}},1500);
 B.on('context',c=>{try{onContext(c||{});}catch(e){B.send('log','context: '+(e&&e.message));}});
 
 // ---------------- home: play, make things, celebrate ----------------

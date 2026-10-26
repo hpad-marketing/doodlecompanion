@@ -115,6 +115,7 @@ let tracking='0',winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0
 const cmdFile=()=>path.join(app.getPath('temp'),'bunny-cmd-'+process.pid+'.txt');
 const toDip=([id,l,t,r,b,title,proc])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height,title||'',proc||''];};
 // The watcher always runs on Windows: window climbing can be switched off, but he still notices what you're working in.
+function watching(){try{const c=JSON.parse(ctxLast||'{}');return !!c.pip||/youtube|netflix|prime video|hotstar|jiocinema|twitch|vlc|media player|movies & tv/i.test(c.title||'');}catch{return false;}}
 function applyWindows(){
   if(process.platform!=='win32'){toPet('windows',[]);return;}
   if(winProc){winLast='';if(S.windows===false)toPet('windows',[]);return;}
@@ -298,7 +299,8 @@ app.whenReady().then(()=>{
   powerMonitor.on('unlock-screen',()=>{away=false;toPet('away',false);});
   powerMonitor.on('resume',()=>{away=false;toPet('away',false);});
   setInterval(()=>{if(!S.sleepAway)return;const idle=powerMonitor.getSystemIdleTime();
-    if(!away&&idle>300){away=true;toPet('away',true);}else if(away&&idle<5){away=false;toPet('away',false);}},5000);
+    // watching a video means no mouse or keys for a while; that isn't being away, so he stays up and holds your video
+    if(!away&&idle>300&&!watching()){away=true;toPet('away',true);}else if(away&&(idle<5||watching())){away=false;toPet('away',false);}},5000);
   screen.on('display-metrics-changed',()=>toPet('area',area()));
   setTimeout(()=>checkUpdate(false),20000);setInterval(()=>checkUpdate(false),60*60000);
 });
