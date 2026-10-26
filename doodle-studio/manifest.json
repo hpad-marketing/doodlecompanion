@@ -1,13 +1,13 @@
 {
- "version": "20261026-230155",
- "notes": "Motions now bring their props: notepad, paint palette, popcorn, book, guitar, phone and screen. Walking legs now overlap the right way round.",
+ "version": "20261026-231547",
+ "notes": "Popcorn stays tucked under one arm while the other hand eats. Includes the motion props and walking leg fix.",
  "runtime": "44.9.0",
- "published": "2026-10-26T17:33:31.202Z",
+ "published": "2026-10-26T17:47:08.213Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "490fad556f4c7b1cac091579da27998268da619561e80b4566a27dfbce16b45d",
+   "sha256": "09a6d16212449398948387f1b1ccb5d197b44196431d67e875fee0da3ea59b16",
    "size": 91069440,
-   "gz": "files/490fad556f4c7b1cac091579da27998268da619561e80b4566a27dfbce16b45d.gz"
+   "gz": "files/09a6d16212449398948387f1b1ccb5d197b44196431d67e875fee0da3ea59b16.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
