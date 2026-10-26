@@ -86,12 +86,19 @@ setInterval(()=>{if(!pet||pet.isDestroyed()||hiddenByUser||dragging)return;
   const onAny=screen.getAllDisplays().some(d=>{const a=d.workArea;return cx>=a.x&&cx<=a.x+a.width&&cy>=a.y-40&&cy<=a.y+a.height+40;});
   if(!onAny){log('watchdog: pet off screen at '+JSON.stringify(b)+', bringing back');const a=screen.getPrimaryDisplay().workArea;pet.setPosition(Math.round(a.x+a.width*0.7-b.width/2),a.y+a.height-b.height);toPet('rescue',{area:a});}
 },1500);
+// When a window closes or minimises, Windows hands focus to the next window and can drop Bunny's top-most spot
+// or stop painting him. Put him back on top straight away, then again once the minimise animation has finished.
+function reassert(why){if(!pet||pet.isDestroyed()||hiddenByUser)return;
+  log(why+': visible '+pet.isVisible()+', minimised '+pet.isMinimized()+', on top '+pet.isAlwaysOnTop()+', bounds '+JSON.stringify(pet.getBounds()));
+  const go=()=>{if(!pet||pet.isDestroyed()||hiddenByUser||dragging)return;if(pet.isMinimized())pet.restore();pet.showInactive();if(S.onTop){pet.setAlwaysOnTop(true,'screen-saver');pet.moveTop();}pet.webContents.invalidate();};
+  go();setTimeout(go,300);setTimeout(go,900);setTimeout(go,2000);}
+ipcMain.on('perch-lost',()=>reassert('perch window gone'));
 ipcMain.on('hide',()=>{hiddenByUser=true;if(pet)pet.hide();rebuildMenu();});
 ipcMain.on('cursor-mode',()=>applyCursor());
 ipcMain.on('windows-mode',()=>applyWindows());
 
 // ---- what's on screen: your open windows (for grabbing and perching) and the cursor (for watching and following) ----
-let winProc=null,winLast='',winFails=0,winLogged=0;
+let winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0;
 function applyWindows(){
   const want=process.platform==='win32'&&S.windows!==false;
   if(!want){if(winProc){winProc.kill();winProc=null;}winLast='';toPet('windows',[]);return;}
@@ -99,7 +106,7 @@ function applyWindows(){
   try{winProc=spawn('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'windows.ps1'),String(process.pid)],{windowsHide:true});}catch{winProc=null;return;}
   let buf='';winProc.stdout.setEncoding('utf8');
   winProc.stdout.on('data',d=>{buf+=d;let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line||line===winLast)continue;winLast=line;
-    try{const list=JSON.parse(line).map(([id,l,t,r,b])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height];});toPet('windows',list);winFails=0;if(++winLogged<200)log('windows '+line.slice(0,600));}catch{}}});
+    try{const list=JSON.parse(line).map(([id,l,t,r,b])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height];});const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',list);winFails=0;if(gone)reassert('a window closed or minimised');if(++winLogged<200)log('windows '+line.slice(0,600));}catch{}}});
   winProc.on('exit',()=>{winProc=null;if(S.windows!==false&&++winFails<5)setTimeout(applyWindows,3000);});
 }
 function applyCursor(){

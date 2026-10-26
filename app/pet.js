@@ -138,7 +138,7 @@ function catchLedge(w){B.send('log','caught '+JSON.stringify(w));falling=false;v
   play('hang_back',2);say(pick(['Gotcha!','Grabbed it!','Phew, caught it!']),1500);}
 function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='climb';
   climb={t0:performance.now(),ms:1500,y0:pos.y,y1:yFor(w[2],SEAT_Y)};play('climb_back',1);}
-function letGo(msg){if(!perch)return;B.send('log','let go of '+perch.id+' at '+Math.round(pos.x)+','+Math.round(pos.y));skipWin=perch.id;perch=null;climb=null;startFall(msg);}
+function letGo(msg){if(!perch)return;B.send('perch-lost');B.send('log','let go of '+perch.id+' at '+Math.round(pos.x)+','+Math.round(pos.y));skipWin=perch.id;perch=null;climb=null;startFall(msg);}
 function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos.y)+' ground '+Math.round(groundY()));skipWin=null;const h=pos.y-fallFrom;
   if(sign){play('sign',99);return;}
   if(thrown&&(walls>0||bounces>=3)){thrown=false;routine=['tired'];play('land',1);say(pick(['I need a minute…','Never… again…','*wheeze*','So… dizzy…']),3000);return;}
