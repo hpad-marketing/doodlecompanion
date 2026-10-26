@@ -65,6 +65,8 @@ function stepSnacks(now,dt){const H=innerHeight,s=bw()*0.22,left=Math.max(0,endA
       B.send('play-ev',{type:'snack',caught:true,score,left:Math.ceil(left/1000)});}
     else if(sn.y>H-s*0.35){sn.gone=true;bits.push({x:sn.x,y:H-lw(),t:0,k:'crumb'});}}
   snacks=snacks.filter(x=>!x.gone);for(const sn of snacks)drawSnack(sn,s);
+  // tell him which snack lands next, so he can keep his eyes on it
+  if(snacks.length&&now-sentAt>120){sentAt=now;const n=snacks.reduce((a,x)=>x.y>a.y?x:a);B.send('play-ev',{type:'snackpos',x:n.x+A.x,y:n.y+A.y});}
   const sec=Math.ceil(left/1000);if(sec!==lastSec){lastSec=sec;B.send('play-ev',{type:'snack',score,left:sec});}
   if(left<=0&&!snacks.length){game=null;B.send('play-ev',{type:'over',score});return false;}
   return true;}

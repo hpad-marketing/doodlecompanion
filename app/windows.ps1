@@ -4,7 +4,8 @@
 # cloaked, tool and untitled windows, the desktop, the taskbar, picture-in-picture players and Bunny's own windows
 # (process id in $args[0]). fg is the window you're working in, so he can react to it. pip is a picture-in-picture video.
 # Bunny can ask for a window to be moved (to carry a picture-in-picture video): main writes "move <id> <x> <y>" to the
-# file in $args[1], checked every 120 ms. Nothing leaves this computer.
+# file in $args[1]. While he sits on a window, main writes "track <id>": that window's rect is then sent about 60 times a
+# second as {"t":[id,left,top,right,bottom]}, so he moves with it as you drag it. "track 0" stops. Nothing leaves this computer.
 Add-Type @"
 using System;using System.Text;using System.Runtime.InteropServices;
 public static class BunnyWins{
@@ -35,6 +36,8 @@ public static class BunnyWins{
   public static void Move(long id,int x,int y){var h=new IntPtr(id);RECT vis,win;
     if(DwmGetWindowAttribute(h,9,out vis,16)!=0||!GetWindowRect(h,out win))return;
     SetWindowPos(h,IntPtr.Zero,x-(vis.L-win.L),y-(vis.T-win.T),0,0,0x0001|0x0004|0x0010);}
+  public static string Track(long id){var h=new IntPtr(id);RECT r;
+    if(IsIconic(h)||!IsWindowVisible(h)||DwmGetWindowAttribute(h,9,out r,16)!=0)return null;return "{\"t\":"+Rect(h,r)+"}";}
   public static string List(uint self){
     var sb=new StringBuilder("{\"w\":[");bool first=true;string pip="null";
     EnumWindows(delegate(IntPtr h,IntPtr l){
@@ -59,10 +62,13 @@ public static class BunnyWins{
 }
 "@
 [void][BunnyWins]::SetThreadDpiAwarenessContext([IntPtr](-4))
-$self=[uint32]$args[0];$cmd=$args[1];$n=0
+$self=[uint32]$args[0];$cmd=$args[1];$track=[int64]0;$lastT='';$clock=[Diagnostics.Stopwatch]::StartNew();$nextList=0
 while($true){
   if($cmd -and (Test-Path -LiteralPath $cmd)){
     try{$lines=Get-Content -LiteralPath $cmd;Remove-Item -LiteralPath $cmd -Force
-      foreach($l in $lines){$p=$l -split ' ';if($p[0] -eq 'move' -and $p.Count -ge 4){[BunnyWins]::Move([int64]$p[1],[int]$p[2],[int]$p[3])}}}catch{}}
-  if($n%4 -eq 0){[Console]::Out.WriteLine([BunnyWins]::List($self));[Console]::Out.Flush()}
-  $n++;Start-Sleep -Milliseconds 120}
+      foreach($l in $lines){$p=$l -split ' '
+        if($p[0] -eq 'move' -and $p.Count -ge 4){[BunnyWins]::Move([int64]$p[1],[int]$p[2],[int]$p[3])}
+        elseif($p[0] -eq 'track' -and $p.Count -ge 2){$track=[int64]$p[1];$lastT=''}}}catch{}}
+  if($track -ne 0){$t=[BunnyWins]::Track($track);if($t -and $t -ne $lastT){$lastT=$t;[Console]::Out.WriteLine($t);[Console]::Out.Flush()}}
+  if($clock.ElapsedMilliseconds -ge $nextList){$nextList=$clock.ElapsedMilliseconds+480;[Console]::Out.WriteLine([BunnyWins]::List($self));[Console]::Out.Flush()}
+  if($track -ne 0){Start-Sleep -Milliseconds 15}else{Start-Sleep -Milliseconds 120}}

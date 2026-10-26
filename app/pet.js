@@ -10,7 +10,7 @@ const FPS=12,LOOPS=new Set(['flop','readwalk','readwalk_side_right','readwalk_si
 const HAND_Y=0.728,HAND_BACK_Y=0.742,FEET_Y=0.936,SEAT_Y=0.89;
 let meta={},size,settings,area,pos={x:0,y:0},action='idle',frame=0,loopsLeft=2,acc=0,last=0,targetX=null,falling=false,vy=0,away=false,
   focus={mode:'off'},meeting=null,bubbleUntil=0,sign=null,bannerDismissed=0,lastActs=[],routine=null,nextThought=0,
-  wins=[],rebalance=false,perch=null,fallFrom=0,skipWin=null,cursor=null,cursorMoved=0,climb=null;
+  wins=[],tracked=0,rebalance=false,perch=null,fallFrom=0,skipWin=null,cursor=null,cursorMoved=0,climb=null;
 let cache=new Map(),oldCache=null,oldTimer=0;let cacheW=0;
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function frames(a){return meta[a]?.frames||1;}
@@ -77,10 +77,12 @@ function next(finished){
   if(falling){play(vy<0?'bounce':'fall',vy<0?1:99);return;}
   if(finished&&finished.startsWith('turn_')&&pendingWalk&&targetX!==null){const [w,l]=pendingWalk;pendingWalk=null;play(w,l);return;}
   if(rebalance&&finished&&finished.startsWith('teeter_')){rebalance=false;play('look',1);say(pick(['Ta-da!','Stuck the landing.','Totally meant that.']),1600);return;}
+  if(swing&&finished==='air_twist')return;
   if(finished==='flop'){play('pushup',1);return;}
   if(finished==='pushup'){if(perch){perch.state='sit';play('sit_look',1);say(pick(['Made it!','Ta-da. Totally meant that.','Phew. Comfy up here.']),2000);}
     else{play('look',1);say(pick(['I\'m okay!','Nobody saw that.','Ten out of ten landing.','Who moved the floor?']),2000);}return;}
-  if(perch&&perch.state==='hang'){if(finished==='hang1_back'){if(Math.random()<.12)return letGo('Nope, can\'t hold on!');if(Math.random()<.5)return startSwing();play('hang_back',1);say(pick(['Two hands!','Hnnngh…','Hold… on…']),1200);return;}
+  if(perch&&perch.state==='hang'){if(finished==='hang1_back'){if(Math.random()<.12)return letGo('Nope, can\'t hold on!');// three ways up, picked at random: swing over the top, swing into a gymnast dismount, or the two-hand pull-up
+    const way=Math.random();if(way<1/3)return startSwing(false);if(way<2/3)return startSwing(true);play('hang_back',1);say(pick(['Two hands!','Hnnngh…','Hold… on…']),1200);return;}
     Math.random()<.8?startClimb():letGo('Nope, can\'t hold on!');return;}
   if(perch&&perch.state==='drowsy'){if(finished==='sit_drowsy'){perch.state='doze';perch.dozeAt=Date.now();play('sit_snooze',99);say('Zzz…',1500);}else play('sit_drowsy',1);return;}
   if(perch&&perch.state==='doze'){play('sit_snooze',99);return;}
@@ -157,9 +159,10 @@ let bounces=0;
 // squash, stretch and tilt are springs on the canvas, so every drop and bounce wobbles a little differently
 let walls=0,thrown=false,thrownAt=0,vx=0,sq=0,sqv=0,tilt=0,tiltv=0,trail=[];
 let lie=0,lieDir=1,faceplant=0,swingAng=0,swing=null;
-// how flat he lies: flat while flopped; during the push-up it follows his arms as they press him up
-function lieTarget(){if(action==='sleep_side')return (PH.sleepSide||{}).ang||85;const t=PH.lie[action];if(!t||!t.length)return 0;const f=Math.min(frame,t.length-1);if(action==='flop')return t[f];
-  const n=t.length-1,p=f/Math.max(1,n),k=Math.round(n*0.6);return p<=0.6?t[f]:t[k]*Math.max(0,1-(p-0.6)/0.25);}
+// how flat he lies: face down his body rests flat on the floor and his head bends up from his neck (baked into the frames);
+// the angle for each frame of the flop and the push-up comes from the rig tables, and lift sets him back on the floor
+const proneAt=()=>{const t=(PH.prone||{})[action];return t&&t.length?t[Math.min(frame,t.length-1)]:null;};
+function lieTarget(){if(action==='sleep_side')return (PH.sleepSide||{}).ang||85;const p=proneAt();return p?p[0]:0;}
 function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);const lt=lieTarget();lie+=(lt-lie)*Math.min(1,dt*(lt>lie?0.03:0.02));if(Math.abs(lt-lie)<0.2)lie=lt;
   const stretch=falling?Math.max(-0.16,Math.min(0.12,-Math.abs(vy)*0.07)):0,lean=falling?Math.max(-10,Math.min(10,vx*24)):0;
   sqv+=(-170*(sq-stretch)-11*sqv)*t;sq+=sqv*t;tiltv+=(-120*(tilt-lean)-9*tiltv)*t;tilt+=tiltv*t;
@@ -169,7 +172,8 @@ function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);cons
   // lying, leaning into a run and swinging from a ledge all pivot about a contact point: his feet, or his gripping hand
   // the canvas transforms about its bottom centre, so contact points are measured up from the bottom edge
   const fy=((PH.feet||[0.5,0.932])[1]-1)*size.bh,about=(x,y,a)=>`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${a.toFixed(2)}deg) translate(${(-x).toFixed(1)}px,${(-y).toFixed(1)}px) `;
-  const ss=PH.sleepSide,rest=action==='sleep_side'&&ss?`translateY(${(-ss.lift*size.bh*Math.min(1,lie/ss.ang)).toFixed(1)}px) `:'';
+  const ss=PH.sleepSide,pr=proneAt(),rest=action==='sleep_side'&&ss?`translateY(${(-ss.lift*size.bh*Math.min(1,lie/ss.ang)).toFixed(1)}px) `:
+    pr&&pr[1]?`translateY(${(-pr[1]*size.bh*(pr[0]>1?Math.min(1,lie/pr[0]):1)).toFixed(1)}px) `:'';
   const flat=lie?rest+about(0,fy,lieDir*lie)+(lieDir<0?'scaleX(-1) ':''):'',run=runLean?about(0,fy,runLean):'',sp=PH.swingPivot||[0.716,0.742],
     swing=sw?about((sp[0]-0.5)*size.bw,(sp[1]-1)*size.bh,sw):'';
   cv.style.transform=`translateX(-50%) ${run}${swing}${flat}rotate(${tilt.toFixed(2)}deg) scale(${(sx*bx).toFixed(3)},${(sy*by).toFixed(3)})`;}
@@ -179,8 +183,8 @@ function catchLedge(w){B.send('log','caught '+JSON.stringify(w));falling=false;v
   play('hang1_back',1);say(pick(['Gotcha!','One hand!','Whoa whoa whoa!']),1500);}
 function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='climb';
   climb={t0:performance.now(),ms:frames('climb_back')*1000/FPS,edge:w[2],settle:0};play('climb_back',1);}
-function startSwing(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='swing';
-  swing={t0:performance.now(),n:3,period:900,y1:yFor(w[2],FEET_Y)};play('swing_back',1);say(pick(['One… two…','Here goes!','Swing… swing…']),1500);}
+function startSwing(gym){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='swing';
+  swing={t0:performance.now(),n:3,period:900,y1:yFor(w[2],FEET_Y),gym:!!gym};play('swing_back',1);say(pick(['One… two…','Here goes!','Swing… swing…']),1500);}
 function letGo(msg){swing=null;swingAng=0;if(!perch)return;B.send('perch-lost');B.send('log','let go of '+perch.id+' at '+Math.round(pos.x)+','+Math.round(pos.y));skipWin=perch.id;perch=null;climb=null;startFall(msg);}
 function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos.y)+' ground '+Math.round(groundY()));skipWin=null;const h=pos.y-fallFrom;
   if(sign){play('sign',99);return;}
@@ -224,6 +228,11 @@ function physics(now,dt){
   if(swing){const w=wins.find(o=>o[0]===perch?.id);if(!w){swing=null;swingAng=0;return letGo();}const t=now-swing.t0,T=swing.n*swing.period;
     // pendulum about his gripping hand, each swing bigger, then a last big swing carries him up and over onto the top
     if(t<T){const amp=8+22*t/T;swingAng=amp*Math.sin(2*Math.PI*t/swing.period);pos.y=yFor(w[2],HAND_BACK_Y);}
+    // gymnast dismount: lets go at the top of the last swing, flies up past the edge twisting one and a half turns, sticks the landing
+    else if(swing.gym){const FL=900,q=Math.min(1,(t-T)/FL),y0=yFor(w[2],HAND_BACK_Y),y1=yFor(w[2],FEET_Y),apex=y1-size.bh*0.5,yc=2*apex-(y0+y1)/2;
+      if(!swing.flying){swing.flying=true;play('air_twist',1);say(pick(['Hup!','Watch this!','Hi-yah!']),900);}
+      swingAng=0;pos.y=(1-q)*(1-q)*y0+2*q*(1-q)*yc+q*q*y1;
+      if(q>=1){swing=null;perch.state='sit';impact(0.3);play('gym_land',1);say(pick(['Ta-da!','Ten out of ten.','Nailed it.','And the judges say… ten!']),2000);}}
     else{const q=Math.min(1,(t-T)/550),e=q*q*(3-2*q);swingAng=(1-e)*30*Math.sin(Math.PI*q);pos.y=yFor(w[2],HAND_BACK_Y)+(yFor(w[2],FEET_Y)-yFor(w[2],HAND_BACK_Y))*e;
       if(q>=1){swing=null;swingAng=0;perch.state='sit';impact(0.35);play('land',1);say(pick(['Ta-da!','Like a gymnast.','Stuck it!']),1800);}}
     sendPos();return;}
@@ -248,13 +257,15 @@ function physics(now,dt){
       else if(thrown&&Math.abs(vx)>0.08){vy=0;vx*=Math.pow(fresh?0.9993:0.996,dt);if(action!=='bounce')play('bounce',1);} // still skidding along the floor
       else{impact(Math.min(0.4,vy*0.35));falling=false;vy=0;vx=0;landed();}}
     sendPos();return;}
-  if(perch){const w=wins.find(o=>o[0]===perch.id);
+  if(perch){const w=wins.find(o=>o[0]===perch.id);if(perch.id!==tracked){tracked=perch.id;B.send('track-win',tracked);}
     if(!w||maximised(w)||!onScreen(w)){letGo(pick(['Hey! Where did it go?','Whoa, it vanished!']));return;}
     const x=w[1]+perch.dx-window.innerWidth/2,y=yFor(w[2],fracFor(action));
     if(Math.abs(x-pos.x)>.5||Math.abs(y-pos.y)>.5){pos.x=x;pos.y=y;sendPos();}}
 }
 // ---------------- cursor modes: watch it, or follow it along the bottom ----------------
-function watchFrame(){if(!cursor)return 7;const dx=cursor.x-midX(pos.x),dy=cursor.y-(pos.y+top0()+size.bh*0.4);
+// during games his eyes follow the ball in flight, or the snack about to land; otherwise your cursor
+const gameWatch=()=>!!game&&(game.kind==='fetch'?!!(game.ball&&game.ball.moving&&game.phase==='wait'):!!(game.snack&&Date.now()-game.snackAt<600));
+function watchFrame(){const c=gameWatch()?(game.kind==='fetch'?game.ball:game.snack):cursor;if(!c)return 7;const dx=c.x-midX(pos.x),dy=c.y-(pos.y+top0()+size.bh*0.4);
   const col=Math.max(0,Math.min(4,Math.round(2+2.4*Math.tanh(dx/(size.bw*1.4)))));const row=dy<-size.bh*0.35?0:dy>size.bh*0.35?2:1;return row*5+col;}
 function followTarget(){const half=window.innerWidth/2,m=size.bw/2;return Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,cursor.x-half));}
 function followCursor(){const snack=game&&game.kind==='snack';if(!cursor||(settings.stayPut&&!snack)||sign||away)return false;const dx=cursor.x-midX(pos.x);
@@ -272,10 +283,12 @@ let lastTick=0;setInterval(()=>{if(size&&performance.now()-lastTick>300){try{ste
 function step(now){
   const dt=Math.min(100,now-(last||now));last=now;acc+=dt;
   if(action==='watch'){acc=0;frame=watchFrame();
-    if(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*(game?0.25:1.2)))next('watch');}
+    const far=cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*(game?0.25:1.2);
+    if(game&&game.kind==='snack'?(far||!gameWatch()&&Date.now()-cursorMoved>6000):game&&game.kind==='fetch'?!gameWatch():(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&far)))next('watch');}
   else while(acc>=1000/FPS){acc-=1000/FPS;frame++;if(frame>=frames(action)){if(--loopsLeft>0)frame=0;else{frame=frames(action)-1;const done=action;next(done);}}}
   spring(dt);if(game)gameTick();
   if(perch&&perch.state==='stand'&&action.startsWith('readwalk')&&!dragging)strollStep(dt);
+  if(!perch&&tracked){tracked=0;B.send('track-win',0);}
   if(!dragging&&(climb||swing||falling||perch))physics(now,dt);
   else if(targetX!==null&&isWalk(action)&&!dragging){const g=action.split('_')[0];
     if(cursorMode()==='follow'&&cursor){targetX=followTarget();const want=g+(targetX>pos.x?'_right':'_left');if(want!==action&&Math.abs(targetX-pos.x)>4)play(want,99);}
@@ -299,9 +312,11 @@ function sendPos(){if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)){B.send('
 
 // ---------------- radial menu (double-click) ----------------
 const WORK_ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
-  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Chat',()=>openChat()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
+  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Chat',()=>openChat()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['Home mode',()=>setMode('on')],['More',()=>openMore()]];
 const HOME_ITEMS=[['Notes',()=>openNotes()],['Ideas',()=>openIdeas()],['Chat',()=>openChat()],[()=>game&&game.kind==='fetch'?'Stop fetch':'Fetch',()=>toggleGame('fetch')],
-  [()=>game&&game.kind==='snack'?'Stop snacks':'Snack catch',()=>toggleGame('snack')],['Feed',()=>feed()],['My board',()=>openBoard()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
+  [()=>game&&game.kind==='snack'?'Stop snacks':'Snack catch',()=>toggleGame('snack')],['Feed',()=>feed()],['My board',()=>openBoard()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['Work mode',()=>setMode('off')],['More',()=>openMore()]];
+// switch menus by hand; More > Home mode > Auto goes back to following his day plan
+function setMode(v){saveS({home:v});say(v==='on'?'Home mode. Play time!':'Work mode. Let\'s get stuff done.',2000);}
 const items=()=>isHome()?HOME_ITEMS:WORK_ITEMS;
 function buildRadial(){radial.innerHTML='';for(const [label,fn] of items()){const b=document.createElement('button');b.className='hit';b.textContent=typeof label==='function'?label():label;
   b.onclick=e=>{e.stopPropagation();closeRadial();fn();};radial.append(b);}}
@@ -430,9 +445,12 @@ function layout(){
   const r=cv.getBoundingClientRect(),top=r.top+size.bh*0.04;
   bubble.style.bottom=(window.innerHeight-top+8)+'px';
   panel.style.bottom=(window.innerHeight-top+8)+'px';
+  // never taller than the room above his head, so the header can't slide off the top; long panels scroll inside
+  panel.style.maxHeight=Math.max(160,top-18)+'px';panel.style.overflowY='auto';
   meters.style.bottom=(window.innerHeight-top+8)+'px';
-  if(panelOpen()&&bubble.classList.contains('show'))bubble.style.bottom=(window.innerHeight-top+panel.offsetHeight+18)+'px';
+  if(panelOpen()&&bubble.classList.contains('show')){const bb=window.innerHeight-top+panel.offsetHeight+18;bubble.style.bottom=bb+'px';bubble.style.visibility=bb+bubble.offsetHeight>window.innerHeight-4?'hidden':'';}
   else if(meters.classList.contains('show'))bubble.style.bottom=(window.innerHeight-top+meters.offsetHeight+16)+'px';
+  if(!panelOpen())bubble.style.visibility='';
   chip.style.bottom=(size.bh*0.45)+'px';chip.style.right=Math.max(8,(window.innerWidth-size.bw)/2-60)+'px';
   showBoard();
 }
@@ -683,7 +701,8 @@ function gameNext(finished){
   if(game.phase==='wait'){play(pick(['look','idle','hop','look']),1);return true;}
   return false;}
 B.on('play-ev',e=>{if(!e)return;if(e.type==='closed'){if(game){game=null;play('look',1);}return;}if(!game)return;
-  if(e.type==='ball'){game.ball=e;if(game.phase==='wait'&&e.thrown&&e.moving){game.phase='chase';game.since=Date.now();game.touched=Date.now();say(pick(['Ooh!','Wheee!','I\'ll get it!']),1000);gameTick();}}
+  if(e.type==='snackpos'){game.snack={x:e.x,y:e.y};game.snackAt=Date.now();if(!isWalk(action)&&action!=='watch'&&!action.startsWith('turn_'))play('watch');return;}
+  if(e.type==='ball'){game.ball=e;if(game.phase==='wait'&&e.moving&&!e.thrown&&action!=='watch'&&!isWalk(action))play('watch');if(game.phase==='wait'&&e.thrown&&e.moving){game.phase='chase';game.since=Date.now();game.touched=Date.now();say(pick(['Ooh!','Wheee!','I\'ll get it!']),1000);gameTick();}}
   else if(e.type==='grab'){game.touched=Date.now();if(game.phase!=='wait'){game.phase='wait';targetX=null;play('look',1);}}
   else if(e.type==='snack'){game.score=e.score;game.left=e.left;if(e.caught){love(1.5);if(Math.random()<.35)say(pick(['Nom!','Yum!','Mmm!','Crunch!']),700);}}
   else if(e.type==='over'){const n=e.score||0,best=settings.snackBest||0;game=null;B.send('play-stop');targetX=null;bump('snacks',n);love(Math.min(25,n*2),'play');
@@ -782,7 +801,7 @@ function openChat(){chatLog=(settings.chat||[]).slice(-6);
       else btn(r,'Give him a real brain (1.1 GB)',()=>{B.invoke('brain-download').then(ok=>{refreshBrain();say(ok?'Whoa. I can THINK now.':'Brain download hiccup. Try again later?',3000);});say('Downloading my brain… watch the ring!',3000);setTimeout(openChat,300);},'p');
       btn(r,'Memories',()=>openMemories());}
     if(!chatLog.length)el('div',{className:'hint',textContent:'Say hi! Try "how are you", "what do you like", "remind me in 10 min to stretch", "idea: …", "eat a salad", "play fetch", "tell me a joke".'},p);
-    const inp=el('input',{type:'text',placeholder:'Type to Bunny and press Enter',maxLength:200},p);
+    const inp=el('input',{type:'text',placeholder:'Type to Bunny and press Enter',maxLength:200},p);setTimeout(()=>{panel.scrollTop=panel.scrollHeight;},0);
     inp.onkeydown=async e=>{if(e.key==='Enter'&&inp.value.trim()&&!thinking){const q=inp.value.trim();inp.value='';const a=await reply(q);const log=[...(settings.chat||[]),{me:1,t:q},{t:a}].slice(-30);saveS({chat:log});if(panelOpen())openChat();say(a,Math.min(9000,2500+a.length*45));}
       if(e.key==='Escape')closePanel();};
     setTimeout(()=>inp.focus(),60);},true);}
@@ -865,6 +884,9 @@ function recover(a){if(a)area=a;if(!area||!Number.isFinite(groundY())){B.invoke(
   pos.x=Number.isFinite(pos.x)?Math.max(area.x,Math.min(area.x+area.width-window.innerWidth,pos.x)):area.x+area.width*0.7-window.innerWidth/2;pos.y=groundY();sentX=NaN;sendPos();drawn='';play('look',1);}
 B.on('rescue',r=>recover(r&&r.area));
 B.on('area',a=>{area=a;if(perch||falling||climb)return;pos.y=groundY();sendPos();});
+B.on('win-rect',r=>{if(!r)return;const i=wins.findIndex(o=>o[0]===r[0]);if(i<0)return;wins[i]=[...r.slice(0,5),wins[i][5],wins[i][6]];
+  // move with the window the moment it moves, rather than on his next frame
+  if(perch&&perch.id===r[0]&&!dragging&&!climb&&!swing&&!maximised(wins[i])){pos.x=r[1]+perch.dx-window.innerWidth/2;pos.y=yFor(r[2],fracFor(action));sendPos();}});
 B.on('windows',list=>{wins=list||[];const pc=perchCtx();if(pc&&(pc.title!==wk.title||pc.proc!==wk.proc))onContext(fgCtx);else if(!pc&&(wk.title!==fgCtx.title||wk.proc!==fgCtx.proc))onContext(fgCtx);});
 B.on('cursor',c=>{if(!cursor||Math.abs(c.x-cursor.x)>2||Math.abs(c.y-cursor.y)>2)cursorMoved=Date.now();cursor=c;});
 B.on('settings',s=>{settings=s.settings;resize(s.size);

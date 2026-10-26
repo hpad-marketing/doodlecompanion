@@ -111,7 +111,7 @@ ipcMain.on('cursor-mode',()=>applyCursor());
 ipcMain.on('windows-mode',()=>applyWindows());
 
 // ---- what's on screen: your open windows (for grabbing and perching) and the cursor (for watching and following) ----
-let winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0,ctxLast='';
+let tracking='0',winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0,ctxLast='';
 const cmdFile=()=>path.join(app.getPath('temp'),'bunny-cmd-'+process.pid+'.txt');
 const toDip=([id,l,t,r,b,title,proc])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height,title||'',proc||''];};
 // The watcher always runs on Windows: window climbing can be switched off, but he still notices what you're working in.
@@ -119,15 +119,19 @@ function applyWindows(){
   if(process.platform!=='win32'){toPet('windows',[]);return;}
   if(winProc){winLast='';if(S.windows===false)toPet('windows',[]);return;}
   try{winProc=spawn('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'windows.ps1'),String(process.pid),cmdFile()],{windowsHide:true});}catch{winProc=null;return;}
+  if(tracking!=='0')try{fs.appendFileSync(cmdFile(),`track ${tracking}\n`);}catch{}
   let buf='';winProc.stdout.setEncoding('utf8');
   winProc.stdout.on('data',d=>{buf+=d;let i;while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line||line===winLast)continue;winLast=line;
-    try{const o=JSON.parse(line),list=Array.isArray(o)?o.map(toDip):(o.w||[]).map(toDip);
+    try{const o=JSON.parse(line);if(o.t){toPet('win-rect',toDip(o.t));continue;}const list=Array.isArray(o)?o.map(toDip):(o.w||[]).map(toDip);
       const ids=new Set(list.map(w=>w[0])),gone=[...winIds].some(id=>!ids.has(id));winIds=ids;toPet('windows',S.windows===false?[]:list);winFails=0;if(gone&&pet&&!pet.isDestroyed()&&(!pet.isVisible()||pet.isMinimized()))reassert('a window closed or minimised');
       if(!Array.isArray(o)){const c={title:String(o.fg&&o.fg.t||'').slice(0,200),proc:String(o.fg&&o.fg.p||'').slice(0,60),pip:o.pip?toDip(o.pip):null},k=JSON.stringify(c);if(k!==ctxLast){ctxLast=k;toPet('context',c);}}
       if(++winLogged<60)log('windows '+JSON.stringify(list).slice(0,400));}catch(e){log('windows parse: '+e.message);}}});
   winProc.stderr.on('data',d=>log('windows.ps1: '+String(d).slice(0,300)));
   winProc.on('exit',()=>{winProc=null;if(++winFails<5)setTimeout(applyWindows,3000);});
 }
+// while he sits on a window, its position is watched about 60 times a second so he moves with it as you drag it
+ipcMain.on('track-win',(_e,id)=>{const v=String(id||0).replace(/\D/g,'')||'0';if(v===tracking||process.platform!=='win32')return;tracking=v;
+  try{fs.appendFileSync(cmdFile(),`track ${v}\n`);}catch(e){log('track-win: '+e.message);}});
 // carrying a picture-in-picture video: Bunny asks for it to be moved next to his hand (positions in DIP, Windows wants pixels)
 ipcMain.on('move-win',(_e,m)=>{if(process.platform!=='win32'||!m||!Number.isFinite(+m.x)||!Number.isFinite(+m.y))return;
   const p=screen.dipToScreenPoint({x:Math.round(+m.x),y:Math.round(+m.y)});
