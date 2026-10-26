@@ -776,6 +776,10 @@ function answer(q){const t=q.toLowerCase(),name=settings.userName,md=moodName(),
   love(1,'chat');return pick(['Hmm, tell me more!','Interesting… I\'ll think about that.','I\'m just a bunny, but I\'m listening.','Ha! Okay.','Say that again, but with snacks.']);}
 // ---------------- events from the app ----------------
 B.on('remind',r=>{if(sign)return say(r.text,9000);targetX=null;play(r.action,LOOPS.has(r.action)?2:1);say(r.text,9000);});
+// update ring: a buffer circle above his head while a new version downloads; it fills as files arrive
+B.on('update-progress',p=>{const u=$('upd');if(!p)return u.classList.remove('show');const r=cv.getBoundingClientRect(),d=Math.max(36,Math.round(size.bw*0.22));
+  Object.assign(u.style,{width:d+'px',height:d+'px',left:Math.round(r.left+r.width/2-d/2)+'px',top:Math.max(2,Math.round(r.top+size.bh*0.02-d))+'px'});u.classList.add('show');
+  const f=p.total?p.done/p.total:0,arc=$('updArc'),C=2*Math.PI*13;arc.setAttribute('stroke-dasharray',f<0.02?'20 82':`${(f*C).toFixed(1)} ${C.toFixed(1)}`);arc.parentNode.classList.toggle('spin',f<0.02);});
 B.on('say',r=>{if(r.action&&!sign)play(r.action,1);say(r.text,r.ms);});
 B.on('do',a=>{targetX=null;if(!sign)play(a,LOOPS.has(a)?2:1);});
 B.on('sign',k=>{if(sign===k)return dropSign();holdSign(k);});

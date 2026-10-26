@@ -300,20 +300,23 @@ async function checkUpdate(manual){
   if(!UPDATE_BASE){if(manual)toPet('say',{text:'Updates aren\'t set up yet.',ms:2500});return;}
   try{
     updating=true;const m=await (await get(UPDATE_BASE+'manifest.json')).json();
-    const mine=require('./package.json').version;if(m.version===mine){if(manual)toPet('say',{text:`I'm up to date (v${mine}).`,ms:2500});return;}
+    const mine=require('./package.json').version;if(m.version===mine){updating=false;if(manual)toPet('say',{text:`I'm up to date (v${mine}).`,ms:2500});return;}
     const todo=Object.entries(m.files).filter(([f,h])=>sha(path.join(__dirname,f))!==h);
     const tmp=path.join(app.getPath('userData'),'update');fs.rmSync(tmp,{recursive:true,force:true});
     if(todo.length>20)toPet('say',{text:`Downloading v${m.version}… (${todo.length} files)`,ms:4000});log('update '+mine+' → '+m.version+': '+todo.length+' files');
-    for(const [f,h] of todo){const r=await get(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'));
+    // eight downloads at a time; the pet shows a progress ring above Bunny until the restart
+    let done=0;toPet('update-progress',{done,total:todo.length});const queue=todo.slice();
+    const worker=async()=>{while(queue.length){const [f,h]=queue.shift();const r=await get(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'));
       const buf=Buffer.from(await r.arrayBuffer());if(crypto.createHash('sha256').update(buf).digest('hex')!==h)throw new Error('bad hash '+f);
-      const out=path.join(tmp,f);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,buf);}
+      const out=path.join(tmp,f);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,buf);done++;if(done%10===0||done===todo.length)toPet('update-progress',{done,total:todo.length});}};
+    await Promise.all(Array.from({length:8},worker));
     // everything arrived intact: swap the files in, drop ones the new version no longer has, restart
     for(const [f] of todo){const dst=path.join(__dirname,f);fs.mkdirSync(path.dirname(dst),{recursive:true});fs.copyFileSync(path.join(tmp,f),dst);}
     for(const f of m.remove||[]){fs.rmSync(path.join(__dirname,f),{force:true,recursive:true});}
     fs.rmSync(tmp,{recursive:true,force:true});
     toPet('say',{text:`New tricks! Updating to v${m.version}…`,ms:2500,action:'spin'});notify('Bunny updated',`Version ${m.version}: ${m.notes||'new moves and fixes'}`);
     setTimeout(()=>{app.relaunch();app.exit(0);},2600);
-  }catch(e){updating=false;log('update failed: '+(e&&(e.stack||e.message)||e));if(manual)toPet('say',{text:'Couldn\'t reach the update server ('+String(e&&e.message||e).slice(0,60)+'). I\'ll try later.',ms:5000});}
+  }catch(e){updating=false;toPet('update-progress',null);log('update failed: '+(e&&(e.stack||e.message)||e));if(manual)toPet('say',{text:'Couldn\'t reach the update server ('+String(e&&e.message||e).slice(0,60)+'). I\'ll try later.',ms:5000});}
 }
 app.on('before-quit',()=>{if(winProc)winProc.kill();});
 app.on('window-all-closed',e=>e.preventDefault&&e.preventDefault());
