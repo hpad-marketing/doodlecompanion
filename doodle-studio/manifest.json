@@ -1,0 +1,43 @@
+{
+ "version": "20261026-195127",
+ "notes": "Today's 14 new motions, and Doodle Studio now updates itself.",
+ "runtime": "44.9.0",
+ "published": "2026-10-26T15:17:36.388Z",
+ "files": {
+  "Doodle Studio.exe": {
+   "sha256": "4cb858adcd6fa12ba6b3170508a2354b82aa77ce53658e0c99b297773fd9d8b7",
+   "size": 90768384,
+   "gz": "files/4cb858adcd6fa12ba6b3170508a2354b82aa77ce53658e0c99b297773fd9d8b7.gz"
+  },
+  "desktop/resources/app/Doodle Studio.ico": {
+   "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
+   "size": 29052,
+   "gz": "files/552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233.gz"
+  },
+  "desktop/resources/app/exports.cjs": {
+   "sha256": "c5ca455df30f8e11a67ddd8d5035eb73ca4bf5279574db02f5c56864dde800cc",
+   "size": 5514,
+   "gz": "files/c5ca455df30f8e11a67ddd8d5035eb73ca4bf5279574db02f5c56864dde800cc.gz"
+  },
+  "desktop/resources/app/main.cjs": {
+   "sha256": "a3b7cd8ca59414470c67947cff84e87bfeb46f580f3a24c5b1f121ddc800d163",
+   "size": 7929,
+   "gz": "files/a3b7cd8ca59414470c67947cff84e87bfeb46f580f3a24c5b1f121ddc800d163.gz"
+  },
+  "desktop/resources/app/package.json": {
+   "sha256": "9ec00530dd2e2955f0d814fd1ed20b70dff0d647e098b819c46582a4e744196e",
+   "size": 135,
+   "gz": "files/9ec00530dd2e2955f0d814fd1ed20b70dff0d647e098b819c46582a4e744196e.gz"
+  },
+  "desktop/resources/app/preload.cjs": {
+   "sha256": "68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8",
+   "size": 694,
+   "gz": "files/68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8.gz"
+  },
+  "desktop/resources/app/updater.cjs": {
+   "sha256": "668e3ad2821ca55ee3060b501bd1da23237bda6d006679d9d5774d1c6634dd97",
+   "size": 5710,
+   "gz": "files/668e3ad2821ca55ee3060b501bd1da23237bda6d006679d9d5774d1c6634dd97.gz"
+  }
+ }
+}
