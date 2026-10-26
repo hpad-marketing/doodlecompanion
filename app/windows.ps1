@@ -1,5 +1,5 @@
 # Tells Bunny what's on screen, one JSON line every 500 ms, in physical pixels:
-#   {"w":[[id,left,top,right,bottom],...],"fg":{"t":"window title","p":"process name"},"pip":[id,left,top,right,bottom] or null}
+#   {"w":[[id,left,top,right,bottom,"title","process"],...],"fg":{"t":"window title","p":"process name"},"pip":[id,left,top,right,bottom] or null}
 # w lists the visible app windows, top-most first, so he can grab their top edges and sit on them. It skips minimised,
 # cloaked, tool and untitled windows, the desktop, the taskbar, picture-in-picture players and Bunny's own windows
 # (process id in $args[0]). fg is the window you're working in, so he can react to it. pip is a picture-in-picture video.
@@ -28,6 +28,9 @@ public static class BunnyWins{
   static string Esc(string s){var b=new StringBuilder();foreach(char c in s){if(c=='"'||c=='\\')b.Append('\\').Append(c);else if(c<32)b.Append(' ');else b.Append(c);}return b.ToString();}
   static bool IsPip(string t){t=t.ToLowerInvariant();return t.Contains("picture in picture")||t.Contains("picture-in-picture");}
   static string Rect(IntPtr h,RECT r){return "["+h.ToInt64()+","+r.L+","+r.T+","+r.R+","+r.B+"]";}
+  // process names are cached by process id, so naming every window twice a second stays cheap
+  static System.Collections.Generic.Dictionary<uint,string> procs=new System.Collections.Generic.Dictionary<uint,string>();
+  static string Proc(uint pid){string n;if(procs.TryGetValue(pid,out n))return n;try{n=System.Diagnostics.Process.GetProcessById((int)pid).ProcessName;}catch{n="";}if(procs.Count>300)procs.Clear();procs[pid]=n;return n;}
   // a picture-in-picture video is moved by its window rect, which can sit a few pixels outside its visible frame
   public static void Move(long id,int x,int y){var h=new IntPtr(id);RECT vis,win;
     if(DwmGetWindowAttribute(h,9,out vis,16)!=0||!GetWindowRect(h,out win))return;
@@ -46,11 +49,12 @@ public static class BunnyWins{
       var c=new StringBuilder(64);GetClassName(h,c,64);var cn=c.ToString();
       if(cn=="Progman"||cn=="WorkerW"||cn=="Shell_TrayWnd"||cn=="Shell_SecondaryTrayWnd")return true;
       if(r.R-r.L<160||r.B-r.T<100)return true;
-      sb.Append(first?"":",").Append(Rect(h,r));first=false;
+      var t=Title(h);if(t.Length>120)t=t.Substring(0,120);
+      sb.Append(first?"":",").Append("["+h.ToInt64()+","+r.L+","+r.T+","+r.R+","+r.B+",\""+Esc(t)+"\",\""+Esc(Proc(pid))+"\"]");first=false;
       return true;},IntPtr.Zero);
     string ft="",fp="";var fg=GetForegroundWindow();
     if(fg!=IntPtr.Zero){ft=Title(fg);uint fpid;GetWindowThreadProcessId(fg,out fpid);
-      if(fpid!=self){try{fp=System.Diagnostics.Process.GetProcessById((int)fpid).ProcessName;}catch{}}else ft="";}
+      if(fpid!=self)fp=Proc(fpid);else ft="";}
     return sb.Append("],\"fg\":{\"t\":\"").Append(Esc(ft)).Append("\",\"p\":\"").Append(Esc(fp)).Append("\"},\"pip\":").Append(pip).Append("}").ToString();}
 }
 "@

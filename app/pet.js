@@ -2,19 +2,19 @@
 // notebook, board (your own words), lunch/tea/meeting signs, focus timers and water log.
 const B=window.bunny,$=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d',{willReadFrequently:true}),bubble=$('bubble'),chip=$('chip'),board=$('board'),radial=$('radial'),panel=$('panel'),meters=$('meters'),fx=$('fx');
-const GAITS={walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5};
-const isWalk=a=>/^(walk|march|jog|tiptoe|skip)_(right|left)$/.test(a);
-const FPS=12,LOOPS=new Set(['sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
+const GAITS={walk:1,march:1.05,jog:1.9,tiptoe:0.5,skip:1.5,prance:1.3,naruto:2.8};
+const isWalk=a=>/^(walk|march|jog|tiptoe|skip|prance|naruto)_(right|left)$/.test(a);
+const FPS=12,LOOPS=new Set(['flop','readwalk','guitar','dance_twirl','dance_topdown','dance_disco','dance_flip','dance_wiggle','sad','happy','popcorn','paint','robot','hold_pip','idle','scratch','read','sleep','wave','dance','look','dangle','write','sign','fall','hang','hang_back','sit_idle','sit_look','sit_read','sit_snooze',
   ...Object.keys(GAITS).flatMap(g=>[g+'_right',g+'_left'])]);
 // where things sit in a frame, as fractions of its height: hands while hanging, feet when standing, seat when sitting
-const HAND_Y=0.728,HAND_BACK_Y=0.742,FEET_Y=0.933,SEAT_Y=0.89;
+const HAND_Y=0.728,HAND_BACK_Y=0.742,FEET_Y=0.936,SEAT_Y=0.89;
 let meta={},size,settings,area,pos={x:0,y:0},action='idle',frame=0,loopsLeft=2,acc=0,last=0,targetX=null,falling=false,vy=0,away=false,
   focus={mode:'off'},meeting=null,bubbleUntil=0,sign=null,bannerDismissed=0,lastActs=[],routine=null,nextThought=0,
   wins=[],perch=null,fallFrom=0,skipWin=null,cursor=null,cursorMoved=0,climb=null;
 let cache=new Map(),oldCache=null,oldTimer=0;let cacheW=0;
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function frames(a){return meta[a]?.frames||1;}
-const KEEP=new Set(['idle','fall','land','bounce','look','dangle']);
+const KEEP=new Set(['idle','fall','land','bounce','look','dangle','flop','pushup']);
 function load(a){if(cache.has(a)){const v=cache.get(a);cache.delete(a);cache.set(a,v);return v;}
   const list=new Array(frames(a)).fill(null),w=cv.width,h=cv.height;cache.set(a,list);
   for(let k=0;k<list.length;k++){const im=new Image();im.src=`frames/${a}/${String(k).padStart(3,'0')}.webp`;
@@ -26,9 +26,15 @@ function load(a){if(cache.has(a)){const v=cache.get(a);cache.delete(a);cache.set
 function img(a,i){return load(a)[i]||(oldCache&&oldCache.get(a)?.[i]);}
 function resetFrames(){if(oldCache)for(const l of oldCache.values())l.forEach(b=>b&&b.close());oldCache=cache;cache=new Map();cacheW=cv.width;drawn='';for(const a of KEEP)load(a);
   clearTimeout(oldTimer);oldTimer=setTimeout(()=>{if(oldCache)for(const l of oldCache.values())l.forEach(b=>b&&b.close());oldCache=null;drawn='';},2500);}
-function play(a,loops){if(!meta[a])a='idle';action=a;frame=0;acc=0;loopsLeft=LOOPS.has(a)?(loops??2+Math.floor(Math.random()*3)):1;img(a,0);showBoard();}
+let pendingWalk=null;
+const DANCES=['dance','dance_twirl','dance_topdown','dance_disco','dance_flip','dance_wiggle'];
+function play(a,loops){if(a==='dance')a=pick(DANCES.filter(d=>meta[d]));if(!meta[a])a='idle';
+  // changing walking direction: a quick full-body turn first, then the walk carries on
+  if(isWalk(a)&&isWalk(action)&&a.split('_')[1]!==action.split('_')[1]&&meta['turn_'+a.split('_')[1]]){pendingWalk=[a,loops];a='turn_'+a.split('_')[1];loops=1;}
+  else if(!a.startsWith('turn_'))pendingWalk=null;
+  action=a;frame=0;acc=0;loopsLeft=LOOPS.has(a)?(loops??2+Math.floor(Math.random()*3)):1;img(a,0);showBoard();}
 function say(text,ms=3500){bubble.textContent=text;bubble.classList.add('show');bubbleUntil=performance.now()+ms;layout();}
-function groundY(){return area.y+area.height-window.innerHeight;}
+function groundY(){return area.y+area.height-window.innerHeight+Math.floor(size.bh*0.064);}
 function mins(){const d=new Date();return d.getHours()*60+d.getMinutes();}
 // his day: every time comes from your schedule in settings
 const tm=s=>{const [h,mm]=String(s).split(':').map(Number);return (h||0)*60+(mm||0);};
@@ -68,7 +74,15 @@ function ambient(){
 function next(finished){
   if(dragging){play('dangle',50);return;}
   if(falling){play(vy<0?'bounce':'fall',vy<0?1:99);return;}
-  if(perch&&perch.state==='hang'){Math.random()<.75?startClimb():letGo('Nope, can\'t hold on!');return;}
+  if(finished&&finished.startsWith('turn_')&&pendingWalk&&targetX!==null){const [w,l]=pendingWalk;pendingWalk=null;play(w,l);return;}
+  if(finished==='flop'){play('pushup',1);return;}
+  if(finished==='pushup'){if(perch){perch.state='sit';play('sit_look',1);say(pick(['Made it!','Ta-da. Totally meant that.','Phew. Comfy up here.']),2000);}
+    else{play('look',1);say(pick(['I\'m okay!','Nobody saw that.','Ten out of ten landing.','Who moved the floor?']),2000);}return;}
+  if(perch&&perch.state==='hang'){if(finished==='hang1_back'){play('hang_back',1);say(pick(['Two hands!','Hnnngh…','Hold… on…']),1200);return;}
+    Math.random()<.8?startClimb():letGo('Nope, can\'t hold on!');return;}
+  if(perch&&perch.state==='teeter'&&finished&&finished.startsWith('teeter_')){teeterEnd();return;}
+  if(perch&&perch.state==='stand'&&action==='readwalk'){play('readwalk',99);return;}
+  if(perch&&perch.state==='sit'&&!sign&&!hold&&finished&&finished.startsWith('sit_')&&Math.random()<.18){strollOnWindow();return;}
   if(game&&gameNext(finished))return;
   if(sign){play('sign',99);return;}
   if(hold){play('hold_pip',99);return;}
@@ -82,8 +96,8 @@ const cursorMode=()=>game?(game.kind==='snack'?'follow':'off'):settings.cursor||
 function gait(){const m=mins();if(settings.nightSleep&&night())return 'tiptoe';const mg=moodGait();if(mg)return mg;
   if(inRange(m,at('lunch')-15,at('lunch')+45))return pick(['skip','skip','walk','jog']);
   if(inRange(m,at('evening'),at('bed')))return pick(['walk','tiptoe','walk']);
-  return pick(['walk','walk','march','jog','tiptoe','skip']);}
-function walkTo(x,g){targetX=x;play((g||gait())+(targetX>pos.x?'_right':'_left'),99);}
+  return pick(['walk','walk','march','jog','tiptoe','skip','prance','naruto']);}
+function walkTo(x,g){targetX=x;if(!g&&Math.abs(x-pos.x)>area.width*0.4&&!(settings.nightSleep&&night())&&Math.random()<.35)g='naruto';play((g||gait())+(targetX>pos.x?'_right':'_left'),99);}
 function walkSomewhere(){const margin=20,span=area.width-window.innerWidth-2*margin;walkTo(area.x+margin+Math.random()*Math.max(1,span));}
 
 // ---------------- signs: lunch, tea, meeting and your own board ----------------
@@ -124,7 +138,7 @@ const top0=()=>window.innerHeight-size.bh;
 const handLine=y=>y+top0()+size.bh*HAND_BACK_Y;
 const midX=x=>x+window.innerWidth/2;
 const yFor=(edge,frac)=>edge-top0()-size.bh*frac;
-const fracFor=a=>a==='hang'?HAND_Y:(a==='hang_back'||a==='climb_back')?HAND_BACK_Y:(a.startsWith('sit_')||a==='perch_turn')?SEAT_Y:FEET_Y;
+const fracFor=a=>a==='hang'?HAND_Y:(a==='hang_back'||a==='hang1_back'||a==='climb_back')?HAND_BACK_Y:(a.startsWith('sit_')||a==='perch_turn')?SEAT_Y:FEET_Y;
 const onScreen=w=>area&&w[3]>area.x+40&&w[1]<area.x+area.width-40&&w[2]>area.y-20&&w[2]<area.y+area.height-40;
 function clampX(){const half=window.innerWidth/2,m=size.bw/2;pos.x=Math.max(area.x-half+m,Math.min(area.x+area.width-half-m,pos.x));}
 function maximised(w){return area&&w[1]<=area.x+6&&w[2]<=area.y+6&&w[3]>=area.x+area.width-6;}
@@ -136,37 +150,72 @@ function ledgeBetween(a,b){if(settings.windows===false)return null;const cx=midX
 let bounces=0;
 // squash, stretch and tilt are springs on the canvas, so every drop and bounce wobbles a little differently
 let walls=0,thrown=false,thrownAt=0,vx=0,sq=0,sqv=0,tilt=0,tiltv=0,trail=[];
-function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);
+let lie=0,lieDir=1,faceplant=0;
+// how flat he lies: flat while flopped; during the push-up it follows his arms as they press him up
+function lieTarget(){if(action==='flop')return 90;if(action!=='pushup')return 0;const p=frame/Math.max(1,frames('pushup')-1),L=(a,b,x)=>a+(b-a)*Math.max(0,Math.min(1,x));
+  return p<0.2?90:p<0.6?L(90,55,(p-0.2)/0.4):p<0.8?L(55,12,(p-0.6)/0.2):L(12,0,(p-0.8)/0.12);}
+function spring(dt){if(wheelBw!==null)return;const t=Math.min(0.05,dt/1000);const lt=lieTarget();lie+=(lt-lie)*Math.min(1,dt*(lt>lie?0.03:0.012));if(Math.abs(lt-lie)<0.2)lie=lt;
   const stretch=falling?Math.max(-0.16,Math.min(0.12,-Math.abs(vy)*0.07)):0,lean=falling?Math.max(-10,Math.min(10,vx*24)):0;
   sqv+=(-170*(sq-stretch)-11*sqv)*t;sq+=sqv*t;tiltv+=(-120*(tilt-lean)-9*tiltv)*t;tilt+=tiltv*t;
-  if(Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
-  const sy=1-sq,sx=1+sq*0.55;cv.style.transform=`translateX(-50%) rotate(${tilt.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})`;}
+  const chub=Math.max(0,bodyOf())/100,fit=Math.max(0,-bodyOf())/100,bx=1+0.07*chub+0.025*fit,by=1-0.02*chub+0.025*fit,drop=/^naruto_/.test(action)?Math.round(0.046*size.bh):0;
+  if(!drop&&Math.abs(sq)<0.002&&Math.abs(sqv)<0.01&&Math.abs(tilt)<0.05&&Math.abs(tiltv)<0.05&&!falling&&!lie&&bx===1&&by===1){if(cv.style.transform!==''){sq=sqv=tilt=tiltv=0;cv.style.transform='';}return;}
+  const sy=1-sq,sx=1+sq*0.55,sn=Math.sin(lie*Math.PI/180);
+  const flat=lie?`translate(${(-lieDir*0.42*size.bh*sn).toFixed(1)}px,${(-0.2*size.bw*sn).toFixed(1)}px) rotate(${(lieDir*lie).toFixed(2)}deg)${lieDir<0?' scaleX(-1)':''} `:'';
+  cv.style.transform=`translateX(-50%) ${drop?`translateY(${drop}px) `:''}${flat}rotate(${tilt.toFixed(2)}deg) scale(${(sx*bx).toFixed(3)},${(sy*by).toFixed(3)})`;}
 function impact(v){sqv+=v*4.2;tiltv+=(Math.random()-.5)*60;}
 function startFall(msg,throwV){falling=true;vy=throwV?Math.max(-0.9,Math.min(0.6,throwV.y)):0;vx=throwV?Math.max(-1.2,Math.min(1.2,throwV.x)):0;bounces=0;walls=0;thrown=Math.abs(vx)>0.55||vy<-0.5;thrownAt=performance.now();fallFrom=pos.y;targetX=null;clampX();play('fall',99);if(msg)say(msg,1500);}
 function catchLedge(w){B.send('log','caught '+JSON.stringify(w));falling=false;vy=0;perch={id:w[0],dx:midX(pos.x)-w[1],state:'hang'};pos.y=yFor(w[2],HAND_BACK_Y);
-  play('hang_back',2);say(pick(['Gotcha!','Grabbed it!','Phew, caught it!']),1500);}
+  play('hang1_back',1);say(pick(['Gotcha!','One hand!','Whoa whoa whoa!']),1500);}
 function startClimb(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='climb';
-  climb={t0:performance.now(),ms:1500,y0:pos.y,y1:yFor(w[2],SEAT_Y)};play('climb_back',1);}
+  climb={t0:performance.now(),ms:3000,y0:pos.y,y1:yFor(w[2],FEET_Y)};play('climb_back',1);}
 function letGo(msg){if(!perch)return;B.send('perch-lost');B.send('log','let go of '+perch.id+' at '+Math.round(pos.x)+','+Math.round(pos.y));skipWin=perch.id;perch=null;climb=null;startFall(msg);}
 function landed(){B.send('log','landed at '+Math.round(pos.x)+','+Math.round(pos.y)+' ground '+Math.round(groundY()));skipWin=null;const h=pos.y-fallFrom;
   if(sign){play('sign',99);return;}
-  if(thrown&&(walls>0||bounces>=3)){thrown=false;routine=['tired'];play('land',1);say(pick(['I need a minute…','Never… again…','*wheeze*','So… dizzy…']),3000);return;}
-  if(h>size.bh*0.5||bounces){play('land',1);say(pick(['Ow… my tail.','I\'m okay! I\'m okay.','Ten out of ten landing.','Who moved the floor?','Stars. I see stars.']),2000);}
+  const dir=faceplant?faceplant:vx?Math.sign(vx):Math.random()<.5?1:-1;
+  if(faceplant||(thrown&&(walls>0||bounces>=3))||h>size.bh*0.5||bounces>=2){faceplant=0;thrown=false;flop(dir,pick(['Ow… my tail.','*face in floor*','So… dizzy…','Stars. I see stars.','Mmmph.']));return;}
+  if(h>size.bh*0.25||bounces){play('land',1);say(pick(['Oof!','I\'m okay! I\'m okay.']),1600);}
   else play(pick(['hop','look']),1);}
+
+// ---- flat on his face, then a push-up; teetering on a window's edge; strolling along a window with his nose in a book ----
+function flop(dir,msg){lieDir=dir||1;targetX=null;play('flop',2);if(msg)say(msg,2200);}
+const feetLine=y=>y+top0()+size.bh*FEET_Y;
+// his feet come down on top of a window close to one of its ends: he lands, but only just
+function edgeBetween(a,b){if(settings.windows===false)return null;const cx=midX(pos.x),near=size.bw*0.5;
+  for(let i=0;i<wins.length;i++){const w=wins[i];if(w[0]===skipWin||maximised(w)||!onScreen(w))continue;
+    if(w[2]>a&&w[2]<=b+1&&cx>w[1]+size.bw*0.06&&cx<w[3]-size.bw*0.06&&!covered(i,cx,w[2]-3)){
+      if(cx-w[1]<near)return {w,side:-1};if(w[3]-cx<near)return {w,side:1};}}
+  return null;}
+function teeterOn(w,side){falling=false;vy=0;vx=0;perch={id:w[0],dx:midX(pos.x)-w[1],state:'teeter',side};pos.y=yFor(w[2],FEET_Y);
+  play(side>0?'teeter_r':'teeter_l',1);say(pick(['Whoa-whoa-whoa!','Balance… balance…','Nope nope nope!']),1600);}
+// heavier from overfeeding, he's likelier to go over the edge
+function teeterEnd(){const side=perch.side||1,chance=Math.max(0.1,0.35+0.5*Math.max(0,bodyOf())/100-0.2*Math.max(0,-bodyOf())/100);
+  if(Math.random()<chance){const id=perch.id;B.send('perch-lost');skipWin=id;perch=null;faceplant=side;startFall(pick(['Aaaah!','Nooo!','Too much snack!']),{x:side*0.28,y:-0.12});return;}
+  perch.dx-=side*size.bw*0.3;perch.state='sit';play('sit_look',1);say(pick(['Phew! Caught myself.','Totally meant to do that.','Heart. Racing.']),2000);}
+function strollOnWindow(){const w=wins.find(o=>o[0]===perch.id);if(!w)return letGo();perch.state='stand';
+  perch.dir=perch.dx<(w[3]-w[1])/2?1:-1;perch.until=Date.now()+3000+Math.random()*7000;play('readwalk',99);
+  say(pick(['Just one more page…','Ooh, plot twist.','Walking and reading. Multitasking!']),2200);}
+function strollStep(dt){const w=wins.find(o=>o[0]===perch.id);if(!w)return;
+  perch.dx+=perch.dir*size.bw*0.00018*dt;const cx=w[1]+perch.dx,m=size.bw*0.14;
+  if(cx>w[3]-m||cx<w[1]+m){perch.dx=Math.max(m,Math.min(w[3]-w[1]-m,perch.dx));perch.state='teeter';perch.side=perch.dir;play(perch.dir>0?'teeter_r':'teeter_l',1);
+    say(pick(['Wait—where\'s the floor?!','Whoa whoa whoa!','Should\'ve looked up!']),1600);return;}
+  if(Date.now()>perch.until){perch.state='sit';play('sit_idle',1);}}
 function physics(now,dt){
-  if(climb){const k=Math.min(1,(now-climb.t0)/climb.ms),e=k*k*(3-2*k);pos.y=climb.y0+(climb.y1-climb.y0)*e;
-    if(k>=1){climb=null;perch.state='sit';play('perch_turn',1);say(pick(['Nice view from up here.','My window now.','Comfy!']),2200);}
+  if(climb){const k=Math.min(1,(now-climb.t0)/climb.ms),q=Math.max(0,Math.min(1,(k-0.68)/0.32)),e=q*q*(3-2*q);pos.y=climb.y0+(climb.y1-climb.y0)*e;
+    // he struggles at the edge first, and only the last big pull gets him up, where he flops flat and pushes himself up
+    if(k>=1){climb=null;perch.state='stand';lieDir=Math.random()<.5?1:-1;play('flop',1);say(pick(['*pant pant*','Made… it…','Never… again…']),2000);}
     sendPos();return;}
   if(falling&&(!Number.isFinite(groundY())||pos.y>groundY()+50)){B.send('log','fell past the ground '+JSON.stringify({pos,area,h:window.innerHeight}));recover();return;}
-  if(falling){const a=handLine(pos.y);vy+=0.0022*dt;pos.y+=vy*dt;
+  if(falling){const a=handLine(pos.y),fy0=pos.y;vy+=0.0022*dt;pos.y+=vy*dt;
     // a sideways throw carries him along, slowed by air and bounced off the screen edges
     pos.x+=vx*dt;vx*=Math.pow(thrown?0.99985:0.9992,dt);const half=window.innerWidth/2,m=size.bw/2,lo=area.x-half+m,hi=area.x+area.width-half-m;
     // thrown hard, he pinballs: walls and the top of the screen send him back with most of his speed
     const keep=thrown?0.86:0.5,wallHit=v=>{walls++;impact(Math.min(0.5,Math.abs(v)*0.5));tiltv+=(v>0?-1:1)*90;if(walls===1&&thrown)say(pick(['Wheee!','Whoaaa!','Not the wall!','Boing boing!']),1200);};
     if(pos.x<lo){pos.x=lo;wallHit(vx);vx=Math.abs(vx)*keep;}else if(pos.x>hi){pos.x=hi;wallHit(vx);vx=-Math.abs(vx)*keep;}
     const ceil=area.y-top0()-size.bh*0.18;if(pos.y<ceil&&vy<0){pos.y=ceil;vy=-vy*0.6;impact(0.3);walls++;}
-    const w=vy>0?ledgeBetween(a,handLine(pos.y)):null;
-    if(w){impact(Math.min(0.5,vy*0.3));catchLedge(w);}
+    const fe=vy>0&&!thrown?edgeBetween(feetLine(fy0),feetLine(pos.y)):null;
+    const w=!fe&&vy>0?ledgeBetween(a,handLine(pos.y)):null;
+    if(fe){impact(Math.min(0.5,vy*0.3));teeterOn(fe.w,fe.side);}
+    else if(w){impact(Math.min(0.5,vy*0.3));catchLedge(w);}
     else if(pos.y>=groundY()){pos.y=groundY();
       // a real drop bounces a couple of times, each lower and a little different, before he settles
       const fresh=thrown&&walls<4&&now-thrownAt<6000,maxB=thrown?10:3,minV=thrown?0.22:0.42;
@@ -203,6 +252,7 @@ function step(now){
     if(cursorMode()==='off'||Date.now()-cursorMoved>6000||(cursorMode()==='follow'&&cursor&&Math.abs(cursor.x-midX(pos.x))>size.bw*(game?0.25:1.2)))next('watch');}
   else while(acc>=1000/FPS){acc-=1000/FPS;frame++;if(frame>=frames(action)){if(--loopsLeft>0)frame=0;else{frame=frames(action)-1;const done=action;next(done);}}}
   spring(dt);if(game)gameTick();
+  if(perch&&perch.state==='stand'&&action==='readwalk'&&!dragging)strollStep(dt);
   if(!dragging&&(climb||falling||perch))physics(now,dt);
   else if(targetX!==null&&isWalk(action)&&!dragging){const g=action.split('_')[0];
     if(cursorMode()==='follow'&&cursor){targetX=followTarget();const want=g+(targetX>pos.x?'_right':'_left');if(want!==action&&Math.abs(targetX-pos.x)>4)play(want,99);}
@@ -226,8 +276,8 @@ function sendPos(){if(!Number.isFinite(pos.x)||!Number.isFinite(pos.y)){B.send('
 
 // ---------------- radial menu (double-click) ----------------
 const WORK_ITEMS=[['Notes',()=>openNotes()],['My board',()=>openBoard()],['Lunch',()=>holdSign('lunch')],['Tea',()=>holdSign('tea')],
-  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
-const HOME_ITEMS=[['Notes',()=>openNotes()],['Ideas',()=>openIdeas()],[()=>doodle?'Stop doodle':'Doodle',()=>doodle?stopDoodle():openDoodle()],[()=>game&&game.kind==='fetch'?'Stop fetch':'Fetch',()=>toggleGame('fetch')],
+  ['Meeting',()=>openMeeting()],['Focus',()=>openFocus()],['Feed',()=>feed()],['Chat',()=>openChat()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
+const HOME_ITEMS=[['Notes',()=>openNotes()],['Ideas',()=>openIdeas()],['Chat',()=>openChat()],[()=>game&&game.kind==='fetch'?'Stop fetch':'Fetch',()=>toggleGame('fetch')],
   [()=>game&&game.kind==='snack'?'Stop snacks':'Snack catch',()=>toggleGame('snack')],['Feed',()=>feed()],['My board',()=>openBoard()],['Water +1',()=>logWater()],[()=>settings.stayPut?'Roam':'Stay put',()=>toggleStay()],['More',()=>openMore()]];
 const items=()=>isHome()?HOME_ITEMS:WORK_ITEMS;
 function buildRadial(){radial.innerHTML='';for(const [label,fn] of items()){const b=document.createElement('button');b.className='hit';b.textContent=typeof label==='function'?label():label;
@@ -336,6 +386,8 @@ function openMore(){
     el('div',{className:'hint',textContent:'Home mode '+(isHome()?'(on now)':'(off now)')},p);const hm=el('div',{className:'row'},p);
     for(const [l,v] of [['Auto','auto'],['On','on'],['Off','off']])btn(hm,l,()=>{saveS({home:v});redraw();},(settings.home||'auto')===v?'on':'');
     el('div',{className:'hint',textContent:weekLine()},p);
+    el('div',{className:'hint',textContent:'His taste: '+tasteLine()},p);
+    const dr=el('div',{className:'row'},p);btn(dr,doodle?'Stop doodle':'Doodle prompt',()=>{closePanel();doodle?stopDoodle():openDoodle();},doodle?'on':'');
     const rr=el('div',{className:'row'},p);btn(rr,'Render folder…',async()=>{const d=await B.invoke('pick-render-dir');if(d)say('I\'ll watch '+d.split(/[\\/]/).pop()+' for renders.',2500);});
     btn(rr,settings.renders!==false?'Render party: on':'Render party: off',()=>{saveS({renders:settings.renders===false});redraw();},settings.renders!==false?'on':'');
     el('div',{className:'hint',textContent:'Moves'},p);const mv=el('div',{className:'row'},p);
@@ -415,22 +467,39 @@ function love(n,why){const was=moodName();mood=Math.max(0,Math.min(100,mood+n));
   if((was==='sad'||was==='blue')&&n>0&&why)say(pick(['Oh! You remembered me.','Hi… thanks for noticing me.','That helped. A lot.']),2500);
   saveMood();}
 function saveMood(force){if(!force&&Date.now()-moodSaved<120000)return;moodSaved=Date.now();saveS({mood:Math.round(mood),lastLove,fedAt,day});}
-function feed(){targetX=null;closeRadial();if(sign)dropSign();const hungry=Date.now()-fedAt>3*3600000;fedAt=Date.now();love(hungry?22:12,'food');
-  play('eat',1);say(hungry?pick(['FOOD. Thank you. I was wasting away.','Nom nom nom. You saved me.']):pick(['Ooh, a snack!','Nom!','You spoil me.']),2600);saveMood(true);}
+// food: healthy food trims him toward fit, junk rounds him out; too much of either and he's grumpy (salad again?) or sluggish
+const FOODS={salad:{act:'eat_salad',body:-8,joy:3,ok:true,say:['Crunchy! Very healthy.','Leaves. Delicious leaves.']},
+  apple:{act:'eat_apple',body:-5,joy:6,ok:true,say:['Mmm, crisp!','An apple a day…']},
+  burger:{act:'eat',body:10,joy:12,ok:false,say:['BURGER. Best day ever.','Nom nom nom!']},
+  donut:{act:'eat_donut',body:8,joy:14,ok:false,say:['Sprinkles! I mean… a donut!','Sugar rush incoming!']}};
+const bodyOf=()=>Math.max(-100,Math.min(100,+settings.body||0));
+function feed(kind){if(!kind)return openFeed();const f=FOODS[kind];targetX=null;closeRadial();closePanel();if(sign)dropSign();
+  const hungry=Date.now()-fedAt>3*3600000,stuffed=fullness()>70,diet=[...(settings.diet||[]),f.ok].slice(-6),same=diet.filter(x=>x===f.ok).length;
+  let joy=(hungry?10:0)+f.joy,msg=pick(f.say);
+  if(f.ok&&same>=4){joy=-6;msg=pick(['Salad AGAIN? I want a burger.','Healthy, healthy, healthy… *sigh*','Is this a punishment?']);}
+  if(!f.ok&&same>=4){joy=-4;msg=pick(['Ugh, I feel sluggish.','Too much junk. My tummy hurts.','Maybe something green next?']);}
+  const body=Math.max(-100,Math.min(100,bodyOf()+f.body*(stuffed&&!f.ok?1.5:1)));saveS({body,diet});
+  fedAt=Date.now();love(joy,'food');play(f.act,1);say(msg,2600);
+  if(body>45&&!f.ok)setTimeout(()=>say(pick(['Getting a bit round, aren\'t I?','Oof. Belt\'s tight.']),2500),2900);
+  else if(body<-45&&f.ok)setTimeout(()=>say(pick(['Look at these muscles!','Feeling strong!']),2500),2900);
+  saveMood(true);}
+function openFeed(){openPanel('feed','Feed me','Full '+Math.round(fullness())+'%',p=>{
+    const r=el('div',{className:'row'},p);for(const [k,l] of [['salad','Salad'],['apple','Apple'],['burger','Burger'],['donut','Donut']])btn(r,l,()=>feed(k),FOODS[k].ok?'':'p');
+    const b=bodyOf();el('div',{className:'hint',textContent:(b<-25?'He\'s looking fit.':b>25?'He\'s looking a bit round.':'He\'s in good shape.')+' Healthy food trims him, treats round him out, and too much of either makes him grumpy.'},p);});}
 // every minute: the slow drift. A couple of quiet hours without a word and he's sad; fed and fussed over, he glows.
 function moodTick(){const idle=(Date.now()-lastLove)/60000,hungry=(Date.now()-fedAt)/3600000;
   if(away||(settings.nightSleep&&night()))return;
   if(idle>25)mood-=idle>120?1.2:0.6;if(hungry>4)mood-=0.4;if(idle<10&&hungry<3)mood+=0.15;
-  mood=Math.max(0,Math.min(100,mood));saveMood();}
+  mood=Math.max(0,Math.min(100,mood));if(bodyOf()&&Math.random()<0.1)saveS({body:bodyOf()*0.97});saveMood();}
 // what kind of thing you're doing, from the active window's app and title (nothing is stored or sent anywhere)
 const CATS=[
+  ['music',/spotify|apple music|soundcloud|youtube music|wynk|gaana|jiosaavn|official (music )?video|official audio|lyric(s| video)|\(audio\)|\bft\.|\bfeat\.|remix|acoustic|unplugged|\bsong\b|playlist|live at/i,/^(spotify|applemusic)$/i],
   ['video',/youtube|netflix|prime video|hotstar|disney\+|jiocinema|vimeo|twitch|zee5|sonyliv|crunchyroll|mubi|\bvlc\b|media player|movies & tv|plex/i,/^(vlc|wmplayer|potplayer.*|mpc-hc.*|mpv|plex)$/i],
   ['design',/canva|figma|affinity|cavalry|photoshop|illustrator|after effects|premiere|procreate|krita|blender|davinci|lightroom|framer|spline/i,/^(designer|photo|publisher|affinity.*|cavalry|photoshop|illustrator|afterfx|adobe premiere pro|krita|blender|resolve|figma|indesign)$/i],
   ['chatbot',/claude|chatgpt|gemini|copilot|perplexity|deepseek|mistral|grok/i,/^(claude|chatgpt)$/i],
   ['code',/visual studio|vs code|github|stack overflow|\.py\b|\.js\b|\.ts\b/i,/^(code|devenv|idea64|pycharm64|webstorm64|sublime_text|notepad\+\+|windowsterminal|cmd|powershell)$/i],
   ['sheets',/excel|google sheets|\.xlsx|\.csv/i,/^excel$/i],
   ['mail',/outlook|gmail|inbox|mail/i,/^(outlook|olk|thunderbird)$/i],
-  ['music',/spotify|apple music|soundcloud|youtube music|wynk|gaana|jiosaavn/i,/^(spotify|applemusic)$/i],
   ['docs',/word|google docs|notion|obsidian|onenote|\.docx/i,/^(winword|notion|obsidian|onenote)$/i],
   ['slides',/powerpoint|google slides|keynote|\.pptx/i,/^powerpnt$/i],
 ];
@@ -444,12 +513,14 @@ const CTX={
   code:{act:'think',say:['Rubber duck mode. Explain it to me.','Have you tried turning it off and on?','Missing semicolon, probably.']},
   sheets:{act:'think',say:['Numbers! My favourite is 7.','Sum it up for me later.','So many little boxes.']},
   mail:{act:'write',say:['Inbox zero. You can do it.','Reply-all with caution.','Taking notes on your emails.']},
-  music:{act:'dance',say:['Is this a bop? It\'s a bop.','Turn it up!','Dance break!']},
+  music:{act:'guitar',say:['Is this a bop? It\'s a bop.','Turn it up!','I know this one! *strums*','Encore!']},
   docs:{act:'write',say:['Writing? I\'ll take notes too.','Big words. Love it.']},
   slides:{act:'read',say:['Slide 1 of many…','Bullet points, assemble!']},
 };
 // called from the windows watcher (every half second, only when something changes)
-function onContext(c){const cat=categorise(c);
+let fgCtx={title:'',proc:'',pip:null};
+function perchCtx(){if(!perch)return null;const w=wins.find(o=>o[0]===perch.id);return w&&(w[5]||w[6])?{title:w[5]||'',proc:w[6]||''}:null;}
+function onContext(c){fgCtx=c;const pc=perchCtx();if(pc)c={...c,...pc};const cat=categorise(c);
   if(c.title!==lastFg){lastFg=c.title;switchLog.push(Date.now());switchLog=switchLog.filter(t=>Date.now()-t<600000);}
   if(cat!==wk.cat){ctxSince=Date.now();ctxReacted=null;}
   wk={cat,title:c.title,proc:c.proc,pip:c.pip};
@@ -469,6 +540,7 @@ function proactive(){
   if(cursorMode()!=='off'&&Date.now()-cursorMoved<8000)return;
   const m=mins(),onFor=(Date.now()-ctxSince)/60000,hungryH=(Date.now()-fedAt)/3600000,lonelyM=(Date.now()-lastLove)/60000;
   // react to a new kind of work within a few seconds of you switching to it
+  if((wk.cat==='video'||wk.cat==='music')&&onFor>0.05&&moodName()!=='blue'&&opine(wk.title)){ctxReacted=wk.cat;return;}
   if(wk.cat&&CTX[wk.cat]&&ctxReacted!==wk.cat&&onFor>0.08){ctxReacted=wk.cat;if(moodName()!=='blue'){targetX=null;play(CTX[wk.cat].act,3);say(pick(CTX[wk.cat].say),3000);return;}}
   if(homeNudge(onFor))return;
   if(hungryH>4&&nudge('hungry',45,pick(['I\'m sooo hungry… feed me? (double-click → Feed)','*tummy rumbles* Snack, please?']),'sad'))return;
@@ -494,7 +566,7 @@ function moodThought(){const md=moodName();
   if(md==='happy'&&Math.random()<.5)return pick(['Life is good!','Best desk buddy ever.','I could dance all day!','Feeling fantastic.']);
   if(wk.cat&&CTX[wk.cat]&&Math.random()<.4)return pick(CTX[wk.cat].say);
   return pick(block().th);}
-const moodGait=()=>{const md=moodName();return md==='blue'||md==='sad'?'walk':md==='happy'&&Math.random()<.5?'skip':null;};
+const moodGait=()=>{const md=moodName();return md==='blue'||md==='sad'?'walk':md==='happy'&&Math.random()<.55?pick(['skip','prance','prance']):null;};
 // ---- carrying your picture-in-picture video: he holds its edge out to his side and it goes where he goes ----
 const PIP_HAND=[108/384,0.797];
 function handPt(){const left=(window.innerWidth-size.bw)/2;return {x:pos.x+left+size.bw*PIP_HAND[0],y:pos.y+top0()+size.bh*PIP_HAND[1]};}
@@ -523,9 +595,9 @@ const fullness=()=>Math.max(0,Math.min(100,100-(Date.now()-fedAt)/3600000*20));
 let metersTimer=0;
 // they show only while his menu is open, and flash for a moment when you feed, pet or tickle him
 function showMeters(on,ms=300){clearTimeout(metersTimer);
-  if(on){$('mHappy').style.width=Math.round(mood)+'%';$('mFull').style.width=Math.round(fullness())+'%';meters.classList.add('show');layout();}
+  if(on){$('mHappy').style.width=Math.round(mood)+'%';$('mFull').style.width=Math.round(fullness())+'%';$('mWeight').style.width=Math.round(Math.abs(bodyOf()))+'%';$('mBodyL').textContent=bodyOf()<-25?'Fit':bodyOf()>25?'Chubby':'Body';meters.classList.add('show');layout();}
   else metersTimer=setTimeout(()=>{if(!radialOpen()){meters.classList.remove('show');layout();}},ms);}
-function flashMeters(){if(radialOpen())return showMeters(true);showMeters(true);showMeters(false,2500);}
+function flashMeters(){if(radialOpen())return showMeters(true);if(panelOpen())return;showMeters(true);showMeters(false,2500);}
 // this week's tally: renders, doodles, ideas, fetches, snacks
 function weekKey(){const d=new Date(),j=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-'+Math.ceil(((d-j)/86400000+j.getDay()+1)/7);}
 function bump(k,n=1){const w=settings.week&&settings.week.k===weekKey()?{...settings.week}:{k:weekKey()};w[k]=(w[k]||0)+n;saveS({week:w});return w[k];}
@@ -561,7 +633,7 @@ function gameTick(){if(!game||game.kind!=='fetch')return;const b=game.ball,half=
   if(game.phase==='chase'&&b){const d=b.x-midX(pos.x);
     if(Math.abs(d)<size.bw*0.32&&b.ground&&Math.abs(b.vx)<0.5){game.phase='dribble';game.dir=Math.sign((b.from??midX(pos.x))-midX(pos.x))||1;B.send('play-cmd',{cmd:'dribble'});
       say(pick(['Got it!','Mine!','Coming back!']),1200);walkTo(clamp((b.from??midX(pos.x))-half),'skip');return;}
-    const tx=clamp(b.x-half);if(!isWalk(action)){if(Math.abs(tx-pos.x)>4)walkTo(tx,'jog');}
+    const tx=clamp(b.x-half);if(action.startsWith('turn_')){targetX=tx;}else if(!isWalk(action)){if(Math.abs(tx-pos.x)>4)walkTo(tx,'jog');}
     else{targetX=tx;const want='jog'+(tx>pos.x?'_right':'_left');if(want!==action&&Math.abs(tx-pos.x)>6)play(want,99);}
     if(Date.now()-game.since>25000){game.phase='wait';targetX=null;play('tired',1);say('Too far! You get it.',2200);}}
   if(game.phase==='dribble'){const dir=action.endsWith('_left')?-1:action.endsWith('_right')?1:game.dir,x=Math.round(midX(pos.x)+dir*size.bw*0.34);
@@ -633,6 +705,75 @@ function homeNudge(onFor){if(!isHome()||game||doodle)return false;const lonelyM=
   if(lonelyM>40&&!wk.cat&&nudge('play',120,pick(['Bored! Play fetch with me? (double-click → Fetch)','Snack catch? I\'m fast, promise.']),'hop'))return true;
   return false;}
 
+
+// ---- his own taste: opinions about what you watch, built up as a memory on this PC ----
+const GENRES=[['animation',/animat|cartoon|anime|pixar|doodle|odd1sout|jaiden|storyboard/i],['design',/design|illustrat|motion graphic|after effects|blender|figma|typography|logo/i],
+  ['cooking',/recipe|cook|kitchen|\bfood\b|chef|bak(e|ing)|street food/i],['gaming',/gameplay|minecraft|fortnite|\bgta\b|valorant|gaming|let'?s play|speedrun|walkthrough/i],
+  ['horror',/horror|scary|creepy|ghost|haunted|cosmic|paranormal/i],['comedy',/funny|comedy|prank|stand-?up|meme|sketch/i],['news',/\bnews\b|breaking|politic|election|debate|headlines/i],
+  ['tech',/review|unboxing|iphone|android|\btech\b|\bai\b|gadget|tutorial|how to/i],['music',/music|song|lyrics|remix|official (music )?video|official audio|acoustic|concert/i],
+  ['sports',/cricket|football|\bipl\b|highlights|\bnba\b|\bf1\b|match|goal/i],['nature',/nature|wildlife|animals|ocean|documentary|planet/i],['crime',/true crime|murder|serial|mystery|case file/i]];
+const genreOf=t=>(GENRES.find(([,re])=>re.test(t))||[null])[0];
+// first run: a personality of his own. He's a doodle, so he leans toward animation and design.
+function taste(){if(settings.taste&&Object.keys(settings.taste).length)return settings.taste;const t={};for(const [g] of GENRES)t[g]=Math.round((Math.random()*2-1)*100)/100;
+  t.animation=Math.max(t.animation,0.6);t.design=Math.max(t.design,0.4);saveS({taste:t});return t;}
+const cleanTitle=t=>(t||'').replace(/\s*[-–|]\s*(YouTube|Netflix|Prime Video|Google Chrome|Microsoft Edge|Mozilla Firefox|Brave|VLC.*)$/ig,'').replace(/^\(\d+\)\s*/,'').trim().slice(0,90);
+let lastOpined='',opineAt=0;
+function opine(title){const t=cleanTitle(title);if(!t||t===lastOpined||Date.now()-opineAt<15000)return false;lastOpined=t;opineAt=Date.now();
+  const g=genreOf(t),tv=taste(),log=[...(settings.watched||[])],past=log.find(x=>x.t===t),gl=log.filter(x=>x.g&&x.g===g);
+  let op=g?tv[g]:(Math.random()*0.6-0.3);if(past)op=op*0.5+past.op*0.5;
+  let line;
+  if(past)line=past.op>0.3?pick(['Rewatching? Yes please, I loved this.','Ooh, this one again! Good choice.']):past.op<-0.3?pick(['This again? Didn\'t love it last time.','We\'ve seen this. I\'m not a fan.']):'Haven\'t we seen this one?';
+  else if(g&&gl.length>=3)line=op>0.3?pick([`Another ${g} video! You know I love these.`,`More ${g}? Best. Taste. Ever.`]):op<-0.3?pick([`${g[0].toUpperCase()+g.slice(1)} again? Can we watch something else?`,`You really like ${g}, huh. I… don't.`]):`Lots of ${g} lately.`;
+  else line=op>0.5?pick(['Ooh, I like this already!','Yes! Good pick.','This is my kind of thing.']):op<-0.4?pick(['Hmm. Not my thing.','Really? This?','I\'ll just… look the other way.']):pick(['Okay, let\'s see where this goes.','Interesting…','Popcorn ready.']);
+  // he's shaped by what you watch together: a little warmer to what he enjoys, a little colder to what he doesn't
+  if(g){tv[g]=Math.max(-1,Math.min(1,tv[g]+(op>0?0.04:op<0?-0.03:0.01)));}
+  log.unshift({t,g,op:Math.round(op*100)/100,at:Date.now()});saveS({taste:{...tv},watched:log.slice(0,60)});
+  targetX=null;if(!sign&&!hold&&!perch){play(op>0.4?'happy':op<-0.4?pick(['turn_back','sad']):'popcorn',op>0.4?1:2);}
+  say(line,4500);if(op>0.4)love(2,'show');else if(op<-0.4)love(-2);return true;}
+function tasteLine(){const tv=taste(),e=Object.entries(tv).sort((a,b)=>b[1]-a[1]);const likes=e.filter(([,v])=>v>0.3).slice(0,3).map(([k])=>k),nope=e.filter(([,v])=>v<-0.3).slice(-2).map(([k])=>k);
+  return 'Likes '+(likes.join(', ')||'a bit of everything')+'. '+(nope.length?'Not a fan of '+nope.join(', ')+'.':'');}
+
+// ---- chat: he answers from what he knows on this PC (mood, tastes, what you watched, notes, ideas, your day) and can do things for you ----
+const JOKES=['Why did the bunny cross the road? To prove he wasn\'t chicken.','What do you call a bunny with fleas? Bugs Bunny.','I tried to draw myself once. Too many ears.',
+  'My favourite colour is ochre. Also my only colour.','I\'m not lazy, I\'m in energy-saving mode.','Why are bunnies good at maths? They multiply fast.'];
+let chatLog=[];
+function openChat(){chatLog=(settings.chat||[]).slice(-6);
+  openPanel('chat','Chat','with Bunny',p=>{const ul=el('ul',{},p);
+    for(const m of chatLog){const li=el('li',{},ul);el('span',{textContent:(m.me?'You: ':'Bunny: ')+m.t},li);}
+    if(!chatLog.length)el('div',{className:'hint',textContent:'Say hi! Try "how are you", "what do you like", "remind me in 10 min to stretch", "idea: …", "eat a salad", "play fetch", "tell me a joke".'},p);
+    const inp=el('input',{type:'text',placeholder:'Type to Bunny and press Enter',maxLength:200},p);
+    inp.onkeydown=e=>{if(e.key==='Enter'&&inp.value.trim()){const q=inp.value.trim();const a=answer(q);const log=[...(settings.chat||[]),{me:1,t:q},{t:a}].slice(-30);saveS({chat:log});openChat();say(a,Math.min(9000,2500+a.length*45));}
+      if(e.key==='Escape')closePanel();};
+    setTimeout(()=>inp.focus(),60);},true);}
+function answer(q){const t=q.toLowerCase(),name=settings.userName,md=moodName(),hi=name?`, ${name}`:'';let m;
+  const act=(a,n=1)=>{if(!sign)play(a,n);};
+  if(m=q.match(/(?:my name is|call me|i am|i'm)\s+([A-Za-z][\w'-]{1,20})$/i)){saveS({userName:m[1]});act('wave');return `Nice to meet you, ${m[1]}! I'll remember that.`;}
+  if(m=q.match(/remind me in (\d+)\s*(m|min|mins|minutes|h|hr|hrs|hours)\b\s*(?:to\s+)?(.*)/i)){const min=+m[1]*(/^h/i.test(m[2])?60:1);B.send('add-reminder',{minutes:min,text:m[3]||'Your reminder!'});act('write');return `Got it. In ${min} min I'll remind you${m[3]?' to '+m[3]:''}.`;}
+  if(m=q.match(/^(?:idea|save idea)[:\s]+(.+)/i)){const ideas=[...(settings.ideas||[]),{t:m[1],at:Date.now()}];saveS({ideas:ideas.slice(-200)});bump('ideas');act('write');return `Caught it! That's idea #${ideas.length}.`;}
+  if(m=q.match(/^(?:note|remember|remember to|add note)[:\s]+(.+)/i)){const n=[...(settings.notes||[])];if(n.length>=6)return 'My notebook is full (six points). Tick one off first?';n.push({text:m[1].slice(0,80),done:false});saveS({notes:n});act('write');return 'Noted in my notebook!';}
+  for(const k of Object.keys(FOODS))if(new RegExp('\\b(eat|have|feed you|try)\\b.*\\b'+k).test(t)){setTimeout(()=>feed(k),400);return k==='salad'?'Fine. Salad.':`${k[0].toUpperCase()+k.slice(1)}? Don't mind if I do!`;}
+  if(/\bfetch\b/.test(t)){setTimeout(()=>toggleGame('fetch'),300);return 'YES. Get the ball!';}
+  if(/snack (game|catch)/.test(t)){setTimeout(()=>toggleGame('snack'),300);return 'Snacks from the sky? I\'m ready!';}
+  if(/\bdance\b/.test(t)){act('dance',2);return pick(['Watch this!','Busting a move!']);}
+  if(/guitar|play (me )?(a )?song/.test(t)){act('guitar',2);return 'This one\'s called "Ode to Carrots".';}
+  if(/doodle|draw/.test(t)&&/prompt|what should/.test(t))return `Today's doodle prompt: "${promptOf()}". Want me to time you? Double-click → Doodle.`;
+  if(/joke|funny/.test(t)){act('laugh');return pick(JOKES);}
+  if(/^(hi|hey|hello|yo|sup|hola|namaste)\b/.test(t)){act('wave');return pick([`Hi${hi}!`,`Hey${hi}! `])+(md==='happy'?' I\'m having a great day.':md==='sad'||md==='blue'?' I missed you.':' What are we up to?');}
+  if(/how are you|how do you feel|you ok|how's it going/.test(t)){const f=fullness();return `Feeling ${md}. ${f<30?'Pretty hungry, honestly.':f>80?'Very full.':'Not hungry.'} ${bodyOf()>25?'A bit round lately…':bodyOf()<-25?'Fit as a fiddle!':''}`.trim();}
+  if(/hungry|food|eat/.test(t)){const f=fullness();return f<40?'Starving! Salad, apple, burger or donut? Just say "eat a burger".':'I\'m okay for now. Maybe an apple later?';}
+  if(m=t.match(/do you like (.+)/)){const g=genreOf(m[1])||genreOf(m[1]+' video');if(!g)return pick(['Never tried it. Show me?','Hmm, ask me after we watch some.']);const v=taste()[g];return v>0.3?`I love ${g}!`:v<-0.3?`Honestly? Not a fan of ${g}.`:`${g[0].toUpperCase()+g.slice(1)} is okay, I guess.`;}
+  if(/what do you like|favou?rite|your taste/.test(t))return tasteLine();
+  if(/what (did|have) (we|i) (watch|seen)|remember what|last (video|watched)/.test(t)){const w=(settings.watched||[]).slice(0,3);return w.length?'Lately: '+w.map(x=>`"${x.t.slice(0,40)}" (${x.op>0.3?'loved it':x.op<-0.3?'meh':'okay'})`).join(', ')+'.':'We haven\'t watched anything together yet!';}
+  if(/my day|today|what did i do|summary/.test(t))return daySummary()||'Quiet day so far. '+weekLine();
+  if(/this week|week/.test(t))return weekLine();
+  if(/notes?|todo|to-do/.test(t)){const n=(settings.notes||[]).filter(x=>!x.done);return n.length?'Still open: '+n.map(x=>x.text).join('; '):'Notebook is clear!';}
+  if(/ideas?|stuck|inspire/.test(t)){const i=settings.ideas||[];return i.length?'One of yours: "'+pick(i).t+'"':'No ideas saved yet. Say "idea: …" and I\'ll keep it.';}
+  if(/time|what time|date|day is it/.test(t)){const d=new Date();return `It's ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}, ${d.toLocaleDateString([], {weekday:'long',day:'numeric',month:'short'})}.`;}
+  if(/thank|love you|good (boy|bunny)|cute|best/.test(t)){love(6,'chat');act('happy');return pick(['Aww! You\'re the best.','*happy ear wiggle*','Stop it, I\'m blushing. In ochre.']);}
+  if(/who are you|what are you|your name/.test(t))return 'I\'m Bunny, your desk buddy from DeepInDoodles. I draw, dance, eat too many donuts and remember what you watch.';
+  if(/bye|good ?night|see you|sleep/.test(t)){act('wave');return pick([`Bye${hi}!`,'See you soon!','Sweet dreams!']);}
+  if(/weather|news|search|google/.test(t))return 'I live offline on your PC, so I can\'t check the internet. Want a joke instead?';
+  love(1,'chat');return pick(['Hmm, tell me more!','Interesting… I\'ll think about that.','I\'m just a bunny, but I\'m listening.','Ha! Okay.','Say that again, but with snacks.']);}
 // ---------------- events from the app ----------------
 B.on('remind',r=>{if(sign)return say(r.text,9000);targetX=null;play(r.action,LOOPS.has(r.action)?2:1);say(r.text,9000);});
 B.on('say',r=>{if(r.action&&!sign)play(r.action,1);say(r.text,r.ms);});
@@ -642,7 +783,7 @@ B.on('radial',()=>openRadial());
 B.on('routine',k=>{if(sign||away)return;targetX=null;
   if(k==='lunch'){routine=['eat','drink'];play('dance',2);say('Lunch time! Dance first, then burger.',4000);}
   if(k==='tea'){routine=['idle'];play('tea',1);say('Tea time! Chai, anyone?',3500);}
-  if(k==='snack'){routine=['happy'];play('eat',1);fedAt=Date.now();love(6);say(pick(['Snack time! Want one too?','Afternoon munchies. Join me?']),4000);}
+  if(k==='snack'){routine=['happy'];play('eat_apple',1);fedAt=Date.now();love(6);say(pick(['Snack time! Want one too?','Afternoon munchies. Join me?']),4000);}
   if(k==='winddown'){routine=['yawn','read'];play('tea',1);say(pick(['Half an hour to bed. Save your work?','Winding down. One more thing, then sleep?']),6000);}
   if(k==='pack'){const open=(settings.notes||[]).filter(n=>!n.done);routine=['wave'];play('pack',1);
     say(open.length?`Packing up! ${open.length} note${open.length>1?'s':''} still open: ${open.map(n=>n.text).join(', ')}`:'Packing up! Notebook is clear. Good work today!',9000);}});
@@ -653,7 +794,7 @@ function recover(a){if(a)area=a;if(!area||!Number.isFinite(groundY())){B.invoke(
   pos.x=Number.isFinite(pos.x)?Math.max(area.x,Math.min(area.x+area.width-window.innerWidth,pos.x)):area.x+area.width*0.7-window.innerWidth/2;pos.y=groundY();sentX=NaN;sendPos();drawn='';play('look',1);}
 B.on('rescue',r=>recover(r&&r.area));
 B.on('area',a=>{area=a;if(perch||falling||climb)return;pos.y=groundY();sendPos();});
-B.on('windows',list=>{wins=list||[];});
+B.on('windows',list=>{wins=list||[];const pc=perchCtx();if(pc&&(pc.title!==wk.title||pc.proc!==wk.proc))onContext(fgCtx);else if(!pc&&(wk.title!==fgCtx.title||wk.proc!==fgCtx.proc))onContext(fgCtx);});
 B.on('cursor',c=>{if(!cursor||Math.abs(c.x-cursor.x)>2||Math.abs(c.y-cursor.y)>2)cursorMoved=Date.now();cursor=c;});
 B.on('settings',s=>{settings=s.settings;resize(s.size);
   if(settings.stayPut&&isWalk(action)&&cursorMode()!=='follow'){targetX=null;play('idle');}

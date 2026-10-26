@@ -105,7 +105,7 @@ ipcMain.on('windows-mode',()=>applyWindows());
 // ---- what's on screen: your open windows (for grabbing and perching) and the cursor (for watching and following) ----
 let winIds=new Set(),winProc=null,winLast='',winFails=0,winLogged=0,ctxLast='';
 const cmdFile=()=>path.join(app.getPath('temp'),'bunny-cmd-'+process.pid+'.txt');
-const toDip=([id,l,t,r,b])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height];};
+const toDip=([id,l,t,r,b,title,proc])=>{const d=screen.screenToDipRect(null,{x:l,y:t,width:r-l,height:b-t});return [id,d.x,d.y,d.x+d.width,d.y+d.height,title||'',proc||''];};
 // The watcher always runs on Windows: window climbing can be switched off, but he still notices what you're working in.
 function applyWindows(){
   if(process.platform!=='win32'){toPet('windows',[]);return;}
