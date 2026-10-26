@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bunny Pet settings</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'">
+<style>
+  :root{--ochre:#E0A64B;--ink:#1F1F1D;--paper:#E0A64B}
+  body{margin:0;background:var(--ochre);color:var(--ink);font:750 15px "Segoe UI",system-ui,sans-serif;padding:20px 22px 30px}
+  h1{font:400 34px Impact,"Anton",sans-serif;margin:0 0 6px;letter-spacing:.5px;text-transform:uppercase}
+  .card{border:3px solid var(--ink);border-radius:3px;box-shadow:5px 5px 0 var(--ink);padding:12px 14px 14px;margin:18px 0}
+  h2{font:400 20px Impact,"Anton",sans-serif;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px}
+  label{display:flex;align-items:center;gap:8px;margin:8px 0;font-weight:650}
+  input[type=number],input[type=time],input[type=text]{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:3px;padding:5px 7px;font:inherit}
+  input[type=number]{width:62px} input[type=text]{flex:1;min-width:0}
+  input[type=checkbox]{width:18px;height:18px;accent-color:#1F1F1D}
+  input[type=range]{flex:1;accent-color:#1F1F1D}
+  button{min-height:44px;background:var(--ink);color:var(--ochre);border:3px solid var(--ink);border-radius:3px;box-shadow:3px 3px 0 #000;padding:0 16px;font:750 14px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+  button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+  .hint{font-size:13px;font-weight:600;opacity:.85;margin:4px 0}
+  #saved{font-weight:750;margin-left:10px;opacity:0;transition:opacity .3s}
+  ul{padding-left:18px;margin:6px 0} li{margin:3px 0}
+
+  /* brand-only controls: no white system boxes */
+  input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;border:3px solid #1F1F1D;border-radius:2px;background:#E0A64B;flex:none;cursor:pointer}
+  input[type=checkbox]:checked{background:#1F1F1D;box-shadow:inset 0 0 0 3px #E0A64B}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;background:#1F1F1D;border-radius:3px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#E0A64B;border:3px solid #1F1F1D;cursor:pointer}
+  ::placeholder{color:rgba(31,31,29,.6)}
+  ::-webkit-calendar-picker-indicator{filter:none;opacity:.8}
+</style></head><body>
+<h1>Bunny Pet</h1>
+<p class="hint">He walks along your taskbar and stays above every app. Click to tickle him, double-click for his menu, hold for a cuddle, drag to move him. Right-click him or the tray icon for everything else.</p>
+
+<div class="card"><h2>Bunny</h2>
+<label>Size <input type="range" id="bw" min="90" max="360" step="5"> <span id="bwv"></span></label>
+<label><input type="checkbox" id="onTop"> Stay on top of every app, even full-screen ones</label>
+<label><input type="checkbox" id="routine"> Daily routine: lunch dance, tea, packing and a notes recap (times under His day)</label>
+<label><input type="checkbox" id="chatty"> Share a thought now and then</label>
+<label><input type="checkbox" id="sleepAway"> Nap when I'm away for 5 minutes, and say hi when I'm back</label>
+<label><input type="checkbox" id="nightSleep"> Sleep between 11 pm and 7 am</label>
+</div>
+
+<div class="card" id="day"><h2>His day</h2>
+<p class="hint">Change any time. Lunch, tea and packing also fire his little routines on weekdays.</p>
+<div id="sched"></div>
+<button id="schedReset" type="button">Back to his usual day</button>
+</div>
+
+<div class="card"><h2>Health</h2>
+<label><input type="checkbox" id="water"> Water reminder every <input type="number" id="waterMin" min="10" max="240"> min</label>
+<label>Daily goal <input type="number" id="waterGoal" min="1" max="20"> glasses</label>
+<label><input type="checkbox" id="stretch"> Stretch nudge every <input type="number" id="stretchMin" min="15" max="240"> min</label>
+<label><input type="checkbox" id="eyes"> Rest your eyes (20-20-20) every <input type="number" id="eyesMin" min="10" max="120"> min</label>
+<p class="hint">Log a glass from his menu with "Water +1". Reminders stay quiet while you're away.</p>
+</div>
+
+<div class="card" id="remind"><h2>Remind me</h2>
+<label><input type="text" id="rText" placeholder="Call the printer guy" maxlength="120"> in <input type="number" id="rMin" min="1" max="1440" value="15"> min</label>
+<button id="rAdd">Add reminder</button>
+<ul id="rList"></ul>
+</div>
+
+<div class="card"><h2>Focus</h2>
+<label>Short break <input type="number" id="breakMin" min="1" max="30"> min</label>
+<p class="hint">Start a 25, 50 or 90 minute focus, or a Pomodoro (four 25-minute rounds with a 15-minute long break), from his menu.</p>
+</div>
+
+<div class="card"><h2>Windows</h2>
+<label><input type="checkbox" id="toasts"> Also show Windows notifications</label>
+<label><input type="checkbox" id="startup"> Start with Windows</label>
+</div>
+<p><button id="save">Save</button><span id="saved">Saved</span></p>
+<script src="settings.js"></script>
+</body></html>

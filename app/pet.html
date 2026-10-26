@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'">
+<style>
+  /* Doodle Studio look: ochre, ink, 3px borders, hard 5px offset shadows, near-square corners, heavy type */
+  @font-face{font-family:"Patrick Hand";src:url(fonts/PatrickHand.woff2) format("woff2")}
+  :root{--ochre:#E0A64B;--ink:#1F1F1D;--paper:#E0A64B}
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden;user-select:none;font-family:"Segoe UI",system-ui,sans-serif;font-weight:750;color:var(--ink)}
+  canvas{position:absolute;left:50%;bottom:0;transform:translateX(-50%);transform-origin:50% 100%}
+  .card{background:var(--ochre);border:3px solid var(--ink);border-radius:3px;box-shadow:5px 5px 0 var(--ink)}
+  #bubble{position:absolute;left:50%;transform:translateX(-50%);max-width:min(300px,calc(100% - 24px));box-sizing:border-box;padding:7px 13px 8px;font-size:14px;line-height:1.25;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+  #bubble.show{opacity:1;pointer-events:auto}
+  #board{position:absolute;display:none;align-items:center;justify-content:center;text-align:center;font-family:"Patrick Hand","Segoe Print",cursive;color:var(--ink);line-height:1.05;overflow:hidden;pointer-events:none;-webkit-text-stroke:.35px var(--ink)}
+  #board small{display:block;font-size:.62em;margin-top:.12em}
+  #chip{position:absolute;right:8px;padding:2px 9px 3px;font-size:12px;display:none;box-shadow:3px 3px 0 var(--ink)}
+  /* radial menu: an arc of round buttons over his head */
+  #radial{position:absolute;inset:0;pointer-events:none;z-index:5}
+  #radial button{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:var(--ochre);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+    font:750 11px "Segoe UI",system-ui,sans-serif;color:var(--ink);cursor:pointer;padding:0;line-height:1.05;opacity:0;transform:scale(.3);transition:transform .18s cubic-bezier(.3,1.6,.5,1),opacity .15s;pointer-events:none}
+  #radial button b{display:block;font-size:20px;line-height:1;margin-bottom:2px}
+  #radial.open button{opacity:1;transform:scale(1);pointer-events:auto}
+  #radial button:hover{background:var(--ink);color:var(--ochre)}
+  #radial button.on{background:var(--ink);color:var(--ochre)}
+  /* panels: notebook, board, meeting, focus, more */
+  #panel{position:absolute;left:50%;transform:translateX(-50%);width:min(320px,calc(100% - 24px));box-sizing:border-box;padding:12px 14px 14px;display:none;font-size:14px}
+  #panel.show{display:block}
+  #panel h3{margin:0 0 8px;font:400 22px Impact,"Anton","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
+  #panel h3 span{font:750 12px "Segoe UI",system-ui,sans-serif;text-transform:none}
+  #panel .x{background:none;border:0;font:750 20px "Segoe UI";cursor:pointer;color:var(--ink);padding:0 2px;min-height:auto;box-shadow:none}
+  #panel input[type=text],#panel input[type=time]{width:100%;box-sizing:border-box;background:var(--paper);border:3px solid var(--ink);border-radius:3px;padding:8px 9px;font:750 14px "Segoe UI",system-ui,sans-serif;color:var(--ink);outline:none}
+  #panel input[type=time]{width:auto;padding:5px 6px}
+  #panel button.b{min-height:40px;padding:0 12px;background:var(--ochre);color:var(--ink);border:3px solid var(--ink);border-radius:3px;box-shadow:3px 3px 0 var(--ink);font:750 13px "Segoe UI",system-ui,sans-serif;cursor:pointer;margin:6px 6px 0 0}
+  #panel button.b.p,#panel button.b.on{background:var(--ink);color:var(--ochre)}
+  #panel button.b:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  #panel ul{list-style:none;margin:0 0 8px;padding:0}
+  #panel li{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:2px dashed rgba(31,31,29,.35);font-family:"Patrick Hand","Segoe Print",cursive;font-size:18px;font-weight:400;line-height:1.15}
+  #panel li.done span{text-decoration:line-through;opacity:.55}
+  #panel li span{flex:1;word-break:break-word}
+  #panel li input{width:18px;height:18px;margin-top:2px;accent-color:#1F1F1D}
+  #panel li .x{font-size:16px;opacity:.6}
+  #panel .hint{font-weight:600;font-size:12px;opacity:.85;margin:6px 0 0}
+  #panel .row{display:flex;flex-wrap:wrap;align-items:center;gap:0}
+  #panel input[type=range]{width:100%;accent-color:#1F1F1D}
+
+  /* brand-only controls: no white system boxes */
+  input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:1px 0 0;border:3px solid #1F1F1D;border-radius:2px;background:#E0A64B;flex:none;cursor:pointer}
+  input[type=checkbox]:checked{background:#1F1F1D;box-shadow:inset 0 0 0 3px #E0A64B}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:6px;background:#1F1F1D;border-radius:3px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#E0A64B;border:3px solid #1F1F1D;cursor:pointer}
+  ::placeholder{color:rgba(31,31,29,.6)}
+  ::-webkit-calendar-picker-indicator{filter:none;opacity:.8}
+</style></head>
+<body>
+<div id="radial"></div>
+<div id="panel" class="card hit"></div>
+<div id="bubble" class="card hit"></div>
+<div id="chip" class="card"></div>
+<canvas id="c"></canvas>
+<div id="board"></div>
+<script src="frames/meta.js"></script><script src="pet.js"></script></body></html>
