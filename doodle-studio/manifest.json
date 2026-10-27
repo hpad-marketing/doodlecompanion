@@ -1,13 +1,13 @@
 {
- "version": "20261026-231547",
- "notes": "Popcorn stays tucked under one arm while the other hand eats. Includes the motion props and walking leg fix.",
+ "version": "20261027-084419",
+ "notes": "34 new storytelling motions in the library: big feelings, talking, toward-the-camera, spooky, travel, action and narrator beats, plus 4 new props.",
  "runtime": "44.9.0",
- "published": "2026-10-26T17:47:08.213Z",
+ "published": "2026-10-27T03:16:11.715Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "09a6d16212449398948387f1b1ccb5d197b44196431d67e875fee0da3ea59b16",
-   "size": 91069440,
-   "gz": "files/09a6d16212449398948387f1b1ccb5d197b44196431d67e875fee0da3ea59b16.gz"
+   "sha256": "bb40a79a7a87d7b6cc9585ba47f583c4500027137678e4216cf56f1c1b9225a1",
+   "size": 91165184,
+   "gz": "files/bb40a79a7a87d7b6cc9585ba47f583c4500027137678e4216cf56f1c1b9225a1.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
