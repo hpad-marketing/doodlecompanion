@@ -1,0 +1,3347 @@
+{
+ "version": 1,
+ "art": {
+  "notepad-notepad-scribble": {
+   "file": "motion-props/notepad-notepad-scribble.svg",
+   "size": 253.67
+  },
+  "pencil-notepad-scribble": {
+   "file": "motion-props/pencil-notepad-scribble.svg",
+   "size": 52.62
+  },
+  "palette-paint-dabs": {
+   "file": "motion-props/palette-paint-dabs.svg",
+   "size": 90.91
+  },
+  "brush-paint-dabs": {
+   "file": "motion-props/brush-paint-dabs.svg",
+   "size": 78.78
+  },
+  "popcorn-snack-munch": {
+   "file": "motion-props/popcorn-snack-munch.svg",
+   "size": 75.31
+  },
+  "book-reading-stroll": {
+   "file": "motion-props/book-reading-stroll.svg",
+   "size": 37.81
+  },
+  "guitar-air-guitar": {
+   "file": "motion-props/guitar-air-guitar.svg",
+   "size": 303.46
+  },
+  "phone-phone-texting": {
+   "file": "motion-props/phone-phone-texting.svg",
+   "size": 268.64
+  },
+  "phone_side-texting-walk": {
+   "file": "motion-props/phone_side-texting-walk.svg",
+   "size": 38.76
+  },
+  "screen-hold-up-screen": {
+   "file": "motion-props/screen-hold-up-screen.svg",
+   "size": 201.68
+  },
+  "trophy-trophy-win": {
+   "file": "motion-props/trophy-trophy-win.svg",
+   "size": 94.54
+  },
+  "rope-tug-rope": {
+   "file": "motion-props/rope-tug-rope.svg",
+   "size": 551.46
+  },
+  "sword-sword-slash": {
+   "file": "motion-props/sword-sword-slash.svg",
+   "size": 55.15
+  },
+  "bulb-idea-lightbulb": {
+   "file": "motion-props/bulb-idea-lightbulb.svg",
+   "size": 86.66
+  },
+  "candle-candle-story": {
+   "file": "motion-props/candle-candle-story.svg",
+   "size": 157.56
+  },
+  "crate-push-heavy": {
+   "file": "motion-props/crate-push-heavy.svg",
+   "size": 252.1
+  },
+  "box_hold-lift-heavy": {
+   "file": "motion-props/box_hold-lift-heavy.svg",
+   "size": 252.1
+  },
+  "ball-throw-ball": {
+   "file": "motion-props/ball-throw-ball.svg",
+   "size": 55.15
+  },
+  "ball_1-throw-ball": {
+   "file": "motion-props/ball_1-throw-ball.svg",
+   "size": 76.26
+  },
+  "ball_2-throw-ball": {
+   "file": "motion-props/ball_2-throw-ball.svg",
+   "size": 106.51
+  },
+  "ball_3-throw-ball": {
+   "file": "motion-props/ball_3-throw-ball.svg",
+   "size": 144.32
+  },
+  "ball_4-throw-ball": {
+   "file": "motion-props/ball_4-throw-ball.svg",
+   "size": 189.7
+  },
+  "ball_5-throw-ball": {
+   "file": "motion-props/ball_5-throw-ball.svg",
+   "size": 242.64
+  },
+  "mic-mic-drop": {
+   "file": "motion-props/mic-mic-drop.svg",
+   "size": 47.27
+  },
+  "phone_c-show-phone": {
+   "file": "motion-props/phone_c-show-phone.svg",
+   "size": 63.02
+  },
+  "phone_c_m-show-phone": {
+   "file": "motion-props/phone_c_m-show-phone.svg",
+   "size": 85.08
+  },
+  "phone_c_l-show-phone": {
+   "file": "motion-props/phone_c_l-show-phone.svg",
+   "size": 107.14
+  },
+  "magnifier_l-magnify-inspect": {
+   "file": "motion-props/magnifier_l-magnify-inspect.svg",
+   "size": 92.17,
+   "lens": {
+    "x": 0,
+    "y": -75.4,
+    "r": 41.2,
+    "zoom": 1.35
+   }
+  },
+  "letter-read-letter": {
+   "file": "motion-props/letter-read-letter.svg",
+   "size": 252.1
+  },
+  "umbrella-umbrella-stroll": {
+   "file": "motion-props/umbrella-umbrella-stroll.svg",
+   "size": 204.83
+  },
+  "gift_8-offer-gift": {
+   "file": "motion-props/gift_8-offer-gift.svg",
+   "size": 201.68
+  },
+  "flashlight_r-flashlight-scan": {
+   "file": "motion-props/flashlight_r-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_mr-flashlight-scan": {
+   "file": "motion-props/flashlight_mr-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_qr-flashlight-scan": {
+   "file": "motion-props/flashlight_qr-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_f-flashlight-scan": {
+   "file": "motion-props/flashlight_f-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_ql-flashlight-scan": {
+   "file": "motion-props/flashlight_ql-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_ml-flashlight-scan": {
+   "file": "motion-props/flashlight_ml-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "flashlight_l-flashlight-scan": {
+   "file": "motion-props/flashlight_l-flashlight-scan.svg",
+   "size": 88.23
+  },
+  "mug_l-sip-coffee": {
+   "file": "motion-props/mug_l-sip-coffee.svg",
+   "size": 159.53
+  },
+  "mug_t1_l-sip-coffee": {
+   "file": "motion-props/mug_t1_l-sip-coffee.svg",
+   "size": 159.53
+  },
+  "mug_t2_l-sip-coffee": {
+   "file": "motion-props/mug_t2_l-sip-coffee.svg",
+   "size": 159.53
+  },
+  "phone_tall-phone-call": {
+   "file": "motion-props/phone_tall-phone-call.svg",
+   "size": 47.27
+  },
+  "steam-rage-tremble": {
+   "file": "motion-props/steam-rage-tremble.svg",
+   "size": 110.29
+  },
+  "fog_l-wipe-lens": {
+   "file": "motion-props/fog_l-wipe-lens.svg",
+   "size": 138.65
+  },
+  "fog_s_l-wipe-lens": {
+   "file": "motion-props/fog_s_l-wipe-lens.svg",
+   "size": 138.65
+  },
+  "popcorn-popcorn-watch": {
+   "file": "motion-props/popcorn-popcorn-watch.svg",
+   "size": 173.32
+  },
+  "sign-hold-sign": {
+   "file": "motion-props/sign-hold-sign.svg",
+   "size": 252.1
+  },
+  "crystal_l-crystal-ball": {
+   "file": "motion-props/crystal_l-crystal-ball.svg",
+   "size": 204.83,
+   "lens": {
+    "x": 52,
+    "y": -39,
+    "r": 50,
+    "zoom": 1.5
+   }
+  },
+  "camera-snap-photo": {
+   "file": "motion-props/camera-snap-photo.svg",
+   "size": 236.34
+  },
+  "camera_flash-snap-photo": {
+   "file": "motion-props/camera_flash-snap-photo.svg",
+   "size": 252.1
+  },
+  "door-door-creak-peek": {
+   "file": "motion-props/door-door-creak-peek.svg",
+   "size": 551.46
+  },
+  "book-open-book": {
+   "file": "motion-props/book-open-book.svg",
+   "size": 252.1
+  },
+  "book_t1-open-book": {
+   "file": "motion-props/book_t1-open-book.svg",
+   "size": 252.1
+  },
+  "book_t2-open-book": {
+   "file": "motion-props/book_t2-open-book.svg",
+   "size": 252.1
+  },
+  "skate-skateboard": {
+   "file": "motion-props/skate-skateboard.svg",
+   "size": 212.71
+  },
+  "ball_x3-catch-ball": {
+   "file": "motion-props/ball_x3-catch-ball.svg",
+   "size": 143.38
+  },
+  "ball-wind-up-pitch": {
+   "file": "motion-props/ball-wind-up-pitch.svg",
+   "size": 55.15
+  },
+  "ball_1-wind-up-pitch": {
+   "file": "motion-props/ball_1-wind-up-pitch.svg",
+   "size": 76.26
+  },
+  "ball_2-wind-up-pitch": {
+   "file": "motion-props/ball_2-wind-up-pitch.svg",
+   "size": 106.51
+  },
+  "ball_3-wind-up-pitch": {
+   "file": "motion-props/ball_3-wind-up-pitch.svg",
+   "size": 144.32
+  },
+  "ball_4-wind-up-pitch": {
+   "file": "motion-props/ball_4-wind-up-pitch.svg",
+   "size": 189.7
+  },
+  "ball_5-wind-up-pitch": {
+   "file": "motion-props/ball_5-wind-up-pitch.svg",
+   "size": 242.64
+  }
+ },
+ "templates": {
+  "notepad-scribble": [
+   {
+    "art": "notepad-notepad-scribble",
+    "name": "Notepad",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "pencil-notepad-scribble",
+    "name": "Pencil",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "paint-dabs": [
+   {
+    "art": "palette-paint-dabs",
+    "name": "Palette",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "brush-paint-dabs",
+    "name": "Brush",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "snack-munch": [
+   {
+    "art": "popcorn-snack-munch",
+    "name": "Popcorn",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "reading-stroll": [
+   {
+    "art": "book-reading-stroll",
+    "name": "Book",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "air-guitar": [
+   {
+    "art": "guitar-air-guitar",
+    "name": "Guitar",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "phone-texting": [
+   {
+    "art": "phone-phone-texting",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "texting-walk": [
+   {
+    "art": "phone_side-texting-walk",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "hold-up-screen": [
+   {
+    "art": "screen-hold-up-screen",
+    "name": "Screen",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.1
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "trophy-win": [
+   {
+    "art": "trophy-trophy-win",
+    "name": "Trophy",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "tug-rope": [
+   {
+    "art": "rope-tug-rope",
+    "name": "Rope",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 180,
+       "depth": 0.05
+      }
+     ]
+    ]
+   }
+  ],
+  "sword-slash": [
+   {
+    "art": "sword-sword-slash",
+    "name": "Sword",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      12,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": -50,
+       "depth": 0.05
+      }
+     ],
+     [
+      20,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 110,
+       "depth": 0.05
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 100,
+       "depth": 0.05
+      }
+     ],
+     [
+      48,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ]
+   }
+  ],
+  "idea-lightbulb": [
+   {
+    "art": "bulb-idea-lightbulb",
+    "name": "Lightbulb",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 1.0,
+       "y": -225
+      }
+     ],
+     [
+      33,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 1.0,
+       "y": -225
+      }
+     ],
+     [
+      34,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 0.8,
+       "y": -225
+      }
+     ],
+     [
+      38,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 1.1,
+       "y": -225
+      }
+     ],
+     [
+      42,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 1.0,
+       "y": -225
+      }
+     ],
+     [
+      76,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 1.0,
+       "y": -225
+      }
+     ],
+     [
+      77,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 1.0,
+       "y": -225
+      }
+     ]
+    ]
+   }
+  ],
+  "candle-story": [
+   {
+    "art": "candle-candle-story",
+    "name": "Candle",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "push-heavy": [
+   {
+    "art": "crate-push-heavy",
+    "name": "Crate",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "lift-heavy": [
+   {
+    "art": "box_hold-lift-heavy",
+    "name": "Box",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 34
+      }
+     ],
+     [
+      20,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 34
+      }
+     ],
+     [
+      54,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 0
+      }
+     ],
+     [
+      80,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 0
+      }
+     ],
+     [
+      96,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 34
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "throw-ball": [
+   {
+    "art": "ball-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      21,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      22,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_1-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      21,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      22,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      24,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_2-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      23,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      24,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      26,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_3-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      25,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      26,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      28,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_4-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      27,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      28,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_5-throw-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      29,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      31,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "mic-drop": [
+   {
+    "art": "mic-mic-drop",
+    "name": "Mic",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": -30,
+       "depth": 0.05
+      }
+     ],
+     [
+      24,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 0
+      }
+     ],
+     [
+      37,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 80,
+       "depth": 0.05,
+       "y": 50
+      }
+     ],
+     [
+      39,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 95,
+       "depth": 0.05,
+       "y": 32
+      }
+     ],
+     [
+      41,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 90,
+       "depth": 0.05,
+       "y": 50
+      }
+     ],
+     [
+      84,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 90,
+       "depth": 0.05,
+       "y": 50
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "show-phone": [
+   {
+    "art": "phone_c-show-phone",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      43,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      93,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      94,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ]
+    ],
+    "placement": "over"
+   },
+   {
+    "art": "phone_c_m-show-phone",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      43,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      46,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      91,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      92,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      94,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "over"
+   },
+   {
+    "art": "phone_c_l-show-phone",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      45,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      46,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      92,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "over"
+   }
+  ],
+  "magnify-inspect": [
+   {
+    "art": "magnifier_l-magnify-inspect",
+    "name": "Magnifier",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "read-letter": [
+   {
+    "art": "letter-read-letter",
+    "name": "Letter",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      7,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      8,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      101,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      102,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "umbrella-stroll": [
+   {
+    "art": "umbrella-umbrella-stroll",
+    "name": "Umbrella",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": -32,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "behind"
+   }
+  ],
+  "offer-gift": [
+   {
+    "art": "gift_8-offer-gift",
+    "name": "Gift",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "x": -5,
+       "y": 8
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "flashlight-scan": [
+   {
+    "art": "flashlight_r-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      9,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      10,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      91,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      92,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "flashlight_mr-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      9,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      10,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      16,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      17,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      88,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      89,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      91,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      92,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "flashlight_qr-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      16,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      17,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      23,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      24,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      85,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      86,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      88,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      89,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "over"
+   },
+   {
+    "art": "flashlight_f-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      23,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      24,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      32,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      33,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      79,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      80,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      85,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      86,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "over"
+   },
+   {
+    "art": "flashlight_ql-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      32,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      33,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      37,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      38,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      75,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      76,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      79,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      80,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "over"
+   },
+   {
+    "art": "flashlight_ml-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      37,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      38,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      41,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      42,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      71,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      72,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      75,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      76,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "flashlight_l-flashlight-scan",
+    "name": "Flashlight",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      41,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      42,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      71,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      72,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "sip-coffee": [
+   {
+    "art": "mug_l-sip-coffee",
+    "name": "Mug",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      15,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      16,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      47,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      48,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "mug_t1_l-sip-coffee",
+    "name": "Mug",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -14
+      }
+     ],
+     [
+      15,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -14
+      }
+     ],
+     [
+      16,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "y": -14
+      }
+     ],
+     [
+      20,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -14
+      }
+     ],
+     [
+      43,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -14
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "y": -14
+      }
+     ],
+     [
+      48,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -14
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "mug_t2_l-sip-coffee",
+    "name": "Mug",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -22
+      }
+     ],
+     [
+      19,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -22
+      }
+     ],
+     [
+      20,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "y": -22
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "y": -22
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "phone-call": [
+   {
+    "art": "phone_tall-phone-call",
+    "name": "Phone",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 24,
+       "depth": 0.05,
+       "x": -2,
+       "y": 8
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "rage-tremble": [
+   {
+    "art": "steam-rage-tremble",
+    "name": "Steam",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 0.6,
+       "y": -225
+      }
+     ],
+     [
+      55,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 0.6,
+       "y": -225
+      }
+     ],
+     [
+      56,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 0.6,
+       "y": -225
+      }
+     ],
+     [
+      62,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 1.1,
+       "y": -250
+      }
+     ],
+     [
+      74,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": true,
+       "scale": 1.2,
+       "y": -270
+      }
+     ],
+     [
+      75,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.6,
+       "visible": false,
+       "scale": 1.2,
+       "y": -270
+      }
+     ]
+    ]
+   }
+  ],
+  "wipe-lens": [
+   {
+    "art": "fog_l-wipe-lens",
+    "name": "Fog",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -28,
+       "y": 16
+      }
+     ],
+     [
+      21,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -28,
+       "y": 16
+      }
+     ],
+     [
+      22,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "x": -28,
+       "y": 16
+      }
+     ],
+     [
+      55,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -28,
+       "y": 16
+      }
+     ]
+    ]
+   },
+   {
+    "art": "fog_s_l-wipe-lens",
+    "name": "Fog",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -28,
+       "y": 16
+      }
+     ],
+     [
+      55,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "x": -28,
+       "y": 16
+      }
+     ],
+     [
+      70,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -28,
+       "y": 16
+      }
+     ]
+    ]
+   }
+  ],
+  "popcorn-watch": [
+   {
+    "art": "popcorn-popcorn-watch",
+    "name": "Popcorn tub",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "hold-sign": [
+   {
+    "art": "sign-hold-sign",
+    "name": "Blank sign",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "crystal-ball": [
+   {
+    "art": "crystal_l-crystal-ball",
+    "name": "Crystal ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -12,
+       "y": 10
+      }
+     ],
+     [
+      13,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -12,
+       "y": 10
+      }
+     ],
+     [
+      14,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "x": -12,
+       "y": 10
+      }
+     ],
+     [
+      105,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "x": -12,
+       "y": 10
+      }
+     ],
+     [
+      106,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": -12,
+       "y": 10
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "snap-photo": [
+   {
+    "art": "camera-snap-photo",
+    "name": "Camera",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      40,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "camera_flash-snap-photo",
+    "name": "Camera",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      40,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      44,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "door-creak-peek": [
+   {
+    "art": "door-door-creak-peek",
+    "name": "Door edge",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ]
+    ],
+    "placement": "over"
+   }
+  ],
+  "open-book": [
+   {
+    "art": "book-open-book",
+    "name": "Book",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      39,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      45,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "book_t1-open-book",
+    "name": "Book",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      39,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      42,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "book_t2-open-book",
+    "name": "Book",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      42,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      45,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "skateboard": [
+   {
+    "art": "skate-skateboard",
+    "name": "Skateboard",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "y": 96
+      }
+     ]
+    ]
+   }
+  ],
+  "catch-ball": [
+   {
+    "art": "ball_x3-catch-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 175,
+       "y": 78
+      }
+     ],
+     [
+      6,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 175,
+       "y": 78
+      }
+     ],
+     [
+      9,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 175,
+       "y": 78
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_x3-catch-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 140,
+       "y": 84
+      }
+     ],
+     [
+      9,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 140,
+       "y": 84
+      }
+     ],
+     [
+      10,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 140,
+       "y": 84
+      }
+     ],
+     [
+      13,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 140,
+       "y": 84
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_x3-catch-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 110,
+       "y": 90
+      }
+     ],
+     [
+      13,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 110,
+       "y": 90
+      }
+     ],
+     [
+      14,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 110,
+       "y": 90
+      }
+     ],
+     [
+      17,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 110,
+       "y": 90
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_x3-catch-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 82,
+       "y": 94
+      }
+     ],
+     [
+      17,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 82,
+       "y": 94
+      }
+     ],
+     [
+      18,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 82,
+       "y": 94
+      }
+     ],
+     [
+      21,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 82,
+       "y": 94
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_x3-catch-ball",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": 50,
+       "y": 100
+      }
+     ],
+     [
+      21,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false,
+       "x": 50,
+       "y": 100
+      }
+     ],
+     [
+      22,
+      {
+       "attachment": "armL",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true,
+       "x": 50,
+       "y": 100
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ],
+  "wind-up-pitch": [
+   {
+    "art": "ball-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05
+      }
+     ],
+     [
+      5,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      6,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      5,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ],
+     [
+      6,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      27,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": true
+      }
+     ],
+     [
+      28,
+      {
+       "attachment": "armR",
+       "upright": true,
+       "rotation": 0,
+       "depth": 0.05,
+       "visible": false
+      }
+     ]
+    ],
+    "placement": "behind"
+   },
+   {
+    "art": "ball_1-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      27,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      28,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 50,
+       "y": 45
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 50,
+       "y": 45
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_2-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      29,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      30,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 35,
+       "y": 50
+      }
+     ],
+     [
+      32,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 35,
+       "y": 50
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_3-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      31,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      32,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": 20,
+       "y": 30
+      }
+     ],
+     [
+      34,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": 20,
+       "y": 30
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_4-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      33,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      34,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": -2,
+       "y": 15
+      }
+     ],
+     [
+      36,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -2,
+       "y": 15
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   },
+   {
+    "art": "ball_5-wind-up-pitch",
+    "name": "Ball",
+    "keys": [
+     [
+      0,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      35,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      36,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": true,
+       "x": -12,
+       "y": 5
+      }
+     ],
+     [
+      38,
+      {
+       "attachment": "head",
+       "upright": true,
+       "rotation": 0,
+       "depth": -2,
+       "visible": false,
+       "x": -12,
+       "y": 5
+      }
+     ]
+    ],
+    "placement": "under-hands"
+   }
+  ]
+ }
+}
