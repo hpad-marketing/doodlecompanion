@@ -1,4 +1,4 @@
-// Bunny Pet for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
+// DoodleBud (formerly Bunny Pet) for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
 // lives a daily routine, and opens a radial menu (notes, his board, lunch, tea, meetings, focus, water) on double-click.
 const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage,net,dialog}=require('electron');
 const path=require('path'),fs=require('fs'),crypto=require('crypto'),{spawn}=require('child_process');
@@ -11,6 +11,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}
 app.commandLine.appendSwitch('disable-features','CalculateNativeWinOcclusion');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
+// productName stays "Bunny Pet" so settings, memory and updates keep living in the same userData folder after the rename to DoodleBud
 app.setAppUserModelId('com.deepindoodles.bunnypet');
 
 const DEFAULTS={bw:150,onTop:true,water:true,waterMin:60,waterGoal:8,stretch:true,stretchMin:120,eyes:false,eyesMin:20,routine:true,chatty:true,
@@ -282,17 +283,17 @@ function menuTemplate(){return [
   {label:'Open log folder',click:()=>require('electron').shell.showItemInFolder(logFile())},
   {label:'Start with Windows',type:'checkbox',checked:!!S.startup,click:i=>{S.startup=i.checked;save();applySettings();}},
   {type:'separator'},
-  {label:'Quit Bunny Pet',click:()=>app.quit()}];}
+  {label:'Quit DoodleBud',click:()=>app.quit()}];}
 function rebuildMenu(){if(tray)tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));}
 function openSettings(section){
   if(settingsWin&&!settingsWin.isDestroyed()){settingsWin.show();settingsWin.focus();settingsWin.webContents.send('section',section);return;}
-  settingsWin=new BrowserWindow({width:500,height:760,title:'Bunny Pet settings',icon:icon(),backgroundColor:'#E0A64B',autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js')}});
+  settingsWin=new BrowserWindow({width:500,height:760,title:'DoodleBud settings',icon:icon(),backgroundColor:'#E0A64B',autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js')}});
   settingsWin.loadFile(path.join(__dirname,'settings.html'),{hash:section||''});settingsWin.on('closed',()=>settingsWin=null);
 }
 
 app.whenReady().then(()=>{
   load();createPet();
-  tray=new Tray(icon().resize({width:32,height:32}));tray.setToolTip('Bunny Pet');
+  tray=new Tray(icon().resize({width:32,height:32}));tray.setToolTip('DoodleBud');
   tray.on('click',()=>{if(pet){if(pet.isVisible()){hiddenByUser=true;pet.hide();}else{hiddenByUser=false;pet.showInactive();}rebuildMenu();}});
   applySettings();
   powerMonitor.on('lock-screen',()=>{away=true;toPet('away',true);});
@@ -308,31 +309,35 @@ app.on('second-instance',()=>{if(pet){hiddenByUser=false;pet.showInactive();toPe
 function sha(f){try{return crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');}catch{return '';}}
 // Downloads go through Chromium's network stack (net.fetch), so office proxies and firewalls that let your browser
 // through let Bunny through too. Each file gets three tries before the update is put off.
-async function get(url){let err;for(let i=0;i<3;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;err=new Error(url+' '+r.status);}catch(e){err=e;}
+async function get(url){let err;for(let i=0;i<6;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;err=new Error(url+' '+r.status);
+    // GitHub rate-limits bursts (429): wait as long as it asks, or back off longer each time
+    if(r.status===429||r.status>=500){const ra=+r.headers.get('retry-after')||0;await new Promise(z=>setTimeout(z,Math.max(ra*1000,4000*2**i)));continue;}}catch(e){err=e;}
   await new Promise(r=>setTimeout(r,800*(i+1)));}throw err;}
-let updating=false;
+let updating=false,upDone=null;
 async function checkUpdate(manual){
-  if(updating){if(manual)toPet('say',{text:'Already updating, hang on…',ms:2500});return;}
+  if(updating){if(manual)toPet('say',{text:upDone?`Already updating (${upDone.done} of ${upDone.total} files), hang on…`:'Already updating, hang on…',ms:2500});return;}
   if(!UPDATE_BASE){if(manual)toPet('say',{text:'Updates aren\'t set up yet.',ms:2500});return;}
   try{
     updating=true;const m=await (await get(UPDATE_BASE+'manifest.json')).json();
     const mine=require('./package.json').version;if(m.version===mine){updating=false;if(manual)toPet('say',{text:`I'm up to date (v${mine}).`,ms:2500});return;}
     const todo=Object.entries(m.files).filter(([f,h])=>sha(path.join(__dirname,f))!==h);
-    const tmp=path.join(app.getPath('userData'),'update');fs.rmSync(tmp,{recursive:true,force:true});
+    // files already fetched by an earlier, interrupted try are kept, so a big update finishes over a few tries instead of starting over
+    const tmp=path.join(app.getPath('userData'),'update');fs.mkdirSync(tmp,{recursive:true});
     if(todo.length>20)toPet('say',{text:`Downloading v${m.version}… (${todo.length} files)`,ms:4000});log('update '+mine+' → '+m.version+': '+todo.length+' files');
-    // eight downloads at a time; the pet shows a progress ring above Bunny until the restart
-    let done=0;toPet('update-progress',{done,total:todo.length});const queue=todo.slice();
-    const worker=async()=>{while(queue.length){const [f,h]=queue.shift();const r=await get(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'));
+    // four downloads at a time; the pet shows a progress ring above Bunny until the restart
+    let done=0;upDone={done,total:todo.length};toPet('update-progress',{done,total:todo.length});const queue=todo.slice();
+    const worker=async()=>{while(queue.length){const [f,h]=queue.shift();if(sha(path.join(tmp,f))===h){done++;continue;}const r=await get(UPDATE_BASE+f.split('/').map(encodeURIComponent).join('/'));
       const buf=Buffer.from(await r.arrayBuffer());if(crypto.createHash('sha256').update(buf).digest('hex')!==h)throw new Error('bad hash '+f);
-      const out=path.join(tmp,f);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,buf);done++;if(done%10===0||done===todo.length)toPet('update-progress',{done,total:todo.length});}};
-    await Promise.all(Array.from({length:8},worker));
+      const out=path.join(tmp,f);fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,buf);done++;upDone={done,total:todo.length};if(done%10===0||done===todo.length)toPet('update-progress',{done,total:todo.length});}};
+    await Promise.all(Array.from({length:4},worker));
     // everything arrived intact: swap the files in, drop ones the new version no longer has, restart
     for(const [f] of todo){const dst=path.join(__dirname,f);fs.mkdirSync(path.dirname(dst),{recursive:true});fs.copyFileSync(path.join(tmp,f),dst);}
     for(const f of m.remove||[]){fs.rmSync(path.join(__dirname,f),{force:true,recursive:true});}
     fs.rmSync(tmp,{recursive:true,force:true});
     toPet('say',{text:`New tricks! Updating to v${m.version}…`,ms:2500,action:'spin'});notify('Bunny updated',`Version ${m.version}: ${m.notes||'new moves and fixes'}`);
     setTimeout(()=>{app.relaunch();app.exit(0);},2600);
-  }catch(e){updating=false;toPet('update-progress',null);log('update failed: '+(e&&(e.stack||e.message)||e));if(manual)toPet('say',{text:'Couldn\'t reach the update server ('+String(e&&e.message||e).slice(0,60)+'). I\'ll try later.',ms:5000});}
+  }catch(e){updating=false;upDone=null;toPet('update-progress',null);log('update failed: '+(e&&(e.stack||e.message)||e));if(manual)toPet('say',{text:/ 429$/.test(String(e&&e.message))?'GitHub asked me to slow down. I kept what I got and will finish in a few minutes.':'Couldn\'t reach the update server ('+String(e&&e.message||e).slice(0,60)+'). I\'ll try later.',ms:5000});
+    if(/ 429$/.test(String(e&&e.message)))setTimeout(()=>checkUpdate(false),5*60000);}
 }
 app.on('before-quit',()=>{if(winProc)winProc.kill();});
 app.on('window-all-closed',e=>e.preventDefault&&e.preventDefault());
