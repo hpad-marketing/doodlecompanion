@@ -1,4 +1,4 @@
-// Bunny Pet for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
+// DoodleBud (formerly Bunny Pet) for Windows: a transparent desktop pet built from Bunny's rig frames. He stays above every app,
 // lives a daily routine, and opens a radial menu (notes, his board, lunch, tea, meetings, focus, water) on double-click.
 const {app,BrowserWindow,Tray,Menu,ipcMain,screen,powerMonitor,Notification,nativeImage,net,dialog}=require('electron');
 const path=require('path'),fs=require('fs'),crypto=require('crypto'),{spawn}=require('child_process');
@@ -11,6 +11,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}
 app.commandLine.appendSwitch('disable-features','CalculateNativeWinOcclusion');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
+// productName stays "Bunny Pet" so settings, memory and updates keep living in the same userData folder after the rename to DoodleBud
 app.setAppUserModelId('com.deepindoodles.bunnypet');
 
 const DEFAULTS={bw:150,onTop:true,water:true,waterMin:60,waterGoal:8,stretch:true,stretchMin:120,eyes:false,eyesMin:20,routine:true,chatty:true,
@@ -282,17 +283,17 @@ function menuTemplate(){return [
   {label:'Open log folder',click:()=>require('electron').shell.showItemInFolder(logFile())},
   {label:'Start with Windows',type:'checkbox',checked:!!S.startup,click:i=>{S.startup=i.checked;save();applySettings();}},
   {type:'separator'},
-  {label:'Quit Bunny Pet',click:()=>app.quit()}];}
+  {label:'Quit DoodleBud',click:()=>app.quit()}];}
 function rebuildMenu(){if(tray)tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));}
 function openSettings(section){
   if(settingsWin&&!settingsWin.isDestroyed()){settingsWin.show();settingsWin.focus();settingsWin.webContents.send('section',section);return;}
-  settingsWin=new BrowserWindow({width:500,height:760,title:'Bunny Pet settings',icon:icon(),backgroundColor:'#E0A64B',autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js')}});
+  settingsWin=new BrowserWindow({width:500,height:760,title:'DoodleBud settings',icon:icon(),backgroundColor:'#E0A64B',autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js')}});
   settingsWin.loadFile(path.join(__dirname,'settings.html'),{hash:section||''});settingsWin.on('closed',()=>settingsWin=null);
 }
 
 app.whenReady().then(()=>{
   load();createPet();
-  tray=new Tray(icon().resize({width:32,height:32}));tray.setToolTip('Bunny Pet');
+  tray=new Tray(icon().resize({width:32,height:32}));tray.setToolTip('DoodleBud');
   tray.on('click',()=>{if(pet){if(pet.isVisible()){hiddenByUser=true;pet.hide();}else{hiddenByUser=false;pet.showInactive();}rebuildMenu();}});
   applySettings();
   powerMonitor.on('lock-screen',()=>{away=true;toPet('away',true);});
