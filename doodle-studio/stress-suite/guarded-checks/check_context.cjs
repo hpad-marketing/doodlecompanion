@@ -22,8 +22,8 @@ const fs=require('fs'),path=require('path');const root=path.resolve(__dirname,'.
  await control('mouth').selectOption('2');
  check('mouth changes geometry without moving body',before===await p.locator('#actor').getAttribute('transform')&&faceBefore!==await p.locator('#native-face').innerHTML());
  await part('head').click();check('mouth change preserves expression',await control('expression').inputValue()==='0');
- await p.locator('#track-filter').click();check('all fifteen tracks available',await p.locator('#tl [data-track]').count()>=15)/*the timeline has grown past fifteen tracks*/;
- await p.locator('#track-filter').click();
+ const filter=await p.locator('#track-filter').isVisible()/*the UX pass shows every track and hides this filter*/;if(filter)await p.locator('#track-filter').click();check('all fifteen tracks available',await p.locator('#tl [data-track]').count()>=15)/*the timeline has grown past fifteen tracks*/;
+ if(filter)await p.locator('#track-filter').click();
  // Reset transforms for a genuine canvas drag on a hand surface.
  await part('figure').click();await p.locator('#context-reset').click();await part('body').click();await p.locator('#context-reset').click();await part('armL').click();await p.locator('#context-reset').click();
  const target=p.locator('#native-armL > path').last();const box=await target.boundingBox();
