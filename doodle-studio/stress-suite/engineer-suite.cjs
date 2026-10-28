@@ -311,7 +311,7 @@ const SUITES={
    // Keep editing and kill mid-burst at a random moment.
    const burst=(async()=>{for(let i=0;i<40;i++){try{await ev(p,f=>DoodleDrawing.seek(f),60+i*3);await ev(p,()=>document.querySelector('#keys').click());}catch{return;}}})();
    await new Promise(r=>setTimeout(r,200+Math.floor(Math.random()*1500)));
-   const pid=ctx.browser()?.process?.()?.pid;const procs=require('child_process').execSync('pgrep -f "'+dirp+'" || true').toString().trim().split('\n').filter(Boolean);for(const id of procs)try{process.kill(+id,'SIGKILL');}catch{}
+   const pid=ctx.browser()?.process?.()?.pid;/*crash-cross-platform*/const cp=require('child_process');if(process.platform==='win32'){if(pid)try{cp.execSync('taskkill /F /T /PID '+pid,{stdio:'ignore'});}catch{}try{cp.execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like \'*'+dirp.replace(/'/g,"''")+'*\' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"',{stdio:'ignore'});}catch{}}else{const procs=cp.execSync('pgrep -f "'+dirp+'" || true').toString().trim().split('\n').filter(Boolean);for(const id of procs)try{process.kill(+id,'SIGKILL');}catch{}}
    await burst.catch(()=>{});await ctx.close().catch(()=>{});
    ({ctx,p}=await open().catch(e=>({ctx:null,p:null,err:e})));if(!p){fails.push({round,reopen:'failed'});continue;}
    const errors=[];p.on('pageerror',e=>errors.push(e.message));
