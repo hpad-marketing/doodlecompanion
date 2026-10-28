@@ -1,0 +1,31 @@
+const fs=require('fs'),path=require('path');const {chromium}=require('C:/Users/Sushant/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');const root=path.resolve(__dirname,'..');
+(async()=>{
+ const origin=fs.readFileSync(path.join(root,'qa/windows-host.log'),'utf8').trim();
+ const browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({acceptDownloads:true,viewport:{width:1440,height:1100}});const page=await context.newPage();const errors=[],checks=[];page.on('pageerror',e=>{errors.push(e.message);console.log(e.message)});const check=(name,v)=>{checks.push({name,passed:!!v});if(!v)throw Error(name)};
+ try{
+  await page.goto(origin);await page.waitForFunction(()=>window.BunnyRig);
+  const nativeStyles=await page.evaluate(()=>BunnyRig.data.master_sha256);check('latest-master data embedded',nativeStyles==='70437c47aedd9c6ecdfd501e39089cb6fba1318c9c1021ebc986d3b0351b0571');
+  await page.locator('[data-part-select="armL"]').click();await (async()=>{if(!await page.locator('#mode').isVisible())await page.evaluate(()=>BunnyStudio.setWorkspace('pose'));await page.locator('#mode').click()})();const slider=page.locator('[data-context-track="armL"]');await slider.fill('30');await slider.dispatchEvent('input');check('manual mode previews without key',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL.length===0);await page.locator('#context-key').click();check('manual Key pose creates key',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL.length===1);
+  await page.locator('[data-track="armL"] .kf').click();await page.locator('#key-ease').selectOption('constant');check('Hold stored on key',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL[0].ease==='constant');await page.locator('#key-time').fill('.25');await page.locator('#key-time').dispatchEvent('change');check('key time edited',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL[0].t===250);
+  await page.locator('#key-frame').fill('10');await page.locator('#key-frame').dispatchEvent('change');check('frame number edits exact 30fps key time',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL[0].t===333);
+  await page.locator('#key-frame').blur();await page.keyboard.press('ArrowRight');check('arrow nudges selected key by one frame',(await page.evaluate(()=>BunnyProject.bundle())).project.keys.armL[0].t===367);
+  await (async()=>{if(!await page.locator('#mode').isVisible())await page.evaluate(()=>BunnyStudio.setWorkspace('pose'));await page.locator('#mode').click()})();await page.locator('[data-clip="blank"]').click();
+  await page.locator('.asset-import input[type=file]').first().setInputFiles({name:'Bunny-test.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 384"><path d="M100 300L256 60L400 300Z" fill="#1F1F1D"/></svg>')});
+  await page.waitForFunction(async()=>(await BunnyProject.bundle()).project.clips.some(c=>!!c.svg));check('SVG stored on Blank',true);
+  await page.locator('#cStart').fill('0');await page.locator('#cStart').dispatchEvent('change');await page.locator('#cEnd').fill('.5');await page.locator('#cEnd').dispatchEvent('change');
+  await page.locator('#play').click();await page.waitForFunction(()=>Number(document.querySelector('#inserted-svg').style.opacity)>0);check('SVG builds after Blank',true);await page.locator('#play').click();
+  await page.locator('#undo').click();check('Undo remains available',await page.locator('#undo').isEnabled());
+  const unsafe=await page.evaluate(()=>BunnyProject.sanitizeSVG('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><image href="https://example.com/x"/><path d="M0 0L10 10" style="fill:url(https://example.com)"/></svg>'));check('import removes scripts and external media',!(/onload|<script|<image|https:/.test(unsafe)));
+  // Actual loopback TCP sync protocol, hosted by the compiled Windows executable.
+  const sync=await page.request.post(origin+'/api/sync/enable',{data:{}});const enabled=await sync.json();const info=await(await page.request.get(origin+'/api/info')).json();
+  check('Wi-Fi listener started',enabled.port>0);
+  const wrong=await(await page.request.post(origin+'/sync',{data:{action:'pull',pin:'wrong'}})).json();check('wrong pairing code rejected',!!wrong.error);
+  const bundle=await page.evaluate(()=>BunnyProject.bundle());const sent=await(await page.request.post(origin+'/sync',{data:{action:'push',pin:info.pin,revision:info.revision,bundle}})).json();check('project sent to PC hub',!!sent.saved);
+  const peer=await browser.newContext();const received=await(await peer.request.post('http://127.0.0.1:'+enabled.port+'/sync',{data:{action:'pull',pin:info.pin}})).json();check('second device receives project',received.bundle.project.clips.some(c=>c.svg));
+  const conflict=await(await peer.request.post('http://127.0.0.1:'+enabled.port+'/sync',{data:{action:'push',pin:info.pin,revision:info.revision,bundle}})).json();check('stale sync cannot overwrite',!!conflict.conflict);
+  const malicious=await peer.request.get('http://127.0.0.1:'+enabled.port+'/api/info');check('LAN port does not disclose pairing code',malicious.status()!==200);await peer.close();
+  const meta={bluetooth_status:info.bluetooth,checks,errors};fs.writeFileSync(path.join(root,'qa/release-integration-checks.json'),JSON.stringify(meta,null,2));
+  check('no JavaScript errors',errors.length===0);
+ }finally{fs.writeFileSync(path.join(root,'qa/release-integration-checks.json'),JSON.stringify({checks,errors},null,2));await browser.close()}
+ console.log(JSON.stringify(checks));
+})().catch(e=>{console.error(e);process.exit(1)});
