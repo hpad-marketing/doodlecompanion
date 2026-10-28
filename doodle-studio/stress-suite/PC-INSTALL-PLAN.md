@@ -38,11 +38,10 @@ The user has closed Doodle Studio. Keep it closed until the install finishes, an
 
    Some scripts patch a single src file and others patch `ux-overhaul.css`. Each one finds its own file when given the src folder.
 
-3. Apply the motion-library add-on from the motion-library thread:
-   - Decompress `addons\delta-chinup.json.xz`.
-   - Apply it to the src lib folder (`motion-templates.json`, `motion-face-profiles.json`, `motion-props.json`) with `tools\motion-install\apply_moves_only.py`.
-   - Check that `motion-templates.json` contains `"chin-up-proud"` exactly once.
-   - Run `addons\patch_eye_size.py` only if this plan or the cloud thread says the user approved the eye fix. Otherwise skip it.
+3. Apply the motion-library add-ons (the user approved all of them), in this order, to the src lib folder (motion-templates.json, motion-face-profiles.json, motion-props.json):
+   1. addons\delta-chinup.json.xz with tools\motion-install\apply_moves_only.py (decompress first). Check: "chin-up-proud" appears exactly once.
+   2. addons\delta-set8.json.xz the same way. Check: motion-templates.json gains the 40 ids listed in addons\approved8.txt.
+   3. Last: `python addons\patch_eye_size.py <lib folder>`. Check: no "00 Neutral" left in motion-face-profiles.json, and a before-and-after face render shows the same eye size.
 
 4. Copy `updated-checks\*.cjs` over `tools\` (these are the old checks updated for the UX pass). Copy `engineer-suite.cjs` to `tools\stress\`.
 
