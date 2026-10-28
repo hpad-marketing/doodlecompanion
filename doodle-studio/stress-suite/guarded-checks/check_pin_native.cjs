@@ -1,0 +1,27 @@
+// Actual packaged runtimes, bounded planted-foot/body/orbit poses with rendered evidence.
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const{chromium}=require('./qa-home-guard.cjs')(require('C:/Users/Sushant/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+(async()=>{const android=process.argv.includes('--android'),label=android?'android':'windows',browser=android?await chromium.connectOverCDP('http://127.0.0.1:9225'):await chromium.launch({channel:'chrome',headless:true}),p=android?browser.contexts()[0].pages()[0]:await browser.newPage(),checks=[],errors=[];let before;
+p.on('pageerror',e=>errors.push(e.message));try{
+ if(!android){const h=JSON.parse(fs.readFileSync('qa/candidate-windows-process.json','utf8').replace(/^\uFEFF/,''));await p.goto('http://127.0.0.1:'+fs.readFileSync(path.join(h.dataDir,'ui-port.txt'),'utf8').trim())}
+ await p.waitForFunction(()=>window.BunnyConstraints);before=await p.evaluate(()=>BunnyProject.bundle());
+ const result=await p.evaluate(async()=>{
+  const C=BunnyConstraints,R=BunnyRig,checks=[],images=[],test=(name,passed,data={})=>{checks.push({name,passed:!!passed,...data});if(!passed)throw Error(name+' '+JSON.stringify(data))};
+  await BunnyProject.accept({format:'BunnyStudio',version:2,project:{projectID:'qa-pins-'+crypto.randomUUID(),keys:{},clips:[],cues:[],sub:{x:256,y:330},aspect:'portrait',idle:{enabled:false}}});
+  BunnyWorkflow.takeControl();BunnyStudio.menu.close();
+  const distance=(a,b)=>Math.hypot(...a.map((n,i)=>n-b[i]));
+  const target=Object.fromEntries(['legL','legR'].map(part=>[part,C.forward(part,0).world]));
+  for(const part of ['legL','legR'])C.setPin(part,true,{time:0,blend:0});
+  const base=await BunnyProject.bundle(),cases=[['Body X +30',{bodyX:30}],['Body X -30',{bodyX:-30}],['Body Y +30',{bodyY:30}],['Body Y -30',{bodyY:-30}],['Body rotate +35',{bodyRot:35}],['Body rotate -35',{bodyRot:-35}],['Yaw +110',{turn:110,bodyX:15}],['Yaw -110',{turn:-110,bodyX:15}],['Yaw180',{turn:180,bodyX:15}],['Above60',{view:60,bodyX:15}],['Below60',{view:-60,bodyX:15}],['Yaw75 below45',{turn:75,view:-45,bodyX:15}]];
+  const joints=Object.keys(R.data.config.bones).filter(n=>/^(UPPER_ARM|FOREARM|WRIST|HAND|THIGH|SHIN|ANKLE|FOOT)\./.test(n));
+  for(const [name,channels]of cases){const b=structuredClone(base);for(const[id,v]of Object.entries(channels))b.project.keys[id]=[{uid:'qa-'+id,t:0,v,ease:'constant'}];await BunnyProject.accept(b);const values=C.compute(0),diagnostic=structuredClone(C.diagnostics),drift=Math.max(...['legL','legR'].map(part=>distance(C.forward(part,0,values).world,target[part]))),pose=R.pose(0);let gap=0;for(const name of joints){const bone=R.data.config.bones[name];gap=Math.max(gap,distance(R.transform(pose.mats[bone.parent],bone.pivot),R.transform(pose.mats[name],bone.pivot)))}
+   test(name+' holds both world-foot contacts with connected native joints',drift<.015&&gap<1e-7,{worldDrift:drift,maximumJointGap:gap,clamped:diagnostic.clamped,requestedMotionFraction:diagnostic.fraction});
+   R.project(0);BunnyCamera.refresh(0);const stage=document.querySelector('#stage').cloneNode(true);stage.querySelectorAll('[display="none"],#part-handles,#subGuide,#caption-safe,.preview-overlay').forEach(n=>n.remove());stage.setAttribute('width',216);stage.setAttribute('height',384);stage.style.removeProperty('width');stage.style.removeProperty('height');const image=new Image();await new Promise((r,j)=>{image.onload=r;image.onerror=j;image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(stage))});const c=document.createElement('canvas');c.width=216;c.height=420;const g=c.getContext('2d');g.fillStyle='#E0A64B';g.fillRect(0,0,c.width,c.height);g.fillStyle='#1F1F1D';g.font='bold 13px Arial';g.fillText(name,6,16);g.font='11px Arial';g.fillText('contact '+drift.toFixed(5)+' · reach '+diagnostic.fraction.toFixed(3),6,31);g.drawImage(image,0,36,216,384);images.push(c);
+  }
+  const canvas=document.createElement('canvas');canvas.width=216*4;canvas.height=420*3;const g=canvas.getContext('2d');images.forEach((image,i)=>g.drawImage(image,(i%4)*216,Math.floor(i/4)*420));
+  test('Numeric constraints do not erase authored requested root keys',(await BunnyProject.bundle()).project.keys.bodyX[0].v===15);
+  return{checks,png:canvas.toDataURL('image/png')};
+ });
+ checks.push(...result.checks);fs.writeFileSync('qa/'+label+'-pin-contact-sheet.png',Buffer.from(result.png.split(',')[1],'base64'));
+ checks.push({name:'No runtime errors',passed:!errors.length,errors});assert.ok(!errors.length);console.log(JSON.stringify({label,checks:checks.length,passed:true,maximumDrift:Math.max(...checks.map(c=>c.worldDrift||0))}));
+}finally{if(before)await p.evaluate(b=>BunnyProject.accept(b),before);fs.writeFileSync('qa/'+label+'-pin-native-checks.json',JSON.stringify({checks,errors,testedBuild:JSON.parse(fs.readFileSync('qa/candidate-native-build.json','utf8')).artifacts[android?'apk':'exe'],limits:['12 bounded both-feet-pinned body/orbit poses; mathematical world contact and16native joint connections with actual runtime SVG rasters. Not exhaustive artistic planted-foot/cloth/physical pen-phone acceptance.','Reach clamping intentionally limits body motion to preserve pins; requested keys remain authored, not silently overwritten.']},null,2));if(!android)await browser.close();}})().then(()=>process.exit(0),e=>{console.error(e);process.exit(1)});
