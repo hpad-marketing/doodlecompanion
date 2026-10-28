@@ -11,7 +11,7 @@ const root = path.resolve(__dirname, '..');
   const checks = [];
   function check(name, value) { checks.push({ name, passed: !!value }); if (!value) throw new Error(name); }
   try {
-    await page.goto(pathToFileURL(path.join(root, process.argv[2] || 'index.source-rig.html')).href);
+    await page.goto(pathToFileURL(path.join(root, process.argv[2] || (fs.existsSync(path.join(root, 'index.studio.html')) ? 'index.studio.html' : 'index.source-rig.html')/*the Oct-23 source-rig page no longer ships*/)).href);
     await page.waitForFunction(() => document.querySelector('#native-armL')?.hasAttribute('transform'));
     check('eleven timeline tracks', await page.locator('[data-rail]').count() >= 11)/*more rails were added later*/;
     check('visible native source paths', await page.locator('#actor path').count() > 20);
