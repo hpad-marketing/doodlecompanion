@@ -8,9 +8,11 @@ const closeNow=page=>page.evaluate(()=>{const h=document.getElementById('studio-
 async function wrapContext(ctx){await ctx.addInitScript(script).catch(()=>{});for(const p of ctx.pages())await closeNow(p);return ctx}
 function wrapBrowser(b){const newContext=b.newContext.bind(b);b.newContext=async(...a)=>wrapContext(await newContext(...a));
  const newPage=b.newPage.bind(b);b.newPage=async(...a)=>{const p=await newPage(...a);await p.context().addInitScript(script).catch(()=>{});return p};return b}
+// PW_CHANNEL=chrome uses the installed Chrome when Playwright's own headless shell isn't installed.
+const chan=(a,i)=>{if(!process.env.PW_CHANNEL)return a;const b=[...a];const o={...(b[i]||{})};if(!o.channel&&!o.executablePath)o.channel=process.env.PW_CHANNEL;b[i]=o;return b};
 const wrapType=bt=>new Proxy(bt,{get(o,k){const v=o[k];
- if(k==='launch')return async(...a)=>wrapBrowser(await o.launch(...a));
- if(k==='launchPersistentContext')return async(...a)=>wrapContext(await o.launchPersistentContext(...a));
+ if(k==='launch')return async(...a)=>wrapBrowser(await o.launch(...chan(a,0)));
+ if(k==='launchPersistentContext')return async(...a)=>wrapContext(await o.launchPersistentContext(...chan(a,1)));
  if(k==='connectOverCDP')return async(...a)=>{const b=wrapBrowser(await o.connectOverCDP(...a));for(const c of b.contexts())await wrapContext(c);return b};
  return typeof v==='function'?v.bind(o):v;}});
 const wrapElectron=el=>new Proxy(el,{get(o,k){const v=o[k];if(k==='launch')return async(...a)=>{const app=await o.launch(...a);await wrapContext(app.context());app.on('window',p=>p.waitForLoadState('domcontentloaded').then(()=>closeNow(p)).catch(()=>{}));return app};return typeof v==='function'?v.bind(o):v;}});
