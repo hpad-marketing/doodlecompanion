@@ -1,5 +1,5 @@
 // 360° prop library: approved props, each drawn from its own 3D model at every 15° of turn and 30° of tilt.
-// Tools › Hold a 360° prop… puts one in Bunny's hand at the playhead. The holding pose is keyed, and the prop
+// Animate › 360° props… puts one in Bunny's hand at the playhead, or on its own in the scene. The holding pose is keyed, and the prop
 // swaps to the right view as Bunny turns, drawing over the body on the near side and behind it on the far side.
 const PropLibrary360=(()=>{
   const S=Studio,W=Workflow,LIB=__PROP360_DATA__,PITCH=10,BLEND=200;
@@ -42,6 +42,14 @@ const PropLibrary360=(()=>{
     return Performance.apply({uid:'prop360-'+rec.id,name:'Hold '+rec.label.toLowerCase(),duration:D,keys,category:'Props',loop:false,props},{at,duration:D,strength:1,blend:BLEND,recent:false});
   }
 
+  // A prop on its own: a free scene object at the chosen turn, moved and scaled like any other prop.
+  function place(id,{turn=0,at=playhead}={}){
+    const rec=find(id);if(!rec)throw Error('Choose a prop from the library');
+    const svg=rec.views[viewKey(rec,turn,PITCH)];
+    const uid=BunnyProps.add(svg,{name:rec.label+(turn?' · '+wrap(Math.round(turn/15)*15)+'°':''),attachment:'scene',time:at,size:rec.size});
+    // Dead centre is behind Bunny, so it lands beside him, ready to drag.
+    const p=BunnyProps.find(uid);BunnyProps.put(uid,{...p.keys[0].value,x:120},{time:p.keys[0].t});return uid;
+  }
   let dlg=null;
   function build(){
     dlg=document.createElement('dialog');dlg.id='prop360-dialog';dlg.setAttribute('aria-labelledby','prop360-title');
@@ -58,19 +66,20 @@ const PropLibrary360=(()=>{
 #prop360-dialog .p3-card img{width:72px!important;height:72px!important;max-width:none}
 #prop360-dialog input[type=number]{width:70px}#prop360-dialog .p3-hint{opacity:.8;font-size:12px}
 #prop360-status{padding:8px 16px;border-top:3px solid #1F1F1D;min-height:20px;font-size:13px}</style>
-<header><h2 id="prop360-title">Hold a 360° prop</h2><span class="p3-hint">Click a prop. Bunny takes it in his hand at the playhead and it turns with him.</span><button type="button" id="prop360-close">Done</button></header>
+<header><h2 id="prop360-title">360° props</h2><span class="p3-hint">Click a prop. In his hand it turns with Bunny. On its own it stays at the angle you pick.</span><button type="button" id="prop360-close">Done</button></header>
+<div class="p3-row"><b>Use it</b><label><input type="radio" name="prop360-mode" value="hold" checked> in Bunny's hand</label><label><input type="radio" name="prop360-mode" value="place"> on its own in the scene</label><label for="prop360-turn">turned</label><select id="prop360-turn">${Array.from({length:24},(_,i)=>`<option value="${i*15}">${i*15}°</option>`).join('')}</select><span class="p3-hint">On its own, it lands beside Bunny. Move, scale or key it in Props like any other prop.</span></div>
 <div class="p3-row"><label for="prop360-seconds"><b>Hold for</b></label><input type="number" id="prop360-seconds" min="0.5" max="120" step="0.5" value="3"><span>seconds from the playhead</span><span class="p3-hint">The arm pose is keyed for the same span, so you can change it afterwards like any other keys.</span></div>
 <div class="p3-body">${cats.map(c=>`<h3>${esc(c)}</h3><div class="p3-grid">${LIB.props.filter(p=>p.category===c).map(p=>`<button type="button" class="p3-card" data-prop="${esc(p.id)}" title="${esc(p.grip)}"><img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(p.views['30_30'])}"><span>${esc(p.label)}</span></button>`).join('')}</div>`).join('')}</div>
 <div id="prop360-status" role="status"></div>`;
     document.body.append(dlg);const q=s=>dlg.querySelector(s),status=t=>q('#prop360-status').textContent=t;
     q('#prop360-close').onclick=()=>dlg.close();
     for(const b of dlg.querySelectorAll('[data-prop]'))b.onclick=()=>{
-      try{const rec=find(b.dataset.prop),r=hold(rec.id,{seconds:+q('#prop360-seconds').value||3});status(rec.label+' added: '+r.props.length+' view'+(r.props.length>1?'s':'')+(r.skipped.length?'. Kept protected tracks: '+r.skipped.join(', ')+'.':'.'));if(typeof applyPose==='function')applyPose(playhead);}
+      try{const rec=find(b.dataset.prop);if(dlg.querySelector('[name=prop360-mode]:checked').value==='place'){place(rec.id,{turn:+q('#prop360-turn').value});status(rec.label+' placed in the scene. Select it in Props to move or scale it.');if(typeof applyPose==='function')applyPose(playhead);return;}const r=hold(rec.id,{seconds:+q('#prop360-seconds').value||3});status(rec.label+' added: '+r.props.length+' view'+(r.props.length>1?'s':'')+(r.skipped.length?'. Kept protected tracks: '+r.skipped.join(', ')+'.':'.'));if(typeof applyPose==='function')applyPose(playhead);}
       catch(e){status(e.message||String(e));}
     };
   }
   function open(){if(!dlg)build();if(!dlg.open)dlg.showModal();}
-  const addMenu=()=>{try{window.DoodleMenu?.add('animate',{id:'animate:prop360',label:'Hold a 360° prop…',run:open})}catch{}};addMenu();DoodleSurfaces.onWindow('bunny-studio-ready',addMenu,{once:true});
-  return{open,hold,frame,track,viewKey,list:()=>LIB.props.map(p=>({id:p.id,label:p.label,category:p.category,hands:p.hold.hand}))};
+  const addMenu=()=>{try{window.DoodleMenu?.add('animate',{id:'animate:prop360',label:'360° props…',run:open})}catch{}};addMenu();DoodleSurfaces.onWindow('bunny-studio-ready',addMenu,{once:true});
+  return{open,hold,place,frame,track,viewKey,list:()=>LIB.props.map(p=>({id:p.id,label:p.label,category:p.category,hands:p.hold.hand}))};
 })();
 window.DoodlePropLibrary360=PropLibrary360;

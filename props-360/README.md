@@ -1,8 +1,8 @@
 # 360° prop library for Doodle Studio
 
-`prop-library-360.js` is a Doodle Studio source module. It adds **Animate › Hold a 360° prop…** with the 90 props
+`prop-library-360.js` is a Doodle Studio source module. It adds **Animate › 360° props…** with the 90 props
 the user approved on 2026-10-28 (`picks.json`). Each prop has 24 eye-level views drawn from its own 3D model. Clicking
-one puts it in Bunny's hand at the playhead, keys the holding pose, and swaps views as Bunny turns.
+one puts it in Bunny's hand at the playhead (pose keyed, views swap as he turns), or places it on its own in the scene at a chosen angle.
 
 Install on the PC from the Talking Character App folder:
 
