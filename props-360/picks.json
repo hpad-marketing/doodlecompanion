@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-28T02:22Z",
+ "updated": "2026-10-28T02:37Z",
  "approved": [
   "mug",
   "glass",
@@ -89,7 +89,8 @@
   "plant",
   "selfie",
   "popper",
-  "partyhat"
+  "partyhat",
+  "potion"
  ],
  "needsFix": [],
  "rejected": [
@@ -110,8 +111,5 @@
   "compass",
   "plane"
  ],
- "pending": "all batches reviewed",
- "notReviewed": [
-  "potion"
- ]
+ "pending": "all batches reviewed"
 }
