@@ -38,6 +38,7 @@ The user has closed Doodle Studio. Keep it closed until the install finishes, an
    18. patch_project_limits
    19. patch_audition_return_visible
    20. patch_queue_follows_format
+   21. patch_shelf_focus_pointer
 
    Some scripts patch a single src file and others patch `ux-overhaul.css`. Each one finds its own file when given the src folder.
 
