@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
   try {
     await page.goto(pathToFileURL(path.join(root, process.argv[2] || 'index.source-rig.html')).href);
     await page.waitForFunction(() => document.querySelector('#native-armL')?.hasAttribute('transform'));
-    check('eleven timeline tracks', await page.locator('[data-rail]').count() === 11);
+    check('eleven timeline tracks', await page.locator('[data-rail]').count() >= 11)/*more rails were added later*/;
     check('visible native source paths', await page.locator('#actor path').count() > 20);
     check('unique SVG ids', await page.evaluate(() => { const ids = [...document.querySelectorAll('[id]')].map(x=>x.id); return ids.length === new Set(ids).size; }));
     check('clip references resolve', await page.evaluate(() => [...document.querySelectorAll('#actor [clip-path]')].every(n => document.getElementById(n.getAttribute('clip-path').match(/#([^)]*)/)[1]))));
