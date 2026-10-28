@@ -282,7 +282,7 @@ const SUITES={
 
  // L. Golden frames: pixel-compare the stage at fixed frames of a canned scene (Blender/Krita style, with tolerance).
  // First run writes goldens; later runs (e.g. the UX-overhauled build) must match them, because UX work must not change rendering.
- async golden(browser){const {PNG}=require('pngjs'),pixelmatch=require('pixelmatch');const dir=path.resolve(arg('goldens',path.join(__dirname,'goldens')));fs.mkdirSync(dir,{recursive:true});
+ async golden(browser){const {PNG}=require('pngjs'),pixelmatch=(m=>m.default||m)(require('pixelmatch'))/*pixelmatch 7 is ESM*/;const dir=path.resolve(arg('goldens',path.join(__dirname,'goldens')));fs.mkdirSync(dir,{recursive:true});
   const shoot=async()=>{const {p,log}=await boot(browser,{width:1600,height:900});
    await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
    await ev(p,async()=>{const pr=JSON.parse(JSON.stringify((await BunnyProject.bundle()).project));const ids=Object.keys(pr.keys);let n=0;ids.forEach((t,j)=>{pr.keys[t]=[0,500,1000,1500,2000].map((ms,i)=>({uid:'g'+(n++),t:ms,v:((i*7+j*3)%5-2)/4,ease:'auto'}));});pr.cues=[{uid:'c1',text:'Golden frame caption test',start:0,end:2000}];await BunnyProject.accept({format:'BunnyStudio',version:1,project:pr});});
@@ -303,7 +303,7 @@ const SUITES={
  // M. Crash injection: SIGKILL the browser during edits and check the reopened project is valid and recent.
  async crash(browser){const os=require('os');const fails=[];const rounds=QUICK?2:4;
   for(let round=0;round<rounds;round++){const dirp=fs.mkdtempSync(path.join(os.tmpdir(),'ds-crash-'));
-   const open=async()=>{const ctx=await chromium.launchPersistentContext(dirp,{viewport:{width:1600,height:900}});const p=ctx.pages()[0]||await ctx.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>window.BunnyStudio&&window.BunnyProject,null,{timeout:120000});await p.waitForTimeout(1500);await ev(p,()=>document.querySelector('#studio-home')?.close());return {ctx,p,errors};};
+   const open=async()=>{const ctx=await chromium.launchPersistentContext(dirp,{...(process.env.PW_CHANNEL?{channel:process.env.PW_CHANNEL}:{}),viewport:{width:1600,height:900}});const p=ctx.pages()[0]||await ctx.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:'+server.address().port);await p.waitForFunction(()=>window.BunnyStudio&&window.BunnyProject,null,{timeout:120000});await p.waitForTimeout(1500);await ev(p,()=>document.querySelector('#studio-home')?.close());return {ctx,p,errors};};
    let {ctx,p}=await open();await setWS(p,'pose');
    const count=()=>ev(p,async()=>{const pr=(await BunnyProject.bundle()).project;return Object.values(pr.keys).reduce((n,a)=>n+(a?.length||0),0);});
    for(let i=0;i<5;i++){await ev(p,f=>DoodleDrawing.seek(f),i*10);await ev(p,()=>document.querySelector('#keys').click());await p.waitForTimeout(50);}
@@ -324,7 +324,7 @@ const SUITES={
 };
 
 (async()=>{server=http.createServer((q,r)=>{r.setHeader('Content-Type','text/html');r.end(fs.readFileSync(HTML))});await new Promise(r=>server.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required','--enable-precise-memory-info','--js-flags=--expose-gc']});
+ const browser=await chromium.launch({...(process.env.PW_CHANNEL?{channel:process.env.PW_CHANNEL}:{}),args:['--autoplay-policy=no-user-gesture-required','--enable-precise-memory-info','--js-flags=--expose-gc']});
  for(const [name,fn]of Object.entries(SUITES)){if(ONLY&&!ONLY.includes(name))continue;const t0=Date.now();console.log('\n=== '+name);
   try{await Promise.race([fn(browser),new Promise((_,j)=>setTimeout(()=>j(Error('suite timeout 15 min')),900000))]);}catch(e){test(name,'Suite crashed: '+e.message.split('\n')[0],false,e.stack?.split('\n').slice(0,4));}
   info(name,'Suite seconds',Math.round((Date.now()-t0)/1000));}
