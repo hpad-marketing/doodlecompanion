@@ -15,7 +15,9 @@ const wrapType=bt=>new Proxy(bt,{get(o,k){const v=o[k];
  if(k==='launchPersistentContext')return async(...a)=>wrapContext(await o.launchPersistentContext(...chan(a,1)));
  if(k==='connectOverCDP')return async(...a)=>{const b=wrapBrowser(await o.connectOverCDP(...a));for(const c of b.contexts())await wrapContext(c);return b};
  return typeof v==='function'?v.bind(o):v;}});
-const wrapElectron=el=>new Proxy(el,{get(o,k){const v=o[k];if(k==='launch')return async(...a)=>{const app=await o.launch(...a);await wrapContext(app.context());app.on('window',p=>p.waitForLoadState('domcontentloaded').then(()=>closeNow(p)).catch(()=>{}));return app};return typeof v==='function'?v.bind(o):v;}});
+// Electron's first window can exist before addInitScript lands, so install the same watcher in each window directly.
+const watchPage=p=>p.waitForLoadState('domcontentloaded').then(()=>p.evaluate(script)).catch(()=>{});
+const wrapElectron=el=>new Proxy(el,{get(o,k){const v=o[k];if(k==='launch')return async(...a)=>{const app=await o.launch(...a);await wrapContext(app.context());for(const p of app.windows())watchPage(p);app.on('window',watchPage);const first=app.firstWindow.bind(app);app.firstWindow=async(...b)=>{const p=await first(...b);await watchPage(p);return p};return app};return typeof v==='function'?v.bind(o):v;}});
 module.exports=function guard(pw){if(process.env.QA_KEEP_HOME)return pw;const out={...pw};
  for(const t of ['chromium','firefox','webkit'])if(pw[t])out[t]=wrapType(pw[t]);
  if(pw._electron)out._electron=wrapElectron(pw._electron);

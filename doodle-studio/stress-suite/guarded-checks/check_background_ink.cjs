@@ -26,4 +26,4 @@ const {_electron}=require('./qa-home-guard.cjs')(require('C:/Users/Sushant/.cach
   const exported=await p.evaluate(async()=>{const image=new Image();image.src=BunnyStory.cloneStage({width:1080});await image.decode();return{width:image.naturalWidth,height:image.naturalHeight,filters:document.querySelectorAll('#drawing-palette-defs filter').length};});check('1080p SVG export includes working ink filters',exported.width===1080&&exported.height===1920,exported);
   check('Native runtime reports no uncaught errors',!errors.length,{errors});
  }finally{if(app)app.process().kill();host.kill();fs.writeFileSync(path.join(qa,'checks.json'),JSON.stringify({checks,errors,build:build.folder,scope:'Isolated native host; original user animation/profile untouched. Raster ink adjustment, not vector conversion.'},null,2));}
-})().catch(e=>{console.error(e);process.exitCode=1;});
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>setTimeout(()=>process.exit(),500)/*killed host/Electron pipes kept node alive*/);

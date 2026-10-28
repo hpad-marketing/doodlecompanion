@@ -1,6 +1,7 @@
 // Isolated native Windows publisher + separate phone UI context. Radio tested separately.
 const fs=require('fs'),assert=require('assert/strict');
 const {chromium}=require('./qa-home-guard.cjs')(require('C:/Users/Sushant/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+if(!process.env.QA_ANDROID){/*the phone side of live sync runs through the Android bridge (window.BunnyAndroid); the Android app is retired*/console.log(JSON.stringify({skipped:true,reason:'Android client retired'}));process.exit(0);}
 (async()=>{
  const origin=process.argv[2];assert(origin&&!origin.endsWith(':54183'));
  const browser=await chromium.launch({channel:'msedge',headless:true});const pc=await browser.newPage({viewport:{width:1600,height:1000}}),phone=await browser.newPage({viewport:{width:393,height:850},isMobile:true,hasTouch:true}),checks=[],errors=[];let network=0,assets=0,forceWifiFailure=false;

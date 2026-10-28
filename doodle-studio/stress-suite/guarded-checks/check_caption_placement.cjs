@@ -29,4 +29,4 @@ const {_electron}=require('./qa-home-guard.cjs')(require('C:/Users/Sushant/.cach
   check('Wrapped caption child spans are recognized as caption hits',await p.evaluate(()=>DoodleCaptionBox.hit({target:document.querySelector('#subText tspan')||document.querySelector('#subText')})));
   check('No uncaught native runtime errors',!errors.length,{errors});
  }finally{if(app)app.process().kill();host.kill();fs.writeFileSync(path.join(qa,'native-checks.json'),JSON.stringify({checks,errors,build:b.folder,scope:'Isolated native pointer/numeric/keyboard caption placement; current-shot shared layout, no caption retiming.'},null,2));}
-})().catch(e=>{console.error(e);process.exitCode=1});
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>setTimeout(()=>process.exit(),500)/*killed host/Electron pipes kept node alive*/);
