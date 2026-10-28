@@ -76,6 +76,6 @@ const root = path.resolve(__dirname, '..');
     await browser.close();
   }
   console.log(JSON.stringify(checks));
-})().catch(error => { console.error(error); process.exitCode = 1; });const __fill=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.fill(v)};const __select=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.selectOption(v)};
+})().catch(error => { console.error(error); process.exitCode = 1; });const __fill=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()&&await l.first().isEditable().catch(()=>false)&&await l.first().getAttribute('type')!=='range'))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.fill(v)};const __select=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.selectOption(v)};
 const __tap=async l=>{/*legacy controls still work but now sit in hidden containers of the studio layout*/if(await l.count()&&!(await l.first().isVisible()))return l.first().dispatchEvent('click');return l.click()};
 

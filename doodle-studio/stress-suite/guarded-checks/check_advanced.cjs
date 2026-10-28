@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path'),http=require('http');
 const {chromium}=require('./qa-home-guard.cjs')(require('C:/Users/Sushant/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
 const root=path.resolve(__dirname,'..');
-const __fill=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.fill(v)};const __select=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.selectOption(v)};
+const __fill=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()&&await l.first().isEditable().catch(()=>false)&&await l.first().getAttribute('type')!=='range'))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.fill(v)};const __select=async(l,v)=>{if(await l.count()&&!(await l.first().isVisible()))return l.first().evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}));},v);return l.selectOption(v)};
 const __tap=async l=>{/*legacy controls still work but now sit in hidden containers of the studio layout*/if(await l.count()&&!(await l.first().isVisible()))return l.first().dispatchEvent('click');return l.click()};
 (async()=>{
  const origin=fs.readFileSync(path.join(root,'qa/windows-host.log'),'utf8').trim();
