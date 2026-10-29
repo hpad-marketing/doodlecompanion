@@ -1,8 +1,8 @@
 {
- "version": "20261029-212355",
- "notes": "Loops are seamless: walks and other looping motions now play their whole cycle to the loop point, so Loop and play ranges keep walking with no dip to the standing pose, and the Texting walk no longer flicks its arms at each loop. Ear physics carries across the loop. New: Tools > Check for updates installs an update straight away. Timeline: remove attribute rows, and double-click the Bunny row to fold its rows.",
+ "version": "20261029-215500",
+ "notes": "Updates no longer cut off the MCP. Doodle Studio now remembers the MCP switch in Script › Assistant and turns it back on after every restart and update. After each update it checks that the MCP answers, and warns you if it doesn't. Also in this version: seamless loops, Tools › Check for updates and the timeline fixes.",
  "runtime": "44.9.0",
- "published": "2026-10-29T15:56:02.469Z",
+ "published": "2026-10-29T16:20:28.603Z",
  "files": {
   "Doodle Studio.exe": {
    "sha256": "1db3d30d2331b2ab2586447ae63ba16580620eb6a306ccc56f0c27af9ea116ac",
@@ -20,9 +20,14 @@
    "gz": "files/c5ca455df30f8e11a67ddd8d5035eb73ca4bf5279574db02f5c56864dde800cc.gz"
   },
   "desktop/resources/app/main.cjs": {
-   "sha256": "edb1da90582d1c87aac688efbadd07b0d335e883fef87f2443b0f31caed8fe05",
-   "size": 8949,
-   "gz": "files/edb1da90582d1c87aac688efbadd07b0d335e883fef87f2443b0f31caed8fe05.gz"
+   "sha256": "f7e760cef01da9f53ca49a4739e5a3575e1b0804d1878d86512370cbed8a2d0c",
+   "size": 9165,
+   "gz": "files/f7e760cef01da9f53ca49a4739e5a3575e1b0804d1878d86512370cbed8a2d0c.gz"
+  },
+  "desktop/resources/app/mcp-keeper.cjs": {
+   "sha256": "fb58839af9d4e8d15dfdc01cb2b8fcb8a1058efd217349a05b5b2bc3055314fe",
+   "size": 4354,
+   "gz": "files/fb58839af9d4e8d15dfdc01cb2b8fcb8a1058efd217349a05b5b2bc3055314fe.gz"
   },
   "desktop/resources/app/package.json": {
    "sha256": "9ec00530dd2e2955f0d814fd1ed20b70dff0d647e098b819c46582a4e744196e",
