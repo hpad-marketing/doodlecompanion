@@ -1,13 +1,13 @@
 {
- "version": "20261027-084419",
- "notes": "34 new storytelling motions in the library: big feelings, talking, toward-the-camera, spooky, travel, action and narrator beats, plus 4 new props.",
+ "version": "20261029-150000",
+ "notes": "Everything from your latest Doodle Studio build is now in the update: every approved motion and prop, the UX overhaul, mouth sets, motion smoothing, background auto layout and all the fixes. Doodle Studio now checks for updates every hour and keeps the version before for rollback.",
  "runtime": "44.9.0",
- "published": "2026-10-27T03:16:11.715Z",
+ "published": "2026-10-29T14:52:28.552Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "bb40a79a7a87d7b6cc9585ba47f583c4500027137678e4216cf56f1c1b9225a1",
-   "size": 91165184,
-   "gz": "files/bb40a79a7a87d7b6cc9585ba47f583c4500027137678e4216cf56f1c1b9225a1.gz"
+   "sha256": "44248926a1dd5503b8bf9dd8b313e81dfd3a014bb6e1020ffaeb13b14b58f166",
+   "size": 96321536,
+   "gz": "files/44248926a1dd5503b8bf9dd8b313e81dfd3a014bb6e1020ffaeb13b14b58f166.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
@@ -35,9 +35,9 @@
    "gz": "files/68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8.gz"
   },
   "desktop/resources/app/updater.cjs": {
-   "sha256": "23022f3ec84dac0647d7a6a3201c7bd68314b98aaf1ce1c2a0d95ebb6a27b398",
-   "size": 6405,
-   "gz": "files/23022f3ec84dac0647d7a6a3201c7bd68314b98aaf1ce1c2a0d95ebb6a27b398.gz"
+   "sha256": "237fd12979a69d3b44587647ce8c7fcfe6acbb2679556bb05cfd88635bf04e4a",
+   "size": 7343,
+   "gz": "files/237fd12979a69d3b44587647ce8c7fcfe6acbb2679556bb05cfd88635bf04e4a.gz"
   }
  }
 }
