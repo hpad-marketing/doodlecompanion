@@ -1,13 +1,13 @@
 {
- "version": "20261029-215500",
- "notes": "Updates no longer cut off the MCP. Doodle Studio now remembers the MCP switch in Script › Assistant and turns it back on after every restart and update. After each update it checks that the MCP answers, and warns you if it doesn't. Also in this version: seamless loops, Tools › Check for updates and the timeline fixes.",
+ "version": "20261029-231907",
+ "notes": "Hands and arms no longer cut into Bunny's head. They move freely but stop at the head outline (ears included); an arm may cross the face only when the whole arm is drawn in front. Applies to every motion, saved motion, pose, key, playback and export. get_scene_state now reports the head check.",
  "runtime": "44.9.0",
- "published": "2026-10-29T16:20:28.603Z",
+ "published": "2026-10-29T18:01:28.882Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "1db3d30d2331b2ab2586447ae63ba16580620eb6a306ccc56f0c27af9ea116ac",
-   "size": 96331264,
-   "gz": "files/1db3d30d2331b2ab2586447ae63ba16580620eb6a306ccc56f0c27af9ea116ac.gz"
+   "sha256": "a14e65f0cb29838468a33bfb612a6932d36e4be035f5ea83e77f0f3978565a6b",
+   "size": 96343040,
+   "gz": "files/a14e65f0cb29838468a33bfb612a6932d36e4be035f5ea83e77f0f3978565a6b.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
