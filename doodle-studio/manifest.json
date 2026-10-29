@@ -1,13 +1,13 @@
 {
- "version": "20261029-150000",
- "notes": "Everything from your latest Doodle Studio build is now in the update: every approved motion and prop, the UX overhaul, mouth sets, motion smoothing, background auto layout and all the fixes. Doodle Studio now checks for updates every hour and keeps the version before for rollback.",
+ "version": "20261029-212355",
+ "notes": "Loops are seamless: walks and other looping motions now play their whole cycle to the loop point, so Loop and play ranges keep walking with no dip to the standing pose, and the Texting walk no longer flicks its arms at each loop. Ear physics carries across the loop. New: Tools > Check for updates installs an update straight away. Timeline: remove attribute rows, and double-click the Bunny row to fold its rows.",
  "runtime": "44.9.0",
- "published": "2026-10-29T14:52:28.552Z",
+ "published": "2026-10-29T15:56:02.469Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "44248926a1dd5503b8bf9dd8b313e81dfd3a014bb6e1020ffaeb13b14b58f166",
-   "size": 96321536,
-   "gz": "files/44248926a1dd5503b8bf9dd8b313e81dfd3a014bb6e1020ffaeb13b14b58f166.gz"
+   "sha256": "1db3d30d2331b2ab2586447ae63ba16580620eb6a306ccc56f0c27af9ea116ac",
+   "size": 96331264,
+   "gz": "files/1db3d30d2331b2ab2586447ae63ba16580620eb6a306ccc56f0c27af9ea116ac.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
@@ -20,9 +20,9 @@
    "gz": "files/c5ca455df30f8e11a67ddd8d5035eb73ca4bf5279574db02f5c56864dde800cc.gz"
   },
   "desktop/resources/app/main.cjs": {
-   "sha256": "a3b7cd8ca59414470c67947cff84e87bfeb46f580f3a24c5b1f121ddc800d163",
-   "size": 7929,
-   "gz": "files/a3b7cd8ca59414470c67947cff84e87bfeb46f580f3a24c5b1f121ddc800d163.gz"
+   "sha256": "edb1da90582d1c87aac688efbadd07b0d335e883fef87f2443b0f31caed8fe05",
+   "size": 8949,
+   "gz": "files/edb1da90582d1c87aac688efbadd07b0d335e883fef87f2443b0f31caed8fe05.gz"
   },
   "desktop/resources/app/package.json": {
    "sha256": "9ec00530dd2e2955f0d814fd1ed20b70dff0d647e098b819c46582a4e744196e",
@@ -30,14 +30,14 @@
    "gz": "files/9ec00530dd2e2955f0d814fd1ed20b70dff0d647e098b819c46582a4e744196e.gz"
   },
   "desktop/resources/app/preload.cjs": {
-   "sha256": "68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8",
-   "size": 694,
-   "gz": "files/68855100dfc7d8d5bc656dc4bfde2174b82a3db4fb021c3ce9ceb667c70d53b8.gz"
+   "sha256": "e60055d539ddbf637a2adf6adbe2a1dc77c1a0b72871a9077130c7501ea79427",
+   "size": 749,
+   "gz": "files/e60055d539ddbf637a2adf6adbe2a1dc77c1a0b72871a9077130c7501ea79427.gz"
   },
   "desktop/resources/app/updater.cjs": {
-   "sha256": "237fd12979a69d3b44587647ce8c7fcfe6acbb2679556bb05cfd88635bf04e4a",
-   "size": 7343,
-   "gz": "files/237fd12979a69d3b44587647ce8c7fcfe6acbb2679556bb05cfd88635bf04e4a.gz"
+   "sha256": "8208099788e1df0b0f52018f91ed8f4e4a835ccfdb08d53946aea8977551c853",
+   "size": 8236,
+   "gz": "files/8208099788e1df0b0f52018f91ed8f4e4a835ccfdb08d53946aea8977551c853.gz"
   }
  }
 }
