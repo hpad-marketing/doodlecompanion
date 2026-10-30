@@ -98,13 +98,13 @@ FACE_Z=0.49
 def cam_state(yaw=0,pitch=2,H=1.9,lens=35,roll=0,band=0.44,shake=0,tx=0,ty=0):
     return dict(yaw=yaw,pitch=pitch,H=H,lens=lens,roll=roll,band=band,shake=shake,tx=tx,ty=ty)
 SHOTS=[  # (start, [(t, state)...])
- (0.00,[(0.0,cam_state(H=1.9)),(1.45,cam_state(H=1.65)),(1.62,cam_state(H=1.7,pitch=16,lens=30)),(2.05,cam_state(H=1.7,pitch=16,lens=30)),
+ (0.00,[(0.0,cam_state(H=3.2,lens=24,pitch=6,yaw=-18)),(1.45,cam_state(H=1.65)),(1.62,cam_state(H=1.7,pitch=16,lens=30)),(2.05,cam_state(H=1.7,pitch=16,lens=30)),
         (2.45,cam_state(H=1.6,pitch=3)),(3.25,cam_state(yaw=-28,H=1.6,pitch=4)),(3.42,cam_state(yaw=-30,H=1.35,pitch=4,band=0.47)),(4.649,cam_state(yaw=-33,H=1.4,pitch=4,band=0.46))]),
  (4.649,[(4.649,cam_state(yaw=8,pitch=1,H=1.75,lens=22,band=0.43)),(5.524,cam_state(yaw=12,pitch=1,H=1.65,lens=22,band=0.43))]),
  (5.524,[(5.524,cam_state(H=1.5,lens=24)),(6.40,cam_state(H=1.5,lens=50)),(6.60,cam_state(H=1.32,lens=50,band=0.46)),(6.85,cam_state(H=1.5,lens=50)),(7.275,cam_state(H=1.5,lens=50))]),
  (7.275,[(7.275,cam_state(pitch=16,H=2.0,lens=26,band=0.42)),(8.85,cam_state(pitch=17,H=1.95,lens=26,roll=6,band=0.42)),(9.025,cam_state(yaw=55,pitch=16,H=1.95,lens=26,roll=6,band=0.42))]),
  (9.025,[(9.025,cam_state(yaw=-60,pitch=18,H=1.6,lens=28,roll=10)),(9.20,cam_state(yaw=-12,pitch=18,H=1.6,lens=28,roll=10)),(10.0,cam_state(yaw=-12,pitch=18,H=1.55,lens=28,roll=10)),(10.62,cam_state(yaw=-12,pitch=18,H=1.4,lens=28,roll=10,band=0.46)),(10.776,cam_state(yaw=40,pitch=12,H=1.4,lens=28,roll=6,band=0.46))]),
- (10.776,[(10.776,cam_state(yaw=-45,pitch=3,H=1.9,lens=35)),(10.95,cam_state(yaw=0,pitch=3,H=1.9,lens=35)),(11.85,cam_state(yaw=0,pitch=3,H=1.9,lens=35)),
+ (10.776,[(10.776,cam_state(yaw=-45,pitch=3,H=2.8,lens=24)),(10.95,cam_state(yaw=-10,pitch=3,H=2.7,lens=24)),(11.85,cam_state(yaw=0,pitch=3,H=1.9,lens=35)),
           (12.05,cam_state(yaw=6,pitch=-8,H=1.75,lens=20,band=0.42)),(12.526,cam_state(yaw=8,pitch=-9,H=1.7,lens=20,band=0.42))]),
  (12.526,[(12.526,cam_state(pitch=-8,H=1.8,lens=16,shake=1,band=0.45)),(12.85,cam_state(pitch=-8,H=1.8,lens=16,shake=1,band=0.45)),(13.0,cam_state(pitch=-8,H=1.6,lens=16,shake=1,band=0.46)),
           (13.6,cam_state(pitch=-8,H=1.8,lens=16,shake=1,band=0.44)),(14.28,cam_state(pitch=-8,H=1.8,lens=16,shake=1,band=0.44)),

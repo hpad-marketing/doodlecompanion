@@ -52,5 +52,33 @@ if '--outfit' in sys.argv: ao.dress(os.path.join(LIB,'outfits','track'))
 sc.render.use_motion_blur=True
 try: sc.render.motion_blur_shutter=0.15
 except Exception: pass
+# round 2 (user, 2026-10-30): dress the studio from the 3D Doodle Library packs, minimal and symmetric,
+# every piece inked like Bunny. Bunny stands at the origin facing -Y; flat floor to y=0.73, wall curve behind.
+import math
+HERE=os.path.dirname(os.path.abspath(__file__))
+for lp in (os.path.join(B,'lib'), os.path.join(HERE,'..','blender','lib'), os.path.join(HERE,'lib')):
+    if os.path.exists(os.path.join(lp,'look.py')): sys.path.insert(0,lp); break
+import look
+mats=look.materials()
+for o in objs:
+    if o.name.endswith(':mic'): o.hide_render=o.hide_viewport=True   # the pack mic stand replaces it
+DRESS=[('scenery-speaker_pair',(0,0.62,0),0),        # speakers flank him, gap behind his body
+       ('scenery-mic_stand',(0.62,0.12,0),-20),       # front-right, out of arm reach
+       ('scenery-spotlight',(-1.2,0.35,0),35),('scenery-spotlight',(1.2,0.35,0),-35),
+       ('scenery-neon_sign',(0,2.12,1.75),0),         # high on the back wall, clear of the ears
+       ('scenery-fairy_lights',(0,2.16,2.35),0)]
+with bpy.data.libraries.load(os.path.join(LIB,'packs','packs.blend')) as (s,d): d.objects=sorted({n for n,_,_ in DRESS})
+src={o.name:o for o in d.objects if o}
+dress=bpy.data.collections.new('Bambi studio dressing'); sc.collection.children.link(dress)
+for n,loc,rz in DRESS:
+    if n not in src: print('missing',n); continue
+    ob=src[n] if src[n].users_collection==() or not src[n].users_collection else src[n].copy()
+    if not ob.users_collection: dress.objects.link(ob)
+    else:
+        ob=src[n].copy(); dress.objects.link(ob)
+    ob.location=loc; ob.rotation_euler=(0,0,math.radians(rz))
+    try: look.apply_ink(ob, sc.camera, mats)
+    except Exception as e: print('ink skipped',n,e)
+print('dressed',[o.name for o in dress.objects])
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
 print('SAVED',OUT, 'cyc mat', [mm.name for mm in cyc.data.materials])
