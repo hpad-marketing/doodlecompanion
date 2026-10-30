@@ -202,16 +202,95 @@ class DSL_OT_prefs(bpy.types.Operator):
         return {'FINISHED'}
 
 
-CLASSES = (DSL_OT_refresh, DSL_OT_insert, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
+class DSL_OT_hold(bpy.types.Operator):
+    """Put the selected prop in Bunny's hand with its real grip (touching his mitten, with limits)"""
+    bl_idname = 'dsl.hold'
+    bl_label = 'Put in hand'
+    bl_options = {'REGISTER', 'UNDO'}
+    side: bpy.props.EnumProperty(items=[('AUTO', 'Auto', 'Researched hand'), ('R', 'Right', ''), ('L', 'Left', '')])
+
+    @_report_errors
+    def execute(self, context):
+        from . import grips
+        ob = context.active_object
+        if not ob or ob.name.startswith('BUNNY_'):
+            raise RuntimeError('Select a prop first.')
+        r = grips.attach(ob, side=None if self.side == 'AUTO' else self.side)
+        self.report({'INFO'} if r.get('ok', True) else {'WARNING'}, grips.describe(r))
+        return {'FINISHED'}
+
+
+class DSL_OT_release(bpy.types.Operator):
+    """Let go of the selected prop: it stays where it is, free to place anywhere"""
+    bl_idname = 'dsl.release'
+    bl_label = 'Let go'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        from . import grips
+        for ob in context.selected_objects:
+            if ob.get('dsl_grip_kind'):
+                grips.release(ob)
+        return {'FINISHED'}
+
+
+class DSL_OT_check_grip(bpy.types.Operator):
+    """Check every frame of the scene range: does the held prop touch the hand and stay out of Bunny?"""
+    bl_idname = 'dsl.check_grip'
+    bl_label = 'Check grip'
+
+    @_report_errors
+    def execute(self, context):
+        from . import grips
+        sc = context.scene
+        bad = []
+        for ob in [o for o in context.scene.objects if o.get('dsl_grip_kind')]:
+            for f, r in grips.check_range(ob, range(sc.frame_start, sc.frame_end + 1, 2)):
+                bad.append('%s f%d: %s' % (ob.name, f, grips.describe(r)))
+        if bad:
+            self.report({'WARNING'}, '%d problem frames. First: %s' % (len(bad), bad[0]))
+            print('\n'.join(bad))
+        else:
+            self.report({'INFO'}, 'All held props touch the hand on every frame, no clipping')
+        return {'FINISHED'}
+
+
+class DSL_OT_add_text(bpy.types.Operator):
+    """Add 3D words in Bunny's ink. Type the text; edit it any time in the Doodle panel"""
+    bl_idname = 'dsl.add_text'
+    bl_label = 'Add 3D text'
+    bl_options = {'REGISTER', 'UNDO'}
+    text: StringProperty(name='Text', default='Wow', description="Use | for a new line")
+    kind: bpy.props.EnumProperty(name='Style', items=[('chunky', 'Chunky', ''), ('flat', 'Flat', ''), ('wobbly', 'Wobbly', '')])
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    @_report_errors
+    def execute(self, context):
+        from . import text3d
+        ob = text3d.add_text(self.text, self.kind, location=context.scene.cursor.location.copy())
+        for o in context.selected_objects:
+            o.select_set(False)
+        ob.select_set(True)
+        context.view_layer.objects.active = ob
+        return {'FINISHED'}
+
+
+CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_OT_refresh, DSL_OT_insert, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
            DSL_OT_set_all, DSL_OT_declutter, DSL_OT_camera, DSL_OT_parallax, DSL_OT_retarget, DSL_OT_inbox,
            DSL_OT_open_folder, DSL_OT_prefs)
 
 
 def register():
-    for c in CLASSES:
+    from . import collide, placement
+    for c in CLASSES + placement.classes + collide.classes:
         bpy.utils.register_class(c)
+    collide.register()
 
 
 def unregister():
-    for c in reversed(CLASSES):
+    from . import collide, placement
+    collide.unregister()
+    for c in reversed(CLASSES + placement.classes + collide.classes):
         bpy.utils.unregister_class(c)

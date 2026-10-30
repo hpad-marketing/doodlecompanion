@@ -264,6 +264,55 @@ class DSL_PT_background(DSLPanel, bpy.types.Panel):
         row.operator('dsl.parallax', text='Add move', icon='CON_CAMERASOLVER')
 
 
+class DSL_PT_object(DSLPanel, bpy.types.Panel):
+    bl_label = 'Selected object'
+
+    def draw(self, context):
+        from . import grips, placement, text3d
+        L = self.layout
+        ob = context.active_object
+        row = L.row(align=True)
+        row.operator('dsl.lock_bunny', text='Bunny locked' if placement.is_locked() else 'Lock Bunny',
+                     icon='LOCKED' if placement.is_locked() else 'UNLOCKED', depress=placement.is_locked())
+        row.operator('dsl.add_text', text='Add 3D text', icon='FONT_DATA')
+        row = L.row(align=True)
+        row.operator('dsl.bake_collision', text='Bake collisions', icon='PHYSICS')
+        g = bool(context.scene.get('dsl_collision_guard', False))
+        row.operator('dsl.collision_guard', text='Live guard', icon='CHECKBOX_HLT' if g else 'CHECKBOX_DEHLT', depress=g)
+        if not ob or ob.name.startswith('BUNNY_'):
+            L.label(text='Select a prop, text or scenery piece')
+            return
+        mod = text3d.text_modifier(ob)
+        if mod:
+            ids = text3d._ids(mod)
+            box = L.box()
+            box.label(text='Text (| = new line)', icon='FONT_DATA')
+            box.prop(mod, '["%s"]' % ids['Text'], text='')
+            r = box.row(align=True)
+            r.prop(mod, '["%s"]' % ids['Size'], text='Size')
+            r.prop(mod, '["%s"]' % ids['Depth'], text='Depth')
+            r.prop(mod, '["%s"]' % ids['Wobble'], text='Wobble')
+            for n in mod.node_group.nodes:
+                if n.bl_idname == 'GeometryNodeStringToCurves':
+                    box.template_ID(n, 'font', open='font.open')
+        kind = ob.get('dsl_grip_kind')
+        if kind:
+            box = L.box()
+            box.label(text='In hand: %s grip (%s)' % (kind, ob.get('dsl_held_side', '')), icon='VIEW_PAN')
+            box.label(text='G and R stay inside what the real grip allows')
+            r = box.row(align=True)
+            r.operator('dsl.check_grip', text='Check grip', icon='CHECKMARK')
+            r.operator('dsl.release', text='Let go', icon='UNLINKED')
+        else:
+            box = L.box()
+            box.label(text='Goes on: %s' % placement.place_mode(ob))
+            r = box.row(align=True)
+            r.operator('dsl.place', text='Place (click in view)', icon='RESTRICT_SELECT_OFF')
+            r.operator('dsl.drop', text='Drop', icon='TRIA_DOWN_BAR')
+            if ob.get('dsl_id', '').startswith('prop-') or ob.type == 'MESH' and ob.get('dsl_id'):
+                box.operator('dsl.hold', text='Put in hand', icon='VIEW_PAN')
+
+
 class DSL_PT_look(DSLPanel, bpy.types.Panel):
     bl_label = 'Look'
     bl_options = {'DEFAULT_CLOSED'}
@@ -323,7 +372,7 @@ WM_PROPS = dict(
     dsl_parallax_amount=FloatProperty(name='Amount', default=1.0, min=0.1, max=3.0),
 )
 
-CLASSES = (DSLItem, DSLSetProp, DSL_UL_items, DSL_PT_library, DSL_PT_background, DSL_PT_look)
+CLASSES = (DSLItem, DSLSetProp, DSL_UL_items, DSL_PT_library, DSL_PT_background, DSL_PT_object, DSL_PT_look)
 
 
 def register():

@@ -1,5 +1,5 @@
 """Merge index_parts/*.json into library.json, keeping anything the user saved (source == 'blender')
-and usage counts.   python3 merge_index.py LIBRARY_DIR"""
+rows from other tools (mocap, performance motions) and usage counts.   python3 merge_index.py LIBRARY_DIR"""
 import glob
 import json
 import os
@@ -9,7 +9,9 @@ lib = sys.argv[1]
 p = os.path.join(lib, 'library.json')
 old = json.load(open(p)) if os.path.exists(p) else {'version': 1, 'items': []}
 usage = {i['id']: {k: i[k] for k in ('uses', 'last_used') if k in i} for i in old['items']}
-items = [i for i in old['items'] if i.get('source') == 'blender']
+# rows other tools add to the library survive a rebuild: your own saves, mocap and performance motions
+KEEP = {'blender', 'cmu-mocap', 'mesh2motion', 'performance'}
+items = [i for i in old['items'] if i.get('source') in KEEP or str(i.get('source', '')).startswith('ext:')]
 ids = {i['id'] for i in items}
 order = ['motions', 'faces', 'mouth_sets', 'props', 'scenery', 'sets_rooms']
 parts = sorted(glob.glob(os.path.join(lib, 'index_parts', '*.json')),

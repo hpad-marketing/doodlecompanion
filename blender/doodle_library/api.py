@@ -4,11 +4,12 @@
     dl.items('motion')                    # library rows
     dl.insert('motion-wave-hello')        # key a motion at the playhead
     dl.insert('face-01')                  # key an expression
-    dl.insert('prop-mug', hold=True)      # add a prop, put it in Bunny's hand
+    dl.insert('prop-mug', hold=True)      # add a prop, put it in Bunny's hand (real grip)
+    dl.add_text('Dell well'); dl.set_text(ob, 'New|line')
     dl.switch_set('bedroom'); dl.set_prop('rug', False)
     dl.save_motion('My wave', (1, 48)); dl.save_expression('Smirk')
 """
-from . import assets, faces, index, motions, sets, style
+from . import assets, collide, faces, grips, index, motions, placement, sets, style, text3d
 
 items = index.items
 get = index.get
@@ -35,14 +36,25 @@ def insert(item_id, frame=None, **opts):
         return sets.switch_set(it['data']['room'])
     ob = assets.insert_object(it, opts.get('location'))
     if cat == 'prop' and opts.get('hold'):
-        assets.attach_prop(ob, side=opts.get('side'))
+        grips.attach(ob, side=opts.get('side'), frame=frame)
     return ob
 
 
 save_motion = lambda name, frame_range=None, **kw: motions.save_action(name, frame_range, **kw)
 save_expression = faces.save_expression
 save_objects = assets.save_objects
-attach_prop = assets.attach_prop
+attach_prop = grips.attach
+release_prop = grips.release
+check_grip = grips.check_contact
+add_text = text3d.add_text
+set_text = text3d.set_text
+get_text = text3d.get_text
+place = placement.place
+drop = placement.drop
+lock_bunny = placement.lock_bunny
+resolve_collision = collide.resolve
+bake_collisions = collide.bake
+collision_guard = collide.set_guard
 use_mouth_set = lambda item_id=None: faces.use_mouth_set(index.get(item_id) if item_id else None)
 sets_list = sets.sets
 switch_set = sets.switch_set

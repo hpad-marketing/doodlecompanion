@@ -82,7 +82,12 @@ def rig_meta():
 
 
 def ds_motion(item_id):
-    return index.blob('motions/doodle_studio.json')['motions'][item_id]
+    """Track data for a Doodle Studio-format motion. Rows may name their own json in 'file'
+    (motions/mocap.json, motions/performance.json ...); the default is doodle_studio.json."""
+    it = index.get(item_id) or {}
+    f = it.get('file') or ''
+    rel = f if f.endswith('.json') else 'motions/doodle_studio.json'
+    return index.blob(rel)['motions'][item_id]
 
 
 def rot_path(b):
