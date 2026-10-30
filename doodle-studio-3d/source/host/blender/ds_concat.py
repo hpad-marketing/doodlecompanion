@@ -13,6 +13,8 @@ track (a song) under the whole scene from the first frame.
   bleeps   [[from, to]]   the voice drops out and a tone plays
   voice    path   the scene audio with character voices applied (replaces --audio)
   bleep    path   the tone (written by the host)
+  paper    {path, alpha}   paper grain over the whole scene
+  transitions [{at, kind, frames, color}]   dip to ink or a mustard flash across a cut
 Frames are 0-based scene frames."""
 import bpy
 import os
@@ -125,6 +127,28 @@ for m in post.get('movies', []):
     st.blend_type = 'ALPHA_OVER'
 for ov in post.get('overlays', []):
     image(ov['path'], 1 + int(ov['start']), int(ov['length']), 20)
+for t in post.get('transitions', []):
+    # the colour fills in up to the cut, then clears: half the frames on each side
+    n = max(2, int(t.get('frames', 12)))
+    cut = 1 + int(t['at'])
+    a, b = max(1, cut - n // 2), min(start, cut + (n - n // 2))
+    if b <= a:
+        continue
+    col = t.get('color', '#1F1F1D').lstrip('#')
+    ch = lane(26, a, b)
+    try:   # 5.x takes a length, 4.x an end frame
+        st = strips.new_effect('trans%d' % cut, 'COLOR', ch, frame_start=a, length=b - a)
+    except TypeError:
+        st = strips.new_effect('trans%d' % cut, 'COLOR', ch, frame_start=a, frame_end=b)
+    st.color = tuple(int(col[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    st.blend_type = 'ALPHA_OVER'
+    for f, v in ((a, 0.0), (cut, 1.0), (b, 0.0)):
+        st.blend_alpha = v
+        st.keyframe_insert('blend_alpha', frame=f)
+    print(f"post: {t.get('kind')} at frame {cut}", flush=True)
+pp = post.get('paper')
+if pp and pp.get('path'):
+    image(pp['path'], 1, start - 1, 40, 'ALPHA_OVER', float(pp.get('alpha', 0.6)))
 if post.get('music', {}).get('path') and os.path.exists(post['music']['path']):
     bed = strips.new_sound('music_bed', post['music']['path'], lane(30, 1, start), 1)
     if bed.frame_final_end > start:

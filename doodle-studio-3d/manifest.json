@@ -1,8 +1,8 @@
 {
- "version": "20261030-142905",
- "notes": "Feature picks part 2: belly squash and stretch with anticipation and overshoot (the face never changes size), hand contact on the hip, belly or chest, beat-synced camera, multi-cam angles with hard cuts, floor-plan camera path, previz grey (viewport and render), halftone dots in the cel shadows, pose from a pen stick figure, and script to blocking.",
+ "version": "20261030-145926",
+ "notes": "Blender powers: ink doodles drawn in 3D, grass and scatter, a cheering crowd that keeps clear of Bunny, jelly props, toon liquids, fisheye lens, 360 video (tagged for YouTube and VR players), auto-ink on imported models, paper finish, dip and flash transitions, linked controls, macros and a master Bunny file. New Blender menu.",
  "runtime": "44.9.0",
- "published": "2026-10-30T14:29:05.631Z",
+ "published": "2026-10-30T14:59:26.608Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "9f1202880a64991f660096eb54dad8b1d1b30a3197ef561e1dcd81b0cc21ec6f",
-   "size": 23514,
-   "gz": "files/9f1202880a64991f660096eb54dad8b1d1b30a3197ef561e1dcd81b0cc21ec6f.gz"
+   "sha256": "a982c4014c3e6d92cddb5134134de49c5345022f40c36af6852a3de56ec6797c",
+   "size": 24617,
+   "gz": "files/a982c4014c3e6d92cddb5134134de49c5345022f40c36af6852a3de56ec6797c.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "a862345024bd5f9393e69740c75baaeadca8ff105319475feab904cf49e8ac4d",
-   "size": 32177,
-   "gz": "files/a862345024bd5f9393e69740c75baaeadca8ff105319475feab904cf49e8ac4d.gz"
+   "sha256": "3a7eb8abdbb02524ae0b95ef115cc9ced836f35e69bb8a8381032c2dd1b85655",
+   "size": 34604,
+   "gz": "files/3a7eb8abdbb02524ae0b95ef115cc9ced836f35e69bb8a8381032c2dd1b85655.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -30,14 +30,19 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "0516b320b773b4c4177015ebd0d6681e8f6bac7d7eb807ace92568124328a44d",
-   "size": 18968,
-   "gz": "files/0516b320b773b4c4177015ebd0d6681e8f6bac7d7eb807ace92568124328a44d.gz"
+   "sha256": "536e444f13c145717682b832bba2de2e7ab38e1b4e40271a09283a622136e81a",
+   "size": 19659,
+   "gz": "files/536e444f13c145717682b832bba2de2e7ab38e1b4e40271a09283a622136e81a.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "ae68ae6eda24442a2362a7ad6a7e66b251f90b27ff20cd0f94e5245659adad4d",
    "size": 4443,
    "gz": "files/ae68ae6eda24442a2362a7ad6a7e66b251f90b27ff20cd0f94e5245659adad4d.gz"
+  },
+  "resources/app/spherical.cjs": {
+   "sha256": "f168ac0aa30d88b5715face8c2126fec11fe8ad05a06f41e5ba67cf1152dae4f",
+   "size": 3474,
+   "gz": "files/f168ac0aa30d88b5715face8c2126fec11fe8ad05a06f41e5ba67cf1152dae4f.gz"
   },
   "resources/app/updater.cjs": {
    "sha256": "08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de",
@@ -50,19 +55,19 @@
    "gz": "files/aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "084fa4e082ab3c8040188295697dc06ef6e39becaf348d82bbe529b4faa95a9b",
-   "size": 11695,
-   "gz": "files/084fa4e082ab3c8040188295697dc06ef6e39becaf348d82bbe529b4faa95a9b.gz"
+   "sha256": "8da0b9f537835e38d5c1f60259f9c3e30dbd35974bf0c250b6381a4c6d8bed42",
+   "size": 11873,
+   "gz": "files/8da0b9f537835e38d5c1f60259f9c3e30dbd35974bf0c250b6381a4c6d8bed42.gz"
   },
   "resources/app/blender/ds_concat.py": {
-   "sha256": "c4483ee6bc419ef5d6ddebc892570fe828781ebc9a80ea1d9bfb46b12602143e",
-   "size": 6167,
-   "gz": "files/c4483ee6bc419ef5d6ddebc892570fe828781ebc9a80ea1d9bfb46b12602143e.gz"
+   "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
+   "size": 7347,
+   "gz": "files/7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "03e4d7d68b54f65f22a7177b59bfa5046a98c6556a8f02c72d979a6958a2874f",
-   "size": 7684,
-   "gz": "files/03e4d7d68b54f65f22a7177b59bfa5046a98c6556a8f02c72d979a6958a2874f.gz"
+   "sha256": "10547c517141f00820ae4b26938ac989dd01886dfd1abccf7243d5d2b1027910",
+   "size": 7813,
+   "gz": "files/10547c517141f00820ae4b26938ac989dd01886dfd1abccf7243d5d2b1027910.gz"
   },
   "resources/app/ui/bunny3d.json": {
    "sha256": "14ed5fcea6a7324bd28190431b49c7e1308b9a0c2dbbdbff3ad688d64de1eeda",
@@ -134,6 +139,11 @@
    "size": 3221,
    "gz": "files/140ba2ab19d18e75234c47b8ddab8fb4a598349c899ef83b9587f245ab2e6272.gz"
   },
+  "resources/app/blender/lib/powers.py": {
+   "sha256": "77990f6d026dce0ebc9452c486df41a87a2ec9dea9d3ba3caa479d366fd9863f",
+   "size": 17547,
+   "gz": "files/77990f6d026dce0ebc9452c486df41a87a2ec9dea9d3ba3caa479d366fd9863f.gz"
+  },
   "resources/app/blender/lib/rig.py": {
    "sha256": "ffeb3e64fd978d0a61ef394598015b546ccaabf06f200b68ca1cd2dc4b842e89",
    "size": 25172,
@@ -200,9 +210,9 @@
    "gz": "files/ea89f002dda1a5a9098a15dddd2ada885e142812a41235073044c6712ac3dbaa.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "c4c19a2e3ba9bd0870b89848262a867d7d797294e49e604509c0d455eb15b2a1",
-   "size": 152819,
-   "gz": "files/c4c19a2e3ba9bd0870b89848262a867d7d797294e49e604509c0d455eb15b2a1.gz"
+   "sha256": "d220ce71ee6444abf56f0ec8b544921003bba370051b6eea30e76b521411126f",
+   "size": 170189,
+   "gz": "files/d220ce71ee6444abf56f0ec8b544921003bba370051b6eea30e76b521411126f.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -214,15 +224,20 @@
    "size": 10172,
    "gz": "files/992b17659ade8a905cef864a3b56d06d18d26970c1e770f5b7e116287b9fb8e0.gz"
   },
+  "resources/app/ui/src/powers.js": {
+   "sha256": "adf7357908a4aa762d586818c8ca58251f4df9a9a0bbb0a31f0363e801058b38",
+   "size": 6660,
+   "gz": "files/adf7357908a4aa762d586818c8ca58251f4df9a9a0bbb0a31f0363e801058b38.gz"
+  },
   "resources/app/ui/src/production.js": {
    "sha256": "979ad596560b79cc2ee15aca4dae75b5b4c5a2d422601d710923a57fb3804e28",
    "size": 24350,
    "gz": "files/979ad596560b79cc2ee15aca4dae75b5b4c5a2d422601d710923a57fb3804e28.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "6d89149fcc5565b9e52e6b157a88dd465210652f51065433191d42aad46840ed",
-   "size": 8316,
-   "gz": "files/6d89149fcc5565b9e52e6b157a88dd465210652f51065433191d42aad46840ed.gz"
+   "sha256": "c2365e839681186f0ffaa61a33381311f4860987872d31797102bd5b579b1c54",
+   "size": 8782,
+   "gz": "files/c2365e839681186f0ffaa61a33381311f4860987872d31797102bd5b579b1c54.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "2f24414d909905595f8636d7daf75523fd13c662a20bdf2340373e13dcbcb295",
@@ -245,9 +260,9 @@
    "gz": "files/25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e",
-   "size": 14210,
-   "gz": "files/4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e.gz"
+   "sha256": "fb639a702899651bf1d60942281a2973151c6269db902d2a14336252185c6caa",
+   "size": 14659,
+   "gz": "files/fb639a702899651bf1d60942281a2973151c6269db902d2a14336252185c6caa.gz"
   },
   "resources/app/ui/src/workflow.js": {
    "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",

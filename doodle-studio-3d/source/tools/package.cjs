@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path');
 const here = path.join(__dirname, '..'), out = path.resolve(process.argv[2] || path.join(here, 'build', 'app'));
 fs.rmSync(out, { recursive: true, force: true });
 const copy = (from, to) => fs.cpSync(path.join(here, from), path.join(out, to), { recursive: true });
-for (const f of ['package.json', 'main.cjs', 'preload.cjs', 'updater.cjs', 'server.cjs', 'mcp.cjs', 'render.cjs', 'library.cjs']) copy('host/' + f, f);
+for (const f of ['package.json', 'main.cjs', 'preload.cjs', 'updater.cjs', 'server.cjs', 'mcp.cjs', 'render.cjs', 'library.cjs', 'spherical.cjs']) copy('host/' + f, f);
 copy('host/blender/Bunny3D_v2.blend', 'blender/Bunny3D_v2.blend');
 for (const c of ['koala', 'frog']) copy(`host/blender/chars/${c}.blend`, `blender/chars/${c}.blend`);
 copy('host/blender/addons/doodle_library', 'blender/addons/doodle_library');

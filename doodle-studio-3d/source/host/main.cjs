@@ -281,6 +281,24 @@ const api = {
     const t = await renders.tryBlender(r.filePaths[0], dataDir);
     return { blender: renders.blender() || null, test: t };
   },
+  // the master Bunny file: the user's own copy of Bunny3D_v2.blend, used by every Bunny render
+  async 'pick-master'({ path: given } = {}) {
+    let f = given;
+    if (!f) {
+      const r = await dialog.showOpenDialog(main, { title: 'Pick the master Bunny .blend', defaultPath: settings.get().masterBlend || settings.get().rendersRoot, filters: [{ name: 'Blender file', extensions: ['blend'] }], properties: ['openFile'] });
+      if (r.canceled || !r.filePaths[0]) return { masterBlend: settings.get().masterBlend || null };
+      f = r.filePaths[0];
+    }
+    if (!/\.blend$/i.test(f) || !fs.existsSync(f)) throw Error('Pick a .blend file');
+    settings.set({ masterBlend: f });
+    return { masterBlend: f };
+  },
+  async 'open-master'() {
+    const exe = renders.blender(), f = settings.get().masterBlend && fs.existsSync(settings.get().masterBlend) ? settings.get().masterBlend : path.join(appDir, 'blender', 'Bunny3D_v2.blend');
+    if (!exe) return { opened: null };
+    require('node:child_process').spawn(exe, [f], { detached: true, stdio: 'ignore' }).unref();
+    return { opened: f };
+  },
   async 'blender-versions'() { return { versions: renders.findBlenders(), inUse: renders.blender() || null }; },
   async 'try-blender'({ path: exe }) { const t = await renders.tryBlender(exe, dataDir); return { blender: renders.blender() || null, test: t, versions: renders.findBlenders() }; },
   async reveal({ file }) { if (file && fs.existsSync(file)) shell.showItemInFolder(file); return {}; },
