@@ -129,6 +129,8 @@ export function recorder() {
     get on() { return !!steps; },
     start(frame) { steps = []; start = frame; },
     note(group, label, frame) { if (steps && !/^Macro/.test(label)) steps.push({ group, label, offset: frame - start }); },
+    // a Claude (MCP) tool call made while recording; read-only and macro calls are left out
+    tool(name, args, frame) { if (steps && !/^(get_state|list_controls|library_list|render_status)$/.test(name) && !(name === 'powers' && /^macro/.test(args?.action || ''))) steps.push({ tool: name, args, offset: frame - start }); },
     stop() { const s = steps || []; steps = null; return s; },
   };
 }

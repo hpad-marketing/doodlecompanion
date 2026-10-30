@@ -138,10 +138,10 @@ export function chime(ok = true) {
   } catch {}
 }
 export async function diskOk(ctx, needGB = 5) {
-  try {
-    const d = await ctx.api('disk', {});
-    if (d.freeGB < needGB) return confirm(`Only ${d.freeGB} GB free where renders go (${d.root}). A render can need several GB. Render anyway?`);
-  } catch {}
+  let d = null;
+  try { d = await ctx.api('disk', {}); } catch {}
+  // outside the try: a Claude call without force must fail, not slip through
+  if (d && d.freeGB < needGB) return confirm(`Only ${d.freeGB} GB free where renders go (${d.root}). A render can need several GB. Render anyway?`);
   return true;
 }
 

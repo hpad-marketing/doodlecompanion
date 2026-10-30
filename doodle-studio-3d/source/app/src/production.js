@@ -210,7 +210,41 @@ export function preflight(ctx, sc = ctx.scene(), { envelope = null, project2d = 
       else if (p && p.headY != null && p.y < p.headY + 0.05) bad.push(`${s.code} "${it.text}": over the face (captions go below his mouth and eyes)`);
     }
   }
-  add('captions', 'Captions short, in the safe zone, below the face', !bad.length, caps.length ? (bad.length ? bad.join('; ') : `${caps.length} caption${caps.length > 1 ? 's' : ''} OK`) : 'No captions in this scene');
+  // the caption tracks (Post › Captions, English and Hindi): drawn centred at captions.y,
+  // 4.5% of the frame tall per line, 1-3 words on one line, longer ones on two
+  const C = sc.captions, aspect = (sc.height || 1920) / (sc.width || 1080);
+  let lines = 0;
+  for (const [lang, track] of Object.entries(C?.tracks || {})) for (const l of track || []) {
+    const s = sc.shots.find(x => x.uid === l.shot);
+    if (!s) continue;
+    lines++;
+    const tag = `${s.code} [${lang}] "${l.text}"`, words = String(l.text).trim().split(/\s+/).filter(Boolean);
+    const rows = words.length <= 3 ? [words] : [words.slice(0, Math.ceil(words.length / 2)), words.slice(Math.ceil(words.length / 2))];
+    const y = C.y ?? 0.7, half = rows.length * 0.045 * 1.15 / 2, wide = Math.max(...rows.map(r => r.join(' ').length)) * 0.55 * 0.045 * aspect;
+    if (wide > 0.88) bad.push(`${tag}: too wide for the safe zone (${Math.round(wide * 100)}% of the width), make it shorter`);
+    if (y - half < 0.14 || y + half > 0.8) bad.push(`${tag}: outside the Instagram safe zone (caption height ${Math.round(y * 100)}%)`);
+    else if (project2d) {
+      const p = project2d(s, { frame: l.f });
+      if (p && p.headY != null && y - half < p.headY + 0.05) bad.push(`${tag}: over the face (captions go below his mouth and eyes)`);
+    }
+  }
+  const total = caps.length + lines;
+  add('captions', 'Captions short, in the safe zone, below the face', !bad.length, total ? (bad.length ? bad.join('; ') : `${total} caption${total > 1 ? 's' : ''} OK`) : 'No captions in this scene');
+  // one horizon height across shots (each shot's first frame, as the camera sees it)
+  if (project2d && sc.shots.length > 1) {
+    const hz = sc.shots.map(s => ({ s, y: project2d(s, { frame: 0 })?.horizonY })).filter(x => x.y != null && x.y > -1 && x.y < 2);
+    if (hz.length > 1) {
+      const ys = hz.map(x => x.y), lo = Math.min(...ys), hi = Math.max(...ys);
+      add('horizon', 'One horizon height across shots', hi - lo <= 0.04, `${hz.map(x => `${x.s.code} ${Math.round(x.y * 100)}%`).join(', ')}${hi - lo > 0.04 ? ` (spread ${Math.round((hi - lo) * 100)}% of the height; keep it within 4%)` : ''}`);
+    }
+  }
+  // hard cuts (shot changes without a transition) only for emphasis: a warning, not a block
+  if (sc.shots.length > 1) {
+    const fps = sc.fps || 30, secs = sc.shots.reduce((n, s) => n + s.length, 0) / fps;
+    const soft = sc.shots.filter((s, i) => i && s.transition?.kind).length, cuts = sc.shots.length - 1 - soft;
+    const avg = secs / (cuts + 1);
+    add('cuts', 'Hard cuts only for emphasis', !cuts || avg >= 2.5, `${cuts} hard cut${cuts === 1 ? '' : 's'} in ${secs.toFixed(1)} s (one every ${avg.toFixed(1)} s${avg < 2.5 ? '; fewer cuts reads calmer, aim for 2.5 s or more' : ''})`, false);
+  }
   const h = contentHash(sc);
   add('moderator', 'Moderator PASS for this exact version', sc.moderator?.hash === h, sc.moderator?.hash === h ? `PASS recorded ${new Date(sc.moderator.at).toLocaleString()}${sc.moderator.note ? ': ' + sc.moderator.note : ''}` : sc.moderator ? 'The scene changed after the PASS: submit it again' : 'Submit the scene to the moderator first');
   return { ok: checks.every(c => c.ok || !c.block), checks, hash: h };
@@ -229,7 +263,10 @@ export function projector(ctx) {
       const at = it.at || [0, 0.8, 1.25];
       const p = new THREE.Vector3(...at).project(view.camera);
       const hp = view.headPoint().project(view.camera);
-      return { x: (p.x + 1) / 2, y: (1 - p.y) / 2, headY: (1 - hp.y) / 2 };
+      // the horizon: a far point straight ahead at the camera's own height (the viewport is z-up, Blender axes)
+      const fwd = new THREE.Vector3(); view.camera.getWorldDirection(fwd); fwd.z = 0;
+      const hz = fwd.length() > 0.05 ? view.camera.position.clone().addScaledVector(fwd.normalize(), 1e4).project(view.camera) : null;
+      return { x: (p.x + 1) / 2, y: (1 - p.y) / 2, headY: (1 - hp.y) / 2, horizonY: hz ? (1 - hz.y) / 2 : null };
     } finally { ctx.showFrame(ctx.scene().shots[keep.shot], keep.frame); }
   };
 }

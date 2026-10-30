@@ -7,6 +7,7 @@ const lib = require('../host/library.cjs')({ settings: { get: () => ({ libraryDi
 start({ root: path.join(__dirname, '..', 'app'), statics: { lib: () => process.env.DSL_LIBRARY || path.join(__dirname, '..', '..', 'lib') }, port: Number(process.argv[2] || 54190), api: {
   save: ({ project, path: p }) => { const f = p || path.join(out, (project.name || 'shot') + '.ds3d.json'); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
   open: () => ({}),
+  'save-at': ({ project, path: p }) => { const f = p.endsWith('.ds3d') ? p : p + '.ds3d'; fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
   'render-carousel': req => { fs.writeFileSync(path.join(out, 'carousel-req.json'), JSON.stringify(req)); return { message: 'dev server: carousel with ' + req.slides.length + ' slides' }; },
   'read-png': ({ path: p }) => ({ data: fs.readFileSync(p).toString('base64') }),
   'write-png': ({ path: p, data }) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(data, 'base64')); return { path: p }; },

@@ -44,6 +44,7 @@ import ds_map, dynamics, rules3d, collision, compat  # noqa: E402
 import stage  # noqa: E402
 import powers  # noqa: E402
 import cast as costars  # noqa: E402
+import rules_scene  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -227,9 +228,20 @@ json.dump(fixes if not cast else {'lead': fixes, 'costars': [{'character': c['na
 report = []
 if flag('--check'):
     rng = [still] if still else range(1, n + 1)
+    sc.frame_set(rng[0])
+    scenery, held_props = rules_scene.classify(arm, cast, objs.values())
+    shot_report = {'scenery': [o.name for o in scenery], 'held': [o.name for o in held_props],
+                   'see_through': rules_scene.see_through(scenery), 'horizon': []}
     for f in rng:
         sc.frame_set(f)
         r = rules3d.check_frame(objs, arm, ear_sets)
+        # scenery, held props and framing (contact every 3rd frame and the last: the slowest check)
+        if f == rng[0] or f == rng[-1] or (f - rng[0]) % 3 == 0:
+            r.update(rules_scene.contact(scenery, held_props, objs.values(), cast))
+        r.update(rules_scene.framing(scenery, sc.camera))
+        hz = rules_scene.horizon(sc.camera)
+        if hz is not None:
+            shot_report['horizon'].append(hz)
         # co-stars obey the same rules; their findings are named after them
         for k, c in enumerate(cast):
             rc = rules3d.check_frame(c['objs'], c['rig'], c['ears'])
@@ -242,9 +254,13 @@ if flag('--check'):
             r['bodies_touch'] = costars.touching(objs, cast)
         r['frame'] = f
         report.append(r)
-    bad = [r for r in report if r['arm_head_clip'] or r['below_floor'] or r['ears_touch'] or r.get('bodies_touch')]
-    json.dump({'frames': report, 'violations': len(bad)}, open(os.path.join(out_dir, 'rules.json'), 'w'), indent=1)
-    print('RULES', 'PASS' if not bad else f'FAIL ({len(bad)} frames)')
+    bad = [r for r in report if rules_scene.frame_bad(r)]
+    hz = shot_report.pop('horizon')
+    shot_report['horizon_y'] = round(sum(hz) / len(hz), 4) if hz else None
+    shot_report['horizon_range'] = [min(hz), max(hz)] if hz else None
+    viol = len(bad) + (1 if shot_report['see_through'] else 0)
+    json.dump({'frames': report, 'shot': shot_report, 'violations': viol}, open(os.path.join(out_dir, 'rules.json'), 'w'), indent=1)
+    print('RULES', 'PASS' if not viol else f'FAIL ({len(bad)} frames' + (', see-through pieces' if shot_report['see_through'] else '') + ')')
 
 if save:
     bpy.ops.wm.save_as_mainfile(filepath=save, copy=True)
@@ -294,5 +310,5 @@ else:
         sc.render.filepath = os.path.join(out_dir, 'frame_')
     bpy.ops.render.render(animation=True)
 print('done', out_dir)
-if flag('--check') and any(r['arm_head_clip'] or r['below_floor'] or r['ears_touch'] or r.get('bodies_touch') for r in report):
+if flag('--check') and (any(rules_scene.frame_bad(r) for r in report) or shot_report['see_through']):
     sys.exit(1)

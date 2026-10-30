@@ -127,3 +127,72 @@ export function audioDrive(project, from, id, min, max, { step = 2, smooth = 2, 
   }
   return n;
 }
+
+// ---------------------------------------------------------------- lip sync
+// Speech mouths from the voice, per video frame (indices into face.speech:
+// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). Reads loudness, how bright
+// the sound is (band energies) and the zero-crossing rate, so vowels open wide or round,
+// hiss and buzz get teeth, and the lips close for a beat before a word starts. No network.
+export const VISEME = { rest: 1, AI: 2, E: 3, O: 4, U: 5, WQ: 6, MBP: 7, FV: 8, L: 9, etc: 10 };
+let lips = null, lipsKey = '';
+export function visemes(fps, { gate = 0.1, hold = 2 } = {}) {
+  if (!buf) return null;
+  const key = bufPath + '|' + fps + '|' + gate + '|' + hold;
+  if (lips && lipsKey === key) return lips;
+  const sr = buf.sampleRate, x = buf.getChannelData(0), per = sr / fps, n = Math.ceil(buf.duration * fps);
+  const k = hz => 1 - Math.exp(-2 * Math.PI * hz / sr);
+  const kL = k(500), kM = k(2200), kH = k(3800);
+  let l = 0, m = 0, hp = 0, prev = 0;
+  const E = new Float32Array(n), LOW = new Float32Array(n), MID = new Float32Array(n), HI = new Float32Array(n), Z = new Float32Array(n);
+  let max = 1e-6;
+  for (let f = 0; f < n; f++) {
+    const a = Math.floor(f * per), b = Math.min(x.length, Math.floor((f + 1) * per));
+    let e = 0, el = 0, em = 0, eh = 0, z = 0;
+    for (let i = a; i < b; i++) {
+      const s = x[i];
+      l += kL * (s - l); m += kM * (s - m); hp += kH * (s - hp);
+      const mid = m - l, hi = s - hp;
+      e += s * s; el += l * l; em += mid * mid; eh += hi * hi;
+      if ((s >= 0) !== (prev >= 0)) z++;
+      prev = s;
+    }
+    const c = Math.max(1, b - a);
+    E[f] = Math.sqrt(e / c); LOW[f] = el; MID[f] = em; HI[f] = eh; Z[f] = z / c;
+    max = Math.max(max, E[f]);
+  }
+  const out = new Uint8Array(n);
+  for (let f = 0; f < n; f++) {
+    const e = E[f] / max, tot = LOW[f] + MID[f] + HI[f] + 1e-12, lo = LOW[f] / tot, hi = HI[f] / tot, z = Z[f] * sr;
+    let v;
+    if (e < gate) v = VISEME.rest;
+    else if (hi > 0.45 || z > 3500) v = z > 5000 ? VISEME.etc : VISEME.FV;      // s, sh, t / f, v
+    else if (lo > 0.7) v = e > 0.55 ? VISEME.O : e > 0.3 ? VISEME.U : VISEME.WQ;  // dark, rounded vowels
+    else if (lo < 0.35) v = e > 0.5 ? VISEME.E : VISEME.L;                       // bright vowels, l
+    else v = e > 0.45 ? VISEME.AI : VISEME.E;                                    // open vowels
+    out[f] = v;
+  }
+  // lips meet for a frame just before a word starts (m, b, p land there too)
+  for (let f = 1; f < n; f++) if (out[f] !== VISEME.rest && out[f - 1] === VISEME.rest && out[f] !== VISEME.FV && out[f] !== VISEME.etc) out[f - 1] = VISEME.MBP;
+  // no one-frame flickers: every mouth holds at least `hold` frames
+  for (let f = 0; f < n;) {
+    let g = f + 1;
+    while (g < n && out[g] === out[f]) g++;
+    if (g - f < hold && f > 0 && out[f] !== VISEME.MBP) for (let i = f; i < g; i++) out[i] = out[f - 1];
+    f = g;
+  }
+  lips = out; lipsKey = key;
+  return out;
+}
+// keys the mouth over one shot (scene frames from..from+project.length); returns the keys made
+export function lipsync(project, from, setKey, opts = {}) {
+  const v = visemes(project.fps, opts);
+  if (!v) throw Error('Import the voice for the scene first (File › Import audio…)');
+  const keep = (project.tracks.mouth || []).filter(k => k.f < 0 || k.f >= project.length);
+  project.tracks.mouth = keep;
+  let n = 0, last = -1;
+  for (let f = 0; f < project.length; f++) {
+    const m = v[from + f] ?? VISEME.rest;
+    if (m !== last) { setKey(project, 'mouth', f, m, 'hold'); last = m; n++; }
+  }
+  return n;
+}

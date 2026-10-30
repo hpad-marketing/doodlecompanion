@@ -2,6 +2,7 @@
 const { spawn } = require('child_process'), path = require('path'), fs = require('fs');
 const { chromium } = require('playwright');
 const port = 54296, out = path.join(__dirname, '..', 'devout'), wav = path.join(out, 'beat.wav');
+if (!fs.existsSync(wav)) { fs.mkdirSync(out, { recursive: true }); fs.copyFileSync(path.join(__dirname, 'fixtures', 'beat.wav'), wav); }   // fresh clone
 const dev = spawn('node', [path.join(__dirname, 'dev.cjs'), String(port)], { stdio: 'ignore' });
 const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
 (async () => {

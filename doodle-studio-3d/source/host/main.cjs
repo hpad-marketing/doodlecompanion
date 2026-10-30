@@ -125,6 +125,13 @@ const api = {
     atomicWrite(file, JSON.stringify(project, null, 1));
     return { path: file };
   },
+  // Save as for Claude: only to a .ds3d inside the renders folder, never a dialog
+  async 'save-at'({ project, path: p }) {
+    const file = insideRenders(String(p).endsWith('.ds3d') ? p : p + '.ds3d');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    atomicWrite(file, JSON.stringify(project, null, 1));
+    return { path: file };
+  },
   async open() {
     const r = await dialog.showOpenDialog(main, { title: 'Open scene', defaultPath: settings.get().rendersRoot, filters: [{ name: 'Doodle Studio 3D scene', extensions: ['ds3d', 'json'] }], properties: ['openFile'] });
     if (r.canceled || !r.filePaths[0]) return {};
@@ -325,6 +332,7 @@ else {
       main.webContents.executeJavaScript(`Promise.resolve(${js})`).then(ok, fail);
     });
     const mcp = require('./mcp.cjs')({ call, api });
+    api['mcp-replay'] = ({ name, args }) => mcp.replay(name, args);
     await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir } });
     let saved = {};
     try { saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'window.json'), 'utf8')); } catch {}
