@@ -22,6 +22,6 @@ const next = () => {
     else ok(!f.costar_cut.length, 'a framing with room for both keeps the co-star in');
     next();
   } });
-  r.render({ name: 'Costar ' + name, shot: shotOf(cam), preview: true, still: 1 });
+  r.render({ name: 'Costar ' + name, shot: shotOf(cam), preview: true, still: 1, check: true });
 };
 next();

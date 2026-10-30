@@ -1,5 +1,5 @@
 // Polish part 2: undo history, Claude change log + per-change undo + token meter, render
-// presets, export preflight (blocks, then passes), moderator PASS voided by an edit, health
+// presets, export preflight (blocks, then passes), health
 // check fixes, pack project, overnight batch. Run: node tools/test_batch5.cjs
 const { spawn } = require('child_process'), path = require('path'), fs = require('fs');
 const { chromium } = require('playwright');
@@ -58,7 +58,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.waitForTimeout(300);
   ok(/s per frame/.test(await p.locator('#render-estimate').textContent()), 'render time estimate shown: ' + await p.locator('#render-estimate').textContent());
 
-  // preflight: blocked without audio, lip sync, moderator
+  // preflight: blocked without audio, lip sync
   let pf = await prod({ action: 'preflight' });
   ok(!pf.ok && pf.checks.find(c => c.id === 'audio').ok === false, 'preflight blocks: no audio');
   let threw = await ev(() => ds3d.renderScene({}).then(() => null, e => e.message));
@@ -74,23 +74,15 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   pf = await prod({ action: 'preflight' });
   ok(pf.checks.find(c => c.id === 'lipsync').ok, 'lip sync sampled: ' + pf.checks.find(c => c.id === 'lipsync').detail);
   ok(pf.checks.find(c => c.id === 'captions').ok, 'caption below the face passes: ' + pf.checks.find(c => c.id === 'captions').detail);
-  ok(!pf.checks.find(c => c.id === 'moderator').ok, 'still blocked: no moderator PASS');
-  await prod({ action: 'moderator_pass', note: 'test' });
-  pf = await prod({ action: 'preflight' });
-  ok(pf.ok, 'everything passes after the moderator PASS');
-  await ev(() => ds3d.setValues({ armL: 55 }, 3, true));
-  pf = await prod({ action: 'preflight' });
-  ok(!pf.checks.find(c => c.id === 'moderator').ok, 'an edit after the PASS voids it');
-  await prod({ action: 'moderator_pass' });
-  await ev(() => ds3d.selectShot(0));
-  ok((await prod({ action: 'preflight' })).ok, 'just selecting a shot keeps the PASS');
+  ok(!pf.checks.find(c => c.id === 'moderator'), 'the moderator gate is retired');
+  ok(pf.ok, 'everything passes once audio, lip sync and captions are fine');
   await ev(() => ds3d.renderScene({}));
   await p.waitForTimeout(300);
   ok(/full/.test(fs.readFileSync(path.join(out, 'scene-log.txt'), 'utf8')), 'final render goes out once the preflight passes');
   // UI: the button shows the dialog
   await p.click('#panel-content button:has-text("Check before export")');
   await p.waitForSelector('.ds-modal .preflight');
-  ok(await p.locator('.ds-modal .preflight.ok').count() === 4, 'preflight dialog: four green checks');
+  ok(await p.locator('.ds-modal .preflight.ok').count() === 3, 'preflight dialog: three green checks');
   await p.screenshot({ path: path.join(out, 'preflight.png') });
   await ev(() => document.querySelectorAll('.ds-modal').forEach(m => m.remove()));
 

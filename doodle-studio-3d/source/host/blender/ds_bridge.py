@@ -82,6 +82,19 @@ for k, v in (shot.get('ik') or {}).items():
 
 PIVOT_Z = 4.145 * S
 BASE_ORTHO = 17.07 * S
+INK_BASE = float(settings['ink_px']) if 'ink_px' in settings.keys() else 12.73
+INK_FOLLOW = bool((shot.get('settings') or {}).get('ink_follow', 1))
+
+
+def ink_for_camera():
+    """Ink like a drawing, as in Doodle Studio: it grows when the camera moves in on Bunny and
+    thins when it pulls back (zoom 1 = the 2D default framing, where ink is INK_BASE)."""
+    from mathutils import Vector
+    fwd = cam.matrix_world.to_3x3() @ Vector((0, 0, -1))
+    P = arm.matrix_world @ arm.pose.bones['root'].head + Vector((0, 0, PIVOT_Z))
+    depth = max(0.05, (P - cam.matrix_world.translation).dot(fwd))
+    zoom = BASE_ORTHO / (depth * 36.0 / max(1.0, cam.data.lens))
+    return INK_BASE * max(0.4, min(3.5, zoom))
 persp = any(float(f.get('camFov', 0)) > 0 for f in frames)
 park = [o for o in bpy.data.objects if o.users_collection and any(c.name == 'Park' for c in o.users_collection)]
 
@@ -147,6 +160,9 @@ for i, vals in enumerate(frames):
             fixes.append({'frame': f, **rep})
     if 'cam' in vals:
         camera_3d(vals['cam'], i / fps)
+        if INK_FOLLOW and 'ink_px' in settings.keys():
+            bpy.context.view_layer.update()
+            settings['ink_px'] = ink_for_camera()
         for o in park:
             o.hide_render = not vals['cam'].get('props', 0)
             o.keyframe_insert('hide_render', frame=f)
@@ -174,6 +190,8 @@ for i, vals in enumerate(frames):
     if cast:
         costars.keep_apart(objs, arm, cast, f, lambda m: print(m, flush=True))
     settings.keyframe_insert('["boil"]', frame=f)
+    if 'ink_px' in settings.keys():
+        settings.keyframe_insert('["ink_px"]', frame=f)
     cam.keyframe_insert('location', frame=f)
     cam.keyframe_insert('rotation_euler', frame=f)
     cam.data.keyframe_insert('ortho_scale' if cam.data.type == 'ORTHO' else 'lens', frame=f)

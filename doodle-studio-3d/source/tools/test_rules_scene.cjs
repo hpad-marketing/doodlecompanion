@@ -23,5 +23,5 @@ const cam = { yaw: 35, pitch: 4, dist: 3.2, lens: 50, roll: 0, tx: 0, ty: 0, tz:
 const shot = { fps: 30, width: 1080, height: 1920, character: 'bunny',
   frames: Array.from({ length: 3 }, () => ({ armR: 30, elbowR: 60, expression: 1, earLScale: 100, earRScale: 100, cam })),
   stage: { set: 'park' }, items: [{ id: 'prop-mug', frame: 0, hold: 'R' }] };
-console.log(r.render({ name: 'Rules Scene Test', shot, preview: true, still: 2 }).message);
+console.log(r.render({ name: 'Rules Scene Test', shot, preview: true, still: 2, check: true }).message);
 const t = setInterval(() => { if (r.status().state === 'idle') clearInterval(t); }, 2000);

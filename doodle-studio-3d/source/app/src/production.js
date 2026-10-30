@@ -176,7 +176,7 @@ export async function estimate(ctx, frames, preview = false) {
 
 // ---------------------------------------------------------------- export preflight
 // Blocks a final export that breaks the rules: audio imported, lip sync sampled across the
-// video, captions short and inside the Instagram safe zone below the face, moderator PASS.
+// video, captions short and inside the Instagram safe zone below the face.
 export const contentHash = sc => { const s = JSON.stringify(strip({ ...sc, moderator: undefined, overrides: undefined, active: undefined })); let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
 export function preflight(ctx, sc = ctx.scene(), { envelope = null, project2d = null } = {}) {
   const checks = [];
@@ -246,7 +246,7 @@ export function preflight(ctx, sc = ctx.scene(), { envelope = null, project2d = 
     add('cuts', 'Hard cuts only for emphasis', !cuts || avg >= 2.5, `${cuts} hard cut${cuts === 1 ? '' : 's'} in ${secs.toFixed(1)} s (one every ${avg.toFixed(1)} s${avg < 2.5 ? '; fewer cuts reads calmer, aim for 2.5 s or more' : ''})`, false);
   }
   const h = contentHash(sc);
-  add('moderator', 'Moderator PASS for this exact version', sc.moderator?.hash === h, sc.moderator?.hash === h ? `PASS recorded ${new Date(sc.moderator.at).toLocaleString()}${sc.moderator.note ? ': ' + sc.moderator.note : ''}` : sc.moderator ? 'The scene changed after the PASS: submit it again' : 'Submit the scene to the moderator first');
+  // the moderator gate and Blender rule checks are retired (user, 2026-10-30): they no longer block exports
   return { ok: checks.every(c => c.ok || !c.block), checks, hash: h };
 }
 export function recordModeratorPass(sc, note = '') {

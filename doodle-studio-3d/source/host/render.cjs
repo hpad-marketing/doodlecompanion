@@ -85,7 +85,8 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     fs.mkdirSync(check, { recursive: true });
     const shotFile = path.join(check, 'shot.json');
     fs.writeFileSync(shotFile, JSON.stringify(withMaster(s.shot)));
-    const args = ['-b', blendFor(s.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check'];
+    // rule checks are retired (user, 2026-10-30); a test can still ask for the report with check: true
+    const args = ['-b', blendFor(s.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, ...(opts.check ? ['--check'] : [])];
     let out = null;
     if (opts.still) args.push('--still', String(opts.still));
     else { out = path.join(f.renders, tag + '.mp4'); args.push('--video', out); }
@@ -122,7 +123,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       const hash = shotHash(s, j.req.preview);
       const hit = !j.req.still && cache[hash] && fs.existsSync(cache[hash]) ? cache[hash] : null;
       if (hit && j.scene) { done.push({ code: s.code, out: hit, reused: true, rules: 'PASS' }); j.frameBase += s.shot.frames.length; j.frame = j.frameBase; continue; }
-      const r = await renderShot(j, f, s, { still: j.req.still, preview: j.req.preview });
+      const r = await renderShot(j, f, s, { still: j.req.still, preview: j.req.preview, check: j.req.check });
       j.frameBase += s.shot.frames.length; j.frame = j.frameBase;
       done.push({ code: s.code, out: r.out, rules: r.rules, check: r.check });
       if (r.code !== 0) { failed = { code: s.code, rules: r.rules, error: r.error, check: r.check }; break; }
@@ -202,7 +203,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       fs.writeFileSync(shotFile, JSON.stringify({ ...withMaster(g.shot), width: j.req.width, height: j.req.height }));
       const frames = [...new Set(g.items.map(x => x.frame + 1))];
       j.step = `${code}: ${frames.length} slide${frames.length > 1 ? 's' : ''}`;
-      const args = ['-b', blendFor(g.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check', '--frames', frames.join(',')];
+      const args = ['-b', blendFor(g.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, ...(j.req.check ? ['--check'] : []), '--frames', frames.join(',')];
       const r = await runBlender(j, args, path.join(check, 'blender.log'));
       if (r.code !== 0 && !(r.rules || '').startsWith('FAIL')) { j.state = 'failed'; j.detail = `${code}: see blender.log`; j.out = check; return; }
       if (r.rules && r.rules !== 'PASS') j.rules = r.rules;
@@ -295,7 +296,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       const shot = { fps: 30, width: 270, height: 480, frames: [0, 1, 2].map(i => ({ armL: 40 + i * 20, headYaw: i * 10, earLFold: -i * 10, expression: 1, cam: { yaw: 0, pitch: 4, dist: 3, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52 } })) };
       const shotFile = path.join(dir, 'shot.json');
       fs.writeFileSync(shotFile, JSON.stringify(shot));
-      const args = ['-b', path.join(appDir, 'blender', 'Bunny3D_v2.blend'), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, dir, '--check', '--still', '2', '--no-cloth'];
+      const args = ['-b', path.join(appDir, 'blender', 'Bunny3D_v2.blend'), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, dir, '--still', '2', '--no-cloth'];
       let log = '', version = null;
       let p;
       try { p = spawn(exe, args, { windowsHide: true }); } catch (e) { return resolve({ ok: false, error: String(e.message || e) }); }
