@@ -1,5 +1,6 @@
 // Doodle Studio 3D: editor shell. Same look as Doodle Studio; 3D-specific workflow.
 import { Viewport } from './viewport.js';
+import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { TRACK_IDS } from './rig.js';
 import { newProject, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 
@@ -204,6 +205,7 @@ function buildPanel() {
     c.append(h('h3', {}, 'Camera'), ...CAM_IDS.map(control));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: () => keyGroup(CAM_IDS) }, 'Key camera'), h('button', { onclick: frameBunny }, 'Frame Bunny')));
     c.append(h('p', { class: 'hint' }, 'Drag in the viewport to orbit, Shift+drag to move the aim, wheel to move in and out, Alt+wheel to change the lens. The set moves with the camera, so angles stay physically true.'));
+    c.append(cameraPresetsPanel(presetCtx()));
   } else if (tab === 'render') {
     const field = (label, key, attrs) => { const i = h('input', { ...attrs, value: project[key] }); i.addEventListener('change', () => { pushUndo(); project[key] = attrs.type === 'number' ? Number(i.value) : i.value; drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
     c.append(h('h3', {}, 'Shot'), field('Length (frames)', 'length', { type: 'number', min: 1, max: 54000 }), field('Frame rate', 'fps', { type: 'number', min: 12, max: 60 }),
@@ -239,6 +241,8 @@ function dollyTo(lens) {
   const l0 = current('cam.lens'), d0 = current('cam.dist');
   camSet({ lens, dist: Math.max(0.4, d0 * lens / l0) });
 }
+// camera-presets.js reaches the shot through this
+const presetCtx = () => ({ view, project: () => project, frame: () => frame, current, setValue, pushUndo, toast, refresh: () => { apply(); drawTracks(); } });
 function frameBunny() { camSet({ tx: 0, ty: 0, tz: 0.52, dist: 3.0 * current('cam.lens') / 50 }); }
 
 // ---------------------------------------------------------------- viewport interaction
@@ -506,7 +510,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
   data = await (await fetch('bunny3d.json')).json();
   view = new Viewport($('#view'), data);
   BUNNY_IDS = PARTS.flatMap(p => p[2]);
-  buildMenu(); buildTabs(); buildRail(); bindViewport(); bindKeys();
+  buildMenu(); buildTabs(); buildRail(); bindViewport(); bindKeys(); bindCameraPresets(presetCtx());
   $('#auto-key').addEventListener('click', e => { autoKey = !autoKey; e.currentTarget.setAttribute('aria-pressed', String(autoKey)); e.currentTarget.textContent = autoKey ? 'Auto' : 'Manual'; });
   $('#render-btn').addEventListener('click', () => render());
   $('#shot-name').addEventListener('change', e => { project.name = e.target.value; dirty = true; });
