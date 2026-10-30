@@ -43,6 +43,7 @@ sys.path.insert(0, HERE)
 import ds_map, dynamics, rules3d, collision, compat  # noqa: E402
 import stage  # noqa: E402
 import powers  # noqa: E402
+import cast as costars  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -131,6 +132,8 @@ pose_bones = [b for b in arm.pose.bones if not b.name.startswith(('MCH-', 'DEF-'
 objs = collision.objects()
 ear_sets = collision.ear_vertex_sets(objs['head'])
 apply = lambda v: ds_map.apply_pose(arm, meta['controls'], v, S, settings)
+# co-stars come in after the lead's collision objects are taken, so those stay the lead's own
+cast = costars.setup(shot, cam, HERE, lambda m: print(m, flush=True))
 fixes = []
 rep = None
 for i, vals in enumerate(frames):
@@ -165,6 +168,10 @@ for i, vals in enumerate(frames):
         fb.keyframe_insert(f'["{k}"]', frame=f, group='face')
     if 'leg_reach' in arm:
         arm.keyframe_insert('["leg_reach"]', frame=f)
+    for c in cast:
+        costars.pose_frame(c, i, f, settings, collide=not flag('--no-collide'))
+    if cast:
+        costars.keep_apart(objs, arm, cast, f, lambda m: print(m, flush=True))
     settings.keyframe_insert('["boil"]', frame=f)
     cam.keyframe_insert('location', frame=f)
     cam.keyframe_insert('rotation_euler', frame=f)
@@ -173,6 +180,12 @@ for i, vals in enumerate(frames):
         cam.data.dof.keyframe_insert('use_dof', frame=f)
         cam.data.dof.keyframe_insert('focus_distance', frame=f)
         cam.data.dof.keyframe_insert('aperture_fstop', frame=f)
+
+if cast:
+    costars.finish(cast, n)
+    for c in cast:
+        if c['pushes']:
+            print(f"cast: {c['name']} kept clear on {len(c['pushes'])} frames (up to {max(p['cm'] for p in c['pushes'])} cm)", flush=True)
 
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
@@ -196,6 +209,8 @@ for fc in compat.fcurves(arm):
 
 if not flag('--no-springs') and n > 1:
     dynamics.bake_springs(arm, 1, n, fps=fps)
+    for c in cast:
+        dynamics.bake_springs(c['rig'], 1, n, fps=fps)
 
 cloth_mods = [(ob, m) for ob in bpy.data.objects for m in ob.modifiers if m.type == 'CLOTH']
 for ob, m in cloth_mods:
@@ -207,16 +222,27 @@ if not flag('--no-cloth') and cloth_mods and n > 1:
         with bpy.context.temp_override(scene=sc, active_object=ob, point_cache=m.point_cache):
             bpy.ops.ptcache.bake(bake=True)
 
-json.dump(fixes, open(os.path.join(out_dir, 'collision.json'), 'w'), indent=1)
+json.dump(fixes if not cast else {'lead': fixes, 'costars': [{'character': c['name'], 'pushes': c['pushes']} for c in cast]},
+          open(os.path.join(out_dir, 'collision.json'), 'w'), indent=1)
 report = []
 if flag('--check'):
     rng = [still] if still else range(1, n + 1)
     for f in rng:
         sc.frame_set(f)
         r = rules3d.check_frame(objs, arm, ear_sets)
+        # co-stars obey the same rules; their findings are named after them
+        for k, c in enumerate(cast):
+            rc = rules3d.check_frame(c['objs'], c['rig'], c['ears'])
+            r['arm_head_clip'] = r['arm_head_clip'] + [f"{c['name']}{k + 1}:{x}" for x in rc['arm_head_clip']]
+            r['below_floor'] = r['below_floor'] or rc['below_floor']
+            r['ears_touch'] = r['ears_touch'] or rc['ears_touch']
+            if rc['below_floor']:
+                r.setdefault('costar_below_floor', []).append(c['name'])
+        if len(cast):
+            r['bodies_touch'] = costars.touching(objs, cast)
         r['frame'] = f
         report.append(r)
-    bad = [r for r in report if r['arm_head_clip'] or r['below_floor'] or r['ears_touch']]
+    bad = [r for r in report if r['arm_head_clip'] or r['below_floor'] or r['ears_touch'] or r.get('bodies_touch')]
     json.dump({'frames': report, 'violations': len(bad)}, open(os.path.join(out_dir, 'rules.json'), 'w'), indent=1)
     print('RULES', 'PASS' if not bad else f'FAIL ({len(bad)} frames)')
 
@@ -268,5 +294,5 @@ else:
         sc.render.filepath = os.path.join(out_dir, 'frame_')
     bpy.ops.render.render(animation=True)
 print('done', out_dir)
-if flag('--check') and any(r['arm_head_clip'] or r['below_floor'] or r['ears_touch'] for r in report):
+if flag('--check') and any(r['arm_head_clip'] or r['below_floor'] or r['ears_touch'] or r.get('bodies_touch') for r in report):
     sys.exit(1)

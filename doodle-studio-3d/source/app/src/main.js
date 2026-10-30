@@ -17,6 +17,7 @@ import * as S2 from './storytime2.js';
 import * as P from './post.js';
 import * as F2 from './features2.js';
 import * as PW from './powers.js';
+import * as CS from './cast.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -238,6 +239,7 @@ function apply() {
     if (sig !== pathSig) { const t = performance.now(); pathPts = A2.pathOf(anim2Ctx(), pathWhat); pathPops = A2.arcCheck(pathPts); pathSig = sig; perf('motion path', performance.now() - t); }
   }
   view.pose(vals);
+  syncCostars();
   const cam = {};
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
   if (project.horizonLock) cam.roll = 0;
@@ -664,6 +666,76 @@ async function masterDialog() {
   modal({ h }, 'Master Bunny file', close => [h('p', { class: 'hint' }, cur ? `Renders use ${cur}` : 'Renders use the built-in Bunny. A master file is your own copy of Bunny3D_v2.blend with your tweaks; every Bunny render uses it.'),
     h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('button', { class: 'primary', onclick: () => { close(); pwRun({ action: 'master' }); } }, cur ? 'Pick another…' : 'Pick the master .blend…'), h('button', { onclick: () => { close(); pwRun({ action: 'open_master' }); } }, 'Open master in Blender'), cur ? h('button', { onclick: () => { close(); pwRun({ action: 'master', path: null }); } }, 'Use the built-in Bunny') : null, h('button', { onclick: close }, 'Close'))]);
 }
+// ---------------------------------------------------------------- co-stars (cast.js; Blender side lib/cast.py)
+const costarLoading = new Set();
+const castName = c => (CHARACTERS.find(x => x[0] === c) || [0, c])[1];
+function syncCostars() {
+  const list = CS.costarsOf(project), ids = BUNNY_IDS.concat(FACE_IDS), out = [];
+  for (const [i, c] of list.entries()) {
+    const d = c.character === loadedChar ? data : charData[c.character];
+    if (!d) {
+      if (!costarLoading.has(c.character)) {
+        costarLoading.add(c.character);
+        fetch(c.character === 'bunny' ? 'bunny3d.json' : `chars/${c.character}.json`).then(r => r.json()).then(j => { charData[c.character] = j; costarLoading.delete(c.character); apply(); }).catch(e => toast(e.message, 5000));
+      }
+      continue;
+    }
+    out.push({ data: d, values: CS.costarValues(project, i, ids, frame), x: c.x, y: c.y, turn: c.turn });
+  }
+  if (out.length || view.actors?.length) view.setCostars(out);
+}
+async function castRun(a) { try { const r = await castAct(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
+async function castAct(a) {
+  const F = a.frame ?? frame, done = (r, message) => ({ ...r, message }), i = a.index ?? 0;
+  const changed = () => { dirty = true; apply(); drawTracks(); updateHud(); };
+  const who = () => { const c = CS.costarsOf(project)[i]; if (!c) throw Error(`No co-star ${i}: add one first`); return castName(c.character); };
+  switch (a.action) {
+    case 'list': return { lead: character(), costars: CS.costarsOf(project).map((c, k) => ({ index: k, character: c.character, x: c.x, y: c.y, turn: c.turn, keyed: Object.keys(c.tracks || {}) })) };
+    case 'add': {
+      const ch = a.character || CHARACTERS.find(c => c[0] !== character())[0];
+      if (!CHARACTERS.some(c => c[0] === ch)) throw Error('character must be one of ' + CHARACTERS.map(c => c[0]).join(', '));
+      pushUndo('Add co-star'); const r = CS.addCostar(project, ch, a); changed();
+      return done(r, `${castName(ch)} joins ${charName()} in this shot. Renders keep them from ever touching`);
+    }
+    case 'remove': { const n = who(); pushUndo('Remove co-star'); const r = CS.removeCostar(project, i); changed(); return done(r, `${n} left the shot`); }
+    case 'place': { if (a.character && !CHARACTERS.some(c => c[0] === a.character)) throw Error('Unknown character'); pushUndo('Place co-star'); const r = CS.placeCostar(project, i, a); changed(); return done(r, `${who()} at ${r.costar.x} m, ${r.costar.y} m, turned ${r.costar.turn}°`); }
+    case 'key': { who(); if (!a.values || typeof a.values !== 'object') throw Error('values: { control: value }'); pushUndo('Key co-star'); const r = CS.keyCostar(project, i, a.values, F); changed(); return done(r, `${who()} keyed at frame ${F}`); }
+    case 'copy': { who(); pushUndo('Copy the lead'); const r = CS.copyLead(project, i, BUNNY_IDS.concat(FACE_IDS), a.mirror ?? true, mirrorValues); changed(); return done(r, `${who()} copies ${charName()}'s moves${r.mirrored ? ', mirrored' : ''}`); }
+    case 'motion': {
+      who();
+      const sp = CS.costarProject(project, i);
+      const r = await useItem({ ...libCtx(), project: () => sp, frame: () => F }, a.id, { frame: F, mirror: !!a.mirror, blend: a.blend || 0 });
+      if (sp.length > project.length) project.length = sp.length;
+      changed();
+      return done(r, `${who()}: ${r?.name || a.id} from frame ${F}`);
+    }
+    case 'clear_keys': { who(); pushUndo('Clear co-star keys'); CS.costarsOf(project)[i].tracks = {}; changed(); return done({ index: i }, `${who()} back to rest`); }
+    default: throw Error('action must be list, add, remove, place, key, copy, motion or clear_keys');
+  }
+}
+async function castDialog() {
+  await loadLibrary(api).catch(() => {});
+  const motions = libraryRows().filter(r => r.category === 'motion');
+  modal({ h }, 'Co-stars in this shot', close => {
+    const rows = CS.costarsOf(project).map((c, i) => {
+      const num = (v, step, label) => h('input', { type: 'number', step, value: v, style: 'width:60px', 'aria-label': label });
+      const x = num(c.x, 0.05, 'Left / right in metres'), y = num(c.y, 0.05, 'Near / far in metres'), t = num(c.turn, 5, 'Turn in degrees');
+      const q = h('input', { type: 'search', placeholder: 'Find a motion', style: 'width:9em', 'aria-label': 'Find a motion' });
+      const sel = h('select', { 'aria-label': 'Motion', style: 'max-width:14em' }, ...motions.slice(0, 400).map(m => h('option', { value: m.id }, m.name)));
+      q.addEventListener('input', () => { const s = q.value.toLowerCase(); sel.replaceChildren(...motions.filter(m => m.name.toLowerCase().includes(s)).slice(0, 200).map(m => h('option', { value: m.id }, m.name))); });
+      return h('div', { class: 'ds-list' },
+        h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('b', { style: 'min-width:5em' }, castName(c.character)), h('span', { class: 'hint' }, 'x'), x, h('span', { class: 'hint' }, 'y'), y, h('span', { class: 'hint' }, 'turn'), t,
+          h('button', { onclick: () => { close(); castRun({ action: 'place', index: i, x: Number(x.value), y: Number(y.value), turn: Number(t.value) }).then(castDialog); } }, 'Place'),
+          h('button', { onclick: () => { close(); castRun({ action: 'remove', index: i }).then(castDialog); } }, 'Remove')),
+        h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('button', { onclick: () => { close(); castRun({ action: 'copy', index: i, mirror: true }); } }, `Copy ${charName()}'s moves (mirrored)`),
+          h('button', { onclick: () => { close(); castRun({ action: 'copy', index: i, mirror: false }); } }, 'Copy as is'), q, sel,
+          h('button', { onclick: () => { close(); castRun({ action: 'motion', index: i, id: sel.value }); } }, 'Play from the playhead'),
+          h('button', { onclick: () => { close(); castRun({ action: 'clear_keys', index: i }); } }, 'Clear keys')));
+    });
+    return [h('p', { class: 'hint' }, `Co-stars share ${charName()}'s rig, look and rules. In the render they are pushed apart, eased, whenever two bodies would touch.`), ...rows,
+      CS.costarsOf(project).length < CS.MAX_COSTARS ? h('div', { class: 'row' }, ...CHARACTERS.map(([id, n]) => h('button', { onclick: () => { close(); castRun({ action: 'add', character: id }).then(castDialog); } }, `Add ${n}`)), h('button', { onclick: close }, 'Close')) : h('button', { onclick: close }, 'Close')];
+  });
+}
 function stickMode() {
   const fr = $('#frame');
   document.getElementById('stick-layer')?.remove(); document.querySelector('.stick-bar')?.remove();
@@ -872,7 +944,7 @@ const carCtx = () => ({
 const MENUS = [
   ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
-  ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
+  ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()], ['Co-stars (more characters)…', () => castDialog()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
@@ -1946,6 +2018,8 @@ function loop() {
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // cast.js (MCP tool "cast")
+    async cast(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await castAct(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // powers.js (MCP tool "powers")
     async powers(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await pw(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // features2.js (MCP tool "features")

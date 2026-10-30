@@ -141,6 +141,32 @@ export class Viewport {
     this.pose(this.values || {});
   }
 
+  // ---------- co-stars: more characters on the same rig code, each in its own group on the floor
+  setCostars(list) {   // [{ data, values, x, y, turn }]
+    this.actors ||= [];
+    while (this.actors.length > list.length) this._dropActor(this.actors.pop());
+    list.forEach((c, i) => {
+      let a = this.actors[i];
+      if (!a || a.data !== c.data) { if (a) this._dropActor(a); a = this.actors[i] = this._actor(c.data); }
+      a.group.position.set(c.x, c.y, 0);
+      a.group.rotation.set(0, 0, (c.turn || 0) * Math.PI / 180);
+      a.pose(c.values || {});
+    });
+  }
+  _actor(data) {
+    const a = Object.create(Viewport.prototype);
+    Object.assign(a, { data, scene: this.scene, outlineUniforms: this.outlineUniforms, rig: new BunnyRig(data), meshes: data.meshes.map(decodeMesh), objects: [],
+      faceState: { expression: 0, gaze: 0, mouth: 0, blink: 0 }, _faceInk: this._faceInk });
+    a.buildFace();
+    a.buildBunny();
+    return a;
+  }
+  _dropActor(a) {
+    this.scene.remove(a.group);
+    for (const o of a.objects) { o.g.dispose(); o.mesh.material.dispose(); o.outline?.material.dispose(); }
+    a.faceTex.dispose();
+  }
+
   pose(values) {
     this.values = values;
     this.rig.pose(values);
@@ -304,6 +330,7 @@ export class Viewport {
     const wpp = 2 * headDist * Math.tan(this.camera.fov * Math.PI / 360) / (h * pr);
     const want = (this.outlineUniforms.inkPx.value * wpp) / (0.1132 * this.data.S);
     if (!this._faceInk || Math.abs(want / this._faceInk - 1) > 0.08) { this._faceInk = want; this.drawFace(); }
+    for (const a of this.actors || []) if (!a._faceInk || Math.abs(want / a._faceInk - 1) > 0.08) { a._faceInk = want; a.drawFace(); }
     this.renderer.render(this.scene, this.camera);
   }
 }
