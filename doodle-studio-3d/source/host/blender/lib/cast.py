@@ -12,6 +12,8 @@ import json
 import math
 import os
 import re
+import shutil
+import tempfile
 
 import bpy
 from mathutils import Vector
@@ -36,11 +38,17 @@ def _objs(new):
 
 def setup(shot, cam, here, log):
     out = []
-    for i, entry in enumerate((shot.get('costars') or [])[:3]):
+    for i, entry in enumerate((shot.get('costars') or [])[:5]):
         path = _blend(entry, here)
         if not os.path.exists(path):
             log(f'cast: no file for {entry.get("character")}')
             continue
+        if bpy.data.filepath and os.path.abspath(path) == os.path.abspath(bpy.data.filepath):
+            # Blender can't append from the open file: a co-star of the lead's own character comes from a copy
+            copy = os.path.join(tempfile.gettempdir(), 'ds_costar_' + os.path.basename(path))
+            if not os.path.exists(copy) or os.path.getmtime(copy) < os.path.getmtime(path):
+                shutil.copyfile(path, copy)
+            path = copy
         before, before_t = set(bpy.data.objects), set(bpy.data.texts)
         with bpy.data.libraries.load(path, link=False) as (src, dst):
             dst.collections = ['Bunny']

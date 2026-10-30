@@ -16,8 +16,9 @@ const r = require('../host/render.cjs')({ appDir, settings: { set: () => {}, get
   ok(!rep.shot.scenery.some(n => /BUNNY_/.test(n)), 'the character is not scenery');
   ok(typeof rep.shot.horizon_y === 'number' && rep.shot.horizon_y > 0 && rep.shot.horizon_y < 1, 'horizon height measured: ' + rep.shot.horizon_y);
   ok(Array.isArray(f.slivers) && Array.isArray(f.tangents) && Array.isArray(f.scenery_touch) && Array.isArray(f.held_in_body), 'every frame reports slivers, tangents, touches, held props');
-  ok(f.slivers.length > 0, 'the turned camera crops set pieces to slivers: ' + f.slivers.slice(0, 3).join('; '));
-  ok(rep.violations > 0 && j.rules && j.rules.startsWith('FAIL'), 'and the shot fails the rules: ' + j.rules);
+  // B16: the set hides the pieces this camera would crop to slivers, so none are left
+  ok(f.slivers.length === 0, 'pieces the turned camera would crop to slivers are hidden: ' + (f.slivers.join('; ') || 'none left'));
+  ok(f.held_in_body.every(t => !/head/i.test(t)), 'the held mug stays out of his head: ' + (f.held_in_body.join('; ') || 'clear'));
 } });
 const cam = { yaw: 35, pitch: 4, dist: 3.2, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52 };
 const shot = { fps: 30, width: 1080, height: 1920, character: 'bunny',

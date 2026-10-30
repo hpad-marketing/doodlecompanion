@@ -1109,7 +1109,7 @@ const MENUS = [
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
     ['Overnight batch…', () => batchDialog(prodCtx())], ['Cancel sleep after renders', () => api('sleep-when-done', { on: false }).then(() => toast('The PC will stay awake'))], '-',
     ['Render presets…', () => presetsDialog(prodCtx())], ['Pack project…', () => pack(prodCtx()).catch(e => toast(e.message, 5000))], ['Clean up cache…', () => cacheDialog(prodCtx()).catch(e => toast(e.message, 5000))]]],
-  ['Help', [['Controls and shortcuts', showHelp, 'F1'], ['Keyboard shortcuts and cheat sheet…', () => hotkeyDialog(wfCtx())]]],
+  ['Help', [['Guide…', () => guideDialog()], ['Controls and shortcuts', showHelp, 'F1'], ['Keyboard shortcuts and cheat sheet…', () => hotkeyDialog(wfCtx())]]],
 ];
 
 // saved layouts are listed live in the View menu
@@ -2320,6 +2320,38 @@ function toggleDark() {
   const dark = document.body.dataset.theme !== 'dark';
   document.body.dataset.theme = dark ? 'dark' : 'light';
   try { localStorage.setItem('ds3d.theme', dark ? 'dark' : 'light'); } catch {}
+}
+
+// Help › Guide: the full guide (app/guide.md), with a search box that jumps to matching sections
+async function guideDialog() {
+  const md = await fetch('guide.md').then(r => r.text()).catch(() => 'The guide could not be loaded.');
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const inline = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  const html = [];
+  let list = false;
+  for (const l of md.split('\n')) {
+    const m = l.match(/^(#{1,4}) (.*)/);
+    if (!/^\s*[-*] /.test(l) && list) { html.push('</ul>'); list = false; }
+    if (m) html.push(`<h${Math.min(4, m[1].length + 1)}>${inline(m[2])}</h${Math.min(4, m[1].length + 1)}>`);
+    else if (/^\s*[-*] /.test(l)) { if (!list) { html.push('<ul>'); list = true; } html.push(`<li>${inline(l.replace(/^\s*[-*] /, ''))}</li>`); }
+    else if (/^\|/.test(l)) { if (!/^\|\s*-/.test(l)) html.push(`<p class="hint">${inline(l.replace(/^\||\|$/g, '').split('|').map(c => c.trim()).join(' · '))}</p>`); }
+    else if (l.trim() === '---') html.push('<hr>');
+    else if (l.trim()) html.push(`<p>${inline(l)}</p>`);
+  }
+  if (list) html.push('</ul>');
+  const body = h('div', { class: 'guide-body', style: 'max-height:70vh;overflow:auto;max-width:760px' });
+  body.innerHTML = html.join('');
+  const find = h('input', { type: 'search', placeholder: 'Find in the guide', style: 'width:100%;margin-bottom:8px' });
+  find.addEventListener('input', () => {
+    const q = find.value.trim().toLowerCase();
+    if (!q) return;
+    const hit = [...body.children].find(el => el.textContent.toLowerCase().includes(q));
+    if (hit) hit.scrollIntoView({ block: 'start' });
+  });
+  const d = h('dialog', { style: 'max-width:820px' }, h('h2', {}, 'Guide'), find, body, h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { onclick: () => d.close() }, 'Close')));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
+  return { open: true };
 }
 
 function showHelp() {

@@ -13,6 +13,7 @@ copy('app/index.html', 'ui/index.html');
 copy('app/src', 'ui/src');
 copy('app/vendor', 'ui/vendor');
 copy('app/bunny3d.json', 'ui/bunny3d.json');
+copy('app/guide.md', 'ui/guide.md');
 for (const c of ['koala', 'frog']) copy(`app/chars/${c}.json`, `ui/chars/${c}.json`);
 if (fs.existsSync(path.join(here, 'app/icon.png'))) copy('app/icon.png', 'ui/icon.png');
 const files = [];

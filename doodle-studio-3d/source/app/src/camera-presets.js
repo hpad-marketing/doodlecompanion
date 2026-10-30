@@ -31,7 +31,7 @@ export const SIZES = [
 // Angles: where the camera sits. `height` puts the lens at a body landmark and keeps it level;
 // `pitch` tilts the camera itself (the set tilts with it, so it stays physically true).
 export const ANGLES = [
-  ['eye', 'Eye level', 'Lens at his eye height, looking straight on. Neutral and honest.', { height: 'eyes' }],
+  ['eye', 'Eye level', 'A level camera looking straight at him. Neutral and honest, and the horizon stays put from shot to shot.', { height: 'eyes' }],
   ['shoulder', 'Shoulder level', 'Lens at shoulder height. A touch lower than the eyes, so he feels a bit stronger.', { height: 'shoulder' }],
   ['hip', 'Hip level', 'Lens at the hips. Great for hands, props and a walk.', { height: 'waist' }],
   ['knee', 'Knee level', 'Lens at the knees. Makes him look taller and the floor bigger.', { height: 'legMid' }],
@@ -277,7 +277,11 @@ function makeObjectTarget(t, view) {
     id: t.id, label: t.label, facing: () => (t.facing ? t.facing() : 0), floorZ: () => view.data.floor_z || 0,
     worldZ: name => { const [z0, z1] = zs(); return z0 + (z1 - z0) * ({ ground: 0.05, legMid: 0.15, waist: 0.4, shoulder: 0.7, eyes: 0.85 }[name] ?? 0.5); },
     eyePoint: () => new THREE.Box3().setFromPoints(t.points()).getCenter(new THREE.Vector3()),
-    region: size => fillRegion(t.points(), { ews: 0.05, ws: 0.18, fs: 0.75, mfs: 0.9, ms: 1, mcu: 1.3, cu: 1.7, ecu: 3 }[size]),
+    // wide sizes give the group the same share of the frame height as Bunny alone gets, with room at the sides
+    region: size => {
+      const fill = { ews: 0.12, ws: 0.32, fs: 0.8, mfs: 0.9, ms: 1, mcu: 1.3, cu: 1.7, ecu: 3 }[size], xf = Math.min(1, Math.max(fill, 0.6));
+      return { points: t.points(), xPoints: t.points(), box: [-fill * 0.9, fill * 0.9], xBox: [-xf * 0.9, xf * 0.9] };
+    },
   };
 }
 
@@ -298,7 +302,10 @@ function framing({ size = state.size, angle = state.angle, place = state.place, 
   const base = { ...from, yaw: wrapYaw(tgt.facing() + (A.yaw || 0)), roll: A.roll || 0, lens: A.lens || from.lens, pitch: A.pitch ?? 2 };
   if (A.height) base.pitch = 0;
   const reg = { ...tgt.region(size), placeX: (PLACES.find(p => p[0] === place) || PLACES[0])[2] };
-  return solve(base, reg, ctx.view.aspect, { heightZ: A.height ? tgt.worldZ(A.height) : null, floorZ: tgt.floorZ() });
+  // eye-line angles keep the camera level, so the horizon sits at the same height on every shot and size;
+  // the framing comes from the camera's height and distance instead of a tilt
+  const level = A.height === 'eyes';
+  return solve(base, reg, ctx.view.aspect, { heightZ: A.height && !level ? tgt.worldZ(A.height) : null, floorZ: tgt.floorZ() });
 }
 
 function viewCam(id, tgt = target()) {
