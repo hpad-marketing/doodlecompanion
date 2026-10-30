@@ -1,8 +1,8 @@
 {
- "version": "20261030-132527",
- "notes": "Faster to work in. Live rule lights in the viewport (arm in head, feet in the floor or in the air, line weight). Your own keyboard shortcuts with a cheat sheet (Help menu), and the Keydial keys from Doodle Studio work here too. A favourites and recents bar (right-click any menu item to pin it). Drag the panel and timeline edges, then View > Save layout. View > Pop out the viewport opens it on the second screen. Snapping, shot status on the chips (right-click to move it on), File > New from template, split a shot at the playhead or the voice into one shot per sentence, beat markers from the audio (or tap B), and draw-over review notes (N).",
+ "version": "20261030-134441",
+ "notes": "Animator tools part 2: graph editor with spacing charts, IK drag that keys FK, pin a hand or foot, click-to-pick, motion paths with an arc fixer, partial pose library, copy keys across shots and characters, animation layers, clip blending, retargeting, time warp, moving holds, Euler filter, balance marker, reference video, playblast with audio, multi-key moves, per-control reset",
  "runtime": "44.9.0",
- "published": "2026-10-30T13:25:27.105Z",
+ "published": "2026-10-30T13:44:41.137Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "253936b9bdb8966f40cb38e4782a90e620224f39f9adb3af02f279b57f1323db",
-   "size": 22364,
-   "gz": "files/253936b9bdb8966f40cb38e4782a90e620224f39f9adb3af02f279b57f1323db.gz"
+   "sha256": "1303819bc6271b3cc7977b01775859dd8fe3bd0db2542de758af7fc77286a0d3",
+   "size": 22810,
+   "gz": "files/1303819bc6271b3cc7977b01775859dd8fe3bd0db2542de758af7fc77286a0d3.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "9f9a652d146d71a82ae3c75a787bc2771670b3fd2a43f9655d33d21ce7055abd",
-   "size": 22911,
-   "gz": "files/9f9a652d146d71a82ae3c75a787bc2771670b3fd2a43f9655d33d21ce7055abd.gz"
+   "sha256": "60e8f8781b560e2ae0e280321bbcf041f103f0985ce9ea558fce8fabb9a76da5",
+   "size": 26091,
+   "gz": "files/60e8f8781b560e2ae0e280321bbcf041f103f0985ce9ea558fce8fabb9a76da5.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -35,9 +35,9 @@
    "gz": "files/6e45488363a518da91be6b1dbf963d290060263f497c3bf464958c2393313c2f.gz"
   },
   "resources/app/server.cjs": {
-   "sha256": "a4b77ac6d1396f004c62e334530f70c0d36eba94d5b2ee26046a21b349e7d11b",
-   "size": 2604,
-   "gz": "files/a4b77ac6d1396f004c62e334530f70c0d36eba94d5b2ee26046a21b349e7d11b.gz"
+   "sha256": "1bd3275449c0c914f299b3a7b0122d548ae11ce73ab441f449c948a1a8961bd1",
+   "size": 4374,
+   "gz": "files/1bd3275449c0c914f299b3a7b0122d548ae11ce73ab441f449c948a1a8961bd1.gz"
   },
   "resources/app/updater.cjs": {
    "sha256": "08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de",
@@ -160,14 +160,19 @@
    "gz": "files/6a9e06afeb4d545b3fff6de68a71d941fda17af97760948389dd400349e7252e.gz"
   },
   "resources/app/ui/src/animtools.js": {
-   "sha256": "7b80c8ddc5d0d3876238f2dded478c789fb7ba254806d268ef491dadc590f549",
-   "size": 10027,
-   "gz": "files/7b80c8ddc5d0d3876238f2dded478c789fb7ba254806d268ef491dadc590f549.gz"
+   "sha256": "cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf",
+   "size": 10264,
+   "gz": "files/cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf.gz"
+  },
+  "resources/app/ui/src/animtools2.js": {
+   "sha256": "52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c",
+   "size": 24153,
+   "gz": "files/52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "bcb23e9fc5ffb83f99c12a234e4492499243862d9beaaee5b121cb0829335ead",
-   "size": 3171,
-   "gz": "files/bcb23e9fc5ffb83f99c12a234e4492499243862d9beaaee5b121cb0829335ead.gz"
+   "sha256": "6acda0beb6978c997c529b8f269eec69aabb7206dd899f67c4ff0eb1ca1e4505",
+   "size": 3571,
+   "gz": "files/6acda0beb6978c997c529b8f269eec69aabb7206dd899f67c4ff0eb1ca1e4505.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2",
@@ -185,14 +190,14 @@
    "gz": "files/63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef.gz"
   },
   "resources/app/ui/src/library.js": {
-   "sha256": "a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219",
-   "size": 15213,
-   "gz": "files/a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219.gz"
+   "sha256": "e14b3ada2bf46c5ad59215ecd1385d740426b805068882f417264ed72e3fba41",
+   "size": 16552,
+   "gz": "files/e14b3ada2bf46c5ad59215ecd1385d740426b805068882f417264ed72e3fba41.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "753e1e066585c9ec15f3d9b0851fafcc89c89666a10513a2efe505118626664d",
-   "size": 93718,
-   "gz": "files/753e1e066585c9ec15f3d9b0851fafcc89c89666a10513a2efe505118626664d.gz"
+   "sha256": "e34e019d452bb1a6b83769241b5970620c08eac463d7e798e7e55653dcc64b3a",
+   "size": 118148,
+   "gz": "files/e34e019d452bb1a6b83769241b5970620c08eac463d7e798e7e55653dcc64b3a.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -200,14 +205,14 @@
    "gz": "files/74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf.gz"
   },
   "resources/app/ui/src/production.js": {
-   "sha256": "0505a42aff196fbaf269654aa8902e5af5167394de6761d85b9ba70bfcf71707",
-   "size": 24343,
-   "gz": "files/0505a42aff196fbaf269654aa8902e5af5167394de6761d85b9ba70bfcf71707.gz"
+   "sha256": "979ad596560b79cc2ee15aca4dae75b5b4c5a2d422601d710923a57fb3804e28",
+   "size": 24350,
+   "gz": "files/979ad596560b79cc2ee15aca4dae75b5b4c5a2d422601d710923a57fb3804e28.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "5378785f33b7d02110a101b26605bde1b15925ed273483a4043ceb5567c2bee4",
-   "size": 7717,
-   "gz": "files/5378785f33b7d02110a101b26605bde1b15925ed273483a4043ceb5567c2bee4.gz"
+   "sha256": "aaadcc3d3b54706f090bf9abde89558adca16d889110cee0b6a2aa0a8a5568e8",
+   "size": 8180,
+   "gz": "files/aaadcc3d3b54706f090bf9abde89558adca16d889110cee0b6a2aa0a8a5568e8.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "f7a8e0a931b2a09d52829c9667f88383b5548159b594163b43cc2112fa13fd71",
@@ -220,9 +225,9 @@
    "gz": "files/883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "9d3276b26e04c8dff9e1f398f048fc074ec5f99afbca8de42d9b9c6038de3587",
-   "size": 12815,
-   "gz": "files/9d3276b26e04c8dff9e1f398f048fc074ec5f99afbca8de42d9b9c6038de3587.gz"
+   "sha256": "f245a8ce37e075278d80691f76dc1729970266503db1cb7d8884a4958c3f2bd9",
+   "size": 13220,
+   "gz": "files/f245a8ce37e075278d80691f76dc1729970266503db1cb7d8884a4958c3f2bd9.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e",

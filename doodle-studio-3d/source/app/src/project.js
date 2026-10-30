@@ -75,9 +75,16 @@ export function defaults(id) {
   return 0;
 }
 
+// base keys plus every animation layer that is on (layers add an offset, times their weight)
 export function valueAt(project, id, f) {
+  let v = trackValue(project, id, f);
+  if (project.layers && !DISCRETE.has(id)) for (const L of project.layers) if (L.on !== false && L.tracks?.[id]?.length) v += (L.weight ?? 1) * trackValue(L, id, f);
+  return v;
+}
+export const layerValue = (L, id, f) => (L.tracks?.[id]?.length ? trackValue(L, id, f) : 0);
+function trackValue(project, id, f) {
   const keys = project.tracks[id];
-  if (!keys || !keys.length) return defaults(id);
+  if (!keys || !keys.length) return project.layer ? 0 : defaults(id);
   if (f <= keys[0].f) return keys[0].v;
   const last = keys[keys.length - 1];
   if (f >= last.f) return last.v;

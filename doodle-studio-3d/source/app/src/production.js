@@ -3,7 +3,7 @@
 // batch, the health check with one-click fixes, pack project and cache cleanup.
 import * as THREE from 'three';
 
-const modal = (ctx, title, body) => {
+export const modal = (ctx, title, body) => {
   const { h } = ctx;
   const close = () => box.remove();
   const box = h('div', { class: 'ds-modal', role: 'dialog', 'aria-label': title }, h('div', { class: 'ds-modal-card' }, h('h3', {}, title), ...body(close)));

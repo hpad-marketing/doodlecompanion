@@ -170,7 +170,10 @@ export async function playblast(ctx) {
   comp.width = src.width - (src.width % 2); comp.height = src.height - (src.height % 2);
   const g = comp.getContext('2d');
   const stream = comp.captureStream(0), track = stream.getVideoTracks()[0];   // one video frame per timeline frame
-  const type = ['video/webm;codecs=vp8', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
+  // the scene audio rides along, from this shot's start in the scene
+  const sound = ctx.audioStream?.();
+  if (sound) stream.addTrack(sound.track);
+  const type = (sound ? ['video/webm;codecs=vp8,opus'] : []).concat(['video/webm;codecs=vp8', 'video/webm']).find(t => MediaRecorder.isTypeSupported(t));
   const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 8e6 });
   const chunks = [];
   rec.ondataavailable = e => e.data.size && chunks.push(e.data);
@@ -193,6 +196,7 @@ export async function playblast(ctx) {
   }
   await new Promise(r => setTimeout(r, 300));   // let the encoder flush the last frames
   rec.stop();
+  sound?.stop();
   await stopped;
   ctx.goto(keep);
   const blob = new Blob(chunks, { type: 'video/webm' });
@@ -202,5 +206,5 @@ export async function playblast(ctx) {
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
   const r = await ctx.api('write-file', { path: `${root}/${safe}/work/playblast/${safe.replace(/ /g, '_')}_${p.code}_playblast_${stamp}.webm`, data: b64 });
   ctx.toast('Playblast saved: ' + r.path, 6000);
-  return { path: r.path, frames: p.length, bytes: blob.size };
+  return { path: r.path, frames: p.length, bytes: blob.size, audio: !!sound };
 }

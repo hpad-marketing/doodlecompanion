@@ -45,6 +45,14 @@ export function play(atSeconds) {
   src.connect(ac().destination);
   src.start(0, Math.max(0, atSeconds));
 }
+// the scene audio as a live track, for the playblast recorder
+export function streamFrom(atSeconds) {
+  if (!buf) return null;
+  ac().resume?.();
+  const dest = ac().createMediaStreamDestination(), s = ac().createBufferSource();
+  s.buffer = buf; s.connect(dest); s.start(0, Math.max(0, atSeconds));
+  return { track: dest.stream.getAudioTracks()[0], stop: () => { try { s.stop(); } catch {} } };
+}
 export function stop() { try { src?.stop(); } catch {} src = null; }
 
 // waveform strip for one shot of the scene (scene frames from..from+length)
