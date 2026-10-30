@@ -300,7 +300,15 @@ else {
       webPreferences: { preload: path.join(appDir, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
     main.removeMenu();
     main.webContents.on('will-navigate', (e, url) => { if (!url.startsWith(`http://127.0.0.1:${PORT}/`)) e.preventDefault(); });
-    main.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    // only the viewport pop-out may open, and it goes to the second screen: the Kamvas pen display stays the primary
+    main.webContents.setWindowOpenHandler(({ frameName }) => {
+      if (frameName !== 'ds3d-viewport') return { action: 'deny' };
+      const primary = screen.getPrimaryDisplay(), other = screen.getAllDisplays().filter(d => d.id !== primary.id).sort((a, b) => b.workArea.width * b.workArea.height - a.workArea.width * a.workArea.height)[0];
+      const wa = (other || primary).workArea, w = Math.min(1100, wa.width), hh = Math.min(1300, wa.height);
+      return { action: 'allow', overrideBrowserWindowOptions: { x: wa.x + Math.round((wa.width - w) / 2), y: wa.y + Math.round((wa.height - hh) / 2), width: w, height: hh, title: 'Doodle Studio 3D: viewport', icon, backgroundColor: '#E0A64B', autoHideMenuBar: true,
+        webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } } };
+    });
+    main.webContents.on('did-create-window', w => { w.removeMenu(); w.webContents.on('will-navigate', e => e.preventDefault()); });
     main.on('close', e => {
       // a clean close leaves nothing to recover; a crash leaves recovery.json for the next start
       if (allowClose) { try { fs.unlinkSync(path.join(dataDir, 'recovery.json')); } catch {} return; }

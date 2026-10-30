@@ -124,6 +124,7 @@ export class Viewport {
 
   // Bunny, the Koala or the Frog: same rig code, their own rest data, meshes and faces
   setCharacter(data) {
+    this.skull = null;
     if (data === this.data) return;
     this.scene.remove(this.group);
     for (const o of this.objects) { o.g.dispose(); o.mesh.material.dispose(); o.outline?.material.dispose(); }
@@ -242,6 +243,39 @@ export class Viewport {
     this.aspect = w / h;
     this.size = [w, h];
     this.setCamera({});
+  }
+
+  // live rule lights: arms or hands inside the skull, and the feet against the floor.
+  // The skull is an ellipsoid fitted to the head mesh in rest space (below the ears), so
+  // the test works for every character; Blender's silhouette check stays the final word.
+  ruleCheck() {
+    const A = n => this.rig.A.get(n) || new THREE.Matrix4();
+    const inv = A('head').clone().invert(), v = new THREE.Vector3();
+    const top = this.rig.bones.get('head')?.tailV.z ?? 0.74;
+    if (!this.skull) {
+      const head = this.objects.find(o => /_head$/.test(o.m.name));
+      if (!head) return null;
+      let z0 = 9, z1 = -9, r = 0;
+      for (let i = 0; i < head.buf.length; i += 3) {
+        v.set(head.buf[i], head.buf[i + 1], head.buf[i + 2]).applyMatrix4(inv);
+        if (v.z > top) continue;
+        z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); r = Math.max(r, Math.hypot(v.x, v.y));
+      }
+      this.skull = { cz: (z0 + z1) / 2, rz: (z1 - z0) / 2, r };
+    }
+    const k = this.skull, clips = [];
+    for (const o of this.objects) {
+      const m = /(hand|cuff|sleeve_fore|sleeve_up|arm)[^.]*\.(L|R)$/.exec(o.m.name);
+      if (!m) continue;
+      for (let i = 0; i < o.buf.length; i += 6) {
+        v.set(o.buf[i], o.buf[i + 1], o.buf[i + 2]).applyMatrix4(inv);
+        if ((v.x * v.x + v.y * v.y) / (k.r * k.r) + ((v.z - k.cz) * (v.z - k.cz)) / (k.rz * k.rz) < 0.92) { clips.push(o.m.name.replace(/^[A-Z]+_/, '')); break; }
+      }
+    }
+    // the floor is z = 0 (the set's floor too); at rest the doodle feet sit about 2 cm up
+    let low = 9;
+    for (const o of this.objects) if (/leg|foot|feet/.test(o.m.name)) for (let i = 2; i < o.buf.length; i += 3) low = Math.min(low, o.buf[i]);
+    return { clips, feet: +low.toFixed(3), belowFloor: low < -0.01, inAir: low > 0.045 };
   }
 
   // the middle of the posed head in world space (caption checks, rule lights)

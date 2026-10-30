@@ -1,8 +1,8 @@
 {
- "version": "20261030-131512",
- "notes": "Never lose work, and safer exports. Edit > Undo history (Ctrl+H). Tools > Claude change log undoes any single Claude change and shows a token meter. Render presets you can edit, with a render-time estimate. Tools > Check before export blocks a final render until the audio is in, lip sync is sampled, captions are short and below the face, and the moderator PASS matches this version. Overnight batch that can sleep the PC, Health check with one-click fixes, Pack project, Clean up cache, a nightly backup of every scene (7 days), and an update safety check that rolls an update back by itself if the MCP stops answering.",
+ "version": "20261030-132527",
+ "notes": "Faster to work in. Live rule lights in the viewport (arm in head, feet in the floor or in the air, line weight). Your own keyboard shortcuts with a cheat sheet (Help menu), and the Keydial keys from Doodle Studio work here too. A favourites and recents bar (right-click any menu item to pin it). Drag the panel and timeline edges, then View > Save layout. View > Pop out the viewport opens it on the second screen. Snapping, shot status on the chips (right-click to move it on), File > New from template, split a shot at the playhead or the voice into one shot per sentence, beat markers from the audio (or tap B), and draw-over review notes (N).",
  "runtime": "44.9.0",
- "published": "2026-10-30T13:15:12.946Z",
+ "published": "2026-10-30T13:25:27.105Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "50c7f5853dba56ee46502b1c96b3c0a2676ad059f1f7f0e06c0a3299781eac7a",
-   "size": 21366,
-   "gz": "files/50c7f5853dba56ee46502b1c96b3c0a2676ad059f1f7f0e06c0a3299781eac7a.gz"
+   "sha256": "253936b9bdb8966f40cb38e4782a90e620224f39f9adb3af02f279b57f1323db",
+   "size": 22364,
+   "gz": "files/253936b9bdb8966f40cb38e4782a90e620224f39f9adb3af02f279b57f1323db.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "aaca6373166aa9fadb494872300eacc10df4eca5da789f8e8fb333b11adeb420",
-   "size": 21595,
-   "gz": "files/aaca6373166aa9fadb494872300eacc10df4eca5da789f8e8fb333b11adeb420.gz"
+   "sha256": "9f9a652d146d71a82ae3c75a787bc2771670b3fd2a43f9655d33d21ce7055abd",
+   "size": 22911,
+   "gz": "files/9f9a652d146d71a82ae3c75a787bc2771670b3fd2a43f9655d33d21ce7055abd.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -190,9 +190,9 @@
    "gz": "files/a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "732cbed1fc3be9d4ecaedc05a397d03a0bbda48ddd1c19d3c86785100d2965d9",
-   "size": 82860,
-   "gz": "files/732cbed1fc3be9d4ecaedc05a397d03a0bbda48ddd1c19d3c86785100d2965d9.gz"
+   "sha256": "753e1e066585c9ec15f3d9b0851fafcc89c89666a10513a2efe505118626664d",
+   "size": 93718,
+   "gz": "files/753e1e066585c9ec15f3d9b0851fafcc89c89666a10513a2efe505118626664d.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -220,14 +220,19 @@
    "gz": "files/883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "1217526fa5f1d45b35fb4035aa85b917b65c46b058989a94a440b0b888a2d005",
-   "size": 11159,
-   "gz": "files/1217526fa5f1d45b35fb4035aa85b917b65c46b058989a94a440b0b888a2d005.gz"
+   "sha256": "9d3276b26e04c8dff9e1f398f048fc074ec5f99afbca8de42d9b9c6038de3587",
+   "size": 12815,
+   "gz": "files/9d3276b26e04c8dff9e1f398f048fc074ec5f99afbca8de42d9b9c6038de3587.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "3b6f85aa98cb65706ab70382d9c2031e9bff2a73a36e9acd25209c1f55ef028a",
-   "size": 12392,
-   "gz": "files/3b6f85aa98cb65706ab70382d9c2031e9bff2a73a36e9acd25209c1f55ef028a.gz"
+   "sha256": "4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e",
+   "size": 14210,
+   "gz": "files/4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e.gz"
+  },
+  "resources/app/ui/src/workflow.js": {
+   "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",
+   "size": 19247,
+   "gz": "files/9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0.gz"
   },
   "resources/app/ui/vendor/three.module.js": {
    "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb",
