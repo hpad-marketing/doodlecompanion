@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doodle Studio 3D</title>
+<link rel="stylesheet" href="src/ui.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+<nav id="menubar" aria-label="Menu"></nav>
+<header class="topbar">
+  <h1>DOODLE STUDIO 3D</h1>
+  <input id="shot-name" aria-label="Shot name" title="Shot name. Renders go to DeepInDoodles\<name>." style="width:220px">
+  <span class="keys-label">KEYS</span>
+  <button id="auto-key" aria-pressed="true" title="Auto: every change you make sets a key at the playhead. Off: changes are only a preview until you press Key.">Auto</button>
+  <button id="render-btn" class="primary" title="Render this shot in Blender (cloth, springs, rule checks)">Render</button>
+</header>
+<main id="canvas-wrap">
+  <div id="frame"><canvas id="view" aria-label="3D viewport"></canvas><div id="hud"></div></div>
+  <div id="rail"></div>
+</main>
+<aside id="panel">
+  <div id="tabs" role="tablist"></div>
+  <div id="panel-content"></div>
+</aside>
+<section id="timeline">
+  <div id="timeline-tools"></div>
+  <div id="tracks"></div>
+</section>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+{
+ "version": "20261030-012341",
+ "notes": "First version of Doodle Studio 3D: live 3D Bunny with joint limits, face, real camera (lens, angles, dolly zoom), timeline with easing, dark mode, background Blender renders to MP4 with rule checks, and its own local MCP on port 54190.",
+ "runtime": "44.9.0",
+ "published": "2026-10-30T01:23:42.110Z",
+ "files": {
+  "resources/app/main.cjs": {
+   "sha256": "13609b15163379fade5f7b9086ceab243a33b0885e4ef3506ed1d7a17a3c9b8e",
+   "size": 7054,
+   "gz": "files/13609b15163379fade5f7b9086ceab243a33b0885e4ef3506ed1d7a17a3c9b8e.gz"
+  },
+  "resources/app/mcp.cjs": {
+   "sha256": "23a939a8b7c3d52aa900df003e1357de8181476078ceaadb3d5e278acadd2b10",
+   "size": 5967,
+   "gz": "files/23a939a8b7c3d52aa900df003e1357de8181476078ceaadb3d5e278acadd2b10.gz"
+  },
+  "resources/app/package.json": {
+   "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
+   "size": 133,
+   "gz": "files/532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a.gz"
+  },
+  "resources/app/preload.cjs": {
+   "sha256": "5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c",
+   "size": 244,
+   "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
+  },
+  "resources/app/render.cjs": {
+   "sha256": "fdd025d939fccbd4ee647d503cf6254aa204fd17f89520d2912d61b120bc7f2b",
+   "size": 4270,
+   "gz": "files/fdd025d939fccbd4ee647d503cf6254aa204fd17f89520d2912d61b120bc7f2b.gz"
+  },
+  "resources/app/server.cjs": {
+   "sha256": "334607d9abdddeb7ba1116aa630dfd420f62dd7a88aab4cc7843bf588d1ff408",
+   "size": 2231,
+   "gz": "files/334607d9abdddeb7ba1116aa630dfd420f62dd7a88aab4cc7843bf588d1ff408.gz"
+  },
+  "resources/app/updater.cjs": {
+   "sha256": "6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd",
+   "size": 8322,
+   "gz": "files/6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd.gz"
+  },
+  "resources/app/blender/Bunny3D_v2.blend": {
+   "sha256": "61d11e8352ac066698449813506808b7718d61f4c21cea571e1c9886b63fb57a",
+   "size": 1950838,
+   "gz": "files/61d11e8352ac066698449813506808b7718d61f4c21cea571e1c9886b63fb57a.gz"
+  },
+  "resources/app/blender/ds_bridge.py": {
+   "sha256": "5e9adb56b981acffed3f9a64c869d215a99dfde7acbb67edfcffba871d5ca99d",
+   "size": 10001,
+   "gz": "files/5e9adb56b981acffed3f9a64c869d215a99dfde7acbb67edfcffba871d5ca99d.gz"
+  },
+  "resources/app/ui/bunny3d.json": {
+   "sha256": "bf374685911814998df6776ed23b7801217e6394994078308a978887a2768041",
+   "size": 3816973,
+   "gz": "files/bf374685911814998df6776ed23b7801217e6394994078308a978887a2768041.gz"
+  },
+  "resources/app/ui/icon.png": {
+   "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
+   "size": 27584,
+   "gz": "files/c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd.gz"
+  },
+  "resources/app/ui/index.html": {
+   "sha256": "ecd362e4a7f2e8c416ba472230d16f61993d7fe429336296ff5c9a1123a0fa5c",
+   "size": 1283,
+   "gz": "files/ecd362e4a7f2e8c416ba472230d16f61993d7fe429336296ff5c9a1123a0fa5c.gz"
+  },
+  "resources/app/blender/lib/collision.py": {
+   "sha256": "cf7a4e8889562f9b814e9f28567b856fe3de599070a2fb55b3e1576070c412d9",
+   "size": 5911,
+   "gz": "files/cf7a4e8889562f9b814e9f28567b856fe3de599070a2fb55b3e1576070c412d9.gz"
+  },
+  "resources/app/blender/lib/ds_map.py": {
+   "sha256": "992993f27b80ed5072a1264378fa45ac6b2654bc3dee1999a46342e15c0e1a40",
+   "size": 5962,
+   "gz": "files/992993f27b80ed5072a1264378fa45ac6b2654bc3dee1999a46342e15c0e1a40.gz"
+  },
+  "resources/app/blender/lib/dynamics.py": {
+   "sha256": "cd07033465d13af89616764d188e6297009cad563b35a8013e1ff1c54dcdfbd5",
+   "size": 2875,
+   "gz": "files/cd07033465d13af89616764d188e6297009cad563b35a8013e1ff1c54dcdfbd5.gz"
+  },
+  "resources/app/blender/lib/face.py": {
+   "sha256": "25d97281126ea5efc99e2d7465da3c27cb475f3a24c888757b646e1f3d0e565f",
+   "size": 15425,
+   "gz": "files/25d97281126ea5efc99e2d7465da3c27cb475f3a24c888757b646e1f3d0e565f.gz"
+  },
+  "resources/app/blender/lib/garment.py": {
+   "sha256": "9ef16d851ceaffc9089fa5ec75da8b3b3ac4fe056f9247f184dca717d0d9db46",
+   "size": 2841,
+   "gz": "files/9ef16d851ceaffc9089fa5ec75da8b3b3ac4fe056f9247f184dca717d0d9db46.gz"
+  },
+  "resources/app/blender/lib/geo.py": {
+   "sha256": "c222334b0b6607ba84fc0ac001015d0de0851814d65f9e9721a3a0285737c531",
+   "size": 14917,
+   "gz": "files/c222334b0b6607ba84fc0ac001015d0de0851814d65f9e9721a3a0285737c531.gz"
+  },
+  "resources/app/blender/lib/look.py": {
+   "sha256": "afb9ceca5232f80f5bcc02b328d2836f9dfee2038b9ddc750ca512b0283deefd",
+   "size": 12434,
+   "gz": "files/afb9ceca5232f80f5bcc02b328d2836f9dfee2038b9ddc750ca512b0283deefd.gz"
+  },
+  "resources/app/blender/lib/physics.py": {
+   "sha256": "140ba2ab19d18e75234c47b8ddab8fb4a598349c899ef83b9587f245ab2e6272",
+   "size": 3221,
+   "gz": "files/140ba2ab19d18e75234c47b8ddab8fb4a598349c899ef83b9587f245ab2e6272.gz"
+  },
+  "resources/app/blender/lib/rig.py": {
+   "sha256": "11a296776774b313f83aa346f905fe849cc35a760943b5d6bded5e624504392a",
+   "size": 22606,
+   "gz": "files/11a296776774b313f83aa346f905fe849cc35a760943b5d6bded5e624504392a.gz"
+  },
+  "resources/app/blender/lib/rules3d.py": {
+   "sha256": "9a37c1b4f1039dc25b78f0b03bcb6e1e2f88ac7febd1b98651020607dd3a4767",
+   "size": 1891,
+   "gz": "files/9a37c1b4f1039dc25b78f0b03bcb6e1e2f88ac7febd1b98651020607dd3a4767.gz"
+  },
+  "resources/app/blender/lib/skin.py": {
+   "sha256": "389d434382a5c3641dc702eace7093e6aace471653887eed8b5def427411a4da",
+   "size": 4257,
+   "gz": "files/389d434382a5c3641dc702eace7093e6aace471653887eed8b5def427411a4da.gz"
+  },
+  "resources/app/ui/src/main.js": {
+   "sha256": "35328c14a904cfc1576a46d64904f631a7f3d30152f616137b8e694e780c7279",
+   "size": 35406,
+   "gz": "files/35328c14a904cfc1576a46d64904f631a7f3d30152f616137b8e694e780c7279.gz"
+  },
+  "resources/app/ui/src/project.js": {
+   "sha256": "5430738ea77d5f1003607d90887a595a38a603a572586134b3ee0747af647743",
+   "size": 2840,
+   "gz": "files/5430738ea77d5f1003607d90887a595a38a603a572586134b3ee0747af647743.gz"
+  },
+  "resources/app/ui/src/rig.js": {
+   "sha256": "3594b25d81563846a09ea2582b13a229d511f92ed311b15b16af6b7ec95d6e13",
+   "size": 13118,
+   "gz": "files/3594b25d81563846a09ea2582b13a229d511f92ed311b15b16af6b7ec95d6e13.gz"
+  },
+  "resources/app/ui/src/ui.css": {
+   "sha256": "4ae2642710999933e0c2609c6ca3d57fead51243c861247fc961d06d8c2bc369",
+   "size": 8095,
+   "gz": "files/4ae2642710999933e0c2609c6ca3d57fead51243c861247fc961d06d8c2bc369.gz"
+  },
+  "resources/app/ui/src/viewport.js": {
+   "sha256": "93ffd63bfc361dccc095c0b8a6af4c4f8c32490508ce9d6b20e8fa9997627add",
+   "size": 11090,
+   "gz": "files/93ffd63bfc361dccc095c0b8a6af4c4f8c32490508ce9d6b20e8fa9997627add.gz"
+  },
+  "resources/app/ui/vendor/three.module.js": {
+   "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb",
+   "size": 1314681,
+   "gz": "files/ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb.gz"
+  }
+ }
+}
