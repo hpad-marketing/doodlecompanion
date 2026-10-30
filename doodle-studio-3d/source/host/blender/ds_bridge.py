@@ -238,6 +238,10 @@ else:
             compat.strips(sc.sequence_editor).new_sound('voice', audio, 1, 1)
             r.ffmpeg.audio_codec = 'AAC'
             r.ffmpeg.audio_bitrate = 192
+        elif sc.sequence_editor and any(st.type == 'SOUND' for st in compat.strips(sc.sequence_editor)):
+            # story sounds and auto foley placed by the stage
+            r.ffmpeg.audio_codec = 'AAC'
+            r.ffmpeg.audio_bitrate = 192
         else:
             r.ffmpeg.audio_codec = 'NONE'
         r.filepath = video

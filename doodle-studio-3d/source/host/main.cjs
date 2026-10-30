@@ -187,7 +187,7 @@ const api = {
   async 'read-png'({ path: p }) { return { data: fs.readFileSync(insideRenders(p)).toString('base64') }; },
   async 'write-png'({ path: p, data }) { const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f }; },
   async 'write-file'({ path: p, data }) {
-    if (!/[.](webm|mp4|png|json|txt)$/i.test(String(p))) throw Error('Only video, image and text files');
+    if (!/[.](webm|mp4|png|json|txt|wav|srt|csv)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
     const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
   },
   // scene audio: any voice or music file the user picks

@@ -182,3 +182,11 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 .graph-wrap{flex:1;position:relative;min-height:160px;height:100%}
 .graph-wrap canvas.graph{display:block;background:transparent;cursor:pointer}
 .pose-lib button small{opacity:.7}
+/* storytime part 2 */
+.mood-strip{display:flex;gap:4px;align-items:stretch}
+.mood-cell{display:flex;flex-direction:column;gap:4px;min-width:64px}
+.mood-swatch{height:56px;border:2px solid var(--fg);color:var(--fg);font:700 11px system-ui;mix-blend-mode:normal}
+.beat-bar{position:relative;height:18px;border-bottom:2px solid var(--fg);margin:8px 0 12px}
+.beat-bar i{position:absolute;bottom:-6px;width:10px;height:10px;margin-left:-5px;border:2px solid var(--fg);transform:rotate(45deg);background:transparent}
+.beat-bar i.on{background:#E0A64B}
+#tracks svg.retention{position:absolute;left:0;top:0;color:var(--fg)}
