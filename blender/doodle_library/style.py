@@ -360,7 +360,7 @@ def ensure_sun(scene=None):
     if not sun:
         data = bpy.data.lights.new('DSL_Sun', 'SUN')
         data.energy = 6.0
-        data.angle = math.radians(2.0)
+        data.angle = math.radians(0.5)  # crisp, toon-like shadow edges
         data.color = (1, 1, 1)
         sun = bpy.data.objects.new('DSL_Sun', data)
         coll = bpy.data.collections.get('Doodle Library') or scene.collection

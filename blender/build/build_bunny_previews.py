@@ -44,7 +44,7 @@ def frame(z, h):
 
 
 if mode == 'faces':
-    frame(0.66, 0.62)
+    frame(0.53, 0.6)
     for it in index.items('expression'):
         d = it['data']
         for k in faces.FACE_PROPS:
@@ -52,7 +52,7 @@ if mode == 'faces':
         arm.update_tag()
         shoot(it['id'])
 elif mode == 'mouths':
-    frame(0.49, 0.26)
+    frame(0.405, 0.17)
     for it in index.items('mouth_set'):
         faces.use_mouth_set(it if it['data'].get('set') else None)
         fb['expression'] = 0

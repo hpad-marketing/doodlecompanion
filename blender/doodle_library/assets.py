@@ -97,8 +97,9 @@ def attach_prop(ob, side=None, pose=True, frame=None):
             for b, ds in (('upper_arm_fk.' + sd, 'UPPER_ARM.' + sd), ('forearm_fk.' + sd, 'FOREARM.' + sd),
                           ('hand_fk.' + sd, 'WRIST.' + sd)):
                 pb = arm.pose.bones[b]
-                pb.rotation_quaternion = ds_map.to_local(pb, ds_map.ds_world_rotation(meta['controls'], vals, ds))
-                pb.keyframe_insert('rotation_quaternion', frame=frame, group=b)
+                from .motions import set_rot, rot_path
+                set_rot(pb, ds_map.to_local(pb, ds_map.ds_world_rotation(meta['controls'], vals, ds)))
+                pb.keyframe_insert(rot_path(pb), frame=frame, group=b)
         bpy.context.view_layer.update()
     p = hand_point(side)
     if p is None:

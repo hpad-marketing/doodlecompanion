@@ -85,9 +85,24 @@ def ds_motion(item_id):
     return index.blob('motions/doodle_studio.json')['motions'][item_id]
 
 
+def rot_path(b):
+    """Key path for a bone's rotation in whatever mode the rig uses (v2 ears are Euler)."""
+    return {'QUATERNION': 'rotation_quaternion', 'AXIS_ANGLE': 'rotation_axis_angle'}.get(b.rotation_mode, 'rotation_euler')
+
+
+def set_rot(b, q):
+    if b.rotation_mode == 'QUATERNION':
+        b.rotation_quaternion = q
+    elif b.rotation_mode == 'AXIS_ANGLE':
+        ax, ang = q.to_axis_angle()
+        b.rotation_axis_angle = (ang, *ax)
+    else:
+        b.rotation_euler = q.to_euler(b.rotation_mode)
+
+
 def _key_pose(arm, frame, bones, face=True):
     for b in bones:
-        b.keyframe_insert('rotation_quaternion', frame=frame, group=b.name)
+        b.keyframe_insert(rot_path(b), frame=frame, group=b.name)
         b.keyframe_insert('location', frame=frame, group=b.name)
         b.keyframe_insert('scale', frame=frame, group=b.name)
     fb = arm.pose.bones.get('face')

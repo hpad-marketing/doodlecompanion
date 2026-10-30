@@ -42,9 +42,10 @@ def apply_expression(item, frame=None, key=True):
                 vals = {'ear%sFold' % side: ears.get('ear%sFold' % side, 0), 'ear%sForward' % side: ears.get('ear%sForward' % side, 0)}
                 M = meta.ds_world_rotation(m['controls'], vals, ds)
                 pb = arm.pose.bones['ear.' + side]
-                pb.rotation_quaternion = meta.to_local(pb, M)
+                from .motions import set_rot, rot_path
+                set_rot(pb, meta.to_local(pb, M))
                 if key:
-                    pb.keyframe_insert('rotation_quaternion', frame=frame, group=pb.name)
+                    pb.keyframe_insert(rot_path(pb), frame=frame, group=pb.name)
     if key and arm.animation_data and arm.animation_data.action:
         from .motions import _fcurves
         for fc in _fcurves(arm):
