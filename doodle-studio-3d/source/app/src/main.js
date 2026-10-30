@@ -4,6 +4,7 @@ import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 
@@ -239,14 +240,14 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
-    ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll]]],
-  ['View', [['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
+    ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M']]],
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
   ['Camera', [...LENSES.map(l => [`${l} mm lens`, () => camSet({ lens: l })]), '-', ...VIEWS.map(([n, c]) => [n, () => camSet(c)]), '-', ['Dolly zoom: wide, keep size', () => dollyTo(18)], ['Dolly zoom: long, keep size', () => dollyTo(100)]]],
   ['Help', [['Controls and shortcuts', showHelp, 'F1']]],
 ];
@@ -352,7 +353,7 @@ function buildPanel() {
         h('button', { onclick: () => render(true) }, 'This frame')),
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => renderScene(true), title: 'Every shot at half size without cloth: a fast check of timing and cuts' }, 'Quick preview scene'),
         h('button', { onclick: () => render(false, true), title: 'This shot at half size without cloth' }, 'Quick preview shot'), h('button', { onclick: cancelRender }, 'Cancel')),
-      h('div', { id: 'render-status', class: 'hint' }, ''), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
+      h('div', { id: 'render-status', class: 'hint' }, ''), autosavePanel(), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
         h('button', { onclick: pickBlender }, 'Change…')));
     api('settings', {}).then(s => { const el = $('#blender-path'); if (el) el.textContent = s.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
     pollRender();
@@ -406,6 +407,36 @@ async function storyboard() {
   const r = await api('write-png', { path: `${root}/${safe}/work/storyboard/${safe.replace(/ /g, '_')}_storyboard_${stamp}.png`, data: sheet.toDataURL('image/png').split(',')[1] });
   toast('Storyboard saved: ' + (r.path || 'work\\storyboard'), 5000);
   return { path: r.path, shots: scene.shots.length };
+}
+
+// ---------------------------------------------------------------- polish.js: autosave, versions, command search, markers
+const polCtx = () => ({
+  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, file: () => filePath, dirty: () => dirty,
+  changed: () => { dirty = true; drawTracks(); updateHud(); },
+  status: t => { const el = $('#status'); if (el) el.textContent = t; },
+  restore: (p, file, f) => { undoStack = []; redoStack = []; filePath = file || null; frame = f | 0; useScene(migrate(p)); dirty = true; updateHud(); },
+  commands: () => [
+    ...MENUS.flatMap(([group, items]) => items.filter(i => i !== '-').map(([label, run, key]) => ({ group, label, run, key }))),
+    ...TABS.map(([id, name]) => ({ group: 'Panel', label: `Open the ${name} tab`, run: () => { tab = id; buildTabs(); buildPanel(); layout(); } })),
+    ...CHARACTERS.map(([id, name]) => ({ group: 'Character', label: `Put ${name} on stage`, run: () => setCharacter(id) })),
+    ...shownParts().map(([id, name]) => ({ group: 'Pose', label: `Pose: ${name}`, run: () => { tab = 'pose'; part = id; buildTabs(); buildPanel(); } })),
+    { group: 'Pose', label: 'Mirror pose', run: () => putPose(mirrorValues(poseNow())) },
+    { group: 'Camera', label: 'Focus on aim (rack focus)', run: () => { pushUndo(); setValue('cam.focus', round(current('cam.dist'))); drawTracks(); } },
+    { group: 'Camera', label: 'Horizon lock on / off', run: () => { pushUndo(); project.horizonLock = !project.horizonLock; apply(); buildPanel(); } },
+    { group: 'File', label: 'Autosave now', run: () => autosaveNow(polCtx(), true).then(() => toast('Autosaved')) },
+  ],
+});
+function autosavePanel() {
+  const s = autosaveSettings();
+  const num = (key, label, attrs, tip) => {
+    const i = h('input', { type: 'number', value: s[key], style: 'width:64px', ...attrs, 'aria-label': label });
+    i.addEventListener('change', () => { setAutosave({ [key]: Number(i.value) }); startAutosave(polCtx()); });
+    return h('span', { class: 'row', title: tip }, label, i);
+  };
+  return h('div', {}, h('h3', {}, 'Autosave'), h('div', { class: 'row' },
+    num('minutes', 'Every (min)', { min: 0, max: 60, step: 1 }, 'Saves a copy of the scene this often while it changes. 0 turns autosave off.'),
+    num('keep', 'Keep', { min: 1, max: 50, step: 1 }, 'How many autosave copies to keep per scene; the oldest go first.')),
+    h('p', { class: 'hint' }, 'Autosaves sit in the app\'s own folder, apart from your scene file. If the app ever closes without saving, it offers the last one back at the same shot and frame. File › Save version… keeps a named copy in work\\versions.'));
 }
 
 // ---------------------------------------------------------------- pose tools: mirror, copy / paste, blend A to B
@@ -548,7 +579,7 @@ function updateHud() {
   const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
   $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
     h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
-    h('span', {}, `F${frame}`));
+    h('span', {}, `F${frame}`), fpsText() ? h('span', {}, fpsText()) : null);
   $('#status').textContent = (filePath ? filePath.split(/[\\/]/).pop() : 'Not saved') + (dirty ? ' •' : '');
 }
 
@@ -591,6 +622,7 @@ function drawTracks() {
     const mv = ev => go(ev), up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); };
     addEventListener('pointermove', mv); addEventListener('pointerup', up);
   });
+  ruler.append(...markerEls(polCtx(), ppf));
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const groups = [['Bunny', BUNNY_IDS.concat(FACE_IDS)], ['Camera', CAM_IDS]];
   for (const [gname, ids] of groups) {
@@ -703,6 +735,7 @@ const character = () => scene.character || 'bunny';
 const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s));
 const idleNow = () => idleFor(project, data.face.faces, character());
 async function render(still = false, preview = false, stillFrame = null) {
+  if (!still && !preview && !(await diskOk(polCtx()))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
     const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: bridge(project) });
@@ -712,6 +745,7 @@ async function render(still = false, preview = false, stillFrame = null) {
   } catch (e) { toast('Render failed to start: ' + e.message, 5000); throw e; }
 }
 async function renderScene(preview = false) {
+  if (!preview && !(await diskOk(polCtx(), 10))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
     const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: bridge(bindShot(scene, s)) }));
@@ -734,7 +768,7 @@ async function pollRender() {
   } catch {}
 }
 let lastRender = null;
-window.ds3dRenderDone = j => { lastRender = j; if (j.kind === 'carousel' && j.state === 'done') finishCarousel(carCtx(), j).catch(e => toast('Could not add the bubbles: ' + e.message, 5000)); toast(`${j.id}: ${j.state}${j.rules ? ' · rules ' + j.rules : ''}`, 5000); pollRender(); };
+window.ds3dRenderDone = j => { lastRender = j; chime(j.state === 'done'); if (j.kind === 'carousel' && j.state === 'done') finishCarousel(carCtx(), j).catch(e => toast('Could not add the bubbles: ' + e.message, 5000)); toast(`${j.id}: ${j.state}${j.rules ? ' · rules ' + j.rules : ''}`, 5000); pollRender(); };
 async function cancelRender() { try { toast((await api('render-cancel', {})).message); } catch (e) { toast(e.message); } }
 async function pickBlender() { try { const r = await api('pick-blender', {}); const el = $('#blender-path'); if (el) el.textContent = r.blender || 'Not found'; } catch (e) { toast(e.message); } }
 window.ds3dRequestClose = () => !dirty || confirm('This scene has unsaved changes. Close anyway?');
@@ -757,7 +791,8 @@ function bindKeys() {
   addEventListener('keydown', e => {
     if (e.target.matches('input,select,textarea')) return;
     const k = e.key, c = e.ctrlKey || e.metaKey;
-    if (c && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    if (c && k.toLowerCase() === 'k') { e.preventDefault(); commandSearch(polCtx()); }
+    else if (c && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
     else if (c && k.toLowerCase() === 's') { e.preventDefault(); saveShot(e.shiftKey); }
     else if (c && k.toLowerCase() === 'o') { e.preventDefault(); openShot(); }
     else if (c && k.toLowerCase() === 'd') { e.preventDefault(); toggleDark(); }
@@ -776,6 +811,7 @@ function bindKeys() {
     else if (k.toLowerCase() === 'k') e.shiftKey ? keyGroup(CAM_IDS) : keyGroup(BUNNY_IDS.concat(FACE_IDS));
     else if (k === 'Delete' || k === 'Backspace') deleteSelected();
     else if (k.toLowerCase() === 'f') frameBunny();
+    else if (k.toLowerCase() === 'm' && !c) addMarker(polCtx());
     else if (k.toLowerCase() === 'g') view.grid.visible = !view.grid.visible;
     else if (k === 'F1') { e.preventDefault(); showHelp(); }
   });
@@ -786,7 +822,7 @@ function refreshAll() {
   layout(); buildPanel(); buildTimelineTools(); drawTracks(); apply();
 }
 
-function loop() { view.render(); requestAnimationFrame(loop); }
+function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); requestAnimationFrame(loop); }
 
 // ---------------------------------------------------------------- boot
 (async () => {
@@ -810,7 +846,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       return { id, label: LABEL[id] || id, min, max, group: id.startsWith('cam.') ? 'camera' : FACE_IDS.includes(id) ? 'face' : PARTS.find(p => p[2].includes(id))?.[1] };
     }),
     names: () => ({ expressions: data.face.faces, gazes: data.face.gazes, mouths: data.face.speech }),
-    state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
+    state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], markers: project.markers || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
       frame, length: project.length, fps: scene.fps, width: scene.width, height: scene.height, autoKey, file: filePath, unsaved: dirty,
       values: Object.fromEntries([...BUNNY_IDS, ...FACE_IDS, ...CAM_IDS].map(id => [id, round(current(id))])),
       idle: { ...idleOf(project), events: idleNow()?.events || [] },
@@ -892,6 +928,9 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       return r;
     },
     storyboard: () => storyboard(),
+    addMarker(f, note) { return addMarker(polCtx(), f ?? frame, note ?? ''); },
+    saveVersion: label => saveVersion(polCtx(), label || 'version'),
+    autosave: (p = {}) => { const s = setAutosave(p); startAutosave(polCtx()); return s; },
     mirrorPose(at) { if (at != null) goto(at); putPose(mirrorValues(poseNow())); return this.state(); },
     blendPoses(a, b, t, at) { if (at != null) goto(at); poseBuf.A = a; poseBuf.B = b; blendPose(Math.max(0, Math.min(100, Number(t)))); return this.state(); },
     setShotLook(p) { pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); apply(); buildPanel(); return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100 }; },
@@ -902,4 +941,6 @@ function loop() { view.render(); requestAnimationFrame(loop); }
   };
   document.body.dataset.ready = '1';
   loop();
+  await offerRecovery(polCtx());
+  startAutosave(polCtx());
 })().catch(e => { document.body.append(h('pre', { style: 'position:fixed;inset:40px;background:#1F1F1D;color:#E0A64B;padding:16px;z-index:999' }, 'Doodle Studio 3D could not start:\n' + (e.stack || e))); });

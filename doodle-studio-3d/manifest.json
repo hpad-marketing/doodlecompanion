@@ -1,8 +1,8 @@
 {
- "version": "20261030-124436",
- "notes": "Batch 1, part 1: rack focus (Focus distance and Aperture on the camera, Focus on aim), Horizon lock per shot, pose tools (Mirror pose, Copy / Paste / Paste mirrored, blend pose A to B), line weight per shot, storyboard sheet PNG (Shot menu). MCP: storyboard, mirror_pose, blend_poses, set_shot_look.",
+ "version": "20261030-124829",
+ "notes": "Batch 2, part 1 (polish): autosave with a settable interval and copy count, crash recovery that reopens at the same shot and frame, named versions (File › Save version… / Versions…), Ctrl+K command search, timeline markers with notes (M), a chime when a render finishes, a free-disk check before full renders, fps meter (View › Show fps). MCP: add_marker, save_version, set_autosave.",
  "runtime": "44.9.0",
- "published": "2026-10-30T12:44:36.963Z",
+ "published": "2026-10-30T12:48:29.422Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "9227d5116c1a0848128d0fd64f3c4cbbaa3e8c8862fabb4eb35338b98fd55de0",
-   "size": 9895,
-   "gz": "files/9227d5116c1a0848128d0fd64f3c4cbbaa3e8c8862fabb4eb35338b98fd55de0.gz"
+   "sha256": "dac2e20077aa62c9d32392c23ad21b6c283a6deba0bea7bee950b9eccfdd4eea",
+   "size": 12791,
+   "gz": "files/dac2e20077aa62c9d32392c23ad21b6c283a6deba0bea7bee950b9eccfdd4eea.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "42e73ec3b99f520e3f9d1ba4b11afd08c593ce17ed4884ee044352c3dbf5e157",
-   "size": 15977,
-   "gz": "files/42e73ec3b99f520e3f9d1ba4b11afd08c593ce17ed4884ee044352c3dbf5e157.gz"
+   "sha256": "4f0be5416916eaff94fe30d1ad780d1ddf1a48da50f14a5b0860038cfd544edd",
+   "size": 16914,
+   "gz": "files/4f0be5416916eaff94fe30d1ad780d1ddf1a48da50f14a5b0860038cfd544edd.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -180,9 +180,14 @@
    "gz": "files/ff96502c25fdc540ec3e54ba837399c39786ad6f2b39f9dc65ed5e825a964504.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "80f66de214dfba994def2530b711349e043294cd688b4d324b0c544da444eeb6",
-   "size": 62943,
-   "gz": "files/80f66de214dfba994def2530b711349e043294cd688b4d324b0c544da444eeb6.gz"
+   "sha256": "0b8c9a58f2836192368a4ab80b8655ebd6c794665c1cdf86544a7d7e48d0c5d6",
+   "size": 66908,
+   "gz": "files/0b8c9a58f2836192368a4ab80b8655ebd6c794665c1cdf86544a7d7e48d0c5d6.gz"
+  },
+  "resources/app/ui/src/polish.js": {
+   "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
+   "size": 8289,
+   "gz": "files/74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf.gz"
   },
   "resources/app/ui/src/project.js": {
    "sha256": "1f7bfbf51345c9e5c36576ef8820dcc4dfadb13df0230d7f8ae9fda4292f3073",
@@ -195,9 +200,9 @@
    "gz": "files/f7a8e0a931b2a09d52829c9667f88383b5548159b594163b43cc2112fa13fd71.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "8bd1386e58cda3263afb3801e3983fc0031add6d9825c0d6f53f18eed501d0d4",
-   "size": 9709,
-   "gz": "files/8bd1386e58cda3263afb3801e3983fc0031add6d9825c0d6f53f18eed501d0d4.gz"
+   "sha256": "680542fffe5045929210e3853f7f5aa98ad2e9e1edcb5e35b26961a4bf45a710",
+   "size": 10573,
+   "gz": "files/680542fffe5045929210e3853f7f5aa98ad2e9e1edcb5e35b26961a4bf45a710.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "de28cb67ecfdb3d6c6be295e7a63270dd77ac913e5c1ad509d0aeb94699fc42b",

@@ -126,3 +126,12 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 .lib-item img{width:36px;height:36px;object-fit:contain;flex:none}
 .lib-item small{display:block;font-weight:500;font-size:11px;opacity:.85}
 .lib-placed{font-size:12px;align-items:center;gap:4px;margin:2px 0}
+/* polish: modals, command search, markers */
+.ds-modal{position:fixed;inset:0;z-index:50;display:grid;place-items:start center;padding-top:12vh;background:color-mix(in srgb,#1F1F1D 35%,transparent)}
+.ds-modal-card{background:var(--bg);border:var(--line);border-radius:2px;padding:12px;width:min(560px,92vw);max-height:70vh;overflow:auto;box-shadow:6px 6px 0 var(--fg)}
+.ds-modal-card input[type=search]{width:100%}
+.ds-list{display:grid;gap:4px;margin-top:8px}
+.ds-list button{display:flex;justify-content:space-between;gap:10px;text-align:left;min-height:34px}
+.ds-list button small{font-weight:500;opacity:.8}
+.ds-list button[aria-selected=true]{background:var(--fg);color:var(--bg)}
+#tracks .marker{position:absolute;top:0;height:22px;border-left:3px solid var(--fg);padding-left:3px;font-size:10px;font-weight:800;white-space:nowrap;cursor:pointer;z-index:3}
