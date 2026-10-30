@@ -5,6 +5,7 @@ import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel,
 import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
+import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 
@@ -127,6 +128,7 @@ async function ensureCharacter() {
   charData[c] ||= await (await fetch(c === 'bunny' ? 'bunny3d.json' : `chars/${c}.json`)).json();
   data = charData[c];
   view.setCharacter(data);
+  if (view3.silhouette) setSilhouette(view, true);
   loadedChar = c;
 }
 async function setCharacter(c) {
@@ -219,7 +221,9 @@ function apply() {
   drawPlayhead();
   updateHud();
   overlayDraw?.();
+  if (view3.onion || onionShown) { drawOnion(animCtx()); onionShown = view3.onion; }
 }
+let onionShown = false;
 
 // ---------------------------------------------------------------- carousel (carousel.js)
 function slideThumb() {
@@ -247,8 +251,15 @@ const MENUS = [
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], '-',
+    ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
   ['Camera', [...LENSES.map(l => [`${l} mm lens`, () => camSet({ lens: l })]), '-', ...VIEWS.map(([n, c]) => [n, () => camSet(c)]), '-', ['Dolly zoom: wide, keep size', () => dollyTo(18)], ['Dolly zoom: long, keep size', () => dollyTo(100)]]],
+  ['Animate', [['Breakdown halfway (tween)', () => breakdown(animCtx(), 50)], ['Stepped blocking on / off', () => toggleStepped()], '-',
+    ['Simplify keys', () => toast(`Removed ${simplify(animCtx()).removed} keys the curves did not need`, 4000)],
+    ['Loop check', () => { const r = loopCheck(animCtx()); toast(r.seamless ? 'Seamless: the last frame matches the first' : `Not seamless: ${r.mismatched.map(m => LABEL[m.id] || m.id).slice(0, 4).join(', ')}${r.mismatched.length > 4 ? '…' : ''}`, 5000); }],
+    ['Make seamless loop', () => { makeLoop(animCtx()); toast('Last frame keyed to match the first'); }],
+    ['Retime shot…', () => { const x = prompt('Speed: below 1 is slower, above 1 is faster (e.g. 0.8 or 1.25). Keys after the playhead move.', '1'); if (x) retime(animCtx(), 1 / Number(x), frame); }], '-',
+    ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))]]],
   ['Help', [['Controls and shortcuts', showHelp, 'F1']]],
 ];
 
@@ -439,6 +450,16 @@ function autosavePanel() {
     h('p', { class: 'hint' }, 'Autosaves sit in the app\'s own folder, apart from your scene file. If the app ever closes without saving, it offers the last one back at the same shot and frame. File › Save version… keeps a named copy in work\\versions.'));
 }
 
+// ---------------------------------------------------------------- animtools.js
+let keyFilter = 'all';
+function toggleStepped() { pushUndo(); project.stepped = !project.stepped; apply(); buildTimelineTools(); toast(project.stepped ? 'Stepped blocking: keys hold' : 'Smooth in-betweens'); }
+const animCtx = () => ({
+  h, api, toast, pushUndo, goto, view: () => view, scene: () => scene, project: () => project, frame: () => frame,
+  poseIds: () => BUNNY_IDS.concat(FACE_IDS),
+  valuesAt: f => { const v = {}; for (const id of BUNNY_IDS.concat(FACE_IDS)) v[id] = valueAt(project, id, f); return v; },
+  changed: lengthToo => { dirty = true; apply(); drawTracks(); if (lengthToo) buildTimelineTools(); updateHud(); },
+});
+
 // ---------------------------------------------------------------- pose tools: mirror, copy / paste, blend A to B
 const POSE_IDS = () => BUNNY_IDS.filter(id => !['bodyX', 'bodyY', 'depth', 's'].includes(id)).concat(FACE_IDS);
 const poseNow = () => Object.fromEntries(POSE_IDS().map(id => [id, current(id)]));
@@ -473,7 +494,18 @@ function posePanel() {
       h('button', { onclick: () => poseBuf.copy ? putPose(poseBuf.copy) : toast('Copy a pose first'), title: 'Key the copied pose at the playhead' }, 'Paste'),
       h('button', { onclick: () => poseBuf.copy ? putPose(mirrorValues(poseBuf.copy)) : toast('Copy a pose first'), title: 'Key the copied pose at the playhead, left and right swapped' }, 'Paste mirrored')),
     h('div', { class: 'row', style: 'margin-top:4px' }, slot('A'), slot('B'), h('span', {}, 'A'), t, h('span', {}, 'B')),
-    h('p', { class: 'hint' }, 'Blend keys an in-between of poses A and B at the playhead. Faces switch at the halfway point.'));
+    h('p', { class: 'hint' }, 'Blend keys an in-between of poses A and B at the playhead. Faces switch at the halfway point.'),
+    (() => {
+      const b = h('input', { type: 'range', min: -25, max: 125, step: 1, value: 50, 'aria-label': 'Breakdown' });
+      b.addEventListener('change', () => { breakdown(animCtx(), Number(b.value)); buildPanel(); });
+      return h('label', { class: 'ctl', title: 'Breakdown: keys an in-between of the keys either side of the playhead. Left favours the previous pose, right the next; past the ends overshoots.' }, h('span', { class: 'name' }, 'Breakdown'), b, h('span', {}, 'prev · next'));
+    })(),
+    (() => {
+      const n = h('input', { type: 'number', min: 1, max: 12, step: 1, value: 2, style: 'width:56px', 'aria-label': 'Frames of lag' });
+      const ids = PARTS.find(p => p[0] === part)?.[2] || [];
+      return h('div', { class: 'row', title: 'Overlap: each control of this part lags the one before it, so motion flows down the chain (shoulder, elbow, wrist).' },
+        h('button', { onclick: () => { overlap(animCtx(), ids, Number(n.value)); toast('Overlap added down ' + (PARTS.find(p => p[0] === part)?.[1] || 'the part')); } }, 'Overlap this part'), n, h('span', {}, 'frames each'));
+    })());
 }
 
 // ---------------------------------------------------------------- idle life (idle.js)
@@ -579,7 +611,7 @@ function updateHud() {
   const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
   $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
     h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
-    h('span', {}, `F${frame}`), fpsText() ? h('span', {}, fpsText()) : null);
+    h('span', {}, `F${frame}`), ...(fpsText() ? [h('span', {}, fpsText())] : []));
   $('#status').textContent = (filePath ? filePath.split(/[\\/]/).pop() : 'Not saved') + (dirty ? ' •' : '');
 }
 
@@ -602,7 +634,9 @@ function buildTimelineTools() {
       ib('next', 'Next frame (→)', () => goto(frame + 1)), ib('end', 'Last frame (End)', () => goto(project.length - 1)), box, h('span', { class: 'clock', id: 'clock' })),
     g('Keys', h('button', { onclick: () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), title: 'Key Bunny\'s whole pose and face (K)' }, 'Key pose'),
       h('button', { onclick: () => keyGroup(CAM_IDS), title: 'Key the camera (Shift+K)' }, 'Key camera'),
-      ib('trash', 'Delete selected key (Delete)', deleteSelected), ease),
+      ib('trash', 'Delete selected key (Delete)', deleteSelected), ease,
+      h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped'),
+      (() => { const s = h('select', { title: 'Show only these keys on the timeline', 'aria-label': 'Key filter' }, ...Object.entries(FILTERS).map(([k, n]) => h('option', { value: k }, n))); s.value = keyFilter; s.addEventListener('change', () => { keyFilter = s.value; drawTracks(); }); return s; })()),
     g('Edit', h('button', { onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'), h('button', { onclick: redo, title: 'Redo (Ctrl+Shift+Z)' }, 'Redo')));
 }
 
@@ -624,7 +658,7 @@ function drawTracks() {
   });
   ruler.append(...markerEls(polCtx(), ppf));
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
-  const groups = [['Bunny', BUNNY_IDS.concat(FACE_IDS)], ['Camera', CAM_IDS]];
+  const groups = [['Bunny', filterIds(keyFilter, BUNNY_IDS.concat(FACE_IDS))], ['Camera', filterIds(keyFilter, CAM_IDS)]].filter(g => g[1].length);
   for (const [gname, ids] of groups) {
     const keyed = ids.filter(id => project.tracks[id]);
     rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname group' }, gname), lane(summaryKeys(keyed, ppf))));
@@ -812,6 +846,7 @@ function bindKeys() {
     else if (k === 'Delete' || k === 'Backspace') deleteSelected();
     else if (k.toLowerCase() === 'f') frameBunny();
     else if (k.toLowerCase() === 'm' && !c) addMarker(polCtx());
+    else if (k.toLowerCase() === 'o' && !c) { view3.onion = !view3.onion; apply(); }
     else if (k.toLowerCase() === 'g') view.grid.visible = !view.grid.visible;
     else if (k === 'F1') { e.preventDefault(); showHelp(); }
   });
@@ -928,6 +963,26 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
       return r;
     },
     storyboard: () => storyboard(),
+    animTool(a) {
+      const c = animCtx();
+      if (a.frame != null) goto(a.frame);
+      const part = a.part && PARTS.find(p => p[0] === a.part);
+      const out = {
+        breakdown: () => breakdown(c, a.amount ?? 50),
+        overlap: () => { if (!part) throw Error('part: ' + PARTS.map(p => p[0]).join(', ')); return overlap(c, part[2], a.amount ?? 2); },
+        simplify: () => simplify(c, a.amount ?? 0.75),
+        loop_check: () => loopCheck(c),
+        make_loop: () => makeLoop(c),
+        retime: () => retime(c, 1 / (a.amount || 1), a.frame ?? 0),
+        stepped: () => { project.stepped = a.on ?? !project.stepped; apply(); buildTimelineTools(); return { stepped: project.stepped }; },
+        onion: () => { view3.onion = a.on ?? !view3.onion; apply(); return { onion: view3.onion }; },
+        silhouette: () => { setSilhouette(view, a.on ?? !view3.silhouette); return { silhouette: view3.silhouette }; },
+        mirror_view: () => { setMirror(a.on ?? !view3.mirror); return { mirror: view3.mirror }; },
+        playblast: () => playblast(c),
+      }[a.action];
+      if (!out) throw Error('action must be breakdown, overlap, simplify, loop_check, make_loop, retime, stepped, onion, silhouette, mirror_view or playblast');
+      return out();
+    },
     addMarker(f, note) { return addMarker(polCtx(), f ?? frame, note ?? ''); },
     saveVersion: label => saveVersion(polCtx(), label || 'version'),
     autosave: (p = {}) => { const s = setAutosave(p); startAutosave(polCtx()); return s; },

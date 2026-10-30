@@ -42,6 +42,8 @@ const TOOLS = [
   ['add_marker', 'Add (or re-label) a timeline marker with a note in the active shot, e.g. a beat, a cut point or an acting note. Markers show on the timeline ruler and the storyboard.', { frame: { type: 'integer', minimum: 0 }, note: { type: 'string' } }, ['note']],
   ['save_version', 'Save a named copy of the scene in DeepInDoodles\\<scene>\\work\\versions (the open scene and its file are not changed).', { label: { type: 'string' } }, ['label']],
   ['set_autosave', 'Autosave interval in minutes (0 = off) and how many copies to keep per scene. Returns the settings.', { minutes: { type: 'number', minimum: 0, maximum: 60 }, keep: { type: 'integer', minimum: 1, maximum: 50 } }],
+  ['anim_tool', 'Animator tools on the active shot. action: breakdown (amount 0-100 favours previous..next key, -25..125 overshoots; keys at frame), overlap (part: body, head, ears, armL, armR, legL, legR; amount = frames of lag per control down the chain), simplify (amount = tolerance in degrees, default 0.75; removes keys the curves do not need), loop_check, make_loop (keys the last frame to match the first), retime (amount = speed, 0.8 slower / 1.25 faster, keys after frame move), stepped (on: blocking, keys hold), onion (on: ghost poses of the previous and next key), silhouette (on: figure in solid ink to check readability), mirror_view (on: flips the viewport only), playblast (viewport video with a frame counter to work\\playblast).',
+    { action: { enum: ['breakdown', 'overlap', 'simplify', 'loop_check', 'make_loop', 'retime', 'stepped', 'onion', 'silhouette', 'mirror_view', 'playblast'] }, amount: { type: 'number' }, part: { type: 'string' }, frame: { type: 'integer', minimum: 0 }, on: { type: 'boolean' } }, ['action']],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
@@ -90,6 +92,7 @@ module.exports = ({ call, api }) => {
     add_marker: a => call(`ds3d.addMarker(${a.frame ?? 'null'}, ${JSON.stringify(a.note || '')})`),
     save_version: a => call(`ds3d.saveVersion(${JSON.stringify(a.label)})`),
     set_autosave: a => call(`ds3d.autosave(${JSON.stringify(a || {})})`),
+    anim_tool: a => call(`ds3d.animTool(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
