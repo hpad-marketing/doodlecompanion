@@ -39,6 +39,9 @@ const TOOLS = [
   ['mirror_pose', 'Swap left and right in the whole pose and face and key it at frame (default the playhead).', { frame: { type: 'integer', minimum: 0 } }],
   ['blend_poses', 'Key an in-between of two poses at frame: a and b are value maps like set_values takes (e.g. from get_state values); t is 0 (all a) to 100 (all b). Faces switch at 50.', { a: { type: 'object' }, b: { type: 'object' }, t: { type: 'number', minimum: 0, maximum: 100 }, frame: { type: 'integer', minimum: 0 } }, ['a', 'b', 't']],
   ['set_shot_look', 'Per-shot look: horizonLock=true keeps the horizon level (roll and Dutch presets ignored); ink is the line weight in percent of Doodle Studio\'s ink (100 = normal, 40-250), applied to every line in the shot so weights stay equal. Rack focus is the cam.focus and cam.fstop values (focus 0 = all sharp).', { horizonLock: { type: 'boolean' }, ink: { type: 'number', minimum: 40, maximum: 250 } }],
+  ['add_marker', 'Add (or re-label) a timeline marker with a note in the active shot, e.g. a beat, a cut point or an acting note. Markers show on the timeline ruler and the storyboard.', { frame: { type: 'integer', minimum: 0 }, note: { type: 'string' } }, ['note']],
+  ['save_version', 'Save a named copy of the scene in DeepInDoodles\\<scene>\\work\\versions (the open scene and its file are not changed).', { label: { type: 'string' } }, ['label']],
+  ['set_autosave', 'Autosave interval in minutes (0 = off) and how many copies to keep per scene. Returns the settings.', { minutes: { type: 'number', minimum: 0, maximum: 60 }, keep: { type: 'integer', minimum: 1, maximum: 50 } }],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
@@ -84,6 +87,9 @@ module.exports = ({ call, api }) => {
     mirror_pose: a => call(`ds3d.mirrorPose(${a.frame ?? 'null'})`),
     blend_poses: a => call(`ds3d.blendPoses(${JSON.stringify(a.a)}, ${JSON.stringify(a.b)}, ${Number(a.t)}, ${a.frame ?? 'null'})`),
     set_shot_look: a => call(`ds3d.setShotLook(${JSON.stringify(a || {})})`),
+    add_marker: a => call(`ds3d.addMarker(${a.frame ?? 'null'}, ${JSON.stringify(a.note || '')})`),
+    save_version: a => call(`ds3d.saveVersion(${JSON.stringify(a.label)})`),
+    set_autosave: a => call(`ds3d.autosave(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));

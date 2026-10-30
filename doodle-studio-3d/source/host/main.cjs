@@ -76,6 +76,48 @@ const api = {
     if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
     return { project, path: r.filePaths[0] };
   },
+  // never lose work: rolling autosaves, a recovery file for crashes, named versions
+  async autosave({ project, file, frame, keep = 5 }) {
+    const dir = path.join(dataDir, 'autosave'); fs.mkdirSync(dir, { recursive: true });
+    const base = String(project.name || 'Untitled scene').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim();
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    atomicWrite(path.join(dir, `${base}_${stamp}.ds3d`), JSON.stringify(project));
+    const mine = fs.readdirSync(dir).filter(f => f.startsWith(base + '_') && f.endsWith('.ds3d')).sort();
+    for (const f of mine.slice(0, Math.max(0, mine.length - Math.max(1, Math.min(50, keep | 0))))) fs.unlinkSync(path.join(dir, f));
+    atomicWrite(path.join(dataDir, 'recovery.json'), JSON.stringify({ at: new Date().toISOString(), file: file || null, frame: frame | 0, project }));
+    return { kept: Math.min(mine.length, keep), dir };
+  },
+  async recovery() {
+    const f = path.join(dataDir, 'recovery.json');
+    try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; }
+  },
+  async 'recovery-clear'() { try { fs.unlinkSync(path.join(dataDir, 'recovery.json')); } catch {} return {}; },
+  async 'save-version'({ project, label }) {
+    const { work } = renders.folders(project.name);
+    const clean = s => String(s || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim();
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 13);
+    const file = path.join(work, 'versions', `${clean(project.name) || 'Untitled'}_${clean(label).replace(/ +/g, '-') || 'version'}_${stamp}.ds3d`);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    atomicWrite(file, JSON.stringify(project, null, 1));
+    return { path: file };
+  },
+  async 'list-versions'({ name }) {
+    const dir = path.join(renders.folders(name).work, 'versions');
+    if (!fs.existsSync(dir)) return { versions: [] };
+    return { versions: fs.readdirSync(dir).filter(f => f.endsWith('.ds3d')).sort().reverse().map(f => ({ file: path.join(dir, f), name: f, at: fs.statSync(path.join(dir, f)).mtime.toISOString() })) };
+  },
+  async 'open-file'({ file }) {
+    const project = JSON.parse(fs.readFileSync(insideRenders(file), 'utf8'));
+    if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
+    return { project, path: file };
+  },
+  // free space where renders go: warn before a render can fill the disk
+  async disk() {
+    const root = settings.get().rendersRoot;
+    fs.mkdirSync(root, { recursive: true });
+    const s = fs.statfsSync(root);
+    return { root, freeGB: +(s.bavail * s.bsize / 1e9).toFixed(1), totalGB: +(s.blocks * s.bsize / 1e9).toFixed(1) };
+  },
   async 'export-bridge'({ shot, name, code }) {
     const { checks } = renders.folders(name);
     const file = path.join(checks, `${String(name || 'scene').replace(/\s+/g, '_')}${code ? '_' + code : ''}.shot.json`);
@@ -135,7 +177,8 @@ else {
     main.webContents.on('will-navigate', (e, url) => { if (!url.startsWith(`http://127.0.0.1:${PORT}/`)) e.preventDefault(); });
     main.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     main.on('close', e => {
-      if (allowClose) return;
+      // a clean close leaves nothing to recover; a crash leaves recovery.json for the next start
+      if (allowClose) { try { fs.unlinkSync(path.join(dataDir, 'recovery.json')); } catch {} return; }
       e.preventDefault();
       main.webContents.executeJavaScript('window.ds3dRequestClose ? window.ds3dRequestClose() : true').then(ok => { if (ok) { allowClose = true; main.close(); } }).catch(() => { allowClose = true; main.close(); });
     });
