@@ -6,6 +6,8 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive } from './audio.js';
+import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 
@@ -114,6 +116,7 @@ function useScene(sc) {
   frame = Math.max(0, Math.min(project.length - 1, frame));
   selected = null;
   refreshAll();
+  if ((scene.audio?.path || null) !== (audioInfo()?.path || null)) loadAudio(api, scene.audio?.path).then(drawTracks).catch(e => toast('Audio: ' + e.message, 5000));
   if (character() !== loadedChar) ensureCharacter().then(refreshAll).catch(e => toast(e.message, 5000));
 }
 
@@ -244,7 +247,7 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
@@ -258,8 +261,11 @@ const MENUS = [
     ['Simplify keys', () => toast(`Removed ${simplify(animCtx()).removed} keys the curves did not need`, 4000)],
     ['Loop check', () => { const r = loopCheck(animCtx()); toast(r.seamless ? 'Seamless: the last frame matches the first' : `Not seamless: ${r.mismatched.map(m => LABEL[m.id] || m.id).slice(0, 4).join(', ')}${r.mismatched.length > 4 ? '…' : ''}`, 5000); }],
     ['Make seamless loop', () => { makeLoop(animCtx()); toast('Last frame keyed to match the first'); }],
+    ['Audio drives a control…', () => audioDriveDialog()],
     ['Retime shot…', () => { const x = prompt('Speed: below 1 is slower, above 1 is faster (e.g. 0.8 or 1.25). Keys after the playhead move.', '1'); if (x) retime(animCtx(), 1 / Number(x), frame); }], '-',
     ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))]]],
+  ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
+    ['Export YouTube chapters', () => exportChapters()], ['Story bible…', () => bibleDialog(polCtx())]]],
   ['Help', [['Controls and shortcuts', showHelp, 'F1']]],
 ];
 
@@ -343,6 +349,7 @@ function buildPanel() {
     c.append(h('h3', {}, 'Camera'), ...CAM_IDS.map(control));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: () => keyGroup(CAM_IDS) }, 'Key camera'), h('button', { onclick: frameBunny }, 'Frame Bunny'),
       h('button', { onclick: () => { pushUndo(); setValue('cam.focus', round(current('cam.dist'))); drawTracks(); }, title: 'Rack focus: put the sharp plane on what the camera aims at. Key it at two frames to pull focus.' }, 'Focus on aim'),
+      h('button', { onclick: () => window.ds3d.turntable(), title: '360° turntable: the camera circles once over the whole shot' }, 'Turntable'),
       h('button', { 'aria-pressed': String(!!project.horizonLock), onclick: () => { pushUndo(); project.horizonLock = !project.horizonLock; apply(); buildPanel(); }, title: 'Keep the horizon level in this shot: roll and Dutch presets are ignored' }, 'Horizon lock')));
     c.append(h('p', { class: 'hint' }, 'Drag in the viewport to orbit, Shift+drag to move the aim, wheel to move in and out, Alt+wheel to change the lens. The set moves with the camera, so angles stay physically true.'));
     c.append(cameraPresetsPanel(presetCtx()));
@@ -448,6 +455,52 @@ function autosavePanel() {
     num('minutes', 'Every (min)', { min: 0, max: 60, step: 1 }, 'Saves a copy of the scene this often while it changes. 0 turns autosave off.'),
     num('keep', 'Keep', { min: 1, max: 50, step: 1 }, 'How many autosave copies to keep per scene; the oldest go first.')),
     h('p', { class: 'hint' }, 'Autosaves sit in the app\'s own folder, apart from your scene file. If the app ever closes without saving, it offers the last one back at the same shot and frame. File › Save version… keeps a named copy in work\\versions.'));
+}
+
+// ---------------------------------------------------------------- audio.js: scene audio, waveform, audio-driven controls
+const sceneStart = () => scene.shots.slice(0, scene.active).reduce((n, s) => n + s.length, 0);
+async function importAudio(pick) {
+  const p = pick === null ? null : pick ?? (await api('pick-audio', {})).path;
+  if (p === undefined || (pick !== null && !p)) return null;
+  pushUndo();
+  scene.audio = p ? { path: p } : null;
+  await loadAudio(api, p);
+  drawTracks();
+  if (p) toast(`Audio: ${p.split(/[\\/]/).pop()} (${audioInfo().seconds} s). It plays with the timeline and goes into scene renders.`, 5000);
+  return audioInfo();
+}
+function audioDriveDialog() {
+  const id = prompt('Which control should follow the audio? e.g. bodyY (bounce), earLFold, headNod, cam.dist', 'bodyY');
+  if (!id) return;
+  const [lo, hi] = range(id);
+  const r = prompt(`Value when quiet, value when loud (range ${lo} to ${hi})`, id === 'bodyY' ? '0, 12' : `0, ${Math.round(hi / 3)}`);
+  if (!r) return;
+  const [a, b] = r.split(',').map(Number);
+  return driveFromAudio(id, a, b);
+}
+function driveFromAudio(id, a, b, opts) {
+  if (!ALL_IDS().includes(id)) throw Error('No control ' + id);
+  pushUndo();
+  const n = audioDrive(project, sceneStart(), id, a, b, opts, setKey);
+  dirty = true; apply(); drawTracks();
+  toast(`${LABEL[id] || id} follows the audio: ${n} keys`);
+  return { id, keys: n };
+}
+
+// ---------------------------------------------------------------- storytime.js
+function retentionCheck() {
+  const r = retention(scene);
+  const msg = `Hook (first 2 s): ${r.hook}.` + (r.lulls.length ? ` ${r.lulls.length} stretch${r.lulls.length > 1 ? 'es' : ''} of 4+ s with nothing changing: ${r.lulls.map(l => `${l.from} (${l.seconds} s)`).join(', ')}.` : ' No 4 s stretch without something changing.');
+  toast(msg, 9000);
+  return r;
+}
+async function exportChapters() {
+  const c = chapters(scene);
+  const root = (await api('settings', {})).rendersRoot;
+  const safe = (scene.name || 'Untitled').replace(/[\\/:*?"<>|]/g, '_');
+  const r = await api('write-file', { path: `${root}/${safe}/work/${safe.replace(/ /g, '_')}_chapters.txt`, data: btoa(unescape(encodeURIComponent(c.text + '\n'))) });
+  toast(`Chapters saved: ${r.path}${c.problems.length ? '. Note: ' + c.problems.join('; ') : ''}`, 8000);
+  return { ...c, path: r.path };
 }
 
 // ---------------------------------------------------------------- animtools.js
@@ -658,6 +711,8 @@ function drawTracks() {
   });
   ruler.append(...markerEls(polCtx(), ppf));
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
+  const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
+  if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Audio'), lane([wave])));
   const groups = [['Bunny', filterIds(keyFilter, BUNNY_IDS.concat(FACE_IDS))], ['Camera', filterIds(keyFilter, CAM_IDS)]].filter(g => g[1].length);
   for (const [gname, ids] of groups) {
     const keyed = ids.filter(id => project.tracks[id]);
@@ -734,12 +789,13 @@ let last = 0;
 function togglePlay() {
   playing = !playing;
   $('#play-btn').replaceChildren(icon(playing ? 'pause' : 'play'));
-  if (playing) { last = performance.now(); requestAnimationFrame(tick); }
+  if (playing) { last = performance.now(); playAudio(sceneStart() / scene.fps + frame / project.fps); requestAnimationFrame(tick); }
+  else stopAudio();
 }
 function tick(t) {
   if (!playing) return;
   const adv = (t - last) * project.fps / 1000;
-  if (adv >= 1) { last += Math.floor(adv) * 1000 / project.fps; frame = (frame + Math.floor(adv)) % project.length; for (const k of Object.keys(preview)) delete preview[k]; apply(); }
+  if (adv >= 1) { last += Math.floor(adv) * 1000 / project.fps; const nf = frame + Math.floor(adv); if (nf >= project.length) playAudio(sceneStart() / scene.fps); frame = nf % project.length; for (const k of Object.keys(preview)) delete preview[k]; apply(); }
   requestAnimationFrame(tick);
 }
 
@@ -872,6 +928,7 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
   $('#shot-name').addEventListener('change', e => { scene.name = e.target.value; dirty = true; });
   new ResizeObserver(() => { if (!window.__fixedSize) { layout(); drawTracks(); } }).observe($('#canvas-wrap'));
   refreshAll();
+  if (scene.audio?.path) loadAudio(api, scene.audio.path).then(drawTracks).catch(() => {});
   window.ds3dLibraryExtra = () => EXTRA.map(({ ask, def, ...r }) => r);
   window.ds3d = {
     get project() { return project; }, get scene() { return scene; }, set scene(s) { useScene(migrate(s)); }, goto, setValue, keyGroup, view, get frame() { return frame; },
@@ -963,6 +1020,15 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
       return r;
     },
     storyboard: () => storyboard(),
+    importAudio: p => importAudio(p ?? null),
+    audioDrive: (id, a, b, opts) => driveFromAudio(id, a, b, opts),
+    turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
+    story(a = {}) {
+      const out = { retention: () => retentionCheck(), chapters: () => exportChapters(), loop_back: () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); return r; },
+        gags: () => gags(scene), bible: () => { if (a.bible) { pushUndo(); scene.bible = { ...(scene.bible || {}), ...a.bible }; dirty = true; } return scene.bible || {}; } }[a.action];
+      if (!out) throw Error('action must be retention, chapters, loop_back, gags or bible');
+      return out();
+    },
     animTool(a) {
       const c = animCtx();
       if (a.frame != null) goto(a.frame);
@@ -979,8 +1045,9 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
         silhouette: () => { setSilhouette(view, a.on ?? !view3.silhouette); return { silhouette: view3.silhouette }; },
         mirror_view: () => { setMirror(a.on ?? !view3.mirror); return { mirror: view3.mirror }; },
         playblast: () => playblast(c),
+        turntable: () => window.ds3d.turntable(),
       }[a.action];
-      if (!out) throw Error('action must be breakdown, overlap, simplify, loop_check, make_loop, retime, stepped, onion, silhouette, mirror_view or playblast');
+      if (!out) throw Error('action must be breakdown, overlap, simplify, loop_check, make_loop, retime, stepped, onion, silhouette, mirror_view, playblast or turntable');
       return out();
     },
     addMarker(f, note) { return addMarker(polCtx(), f ?? frame, note ?? ''); },

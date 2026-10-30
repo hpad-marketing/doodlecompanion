@@ -104,7 +104,8 @@ def place(items, log):
             elif kind == 'sound':
                 dl.story_sound(name, f, volume=float(it.get('volume', 0.8)))
             elif kind == 'text':
-                ob = dl.add_text(it.get('text') or 'Text')
+                # a 3D headline in chunky doodle lettering, above and behind the character unless placed
+                ob = dl.add_text(it.get('text') or 'Text', location=it.get('at') or (0.0, 0.8, 1.25))
             else:
                 hold = it.get('hold')
                 ob = dl.insert(it['id'], frame=f, hold=bool(hold), side=hold if hold in ('L', 'R') else None,
