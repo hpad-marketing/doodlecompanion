@@ -65,8 +65,7 @@ def body_at(t):
 
 # faces: (start time, expression id)
 # v002/v003: 61, 65 and 60 read heavy-lidded and 23 is unchecked, so only faces confirmed open-eyed in the v001 stills
-FACES=[(0,12),(1.3,2),(2.0,23),(3.0,15),(3.77,2),(4.65,23),(5.52,12),(6.3,15),(7.28,20),(8.0,2),
-       (9.03,23),(10.0,15),(10.78,20),(12.1,2),(12.53,23),(13.4,15),(14.0,2),(14.35,12),(16.0,23)]
+FACES=[(0,0),(1.3,2),(2.0,1),(3.0,20),(3.77,2),(4.65,1),(5.52,0),(6.3,20),(7.28,3),(8.0,2),(9.03,1),(10.0,20),(10.78,3),(12.1,2),(12.53,1),(13.4,20),(14.0,2),(14.35,0),(16.0,1)]  # open, big-eyed faces only (user 2026-10-30)
 def face_at(t): return [e for s,e in FACES if s<=t][-1]
 BLINKS=[0.9,3.4,6.9,9.6,11.3,15.2,16.9]   # avoid cuts and faces with closed eyes
 def blink_at(t):

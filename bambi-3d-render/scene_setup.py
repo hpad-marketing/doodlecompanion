@@ -64,9 +64,10 @@ for o in objs:
     if o.name.endswith(':mic'): o.hide_render=o.hide_viewport=True   # the pack mic stand replaces it
 DRESS=[('scenery-speaker_pair',(0,0.62,0),0),        # speakers flank him, gap behind his body
        ('scenery-mic_stand',(0.62,0.12,0),-20),       # front-right, out of arm reach
-       ('scenery-spotlight',(-1.2,0.35,0),35),('scenery-spotlight',(1.2,0.35,0),-35),
-       ('scenery-neon_sign',(0,2.12,1.75),0),         # high on the back wall, clear of the ears
-       ('scenery-fairy_lights',(0,2.16,2.35),0)]
+       ('scenery-spotlight',(-1.3,1.1,0),55),('scenery-spotlight',(1.3,1.1,0),-55),  # inside the 9:16 width
+       ('scenery-drum_kit',(-1.35,1.25,0),20),('scenery-keyboard_stand',(1.35,1.25,0),-20),  # wide shots
+       ('scenery-neon_sign',(0,1.93,1.12),0),         # on the cyc wall (wall face y~1.96), just above the ears
+       ('scenery-fairy_lights',(0,1.94,1.72),0)]
 with bpy.data.libraries.load(os.path.join(LIB,'packs','packs.blend')) as (s,d): d.objects=sorted({n for n,_,_ in DRESS})
 src={o.name:o for o in d.objects if o}
 dress=bpy.data.collections.new('Bambi studio dressing'); sc.collection.children.link(dress)
