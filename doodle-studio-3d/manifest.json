@@ -1,8 +1,8 @@
 {
- "version": "20261030-052429",
- "notes": "Ears fold about the edge of their base, so no hook or notch where an ear meets the head when it bends out. 88 faces with full round pupils. Expressions up to 87.",
+ "version": "20261030-052943",
+ "notes": "Smaller round pupils with room inside the eye, on all 88 faces. Ears fold about the edge of their base (no hook where an ear meets the head).",
  "runtime": "44.9.0",
- "published": "2026-10-30T05:24:30.555Z",
+ "published": "2026-10-30T05:29:43.745Z",
  "files": {
   "resources/app/main.cjs": {
    "sha256": "a6b4f0650186f21747b1af2eafb766d43b82db14e30034775dad8d2ae1b3920b",
@@ -40,9 +40,9 @@
    "gz": "files/6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
-   "sha256": "9a6f5eb15a7dd09ca8f27da4113c944a829c6d295d8e4af090a5b48de2cea19e",
-   "size": 3882056,
-   "gz": "files/9a6f5eb15a7dd09ca8f27da4113c944a829c6d295d8e4af090a5b48de2cea19e.gz"
+   "sha256": "63f79d6396f580d77d4c39ad71c00a7b47dbc3b08bdb76c9cecef9f8bfcb2e19",
+   "size": 4037380,
+   "gz": "files/63f79d6396f580d77d4c39ad71c00a7b47dbc3b08bdb76c9cecef9f8bfcb2e19.gz"
   },
   "resources/app/blender/ds_bridge.py": {
    "sha256": "6d0d3e5bea7d83ff85baa8371e6e362b44e0364f91bbbf9aa8f795e2afe73932",
@@ -55,9 +55,9 @@
    "gz": "files/82ebc4420f9cd8813cb56ea79930c97b0f21d44e8e9cc89f78e1810733526e84.gz"
   },
   "resources/app/ui/bunny3d.json": {
-   "sha256": "b66489a887c6b1f68ffbc46550204216e0cf12ff76546ff4311c81f53ef570dc",
-   "size": 7141653,
-   "gz": "files/b66489a887c6b1f68ffbc46550204216e0cf12ff76546ff4311c81f53ef570dc.gz"
+   "sha256": "82c494c896634ee55813d3e371901825dc0b6b1d60d6dc92535548794b6ca536",
+   "size": 7325673,
+   "gz": "files/82c494c896634ee55813d3e371901825dc0b6b1d60d6dc92535548794b6ca536.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
