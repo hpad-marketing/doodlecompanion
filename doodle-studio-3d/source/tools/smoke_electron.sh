@@ -27,6 +27,8 @@ call set_stage '{"stage":{"set":"bedroom","outfit":"raincoat"}}' 300
 curl -s -o /dev/null -w "library preview: %{http_code}\n" "http://127.0.0.1:54190/lib/previews/outfit/outfit-raincoat.png"
 curl -s -o /dev/null -w "library json blocked: %{http_code}\n" "http://127.0.0.1:54190/lib/library.json"
 call production '{"action":"change_log"}' 300
+call workflow '{"action":"rules","frame":0}' 200
+call workflow '{"action":"status","status":"polish"}' 200
 call production '{"action":"health"}' 300
 call production '{"action":"preflight"}' 200
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}},{"jsonrpc":"2.0","id":2,"method":"tools/list"}]' | python3 -c "import json,sys;j=json.load(sys.stdin);print('update safety probe:', bool(j[0]['result']['serverInfo']) and len(j[1]['result']['tools'])>10)"
