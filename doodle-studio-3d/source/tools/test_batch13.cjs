@@ -131,6 +131,23 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   r = await ev(async () => ds3d.anim2({ action: 'ik', limb: 'armR', offset: [0.05, 0, 0] }));
   ok(!r.warning, 'an ordinary IK move gives no warning');
 
+  // B11 mirror pose is one redraw, not one per control
+  const ms = await ev(() => { ds3d.setValues({ armL: 40, elbowL: 30, headYaw: 20 }, 0, true); const t0 = performance.now(); ds3d.mirrorPose(0); return performance.now() - t0; });
+  ok(ms < 400 && Math.abs((await ev(() => ds3d.state().values.armR)) - 40) < 0.5, `mirror pose swaps sides in ${Math.round(ms)} ms`);
+
+  // B12 co-stars and camera presets
+  await ev(() => ds3d.cast({ action: 'add', character: 'bunny' }));
+  await ev(() => ds3d.cast({ action: 'place', x: 0.8, y: 0 }));
+  await p.waitForTimeout(500);
+  r = await ev(() => ds3dCameraPresets.apply({ target: 'bunny', size: 'ms', angle: 'eye' }));
+  ok(r.warning && /co-star 1/.test(r.warning), 'framing only Bunny warns that the co-star is cut off: ' + r.warning);
+  r = await ev(() => ds3dCameraPresets.apply({ target: 'group', size: 'fs', angle: 'eye' }));
+  ok(r.target === 'group' && !r.warning, 'the group target keeps everyone in frame');
+  ok((await ev(() => ds3dCameraPresets.list().targets.map(t => t[0]))).includes('group'), 'group is in the target list');
+
+  // library browse shows outfits and accessories
+  ok(await ev(async () => { const c = (await import('/src/library.js')).CATEGORIES.map(x => x[0]); return c.includes('outfit') && c.includes('accessory'); }), 'the Library browser has Outfits and Accessories chips');
+
   ok(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); dev.kill();
 })().catch(e => { console.log('FAIL', e); dev.kill(); process.exit(1); });

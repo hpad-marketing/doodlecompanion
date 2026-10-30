@@ -153,6 +153,23 @@ export class Viewport {
       a.pose(c.values || {});
     });
   }
+  // world points on a body's surface (every `step`th vertex); actor = a co-star, else the lead
+  bodyPoints(actor = null, step = 9) {
+    const who = actor || this, out = [];
+    who.group.updateMatrixWorld();
+    for (const o of who.objects) for (let i = 0; i < o.buf.length; i += 3 * step) out.push(new THREE.Vector3(o.buf[i], o.buf[i + 1], o.buf[i + 2]).applyMatrix4(who.group.matrixWorld));
+    return out;
+  }
+  // how much of each co-star the camera sees (0..1) and whether it stands in front of the lead
+  costarFraming() {
+    this.camera.updateMatrixWorld();
+    const camPos = this.camera.position, lead = this.bodyPoints(null, 40), d0 = lead.reduce((n, p) => n + p.distanceTo(camPos), 0) / Math.max(1, lead.length);
+    return (this.actors || []).map((a, index) => {
+      const pts = this.bodyPoints(a), d = pts.reduce((n, p) => n + p.distanceTo(camPos), 0) / Math.max(1, pts.length);
+      const inside = pts.filter(p => { const q = p.clone().project(this.camera); return q.z < 1 && Math.abs(q.x) <= 1 && Math.abs(q.y) <= 1; }).length;
+      return { index, share: +(inside / Math.max(1, pts.length)).toFixed(3), foreground: d < d0 - 0.2 };
+    });
+  }
   _actor(data) {
     const a = Object.create(Viewport.prototype);
     Object.assign(a, { data, scene: this.scene, outlineUniforms: this.outlineUniforms, rig: new BunnyRig(data), meshes: data.meshes.map(decodeMesh), objects: [],

@@ -7,6 +7,7 @@ of rules3d's body checks:
 - tangents: a piece whose edge just kisses the frame edge
 - see-through: a visible piece with no fill or a see-through material
 - the horizon height on screen (compared across shots when the scene is joined)
+- co-stars cut off by the frame edge (a foreground over-the-shoulder co-star may crop)
 
 The character (lead and co-stars), its outfit and accessories, held props, the room shell
 (floor and walls), effects pinned to the camera and scatter tufts are not scenery here.
@@ -110,7 +111,8 @@ def _char_points(char_objs, every=8):
         ev = ob.evaluated_get(dg)
         me = ev.to_mesh()
         mw = ob.matrix_world
-        out += [mw @ v.co for v in me.vertices[::every]]
+        vs = me.vertices
+        out += [mw @ vs[i].co for i in range(0, len(vs), every)]
         ev.to_mesh_clear()
     return out
 
@@ -208,7 +210,40 @@ def horizon(cam):
     return round(1 - p.y, 4)
 
 
+COSTAR_CUT = 0.6    # a co-star showing less than this share of himself is cut off (blocking)
+
+
+def costar_framing(cast, cam, lead_objs):
+    """Share of each co-star inside the frame, from his surface points."""
+    sc = bpy.context.scene
+    cut, cropped = [], []
+    if not cast or cam is None:
+        return {'costar_cut': cut, 'costar_cropped': cropped}
+    camp = cam.matrix_world.translation
+    lead = [p for p in _char_points(list(lead_objs), every=40)]
+    d0 = sum((p - camp).length for p in lead) / max(1, len(lead))
+    for k, c in enumerate(cast):
+        pts = _char_points(list(c['objs'].values()), every=12)
+        if not pts:
+            continue
+        d = sum((p - camp).length for p in pts) / len(pts)
+        if d < d0 - 0.2:
+            continue   # in front of the lead: an over-the-shoulder crop is allowed
+        inside = 0
+        for p in pts:
+            q = world_to_camera_view(sc, cam, p)
+            if q.z > 0 and 0 <= q.x <= 1 and 0 <= q.y <= 1:
+                inside += 1
+        share = inside / len(pts)
+        name = f"{c['name']}{k + 1}"
+        if share < COSTAR_CUT:
+            cut.append(f'{name} only {share * 100:.0f}% in frame')
+        elif share < 0.98:
+            cropped.append(f'{name} {share * 100:.0f}% in frame')
+    return {'costar_cut': cut, 'costar_cropped': cropped}
+
+
 def frame_bad(r):
     """A frame breaks a blocking rule (near-misses are warnings only)."""
     return bool(r.get('arm_head_clip') or r.get('below_floor') or r.get('ears_touch') or r.get('bodies_touch')
-                or r.get('scenery_touch') or r.get('held_in_body') or r.get('slivers') or r.get('tangents'))
+                or r.get('scenery_touch') or r.get('held_in_body') or r.get('slivers') or r.get('tangents') or r.get('costar_cut'))

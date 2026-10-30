@@ -268,7 +268,7 @@ function fillRegion(points, fill) {
   return { points, xPoints: points, box: [-fill, fill].map(v => v * 0.9), xBox: [-fill, fill].map(v => v * 0.9) };
 }
 
-// Props and other characters register here: { id, label, points(): Vector3[], facing(): deg }
+// Props and other characters register here ("group": the lead and every co-star): { id, label, points(): Vector3[], facing(): deg }
 const extraTargets = new Map();
 export function registerCameraTarget(t) { extraTargets.set(t.id, t); }
 function makeObjectTarget(t, view) {
@@ -532,7 +532,11 @@ export function applyCameraPreset(o = {}) {
     const f0 = o.frame ?? ctx.frame(), n = Math.max(2, Math.round(secs * ctx.project().fps));
     writeKeys(moveKeys(o.move, f0, n)); done.push(`${o.move} ${f0}–${f0 + n}`);
   }
-  return { applied: done, target: state.target, size: state.size, angle: state.angle, placement: state.place, lookAtCamera: lookOn(), camera: camNow() };
+  const out = { applied: done, target: state.target, size: state.size, angle: state.angle, placement: state.place, lookAtCamera: lookOn(), camera: camNow() };
+  // co-stars the new framing cuts off (a foreground shoulder in an over-the-shoulder view is fine)
+  const cut = (ctx.costarFraming?.() || []).filter(c => !c.foreground && c.share < 0.98);
+  if (cut.length) out.warning = `This framing cuts off ${cut.map(c => `co-star ${c.index + 1} (${Math.round(c.share * 100)}% in frame)`).join(', ')}. Frame on "group" to keep everyone in.`;
+  return out;
 }
 
 function targetList() { return [...BUNNY_PARTS, ...[...extraTargets.values()].map(t => [t.id, t.label])]; }
