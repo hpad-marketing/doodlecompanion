@@ -37,6 +37,7 @@ export async function loadLibrary(api, force = false) {
   return loading;
 }
 export const libraryRows = () => lib?.items || [];
+export const libraryInfo = () => lib;
 
 export function search(rows, { category, query, limit = 60 } = {}) {
   const words = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
@@ -66,6 +67,8 @@ export async function useItem(ctx, ref, opts = {}) {
   const item = { id: row.id, frame: f0 };
   if (row.category === 'prop' && (opts.hold === 'L' || opts.hold === 'R')) item.hold = opts.hold;
   if (opts.at) item.at = opts.at;
+  // standing props and scenery get a spot beside the character, so the 3D view and the render agree
+  else if (!item.hold && (row.category === 'prop' || row.category === 'scenery') && ctx.defaultSpot) item.at = ctx.defaultSpot(item);
   if (row.ask) {
     let text = opts.text ?? (opts.prompt === false ? row.def : prompt(row.ask, row.def));
     if (text == null) return null;

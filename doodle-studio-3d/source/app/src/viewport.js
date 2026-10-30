@@ -9,7 +9,7 @@ export const MUSTARD = new THREE.Color('#E0A64B');
 const INK_PX_1920 = 12.73;          // Blender's outline width on a 1920 px tall frame
 const DEPTH_BIAS = 4.5;              // outline pushed away from the camera by this many ink widths
 
-const outlineVS = `
+export const outlineVS = `
 uniform float inkPx; uniform vec2 res; uniform float bias; uniform float ortho; uniform float worldPerPxOrtho;
 void main(){
   vec4 vp = modelViewMatrix * vec4(position, 1.0);
@@ -19,7 +19,7 @@ void main(){
   vp.xyz += vn * inkPx * wpp + away * bias * inkPx * wpp;
   gl_Position = projectionMatrix * vp;
 }`;
-const outlineFS = `uniform vec3 color; void main(){ gl_FragColor = vec4(color, 1.0);
+export const outlineFS = `uniform vec3 color; void main(){ gl_FragColor = vec4(color, 1.0);
 #include <colorspace_fragment>
 }`;
 

@@ -60,7 +60,8 @@ def setup(shot, log):
                 dl.set_prop(pid, bool(on))
             except Exception as e:  # a piece renamed in a library update must not stop the render
                 log(f'stage: no piece {pid!r} in {st["set"]}: {e}')
-        done.append('set ' + st['set'])
+        moved = move_pieces(st.get('pieces') or {})
+        done.append('set ' + st['set'] + (' (%d pieces moved)' % moved if moved else ''))
     if st.get('time'):
         dl.set_time(st['time'])
     if st.get('sky'):
@@ -80,6 +81,26 @@ def setup(shot, log):
         done.append('mouths ' + st['mouthSet'])
     log('stage: ' + (', '.join(done) or 'light only'))
     return [dict(i) for i in shot.get('items') or []]
+
+
+def move_pieces(pieces):
+    """Set pieces moved in Doodle Studio 3D's view: {piece: {at: [dx, dy, dz], rot: deg about Z, scale}}.
+    Things standing on a piece (dsl_on) move with it, as in the editor."""
+    import math
+    n = 0
+    coll = bpy.data.collections.get('Doodle Set')
+    obs = list(coll.all_objects) if coll else list(bpy.data.objects)
+    for pid, xf in pieces.items():
+        at, rot, sc = xf.get('at') or (0, 0, 0), float(xf.get('rot') or 0), float(xf.get('scale') or 1)
+        for ob in obs:
+            if ob.get('dsl_prop') == pid and not ob.get('dsl_shell'):
+                ob.location = (ob.location.x + at[0], ob.location.y + at[1], ob.location.z + at[2])
+                ob.rotation_euler.z += math.radians(rot)
+                ob.scale = ob.scale * sc
+                n += 1
+            elif ob.get('dsl_on') == pid:
+                ob.location = (ob.location.x + at[0], ob.location.y + at[1], ob.location.z + at[2])
+    return n
 
 
 def halftone(cells=90):
@@ -160,6 +181,18 @@ def place(items, log):
                 hold = it.get('hold')
                 ob = dl.insert(it['id'], frame=f, hold=bool(hold), side=hold if hold in ('L', 'R') else None,
                                location=it.get('at'))
+                # turn and size set in the editor's 3D view (degrees, XYZ)
+                if ob is not None and not hold:
+                    import math
+                    if it.get('rot'):
+                        ob.rotation_euler = tuple(math.radians(float(a)) for a in it['rot'])
+                    if it.get('scale'):
+                        ob.scale = tuple(float(a) for a in it['scale'])
+                if ob is not None and it.get('until') is not None:
+                    for v, fr in ((True, f), (False, int(it['until']) + 2)):
+                        ob.hide_render = not v
+                        ob.keyframe_insert('hide_render', frame=fr)
+                    ob.hide_render = False
                 if it.get('jelly') and ob is not None:
                     import powers
                     powers.jelly(ob, f)

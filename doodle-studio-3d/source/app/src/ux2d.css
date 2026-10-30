@@ -1,0 +1,154 @@
+/* Doodle Studio 3D in the 2D Doodle Studio's layout: Canvas, Tools and Timeline docks with
+   draggable title bars (drag onto another dock to swap, pull outside to detach into a window),
+   workspace tabs, a section row per workspace and wide horizontal rows instead of long stacks. */
+body.ux2d{display:grid;grid-template-columns:1fr;grid-template-rows:30px minmax(0,1fr);grid-template-areas:'menu' 'work'}
+#workspace{grid-area:work;min-height:0;min-width:0;display:grid;
+  grid-template-columns:var(--canvas-width,35%) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--timeline-height,370px);
+  grid-template-areas:'canvas tools' 'canvas timeline'}
+#workspace[data-layout=canvas-right]{grid-template-columns:minmax(0,1fr) var(--canvas-width,35%);grid-template-areas:'tools canvas' 'timeline canvas'}
+#workspace[data-layout=timeline-wide]{grid-template-areas:'canvas tools' 'timeline timeline'}
+#workspace[data-layout=timeline-wide-right]{grid-template-columns:minmax(0,1fr) var(--canvas-width,35%);grid-template-areas:'tools canvas' 'timeline timeline'}
+#dock-canvas{grid-area:canvas}#dock-tools{grid-area:tools}#dock-timeline{grid-area:timeline}
+#workspace.no-canvas{grid-template-columns:minmax(0,1fr);grid-template-areas:'tools' 'timeline'}
+#workspace.no-tools[data-layout=classic],#workspace.no-tools[data-layout=timeline-wide]{grid-template-areas:'canvas timeline' 'canvas timeline'}
+#workspace.no-tools[data-layout=canvas-right],#workspace.no-tools[data-layout=timeline-wide-right]{grid-template-areas:'timeline canvas' 'timeline canvas'}
+#workspace.no-timeline{grid-template-rows:minmax(0,1fr) 0}
+#workspace.no-timeline[data-layout=classic],#workspace.no-timeline[data-layout=timeline-wide]{grid-template-areas:'canvas tools' 'canvas tools'}
+#workspace.no-timeline[data-layout=canvas-right],#workspace.no-timeline[data-layout=timeline-wide-right]{grid-template-areas:'tools canvas' 'tools canvas'}
+.dock{position:relative;min-width:0;min-height:0;display:grid;grid-template-rows:26px minmax(0,1fr);border-right:var(--line);border-bottom:var(--line);overflow:hidden}
+#dock-canvas{grid-template-rows:26px auto minmax(0,1fr)}
+.dock.detached{display:none}
+.dock-title{display:flex;align-items:center;gap:6px;padding:0 6px 0 8px;border-bottom:var(--line);font-size:13px;cursor:grab;user-select:none;touch-action:none;min-width:0}
+.dock-title:active{cursor:grabbing}
+.dock-title .grip{font-size:12px;opacity:.8}
+.dock-title .dock-hint{flex:1;text-align:right;font-size:10px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock-title .dock-btns{display:flex;gap:3px}
+.dock-title .dock-btns button{min-height:20px;height:20px;min-width:20px;padding:0 5px;font-size:11px;border-width:1px}
+.dock.drop-target{outline:4px dashed var(--fg);outline-offset:-6px}
+body.dock-dragging *{cursor:grabbing!important}
+.dock-ghost{position:fixed;z-index:200;pointer-events:none;background:var(--fg);color:var(--bg);font:800 12px system-ui;padding:4px 10px;border-radius:2px}
+.dock-ghost.out{outline:3px dashed var(--fg);outline-offset:3px}
+
+/* canvas dock: format row, the frame, the tool rail on its right edge (as in the 2D app) */
+.canvas-top{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--fg) 35%,transparent);flex-wrap:wrap}
+.canvas-top select{height:30px}
+.canvas-top .seg{display:flex;gap:2px}
+.canvas-top .seg button{min-height:26px;height:26px;padding:0 7px;font-size:12px}
+.canvas-body{display:grid;grid-template-columns:minmax(0,1fr) 66px;min-height:0}
+body.ux2d #canvas-wrap{grid-area:auto;position:relative}
+body.ux2d #rail{position:static;display:flex;flex-direction:column;gap:5px;padding:6px 6px;border-left:var(--line);overflow:auto;scrollbar-width:none}
+body.ux2d #rail button{width:52px;min-height:46px;padding:2px;font-size:9.5px;font-weight:750;line-height:1.05}
+body.ux2d #rail button svg{width:20px;height:20px}
+body.ux2d #rail hr{border:0;border-top:1px solid var(--fg);opacity:.4;width:100%;margin:2px 0}
+
+/* tools dock */
+body.ux2d #panel{grid-area:auto;border-left:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;min-height:0}
+body.ux2d .topbar{grid-area:auto;display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:var(--line);min-height:50px}
+body.ux2d .topbar h1{font-size:20px;flex:1 1 auto}
+body.ux2d .topbar #shot-name{width:200px}
+body.ux2d .topbar #shot-select{width:200px;height:34px}
+body.ux2d .topbar button{min-height:34px}
+body.ux2d #tabs button{min-height:46px;font-size:14px}
+body.ux2d #tabs button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+#subtabs{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:var(--line);min-height:44px}
+#subtabs .sub-chips{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+#subtabs .sub-chips button{min-height:30px;padding:0 9px;font-size:12.5px}
+#subtabs .sub-chips .sub-label{align-self:center;font-size:12px;font-weight:700;padding:0 6px 0 2px;opacity:.8}
+#subtabs #auto-key{flex:none}
+body.ux2d #panel-content{padding:10px 12px}
+#statusline{border-top:1px solid color-mix(in srgb,var(--fg) 40%,transparent);padding:3px 10px;font-size:11.5px;font-weight:650;min-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* wide panel: sections side by side, controls in two columns (the 2D "use the space" pass) */
+.ws{display:grid;gap:10px 22px;grid-template-columns:minmax(0,1fr);align-items:start}
+.ws>.col{min-width:0}
+.ws>.col+.col{border-left:0}
+#panel.wide .ws.two{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+#panel.wide .ws.three{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
+#panel.wide .ws.two>.col+.col,#panel.wide .ws.three>.col+.col{border-left:1px solid color-mix(in srgb,var(--fg) 45%,transparent);padding-left:16px}
+.ctl-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 18px}
+#panel.wide .ctl-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#panel.wide .ws .ctl-grid.one{grid-template-columns:minmax(0,1fr)}
+.ws h3:first-child,.col>h3:first-child{margin-top:0}
+.shelf{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 8px}
+.shelf button{min-height:30px;padding:0 9px;font-size:12.5px}
+.shelf-group{margin-bottom:6px}
+.shelf-group>h3{margin:6px 0 4px}
+.lbl-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px}
+.lbl-row>label:first-child,.lbl-row>.lbl{min-width:7.5em;font-size:12px;font-weight:650}
+
+/* menus: long menus run in columns instead of one tall stack */
+#menubar .menu-list.cols{display:none;flex-direction:row;align-items:flex-start;gap:0;min-width:0}
+#menubar .menu.open .menu-list.cols{display:flex}
+#menubar .menu-list .mcol{display:flex;flex-direction:column;gap:2px;min-width:260px;padding:0 3px}
+#menubar .menu-list .mcol+.mcol{border-left:1px solid rgba(224,166,75,.35)}
+#menubar .menu-list .mhead{font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.7;padding:4px 10px 2px}
+#menubar .right{display:flex;align-items:center;gap:6px}
+
+/* timeline in the 2D layout: labelled groups on two rows */
+body.ux2d #timeline{grid-area:auto;border-top:0;display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;position:relative}
+body.ux2d #timeline-tools{gap:6px 12px;padding:5px 8px}
+.tl-row{display:flex;align-items:center;flex-wrap:wrap;gap:5px 12px;width:100%}
+.ux-group button.icon.on,.ux-group button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.ux-group .zoom{width:110px}
+.ux-group .of{font-size:11.5px;font-weight:650;opacity:.85;white-space:nowrap}
+#tracks.boxing{cursor:crosshair}
+#tracks .lanes-x{position:relative}
+#tracks .tname{display:flex;align-items:center;gap:4px}
+#tracks .tname .tn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#tracks .tname .rm{display:none;min-height:16px;height:16px;min-width:16px;padding:0;border:0;font-size:13px;line-height:1;background:transparent}
+#tracks .trow:hover .tname .rm,#tracks .trow.rsel .tname .rm{display:inline-block}
+#tracks .trow.rsel .tname{background:var(--fg);color:var(--bg)}
+#tracks .trow.rsel .tname .rm{color:var(--bg)}
+#tracks .tname.group{cursor:pointer}
+#tracks .tname.group .fold{display:inline-block;width:12px;font-size:10px}
+#tracks .trow.restore .tname{font-style:italic;font-weight:700;cursor:pointer;text-decoration:underline}
+#tracks .item-mark{position:absolute;top:2px;height:17px;padding:0 5px;border:2px solid var(--fg);border-radius:2px;font-size:10px;font-weight:800;line-height:13px;white-space:nowrap;background:var(--bg);cursor:ew-resize;overflow:hidden;max-width:140px}
+#tracks .item-mark.sel{background:var(--fg);color:var(--bg)}
+.box-sel{position:absolute;z-index:6;border:2px dashed var(--fg);background:color-mix(in srgb,var(--fg) 12%,transparent);pointer-events:none}
+.ctx-menu{position:fixed;z-index:120;background:#1F1F1D;border:2px solid #E0A64B;padding:4px;display:flex;flex-direction:column;gap:2px;min-width:230px}
+.ctx-menu button{text-align:left;border:0;background:transparent;color:#E0A64B;font-weight:600;min-height:28px}
+.ctx-menu button:hover{background:#E0A64B;color:#1F1F1D;outline:0}
+.ctx-menu hr{border:0;border-top:1px solid #E0A64B;opacity:.4;width:100%;margin:2px 0}
+
+/* library browser: big pictures, hover preview, details on the right */
+.libx{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#panel.wide .libx{grid-template-columns:minmax(0,1fr) 300px}
+.libx-top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.libx-top input[type=search]{flex:1 1 220px;min-width:160px;margin:0}
+.libx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;align-content:start}
+.libx-card{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:4px;min-height:0;white-space:normal;text-align:left;font-size:11.5px;font-weight:750;line-height:1.15}
+.libx-card .pic{aspect-ratio:1;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--fg) 35%,transparent);background:#E0A64B;overflow:hidden}
+.libx-card .pic img,.libx-card .pic canvas{width:100%;height:100%;object-fit:contain}
+.libx-card .pic .glyph{font-size:34px;color:#1F1F1D}
+.libx-card small{font-weight:500;opacity:.8;font-size:10.5px}
+.libx-card[aria-pressed=true]{outline:3px solid var(--fg);outline-offset:-3px}
+.libx-side{border-left:1px solid color-mix(in srgb,var(--fg) 45%,transparent);padding-left:12px;position:sticky;top:0;align-self:start}
+.libx-side .big{width:100%;aspect-ratio:1;border:var(--line);background:#E0A64B;display:grid;place-items:center;overflow:hidden}
+.libx-side .big img,.libx-side .big canvas{width:100%;height:100%;object-fit:contain}
+.libx-side .big .glyph{font-size:90px;color:#1F1F1D}
+.libx-side h4{margin:8px 0 2px;font-size:15px}
+.libx-side p{margin:4px 0;font-size:12px}
+.libx-more{grid-column:1/-1}
+.face-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px}
+.face-grid button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:3px;min-height:0;font-size:10.5px;font-weight:700;white-space:normal;line-height:1.1}
+.face-grid canvas{width:100%;aspect-ratio:1.25;background:#E0A64B;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent)}
+.item-list{display:flex;flex-direction:column;gap:3px}
+.item-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px;align-items:center;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent);padding:3px;cursor:pointer}
+.item-row.sel{border:var(--line);background:color-mix(in srgb,var(--fg) 10%,transparent)}
+.item-row img,.item-row .glyph{width:44px;height:44px;object-fit:contain;display:grid;place-items:center;font-size:22px}
+.item-row .btns{display:flex;gap:3px}
+.item-row .btns button{min-height:26px;padding:0 7px;font-size:12px}
+.xform{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:4px 6px;align-items:center;margin:6px 0}
+.xform input{width:100%;min-height:26px;height:26px}
+.xform span{font-size:11.5px;font-weight:700}
+.preview-badge{position:absolute;right:8px;bottom:8px;background:#1F1F1D;color:#E0A64B;font:800 11px system-ui;padding:4px 8px;border-radius:2px;pointer-events:none;z-index:4}
+#frame canvas.picking{cursor:pointer}
+#dock-canvas>.resizer.canvas-edge{top:0;bottom:0;right:0;width:7px;cursor:col-resize}
+#workspace[data-layout*=right] #dock-canvas>.resizer.canvas-edge{left:0;right:auto}
+#dock-timeline>.resizer.timeline-edge{left:0;right:0;top:0;height:7px;cursor:row-resize}
+.dock[hidden]{display:none!important}
+#timeline-tools button:not(.icon) svg,#panel button:not(.icon) svg{width:15px;height:15px;vertical-align:-3px;flex:none}
+/* names stay put while a zoomed timeline scrolls sideways */
+#tracks .trow>.tname,#tracks .ruler>.tname{position:sticky;left:0;z-index:3;background:var(--bg)}
+#tracks .trow.rsel>.tname{background:var(--fg)}
+#tracks .lane{padding-left:0}
