@@ -3,6 +3,7 @@
 // so a shot exports straight to the Blender bridge.
 
 import { idleLayer, idleOn } from './idle.js';
+import { costarsForBridge } from './cast.js';
 
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
 export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52, focus: 0, fstop: 2.8 };   // focus 0 = everything sharp
@@ -167,6 +168,7 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (Object.keys(stage).length) out.stage = stage;
   if (project.items?.length) out.items = project.items;
   if (project.powers && Object.keys(project.powers).length) out.powers = project.powers;   // Blender powers (powers.py)
+  if (project.costars?.length) out.costars = costarsForBridge(project, allIds);   // co-stars (cast.py)   // Blender powers (powers.py)
   if (project.camCuts?.length) out.cuts = project.camCuts.map(f => +(f / project.fps).toFixed(4));   // multi-cam: no blur across a cut
   return out;
 }

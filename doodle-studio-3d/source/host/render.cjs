@@ -47,6 +47,12 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     if (!fs.existsSync(f)) throw Error(`No 3D character "${c}" in this build`);
     return f;
   };
+  // a Bunny co-star comes from the master Bunny file too, when one is set
+  const withMaster = shot => {
+    const m = settings.get().masterBlend;
+    if (!shot.costars?.length || !m || !fs.existsSync(m)) return shot;
+    return { ...shot, costars: shot.costars.map(c => (c.character === 'bunny' ? { ...c, blend: m } : c)) };
+  };
   const shotHash = (s, preview) => crypto.createHash('sha256').update(JSON.stringify([s.shot, s.audio || null, !!preview, fs.statSync(blendFor(s.shot)).mtimeMs, settings.get().libraryDir || ''])).digest('hex').slice(0, 16);
 
   // one Blender run; resolves with the step's result
@@ -78,7 +84,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     const check = path.join(f.checks, tag);
     fs.mkdirSync(check, { recursive: true });
     const shotFile = path.join(check, 'shot.json');
-    fs.writeFileSync(shotFile, JSON.stringify(s.shot));
+    fs.writeFileSync(shotFile, JSON.stringify(withMaster(s.shot)));
     const args = ['-b', blendFor(s.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check'];
     let out = null;
     if (opts.still) args.push('--still', String(opts.still));
@@ -193,7 +199,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       const check = path.join(f.checks, `${tag}_${code}`);
       fs.mkdirSync(check, { recursive: true });
       const shotFile = path.join(check, 'shot.json');
-      fs.writeFileSync(shotFile, JSON.stringify({ ...g.shot, width: j.req.width, height: j.req.height }));
+      fs.writeFileSync(shotFile, JSON.stringify({ ...withMaster(g.shot), width: j.req.width, height: j.req.height }));
       const frames = [...new Set(g.items.map(x => x.frame + 1))];
       j.step = `${code}: ${frames.length} slide${frames.length > 1 ? 's' : ''}`;
       const args = ['-b', blendFor(g.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check', '--frames', frames.join(',')];
