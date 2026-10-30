@@ -2,7 +2,7 @@
 
 For the person making the videos, and for any AI assistant (Claude, ChatGPT or another) that drives the app through its MCP.
 
-Written against build 20261030-162644 and updated for later builds (the moderator gate and the Blender rule check are retired): all 162 approved features, plus the fixes from the stress test. When the app and this guide disagree, trust the app: `list_controls`, `library_list` and `apply_camera_preset {list:true}` always report what's actually there.
+Written against build 20261030-192645: all 162 approved features, plus the fixes from the stress test. The moderator gate and the Blender rule check are retired (your call, 30 Oct), so the rules below are kept by the rig, the presets, preflight and your eye. When the app and this guide disagree, trust the app: `list_controls`, `library_list` and `apply_camera_preset {list:true}` always report what's actually there.
 
 This is a map, not a recipe book. Each feature gets what it does, where it shines, and a few uses beyond the obvious one. The recipes at the end are starting points to remix. They're not templates to repeat.
 
@@ -52,11 +52,11 @@ Nothing is shown to the user or exported until all of these hold. The right-hand
 | # | Rule | Checked by |
 |---|---|---|
 | 1 | Hands and arms never cut into the head (outline and ears included). An arm crosses the face only when the whole arm is in front. | Rig solver at render, live rule lights (`workflow rules`) |
-| 1a | No see-through lines: only the front part is drawn where parts overlap. | Built into the look; the Blender check flags see-through materials (`see_through`) |
+| 1a | No see-through lines: only the front part is drawn where parts overlap. | Built into the look; check stills by eye |
 | 2 | Grounding: feet on the floor, nothing floats, no sitting on props unless asked. Bunny always stands on the floor. | Rig solver at render, rule lights |
 | 3 | Constant stroke weight per depth layer. | By construction; `set_shot_look ink` keeps weights equal |
 | 4 | Smooth camera: eased moves, few cuts, counted across the whole video. Low and high angles only when the set moves with the lens (a real 3D camera does this). Bunny is always framed and never cut off. | Camera presets are eased; preflight warns when hard cuts come faster than one every 2.5 s |
-| 5 | Minimal sets, clear of the character, no tangents. Props behind him. At least 35% of a cropped prop is visible. | Blender check: `scenery_touch` blocks, `scenery_near` warns within 2 cm, `slivers`, `tangents`, `held_in_body`, `costar_cut` |
+| 5 | Minimal sets, clear of the character, no tangents. Props behind him. At least 35% of a cropped prop is visible. | The set auto-layout keeps a clear zone round his mark; check preview stills for slivers and tangents |
 | 5a | Cinematic composition: thirds, frame within frame, depth-true scale, one horizon height across shots. | Camera presets (thirds placement), the `group` target for co-stars; preflight blocks a horizon spread over 4% |
 | 6 | Real lip sync from the audio. The mouth is closed in silence. | `audio lipsync` keys it; preflight samples the mouth on loud frames |
 | 7 | Eyes and mouth keep a constant size. Act with expression, gaze, head and body. | By construction (squash never scales the face) |
@@ -544,12 +544,10 @@ Each recipe ends with "push it further", which points at features the recipe did
 
 ## 7. Known limits and troubleshooting
 
-As of build 20261030-163541. The live list is `doodle-studio/stress-3d/BUGS.md`.
+As of build 20261030-192645. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
-- **The default park layout fails the scenery check.** A stone sits against Bunny's leg at his default mark, and medium and close shots crop trees and clouds to slivers. Hide pieces with `set_stage {setProps: {stone: false}}` or move him off the mark, then check a preview still.
-- **Held props can be too big for his hand.** The mug is about 30 cm tall against a 12 cm hand, so at a resting hand it sits inside his head and shirt, and the render's `held_in_body` check fails it. Until props are scaled to his hand, pose the arm forward and out, and check a still before you build a shot on a held prop.
-- **Group wide shots sit very far back.** `target: group, size: ws` frames from about 21 m. Use `ms` for two characters, or `fs`.
-- **Re-rendering a still overwrites the last check folder.** Copy anything you need from `work\checks` before you render again.
+- **Held props can still be too big for his hand.** The mug comes out about 2.5× his hand and sits inside his head and shirt, so it doesn't show. A fix is with the pipeline. Until then, check a still before you build a shot on a held prop, and prefer props on the set to props in hand.
+- **A medium shot of Bunny reads as a close-up.** With the camera level at eye height, his big head fills the 9:16 frame. Use `fs` when you want his body in the shot.
 - **Raised arms clip the head** unless they also reach forward. The solver lowers them, and the user chose to keep the arms as they are. `anim2 ik` now warns when a pose puts the arm in the head.
 - **From a medium shot inward, 9:16 crops the sides of his head.** The eyes stay in frame.
 - **5 props graze a sleeve when held:** cake, lantern, light bulb, skateboard, flask.
@@ -563,9 +561,9 @@ As of build 20261030-163541. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 ## 8. Appendix: every MCP tool
 
-These are the 47 tools on build 20261030-163541. Ask the app with `tools/list` for the full argument schemas.
+These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
+`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 
