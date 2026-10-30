@@ -1196,7 +1196,9 @@
      "earLFold": -35,
      "earRFold": -35,
      "earLForward": 22,
-     "earRForward": 22
+     "earRForward": 22,
+     "earLSquash": 12,
+     "earRSquash": 12
     },
     "talk": "own",
     "gaze": -1,
@@ -1224,7 +1226,9 @@
      "earLFold": 8,
      "earRFold": 8,
      "earLForward": -6,
-     "earRForward": -6
+     "earRForward": -6,
+     "earLScale": 135,
+     "earRScale": 135
     },
     "talk": "own",
     "gaze": -1,
@@ -1252,7 +1256,8 @@
      "earLFold": -30,
      "earRFold": -30,
      "earLForward": 0,
-     "earRForward": 0
+     "earRForward": 0,
+     "noseSniff": 35
     },
     "talk": "own",
     "gaze": -1,
@@ -1280,7 +1285,8 @@
      "earLFold": 8,
      "earRFold": 8,
      "earLForward": -6,
-     "earRForward": -6
+     "earRForward": -6,
+     "noseSniff": 70
     },
     "talk": "own",
     "gaze": -1,

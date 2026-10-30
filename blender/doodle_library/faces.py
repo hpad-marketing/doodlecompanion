@@ -51,6 +51,7 @@ def apply_expression(item, frame=None, key=True):
                 set_rot(pb, meta.to_local(pb, M))
                 if key:
                     pb.keyframe_insert(rot_path(pb), frame=frame, group=pb.name)
+            _ear_size_and_nose(arm, ears, float(m.get('S', 1.0)), frame if key else None)
     if key and arm.animation_data and arm.animation_data.action:
         from .motions import _fcurves
         for fc in _fcurves(arm):
@@ -58,6 +59,35 @@ def apply_expression(item, frame=None, key=True):
                 for kp in fc.keyframe_points:
                     kp.interpolation = 'CONSTANT'
     index.mark_used(item['id'])
+
+
+def _ear_size_and_nose(arm, vals, S, frame=None):
+    """EAR Scale / Squash and NOSE Wiggle / Sniff from a face's ears block, with the
+    same limits as the rig's ds_map.apply_pose (kept in step with it). Always keys the
+    defaults too, so a face without them undoes the last one's bump pop or sniff."""
+    import math
+    from mathutils import Vector
+    for side in ('L', 'R'):
+        e = arm.pose.bones.get('ear.' + side)
+        if e is None:
+            continue
+        k = 'ear' + side
+        u = max(0.5, min(1.5, float(vals.get(k + 'Scale', 100.0)) / 100.0))
+        qm = 0.12 if arm.get('ear_width_lock') else 0.3
+        q = max(-0.5, min(qm, float(vals.get(k + 'Squash', 0.0)) / 100.0))
+        w = u / math.sqrt(1.0 - q)
+        e.scale = (min(w, 1.0) if arm.get('ear_width_lock') else w, u * (1.0 - q), w)
+        if frame is not None:
+            e.keyframe_insert('scale', frame=frame, group=e.name)
+    n = arm.pose.bones.get('nose')
+    if n is not None:
+        wig = max(-1.0, min(1.0, float(vals.get('noseWiggle', 0.0)) / 100.0))
+        sn = max(0.0, min(1.0, float(vals.get('noseSniff', 0.0)) / 100.0))
+        n.location = n.bone.matrix_local.to_3x3().inverted() @ (Vector((0.06 * wig, 0, 0.05 * sn)) * S)
+        n.scale = (1 + 0.12 * sn,) * 3
+        if frame is not None:
+            n.keyframe_insert('location', frame=frame, group=n.name)
+            n.keyframe_insert('scale', frame=frame, group=n.name)
 
 
 def save_expression(name, include_ears=False):
