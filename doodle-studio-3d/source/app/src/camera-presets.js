@@ -7,7 +7,7 @@
 // Camera tab. ctx = { view, project(), frame(), current(id), setValue(id, v), pushUndo(), refresh(), toast(msg) }.
 // The desktop MCP calls window.ds3dCameraPresets.apply({...}).
 import * as THREE from 'three';
-import { BunnyRig } from './rig.js';
+import { BunnyRig, TRACK_IDS } from './rig.js';
 import { setKey, valueAt, CAM_DEFAULT } from './project.js';
 
 const RAD = Math.PI / 180;
@@ -315,6 +315,7 @@ function viewCam(id, tgt = target()) {
 function writeStill(c) {
   ctx.pushUndo();
   for (const k of CAM_KEYS) ctx.setValue('cam.' + k, k === 'yaw' ? wrapYaw(c[k]) : c[k]);
+  if (lookOn()) bakeLook();
   ctx.refresh();
 }
 
@@ -325,6 +326,7 @@ function writeKeys(keys) {
   for (const k of CAM_KEYS) { const t = p.tracks['cam.' + k]; if (t) p.tracks['cam.' + k] = t.filter(q => q.f <= f0 || q.f >= f1); }
   if (f1 >= p.length) p.length = f1 + 1;
   for (const { f, cam, ease } of keys) for (const k of CAM_KEYS) setKey(p, 'cam.' + k, f, cam[k], ease || 'ease');
+  if (lookOn()) bakeLook();
   ctx.refresh();
 }
 
@@ -428,6 +430,83 @@ function moveKeys(id, f0, n) {
   throw Error('Unknown camera move ' + id);
 }
 
+// ---------------------------------------------------------------- look at camera
+// When on, Bunny keeps his face on the lens for the whole shot. The neck does the work while it can;
+// once the camera passes the neck's limit he re-plants: a quick eased turn of the whole body (with two
+// small steps) that leads a little into the camera's travel, while the head keeps tracking.
+// The result is baked into headYaw / headNod / turn / legL / legR keys (marked look:true), so it plays
+// and renders like any other animation, and it re-bakes itself whenever the camera keys change.
+const LOOK_IDS = ['headYaw', 'headNod', 'turn', 'legL', 'legR'];
+const lookOn = () => !!ctx?.project().lookAtCamera;
+function limitOf(id, fallback) {
+  const c = ctx.view.data.controls.find(c => TRACK_IDS[c.name] === id);
+  return c ? Math.min(Math.abs(c.min), Math.abs(c.max)) : fallback;
+}
+function clearLook(p) {
+  for (const id of LOOK_IDS) { const t = p.tracks[id]; if (!t) continue; p.tracks[id] = t.filter(k => !k.look); if (!p.tracks[id].length) delete p.tracks[id]; }
+}
+function bakeLook() {
+  const p = ctx.project(), yawMax = limitOf('headYaw', 50) * 0.92, nodMax = limitOf('headNod', 18) * 0.95;
+  const HEAD_Z = 0.487;   // head pivot height at rest (measured from the rig)
+  clearLook(p);
+  if (p.tracks.turn && !p.lookTurnBackup) p.lookTurnBackup = p.tracks.turn;   // his own turn keys come back when this is switched off
+  const base = p.lookTurnBackup?.length ? p.lookTurnBackup[0].v : 0;
+  delete p.tracks.turn;
+  const n = p.length, TURN = Math.max(6, Math.round(p.fps / 3)), LEAD = yawMax * 0.45;
+  const camYaw = [], camElev = [];
+  let prev = null;
+  for (let f = 0; f < n; f++) {
+    const val = id => valueAt(p, id, f), S = ctx.view.data.S, sc = val('s') || 1;
+    const H = new THREE.Vector3(val('bodyX') / STAGE_BODY_UNIT * S, val('depth') * S, -val('bodyY') / STAGE_BODY_UNIT * S + HEAD_Z * sc);
+    const d = posOf(camAt(f)).sub(H);
+    let y = Math.atan2(d.x, -d.y) / RAD;
+    if (prev != null) y = prev + wrapYaw(y - prev);   // unwrap so long orbits keep counting
+    camYaw.push(prev = y);
+    camElev.push(Math.atan2(d.z, Math.hypot(d.x, d.y)) / RAD);
+  }
+  // body turn: hold while the neck can reach, re-plant when it can't
+  const body = new Float32Array(n), turns = [];
+  let cur = base + Math.round((camYaw[0] - base) / 360) * 360, f = 0;
+  if (Math.abs(camYaw[0] - cur) > yawMax) cur = camYaw[0];   // first frame: start already facing the lens
+  while (f < n) {
+    const rel = camYaw[f] - cur;
+    if (Math.abs(rel) <= yawMax || f + 1 >= n) { body[f++] = cur; continue; }
+    const from = cur, to = camYaw[Math.min(n - 1, f + TURN)] + Math.sign(rel) * LEAD;
+    turns.push([f, Math.min(n - 1, f + TURN), from, to]);
+    for (let i = 0; i <= TURN && f < n; i++, f++) { const t = i / TURN; body[f] = from + (to - from) * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); }
+    cur = to;
+  }
+  const key = (id, fr, v, ease) => { setKey(p, id, fr, v, ease); const k = p.tracks[id].find(k => k.f === fr); k.look = true; };
+  key('turn', 0, body[0], 'hold');
+  for (const [a, b, from, to] of turns) { key('turn', Math.max(0, a - 1), from, 'ease'); key('turn', b, to, 'hold'); }
+  // head: whatever the body leaves over, inside the neck's range, every 2 frames
+  for (let fr = 0; fr < n; fr += 2) {
+    key('headYaw', fr, Math.max(-yawMax, Math.min(yawMax, camYaw[fr] - body[fr])), 'linear');
+    key('headNod', fr, Math.max(-nodMax, Math.min(nodMax, -camElev[fr])), 'linear');
+  }
+  // two small steps per re-plant so the feet move with the body
+  for (const [a, b] of turns) {
+    const q = (b - a) / 4, lift = 18;
+    for (const [id, at] of [['legL', a + q], ['legR', a + 3 * q]]) {
+      key(id, Math.max(0, Math.round(at - q)), 0, 'ease'); key(id, Math.round(at), lift, 'ease'); key(id, Math.min(n - 1, Math.round(at + q)), 0, 'ease');
+    }
+  }
+  lookSig = camSig();
+  return { turns: turns.length };
+}
+let lookSig = '';
+const camSig = () => { const p = ctx.project(); return JSON.stringify([p.length, CAM_KEYS.map(k => p.tracks['cam.' + k]), ['bodyX', 'bodyY', 'depth', 's'].map(k => p.tracks[k])]); };
+export function setLookAtCamera(on) {
+  ctx.pushUndo();
+  const p = ctx.project();
+  p.lookAtCamera = !!on;
+  const r = on ? bakeLook() : (clearLook(p), p.lookTurnBackup && (p.tracks.turn = p.lookTurnBackup), delete p.lookTurnBackup, { turns: 0 });
+  ctx.refresh();
+  return r;
+}
+// manual camera drags and undo also change the camera: re-bake when they do
+setInterval(() => { if (ctx && lookOn() && camSig() !== lookSig) { bakeLook(); ctx.refresh(); } }, 400);
+
 // One entry point for the panel and the MCP tool
 export function applyCameraPreset(o = {}) {
   if (!ctx) throw Error('Camera presets are not ready yet');
@@ -437,6 +516,7 @@ export function applyCameraPreset(o = {}) {
   }
   if (o.placement) state.place = o.placement;
   const done = [];
+  if (o.lookAtCamera != null) { const r = setLookAtCamera(o.lookAtCamera); done.push(`look at camera ${o.lookAtCamera ? 'on' : 'off'} (${r.turns} re-plants)`); }
   if (o.view) {
     if (!VIEWS.some(v => v[0] === o.view)) throw Error('Unknown view ' + o.view);
     writeStill(viewCam(o.view)); done.push(o.view);
@@ -452,7 +532,7 @@ export function applyCameraPreset(o = {}) {
     const f0 = o.frame ?? ctx.frame(), n = Math.max(2, Math.round(secs * ctx.project().fps));
     writeKeys(moveKeys(o.move, f0, n)); done.push(`${o.move} ${f0}–${f0 + n}`);
   }
-  return { applied: done, target: state.target, size: state.size, angle: state.angle, placement: state.place, camera: camNow() };
+  return { applied: done, target: state.target, size: state.size, angle: state.angle, placement: state.place, lookAtCamera: lookOn(), camera: camNow() };
 }
 
 function targetList() { return [...BUNNY_PARTS, ...[...extraTargets.values()].map(t => [t.id, t.label])]; }
@@ -484,6 +564,9 @@ export function cameraPresetsPanel(c) {
     secs.addEventListener('change', () => { state.seconds._ = secs.value === '' ? undefined : Number(secs.value); });
     const groups = [...new Set(MOVES.map(m => m[4]))];
     box.replaceChildren(
+      el('div', { class: 'row', style: 'margin-top:12px' },
+        el('button', { 'aria-pressed': String(lookOn()), title: 'Bunny keeps looking into the lens for the whole shot. His neck follows the camera; when it can\'t turn further he re-plants his body to face it again. Bakes head, turn and leg keys, and updates itself when the camera changes.',
+          onclick: () => { try { setLookAtCamera(!lookOn()); } catch (e) { ctx.toast(e.message); } draw(); } }, 'Look at camera: ' + (lookOn() ? 'On' : 'Off'))),
       el('h3', {}, 'Shot presets'),
       el('p', { class: 'hint' }, 'Pick what to frame, then click a size or angle: the camera frames it at the playhead.'),
       el('div', { class: 'chips', role: 'group', 'aria-label': 'Frame on' }, ...targetList().map(([id, name]) => chip(state.target === id, 'Frame on ' + name, name, { target: id }))),
