@@ -62,6 +62,22 @@ def _on_camera(ob, cam):
     return any(c.type == 'CHILD_OF' and c.target == cam for c in ob.constraints)
 
 
+def _not_scenery(ob):
+    """Effects, reaction pops, text and storytime pieces are drawn overlays, not set pieces (B19)."""
+    p = ob
+    while p is not None:
+        i = str(p.get('dsl_id', ''))
+        if i.startswith(('fx', 'react', 'story', 'text', 'sound')) or p.name.startswith(('FX ', 'FX_', 'DSL fx', 'Text ', 'Text_', 'DSL_fx', 'DSL_story', 'DSL_text', 'React')):
+            return True
+        if p.type == 'FONT' or (p.data is not None and getattr(p.data, 'body', None) is not None):
+            return True
+        p = p.parent
+    for c in ob.users_collection:
+        if any(w in c.name.lower() for w in ('fx', 'effect', 'storytime', 'story', 'text', 'reaction')):
+            return True
+    return False
+
+
 def classify(arm, cast, char_objs):
     """(scenery, held props) visible in the render."""
     sc = bpy.context.scene
@@ -75,7 +91,7 @@ def classify(arm, cast, char_objs):
             continue
         if held(ob, rigs):
             hold.append(ob)
-        elif _belongs(ob, rigs) or ob.get('dsl_shell') or _on_camera(ob, sc.camera) or ob.name.startswith(('DS_scatter', 'DS_doodle')):
+        elif _belongs(ob, rigs) or ob.get('dsl_shell') or _on_camera(ob, sc.camera) or ob.name.startswith(('DS_scatter', 'DS_doodle')) or _not_scenery(ob):
             continue
         else:
             scenery.append(ob)
@@ -247,3 +263,67 @@ def frame_bad(r):
     """A frame breaks a blocking rule (near-misses are warnings only)."""
     return bool(r.get('arm_head_clip') or r.get('below_floor') or r.get('ears_touch') or r.get('bodies_touch')
                 or r.get('scenery_touch') or r.get('held_in_body') or r.get('slivers') or r.get('tangents') or r.get('costar_cut'))
+
+
+def tidy_set(arm, cast, char_objs, cam, n, log, room, clear=0.12):
+    """The set's auto-layout, made camera- and character-aware (B13/B16):
+    - set pieces standing within `clear` m of a character at frame 1 slide straight out of the way;
+    - pieces the camera crops to a sliver (under SLIVER of themselves showing) are hidden on those frames.
+    Big pieces (floor, walls, backdrops: over 2 m across) are never moved."""
+    sc = bpy.context.scene
+    sc.frame_set(1)
+    scenery, _ = classify(arm, cast, char_objs)
+    # only the set's own pieces ("park:stone"); props the user placed stay where they were put
+    pieces = [o for o in scenery if o.name.startswith(room + ':')]
+    small = [o for o in pieces if max(o.dimensions) < 2.0]
+    bodies = [list(char_objs)] + [list(c['objs'].values()) for c in cast or []]
+    moved = []
+    for ob in small:
+        top = ob
+        while top.parent is not None and top.parent.type != 'ARMATURE':
+            top = top.parent
+        for b in bodies:
+            boxes = [_aabb(o) for o in b]
+            cb = (Vector([min(x[0][i] for x in boxes) for i in range(3)]), Vector([max(x[1][i] for x in boxes) for i in range(3)]))
+            a = _aabb(ob)
+            if _gap(a, cb) >= clear:
+                continue
+            # push out along the ground, away from the character's centre
+            c, p = (cb[0] + cb[1]) / 2, (a[0] + a[1]) / 2
+            d = Vector((p.x - c.x, p.y - c.y, 0.0))
+            if d.length < 1e-4:
+                d = Vector((1.0, 0.0, 0.0))
+            d.normalize()
+            for _ in range(40):
+                top.location += d * 0.03
+                bpy.context.view_layer.update()
+                if _gap(_aabb(ob), cb) >= clear:
+                    break
+            moved.append(ob.name)
+            break
+    if moved:
+        log(f'set: moved {", ".join(moved)} clear of the character')
+    hidden = {}
+    for f in range(1, n + 1):
+        sc.frame_set(f)
+        for ob in pieces:
+            pts = [world_to_camera_view(sc, cam, ob.matrix_world @ Vector(c)) for c in ob.bound_box]
+            pts = [p for p in pts if p.z > 0]
+            if len(pts) < 2:
+                continue
+            x0, x1 = min(p.x for p in pts), max(p.x for p in pts)
+            y0, y1 = min(p.y for p in pts), max(p.y for p in pts)
+            area = max(1e-9, (x1 - x0) * (y1 - y0))
+            vx, vy = max(0.0, min(1.0, x1) - max(0.0, x0)), max(0.0, min(1.0, y1) - max(0.0, y0))
+            share = vx * vy / area
+            sliver = 0 < share < SLIVER and (x1 - x0) < 1.2 and (y1 - y0) < 1.2
+            if sliver or ob.name in hidden:
+                ob.hide_render = sliver
+                ob.keyframe_insert('hide_render', frame=f)
+                if sliver:
+                    hidden.setdefault(ob.name, 0)
+                    hidden[ob.name] += 1
+    sc.frame_set(1)
+    if hidden:
+        log('set: hid slivers ' + ', '.join(f'{k} ({v} frames)' for k, v in hidden.items()))
+    return moved, hidden

@@ -27,10 +27,12 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     return { root, work, renders: path.join(work, 'renders'), checks: path.join(work, 'checks') };
   }
 
+  // a version is taken once it has a video, a still or a checks folder, so a failed retry never overwrites the last one's log
   function nextVersion(dir, stem) {
     let v = 1;
     const tag = () => `${stem}_v${String(v).padStart(3, '0')}`;
-    while (fs.existsSync(path.join(dir, tag() + '.mp4')) || fs.existsSync(path.join(dir, tag() + '.png'))) v++;
+    const checks = path.join(path.dirname(dir), 'checks');
+    while (fs.existsSync(path.join(dir, tag() + '.mp4')) || fs.existsSync(path.join(dir, tag() + '.png')) || fs.existsSync(path.join(checks, tag()))) v++;
     return tag();
   }
 

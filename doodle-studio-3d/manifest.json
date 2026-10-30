@@ -1,8 +1,8 @@
 {
- "version": "20261030-175852",
- "notes": "The 2D Doodle Studio's layout comes to 3D: Canvas, Tools and Timeline docks you can swap, resize, detach to another screen or hide (Ctrl+Shift+H); tabs with section chips and button shelves instead of long menus; the 2D timeline with box select, Ctrl+A/C/V on keys, Clear all, row remove and restore, fold and zoom. The 3D view now shows the set, props, scenery, effects, reactions and storytime pieces in the Doodle look: click any of them (or Bunny) and drag the gizmo to move, turn or scale it (Q W E R), and the render puts it in the same place. Library cards have big previews; pointing at a motion or face plays it on Bunny. New props stand beside Bunny, clear of him.",
+ "version": "20261030-192645",
+ "notes": "Frog back to the older look with eyes inside pulled-back bumps; big lid-tucked pupils on every face (Bunny, Koala, Frog); Frog's newer faces lifted into the bumps; up to 5 co-stars (6 characters on stage) and a Bunny co-star with a Bunny lead; Help > Guide and get_guide tool; held props sized to the hand and kept off the body; set pieces kept off characters and slivers hidden; eye-level presets keep the horizon level; object framing fixed; rain and text no longer count as see-through; version numbers never clash.",
  "runtime": "44.9.0",
- "published": "2026-10-30T17:58:52.884Z",
+ "published": "2026-10-30T19:26:47.880Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -15,9 +15,9 @@
    "gz": "files/b6748007b08dea683ce0a3258a2a4e6736283e9395dddde02f02bafaa9b7c353.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3",
-   "size": 37821,
-   "gz": "files/3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3.gz"
+   "sha256": "62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c",
+   "size": 38516,
+   "gz": "files/62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "83447e61d8ef68b6b6f3386f78a77efb56bdc7bafdc4dba22e026f52802c821c",
@@ -35,9 +35,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa",
-   "size": 20179,
-   "gz": "files/d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa.gz"
+   "sha256": "648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103",
+   "size": 20408,
+   "gz": "files/648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "841400db7129961c481dcac6cafb508731483a76262471832c122a590891a5d8",
@@ -55,14 +55,14 @@
    "gz": "files/08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
-   "sha256": "225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d",
-   "size": 3201595,
-   "gz": "files/225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d.gz"
+   "sha256": "60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8",
+   "size": 3031493,
+   "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2",
-   "size": 15352,
-   "gz": "files/4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2.gz"
+   "sha256": "0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425",
+   "size": 16583,
+   "gz": "files/0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -75,14 +75,19 @@
    "gz": "files/c6502f061afb5ce5c5c70d4f394ae107f7ea439ab9f86206ee6468b1b620b11e.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "c7ae2e56b889d0edfb1dd01f5bdc448bfade805c0ea96de435abe4b3c3366255",
-   "size": 9576,
-   "gz": "files/c7ae2e56b889d0edfb1dd01f5bdc448bfade805c0ea96de435abe4b3c3366255.gz"
+   "sha256": "bc021725df905265c04e314744e1553667d0f9965ed38d8c2816da617d100630",
+   "size": 10749,
+   "gz": "files/bc021725df905265c04e314744e1553667d0f9965ed38d8c2816da617d100630.gz"
   },
   "resources/app/ui/bunny3d.json": {
-   "sha256": "4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b",
-   "size": 5100444,
-   "gz": "files/4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b.gz"
+   "sha256": "2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746",
+   "size": 4933989,
+   "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
+  },
+  "resources/app/ui/guide.md": {
+   "sha256": "4ed5e6aaf19c3f0103ad63ab890cd5731e5f1481512b542d8eda7533421d6241",
+   "size": 40805,
+   "gz": "files/4ed5e6aaf19c3f0103ad63ab890cd5731e5f1481512b542d8eda7533421d6241.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -95,19 +100,19 @@
    "gz": "files/c5e09307a2cdf4a77ff22829d5ae20b74a8c6ce1ea1c89420b60d2db2282b2ab.gz"
   },
   "resources/app/blender/chars/frog.blend": {
-   "sha256": "d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae",
-   "size": 3172314,
-   "gz": "files/d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae.gz"
+   "sha256": "9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f",
+   "size": 2927936,
+   "gz": "files/9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f.gz"
   },
   "resources/app/blender/chars/koala.blend": {
-   "sha256": "3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33",
-   "size": 3481894,
-   "gz": "files/3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33.gz"
+   "sha256": "41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606",
+   "size": 3132248,
+   "gz": "files/41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606.gz"
   },
   "resources/app/blender/lib/cast.py": {
-   "sha256": "5d7829dbdbdc5ddb67697948acd5e3dda85baebd6e7eb28146d18025d03d2da4",
-   "size": 8490,
-   "gz": "files/5d7829dbdbdc5ddb67697948acd5e3dda85baebd6e7eb28146d18025d03d2da4.gz"
+   "sha256": "6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e",
+   "size": 8979,
+   "gz": "files/6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e.gz"
   },
   "resources/app/blender/lib/collision.py": {
    "sha256": "a546871be85792d29e0548a700ec443fc488a03e4b01c95e3002a24dc127d0f8",
@@ -170,9 +175,9 @@
    "gz": "files/e0c6a293f6d74c39cc5a2a9fa761d264d7588a64d28ca7d0cc376394da0316a4.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
-   "sha256": "bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887",
-   "size": 9539,
-   "gz": "files/bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887.gz"
+   "sha256": "cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8",
+   "size": 13273,
+   "gz": "files/cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8.gz"
   },
   "resources/app/blender/lib/skin.py": {
    "sha256": "9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517",
@@ -180,14 +185,14 @@
    "gz": "files/9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517.gz"
   },
   "resources/app/ui/chars/frog.json": {
-   "sha256": "f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9",
-   "size": 5692519,
-   "gz": "files/f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9.gz"
+   "sha256": "046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3",
+   "size": 5169286,
+   "gz": "files/046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3.gz"
   },
   "resources/app/ui/chars/koala.json": {
-   "sha256": "38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775",
-   "size": 6067752,
-   "gz": "files/38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775.gz"
+   "sha256": "d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402",
+   "size": 5569967,
+   "gz": "files/d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402.gz"
   },
   "resources/app/ui/src/animtools.js": {
    "sha256": "cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf",
@@ -205,9 +210,9 @@
    "gz": "files/923890fc7d0b6c1d1480cb7eb776f74ebb7a8c5310018c862f3b6a18a5ac23ce.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
-   "sha256": "0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc",
-   "size": 41401,
-   "gz": "files/0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc.gz"
+   "sha256": "b8c68701627c22f8cf2c71d3684a8e2fabd5bab40dd398303bc0d00589946ba7",
+   "size": 41947,
+   "gz": "files/b8c68701627c22f8cf2c71d3684a8e2fabd5bab40dd398303bc0d00589946ba7.gz"
   },
   "resources/app/ui/src/carousel.js": {
    "sha256": "9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985",
@@ -215,9 +220,9 @@
    "gz": "files/9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985.gz"
   },
   "resources/app/ui/src/cast.js": {
-   "sha256": "64459a04978cb02a47f11cdf04669a8487bce98d76e6aef19f32c2cb899cb3c1",
-   "size": 3465,
-   "gz": "files/64459a04978cb02a47f11cdf04669a8487bce98d76e6aef19f32c2cb899cb3c1.gz"
+   "sha256": "b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4",
+   "size": 3464,
+   "gz": "files/b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4.gz"
   },
   "resources/app/ui/src/features2.js": {
    "sha256": "1772ca3b12f9c52342b432652531a1c40b57bb8ed3783c172abb0bd0128bdef2",
@@ -240,9 +245,9 @@
    "gz": "files/ffb2235262a28ce1f8dda90799e228cf54124f98720af658913af59a42b3e972.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "d7b9742cfa15d21849ce2ad7d60eecb7998c706f7aaa9c2189c24dbb35e5c586",
-   "size": 231258,
-   "gz": "files/d7b9742cfa15d21849ce2ad7d60eecb7998c706f7aaa9c2189c24dbb35e5c586.gz"
+   "sha256": "6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9",
+   "size": 233321,
+   "gz": "files/6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -438,6 +443,236 @@
    "sha256": "291d5451e15d2a5ab3d7b75f47332f9f544f46eb0f7945f103c1d97d850bfba5",
    "size": 18968,
    "gz": "files/291d5451e15d2a5ab3d7b75f47332f9f544f46eb0f7945f103c1d97d850bfba5.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/__init__.cpython-311.pyc": {
+   "sha256": "2a2834cfbb7aa44b4e487f1320d3d1f974d780257c578e3a0013f9af0a519af1",
+   "size": 6851,
+   "gz": "files/2a2834cfbb7aa44b4e487f1320d3d1f974d780257c578e3a0013f9af0a519af1.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/__init__.cpython-313.pyc": {
+   "sha256": "29231144b2e4c11193e241045975f330917937ba263a93d59296b6a87145fe5f",
+   "size": 6565,
+   "gz": "files/29231144b2e4c11193e241045975f330917937ba263a93d59296b6a87145fe5f.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/api.cpython-311.pyc": {
+   "sha256": "975b5ae5669a57f1a8e34bc6883fe15bd7237eebb9b50835683ac3069d4cc768",
+   "size": 6361,
+   "gz": "files/975b5ae5669a57f1a8e34bc6883fe15bd7237eebb9b50835683ac3069d4cc768.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/api.cpython-313.pyc": {
+   "sha256": "f659a78a58203df4357f314ef8f116ee33058e66505b8dcd68031f60a5a21d2b",
+   "size": 6587,
+   "gz": "files/f659a78a58203df4357f314ef8f116ee33058e66505b8dcd68031f60a5a21d2b.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/assets.cpython-311.pyc": {
+   "sha256": "ac45b2669519abec24010e15fa13e32b6a4e834d82dcc0801d644e554111ff09",
+   "size": 14634,
+   "gz": "files/ac45b2669519abec24010e15fa13e32b6a4e834d82dcc0801d644e554111ff09.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/assets.cpython-313.pyc": {
+   "sha256": "fde374cee28fc1161ed7b44f57b8a09fb37c7ae685c14eff97c83f29b83508b3",
+   "size": 13665,
+   "gz": "files/fde374cee28fc1161ed7b44f57b8a09fb37c7ae685c14eff97c83f29b83508b3.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/capture.cpython-311.pyc": {
+   "sha256": "c577493b314eb1d7e7bf9ee954f547dce48d910283ffe4d137472afa84f19cb2",
+   "size": 10646,
+   "gz": "files/c577493b314eb1d7e7bf9ee954f547dce48d910283ffe4d137472afa84f19cb2.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/capture.cpython-313.pyc": {
+   "sha256": "24d2ceeb130096b60d5c006f3c94011a9ee587effed895e5e52aa9573e091e8b",
+   "size": 10254,
+   "gz": "files/24d2ceeb130096b60d5c006f3c94011a9ee587effed895e5e52aa9573e091e8b.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/collide.cpython-311.pyc": {
+   "sha256": "33f0a3160b8ce7056e3ff063dc0d3a0212471321b7ca129291554aec5bea35ae",
+   "size": 23693,
+   "gz": "files/33f0a3160b8ce7056e3ff063dc0d3a0212471321b7ca129291554aec5bea35ae.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/collide.cpython-313.pyc": {
+   "sha256": "c9fcdc375980c89416e2487317dbf697ce710c233cdf89c3c4bcbbc9292627bb",
+   "size": 21286,
+   "gz": "files/c9fcdc375980c89416e2487317dbf697ce710c233cdf89c3c4bcbbc9292627bb.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/faces.cpython-311.pyc": {
+   "sha256": "2953ce7d1060098a7a9b1f389531153b6ec0bc1b20a44ee5c2b45dadb4ee2adc",
+   "size": 24652,
+   "gz": "files/2953ce7d1060098a7a9b1f389531153b6ec0bc1b20a44ee5c2b45dadb4ee2adc.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/faces.cpython-313.pyc": {
+   "sha256": "d8b223b1791c3b265da1a86a50380a567234e31ae0c0863ab5a8c2f439fd201f",
+   "size": 22800,
+   "gz": "files/d8b223b1791c3b265da1a86a50380a567234e31ae0c0863ab5a8c2f439fd201f.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/fx.cpython-311.pyc": {
+   "sha256": "19b0315c5557c3e3c2bfe2fe9d97189cc7197c35442ec0e9dda329c712c4feb9",
+   "size": 25704,
+   "gz": "files/19b0315c5557c3e3c2bfe2fe9d97189cc7197c35442ec0e9dda329c712c4feb9.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/fx.cpython-313.pyc": {
+   "sha256": "9f7921adc7561a270766965b42af187c65826c385c55d79e40ad764e47e89846",
+   "size": 23428,
+   "gz": "files/9f7921adc7561a270766965b42af187c65826c385c55d79e40ad764e47e89846.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/gpu.cpython-311.pyc": {
+   "sha256": "9e7de870419b67108107b502c3e918e44af72882a012776619120cac5e503118",
+   "size": 3779,
+   "gz": "files/9e7de870419b67108107b502c3e918e44af72882a012776619120cac5e503118.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/gpu.cpython-313.pyc": {
+   "sha256": "7bbcb8df52aaa2caa9984031a8ced7bac667ff17d6c0b062dfb556ee74f2bbad",
+   "size": 3575,
+   "gz": "files/7bbcb8df52aaa2caa9984031a8ced7bac667ff17d6c0b062dfb556ee74f2bbad.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/grips.cpython-311.pyc": {
+   "sha256": "c710e462a873fef5db16f008d55229bc37442d2294c03609d8a6637cada9c6f3",
+   "size": 88035,
+   "gz": "files/c710e462a873fef5db16f008d55229bc37442d2294c03609d8a6637cada9c6f3.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/grips.cpython-313.pyc": {
+   "sha256": "badd630cb418ff96a5f7aded49d1fe7195fa7b5ca69d3576758878c75d3b2980",
+   "size": 77168,
+   "gz": "files/badd630cb418ff96a5f7aded49d1fe7195fa7b5ca69d3576758878c75d3b2980.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/index.cpython-311.pyc": {
+   "sha256": "db9c03ae85770912f1d9e573ec49d2261c90d8155eebfd51f47a31b707a79e72",
+   "size": 13464,
+   "gz": "files/db9c03ae85770912f1d9e573ec49d2261c90d8155eebfd51f47a31b707a79e72.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/index.cpython-313.pyc": {
+   "sha256": "5d0d07db7f8144a0b4c024a22aa8c9ecb6afaaf90c6c71a372b7506cab17ad0e",
+   "size": 11205,
+   "gz": "files/5d0d07db7f8144a0b4c024a22aa8c9ecb6afaaf90c6c71a372b7506cab17ad0e.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/interact.cpython-311.pyc": {
+   "sha256": "f67b8431128c3fba4779c14c7106e76c9880d07e7230507cc7e453737cbae494",
+   "size": 18022,
+   "gz": "files/f67b8431128c3fba4779c14c7106e76c9880d07e7230507cc7e453737cbae494.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/interact.cpython-313.pyc": {
+   "sha256": "8f6d9cc374547f97b246c00a765812a300d74c0ebcbfef90b81cf2e72984d2ea",
+   "size": 17725,
+   "gz": "files/8f6d9cc374547f97b246c00a765812a300d74c0ebcbfef90b81cf2e72984d2ea.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/lighting.cpython-311.pyc": {
+   "sha256": "c5836ac8c6f58031c14a51502e3b390491a4d69500a1eb60a55de2d931eebae6",
+   "size": 12787,
+   "gz": "files/c5836ac8c6f58031c14a51502e3b390491a4d69500a1eb60a55de2d931eebae6.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/lighting.cpython-313.pyc": {
+   "sha256": "f2428ff330c1a40efcb99c03455abefb4565a29c453437bce1f0a81692462a5a",
+   "size": 12331,
+   "gz": "files/f2428ff330c1a40efcb99c03455abefb4565a29c453437bce1f0a81692462a5a.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/motions.cpython-311.pyc": {
+   "sha256": "31f246fdea6001bd915d24d205a826eedea9b58f5ccb4c64a974bc041a24aed1",
+   "size": 20817,
+   "gz": "files/31f246fdea6001bd915d24d205a826eedea9b58f5ccb4c64a974bc041a24aed1.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/motions.cpython-313.pyc": {
+   "sha256": "dd51a5c4e98e24a4139c27040cb115577ff0661336f75f13ebcf9ea84d0cd6db",
+   "size": 18999,
+   "gz": "files/dd51a5c4e98e24a4139c27040cb115577ff0661336f75f13ebcf9ea84d0cd6db.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/ops.cpython-311.pyc": {
+   "sha256": "d32acc46a1cf7198d0b122bb1bbf7c5ca8bbe0a879d57406c2ad631a491d6018",
+   "size": 22634,
+   "gz": "files/d32acc46a1cf7198d0b122bb1bbf7c5ca8bbe0a879d57406c2ad631a491d6018.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/ops.cpython-313.pyc": {
+   "sha256": "2ee06233918985904a86dfbe3ba9541f259e4b4afb078b8af711df2ea4c73904",
+   "size": 21686,
+   "gz": "files/2ee06233918985904a86dfbe3ba9541f259e4b4afb078b8af711df2ea4c73904.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/outfits.cpython-311.pyc": {
+   "sha256": "f4788bbacb43341719bd5f1643506d5f45a35e557dbd37e53986da10bcdaf47e",
+   "size": 3378,
+   "gz": "files/f4788bbacb43341719bd5f1643506d5f45a35e557dbd37e53986da10bcdaf47e.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/outfits.cpython-313.pyc": {
+   "sha256": "9d8767095018f4dc031becf18a3bb569737b88aadc7209516d28ef30e4db2558",
+   "size": 3067,
+   "gz": "files/9d8767095018f4dc031becf18a3bb569737b88aadc7209516d28ef30e4db2558.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/packs.cpython-311.pyc": {
+   "sha256": "919cb91b825e879055491ae0dc17041099ec156fa8d1ddbae0ef958099fa8c22",
+   "size": 24518,
+   "gz": "files/919cb91b825e879055491ae0dc17041099ec156fa8d1ddbae0ef958099fa8c22.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/packs.cpython-313.pyc": {
+   "sha256": "537789bde1bd46b4becef1a7372779e1805b3c9017a74a0da07dfcc1c733939f",
+   "size": 22904,
+   "gz": "files/537789bde1bd46b4becef1a7372779e1805b3c9017a74a0da07dfcc1c733939f.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/paths.cpython-311.pyc": {
+   "sha256": "9654db1e8a469930a297d41e3b3532e5e1168eab40cb8939ab900985c43f522e",
+   "size": 3947,
+   "gz": "files/9654db1e8a469930a297d41e3b3532e5e1168eab40cb8939ab900985c43f522e.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/paths.cpython-313.pyc": {
+   "sha256": "8b4a9dae00967c53337ec7d74b3548064bdbf372882aca6a7c64054a11b43124",
+   "size": 3870,
+   "gz": "files/8b4a9dae00967c53337ec7d74b3548064bdbf372882aca6a7c64054a11b43124.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/placement.cpython-311.pyc": {
+   "sha256": "b0ee12b08b2a6c7f725ae410691a85f918154ac90323861a35479ffcfcd3c19e",
+   "size": 19715,
+   "gz": "files/b0ee12b08b2a6c7f725ae410691a85f918154ac90323861a35479ffcfcd3c19e.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/placement.cpython-313.pyc": {
+   "sha256": "191e0e2faadd9f7e6c515dec0b9236ac4a5164fa7687a0f9959ca9bd76c2ade8",
+   "size": 18425,
+   "gz": "files/191e0e2faadd9f7e6c515dec0b9236ac4a5164fa7687a0f9959ca9bd76c2ade8.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/sets.cpython-311.pyc": {
+   "sha256": "163f5aa88d42f5806ebdf29cbcb8c2ea8af1070e9d057d469014203cd2012465",
+   "size": 17434,
+   "gz": "files/163f5aa88d42f5806ebdf29cbcb8c2ea8af1070e9d057d469014203cd2012465.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/sets.cpython-313.pyc": {
+   "sha256": "81e1fda738d2162c5b53d093d0accb58eb6e672d7f0972d3747f767d3c012f86",
+   "size": 16205,
+   "gz": "files/81e1fda738d2162c5b53d093d0accb58eb6e672d7f0972d3747f767d3c012f86.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/storytime.cpython-311.pyc": {
+   "sha256": "e12a06d49125c95a0cce6d734e947925530c0eeea779a595706326ddecd5fdfe",
+   "size": 36522,
+   "gz": "files/e12a06d49125c95a0cce6d734e947925530c0eeea779a595706326ddecd5fdfe.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/storytime.cpython-313.pyc": {
+   "sha256": "38d80d4cc48a118ff74a9d3719531729e0f88345c8ac881cc07a3ebdb9771ed2",
+   "size": 32712,
+   "gz": "files/38d80d4cc48a118ff74a9d3719531729e0f88345c8ac881cc07a3ebdb9771ed2.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/style.cpython-311.pyc": {
+   "sha256": "4fadc9d04b286372688a8a7688afecb1e8b9c0f506661661cc8c111bd07b80f2",
+   "size": 31057,
+   "gz": "files/4fadc9d04b286372688a8a7688afecb1e8b9c0f506661661cc8c111bd07b80f2.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/style.cpython-313.pyc": {
+   "sha256": "f8516d17e2a76f8704ab263062db2f25b8aaa3cfd31e75246f5c0f5907f82a3f",
+   "size": 29715,
+   "gz": "files/f8516d17e2a76f8704ab263062db2f25b8aaa3cfd31e75246f5c0f5907f82a3f.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/text3d.cpython-311.pyc": {
+   "sha256": "fe228a34acfa7cc16982c4725983314c23004dd9deb3584c7cfcd3d138ae9a95",
+   "size": 12488,
+   "gz": "files/fe228a34acfa7cc16982c4725983314c23004dd9deb3584c7cfcd3d138ae9a95.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/text3d.cpython-313.pyc": {
+   "sha256": "be41c059bb4bd38bf8e4a5648e5b3d957ca9043b8ca61ccc0cddf1256b5ad109",
+   "size": 11985,
+   "gz": "files/be41c059bb4bd38bf8e4a5648e5b3d957ca9043b8ca61ccc0cddf1256b5ad109.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/ui.cpython-311.pyc": {
+   "sha256": "7c6fdd22c99970c174ab82d0fdd2edb49154b8babdf895e2b9f922bea45251fc",
+   "size": 36444,
+   "gz": "files/7c6fdd22c99970c174ab82d0fdd2edb49154b8babdf895e2b9f922bea45251fc.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__pycache__/ui.cpython-313.pyc": {
+   "sha256": "239db23028dee07658e8a79d625871471897bf270a9c5c4879fca11401d5cace",
+   "size": 31827,
+   "gz": "files/239db23028dee07658e8a79d625871471897bf270a9c5c4879fca11401d5cace.gz"
   },
   "resources/app/ui/vendor/addons/controls/TransformControls.js": {
    "sha256": "9848ad589dfcf5f3769d0836472cb37cc46e6e0b36eb42ebcf7c898d0072e8ec",

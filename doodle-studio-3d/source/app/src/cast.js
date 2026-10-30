@@ -1,10 +1,10 @@
-// Co-stars: up to three more characters in a shot, on the same rig (Bunny, the Koala, the Frog).
+// Co-stars: up to five more characters in a shot, on the same rig (Bunny, the Koala, the Frog).
 // Each keeps its own keys (costar.tracks, same control ids as the lead) and stands at (x, y)
 // metres turned `turn` degrees. Blender (lib/cast.py) appends their rigs into the lead's scene,
 // keeps their arms out of their own heads and pushes them apart so no two bodies ever touch.
 import { valueAt, setKey } from './project.js';
 
-export const MAX_COSTARS = 3;
+export const MAX_COSTARS = 5;
 export const costarsOf = p => p.costars || [];
 
 // a stand-in project, so valueAt, setKey and the library's motion code work on a co-star's keys

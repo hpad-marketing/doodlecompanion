@@ -52,9 +52,9 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   // place, remove, limits
   r = await C({ action: 'place', index: 0, x: 1.2, y: 0.3, turn: -45 });
   ok(r.costar.x === 1.2 && (await bridge()).costars[0].turn === -45, 'placed by number');
-  await C({ action: 'add', character: 'bunny' });
-  ok(await ev(async () => { try { await ds3d.cast({ action: 'add', character: 'koala' }); return false; } catch (e) { return /up to 3/.test(e.message); } }), 'three co-stars at most');
-  await C({ action: 'remove', index: 2 });
+  for (const c of ['bunny', 'koala', 'frog']) await C({ action: 'add', character: c });
+  ok(await ev(async () => { try { await ds3d.cast({ action: 'add', character: 'koala' }); return false; } catch (e) { return /up to 5/.test(e.message); } }), 'five co-stars at most');
+  for (let i = 0; i < 3; i++) await C({ action: 'remove', index: 2 });
   r = await C({ action: 'list' });
   ok(r.costars.length === 2 && r.costars[0].keyed.includes('armR'), 'list shows each co-star and its keys');
   await p.waitForFunction(() => (ds3d.view.actors || []).length === 2, null, { timeout: 5000 });

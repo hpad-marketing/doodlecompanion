@@ -151,6 +151,30 @@ def halftone(cells=90):
     return n
 
 
+def fit_to_hand(ob, side, log):
+    """Small one-hand props (mugs, phones, apples) are modelled at their own size; held by
+    Bunny's short arms they come in no bigger than his hand allows, so they never reach into
+    his head or shirt (B14). Long props (fist grips) and two-hand props keep their size."""
+    try:
+        from doodle_library import grips
+        if grips.spec(ob).get('kind') not in ('hook', 'pinch', 'palm'):
+            return
+        hand = bpy.data.objects.get('BUNNY_hand.' + side)
+        if hand is None:
+            return
+        bpy.context.view_layer.update()
+        h = max(hand.dimensions)
+        big = max(ob.dimensions)
+        cap = 1.1 * h
+        if big > cap > 0:
+            k = cap / big
+            ob.scale = ob.scale * k
+            bpy.context.view_layer.update()
+            log(f'{ob.name}: {big * 100:.0f} cm scaled to {cap * 100:.0f} cm to fit his hand')
+    except Exception as e:
+        log(f'{ob.name}: hand fit skipped: {e}')
+
+
 def place(items, log):
     """Library items, keyed at their frame (1-based in Blender)."""
     if not items:
@@ -179,8 +203,12 @@ def place(items, log):
                 ob = dl.add_text(it.get('text') or 'Text', location=it.get('at') or (0.0, 0.8, 1.25))
             else:
                 hold = it.get('hold')
-                ob = dl.insert(it['id'], frame=f, hold=bool(hold), side=hold if hold in ('L', 'R') else None,
-                               location=it.get('at'))
+                side = hold if hold in ('L', 'R') else None
+                ob = dl.insert(it['id'], frame=f, hold=False, location=it.get('at'))
+                if hold and ob is not None:
+                    fit_to_hand(ob, side or 'R', log)
+                    from doodle_library import grips
+                    grips.attach(ob, side=side, frame=f)
                 # turn and size set in the editor's 3D view (degrees, XYZ)
                 if ob is not None and not hold:
                     import math
