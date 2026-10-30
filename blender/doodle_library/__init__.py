@@ -2,7 +2,7 @@
 bl_info = {
     'name': 'Doodle Library',
     'author': 'DeepInDoodles',
-    'version': (1, 0, 0),
+    'version': (1, 1, 0),
     'blender': (4, 5, 0),
     'location': '3D View › Sidebar › Doodle',
     'description': "Bunny's motions, faces, mouth sets, 360° props and room sets, saved as you use them",
@@ -15,7 +15,7 @@ import bpy  # noqa: E402
 from bpy.app.handlers import persistent  # noqa: E402
 from bpy.props import BoolProperty, StringProperty  # noqa: E402
 
-from . import capture, index, ops, paths, ui  # noqa: E402
+from . import capture, gpu, index, ops, paths, ui  # noqa: E402
 
 LIB_NAME = 'Doodle Library'
 
@@ -80,6 +80,7 @@ def register():
     ui.register()
     ops.register()
     capture.register()
+    gpu.register()
     bpy.app.handlers.load_post.append(on_load)
     bpy.app.timers.register(_first_refresh, first_interval=0.5)
 
@@ -87,6 +88,7 @@ def register():
 def unregister():
     if on_load in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(on_load)
+    gpu.unregister()
     capture.unregister()
     ops.unregister()
     ui.unregister()
