@@ -104,7 +104,7 @@ def face_group():
         return ng
     ng = bpy.data.node_groups.new(name, 'GeometryNodeTree')
     _sock(ng, 'Geometry', 'NodeSocketGeometry')
-    _sock(ng, 'Expression', 'NodeSocketInt', default=0, mn=0, mx=41)
+    _sock(ng, 'Expression', 'NodeSocketInt', default=0, mn=0, mx=999)
     _sock(ng, 'Gaze', 'NodeSocketInt', default=0, mn=0, mx=8)
     _sock(ng, 'Speech Mouth', 'NodeSocketInt', default=0, mn=0, mx=18)
     _sock(ng, 'Blink', 'NodeSocketInt', default=0, mn=0, mx=4)

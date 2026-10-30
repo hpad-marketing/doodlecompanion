@@ -1,8 +1,68 @@
-{"rest":{},
- "turn":{"turn":60,"bodyX":30,"bodyY":-10,"depth":0.5,"s":1.1},
- "head":{"headYaw":30,"headNod":-12,"rot":10},
- "torso":{"bodyTilt":8,"torsoBow":12,"torsoTwist":-15,"breath":60,"bodyRot":10},
- "arms":{"armL":80,"armLForward":30,"elbowL":60,"wristL":20,"armR":-5,"armRForward":-40,"elbowR":100},
- "legs":{"legL":50,"kneeL":70,"footL":-20,"legR":-30,"legROut":15,"kneeR":30},
- "ears":{"earLFold":30,"earLForward":-20,"earRFold":-35,"earRForward":25},
- "mix":{"turn":-120,"headYaw":-40,"armR":130,"elbowR":40,"legL":70,"kneeL":110,"earLFold":-25,"torsoBow":-8}}
+{
+ "rest": {},
+ "turn": {
+  "turn": 60,
+  "bodyX": 30,
+  "bodyY": -10,
+  "depth": 0.5,
+  "s": 1.1
+ },
+ "head": {
+  "headYaw": 30,
+  "headNod": -12,
+  "rot": 10
+ },
+ "torso": {
+  "bodyTilt": 8,
+  "torsoBow": 12,
+  "torsoTwist": -15,
+  "breath": 60,
+  "bodyRot": 10
+ },
+ "arms": {
+  "armL": 80,
+  "armLForward": 30,
+  "elbowL": 60,
+  "wristL": 20,
+  "armR": -5,
+  "armRForward": -40,
+  "elbowR": 100
+ },
+ "legs": {
+  "legL": 50,
+  "kneeL": 70,
+  "footL": -20,
+  "legR": -30,
+  "legROut": 15,
+  "kneeR": 30
+ },
+ "ears": {
+  "earLFold": 30,
+  "earLForward": -20,
+  "earRFold": -35,
+  "earRForward": 25
+ },
+ "mix": {
+  "turn": -120,
+  "headYaw": -40,
+  "armR": 130,
+  "elbowR": 40,
+  "legL": 70,
+  "kneeL": 110,
+  "earLFold": -25,
+  "torsoBow": -8
+ },
+ "ear_out35": {
+  "earLFold": -35,
+  "earRFold": -35
+ },
+ "ear_rout35_fwd": {
+  "earRFold": -35,
+  "earLForward": 25
+ },
+ "ear_side_back": {
+  "turn": 70,
+  "earLForward": -30,
+  "earRFold": -20
+ }
+}

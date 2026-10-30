@@ -51,6 +51,31 @@ def ds_world_rotation(controls, values, ds_bone):
     return M
 
 
+def hinge_offset(radii, e1, e2, axis, M):
+    """Pivot (from the bone head, rest space) at the edge of the ear base on the
+    side the ear bends toward; zero when it doesn't bend."""
+    tip = M @ axis
+    bend = tip - axis * tip.dot(axis)
+    x, y = bend.dot(e1), bend.dot(e2)
+    if x * x + y * y < 1e-12:
+        return Vector((0, 0, 0))
+    ang = math.atan2(y, x) % (2 * math.pi)
+    f = ang / (2 * math.pi) * len(radii)
+    i = int(f) % len(radii)
+    r = radii[i] + (radii[(i + 1) % len(radii)] - radii[i]) * (f - int(f))
+    return (e1 * math.cos(ang) + e2 * math.sin(ang)) * r
+
+
+def hinge_location(pose_bone, M):
+    """Pose location that turns a rotation about the bone head into the same
+    rotation about the ear's hinge."""
+    b = pose_bone.bone
+    B0 = b.matrix_local.to_3x3()
+    axis = (B0 @ Vector((0, 1, 0))).normalized()
+    p = hinge_offset(list(pose_bone['hinge_r']), Vector(pose_bone['hinge_e1']), Vector(pose_bone['hinge_e2']), axis, M)
+    return B0.inverted() @ (p - M @ p)
+
+
 def to_local(pose_bone, M):
     B0 = pose_bone.bone.matrix_local.to_3x3()
     return (B0.inverted() @ M @ B0).to_quaternion()
@@ -77,6 +102,8 @@ def apply_pose(arm, controls, values, S, settings=None, face_bone='face'):
     for ds_bone, ctrl in BONE_MAP.items():
         M = ds_world_rotation(controls, values, ds_bone)
         set_rotation(pb[ctrl], to_local(pb[ctrl], M))
+        if 'hinge_r' in pb[ctrl]:
+            pb[ctrl].location = hinge_location(pb[ctrl], M)
     # app body motion: rotation about the hoodie base (Doodle Studio bodyRot)
     br = float(values.get('bodyRot', 0.0))
     pb['body_rot'].rotation_quaternion = to_local(pb['body_rot'], Matrix.Rotation(math.radians(br), 3, 'Y'))
