@@ -164,5 +164,6 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;
   if (project.items?.length) out.items = project.items;
+  if (project.camCuts?.length) out.cuts = project.camCuts.map(f => +(f / project.fps).toFixed(4));   // multi-cam: no blur across a cut
   return out;
 }

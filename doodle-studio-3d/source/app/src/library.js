@@ -195,6 +195,10 @@ export function libraryPanel(ctx) {
   shadow.checked = !!st.shadows;
   shadow.addEventListener('change', () => { setStage(ctx, { shadows: shadow.checked }, ui.shotOnly); rebuild(); });
   box.append(h('label', { class: 'ctl', style: 'grid-template-columns:auto 1fr', title: 'Flat cel shadows on the set. Off unless you turn it on.' }, shadow, 'Cel shadows'));
+  const dots = h('input', { type: 'checkbox' });
+  dots.checked = !!st.halftone;
+  dots.addEventListener('change', () => { setStage(ctx, dots.checked ? { halftone: true, shadows: true } : { halftone: false }, ui.shotOnly); rebuild(); });
+  box.append(h('label', { class: 'ctl', style: 'grid-template-columns:auto 1fr', title: 'Comic-book halftone: the cel shadows become ink dots. Turns cel shadows on. Off unless you turn it on.' }, dots, 'Halftone dots in the shadows'));
   const outfits = rows.filter(r => r.category === 'outfit'), accs = rows.filter(r => r.category === 'accessory');
   box.append(sel('Outfit', 'outfit', [['', 'None'], ...outfits.map(r => [r.data.outfit, r.name])], st.outfit, 'Brand black outfits from the clothing studio'));
   if (accs.length) box.append(h('div', { class: 'chips', title: 'Accessories: click to wear or take off' }, ...accs.map(r =>

@@ -1,8 +1,8 @@
 {
- "version": "20261030-140740",
- "notes": "Storytime part 3: flashback and VHS looks, photo cut-ins, narrator picture-in-picture, imagination bubble, English and Hindi caption tracks with word highlight and SRT, a music bed that ducks under the voice, bleeps and opt-in character voices (Story menu).",
+ "version": "20261030-142905",
+ "notes": "Feature picks part 2: belly squash and stretch with anticipation and overshoot (the face never changes size), hand contact on the hip, belly or chest, beat-synced camera, multi-cam angles with hard cuts, floor-plan camera path, previz grey (viewport and render), halftone dots in the cel shadows, pose from a pen stick figure, and script to blocking.",
  "runtime": "44.9.0",
- "published": "2026-10-30T14:07:40.264Z",
+ "published": "2026-10-30T14:29:05.631Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -15,9 +15,9 @@
    "gz": "files/9f1202880a64991f660096eb54dad8b1d1b30a3197ef561e1dcd81b0cc21ec6f.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "5d2ac93fd59054963d0e39dd68cfde11fbd3adada5a6fec1b701a28566b52a6b",
-   "size": 29830,
-   "gz": "files/5d2ac93fd59054963d0e39dd68cfde11fbd3adada5a6fec1b701a28566b52a6b.gz"
+   "sha256": "a862345024bd5f9393e69740c75baaeadca8ff105319475feab904cf49e8ac4d",
+   "size": 32177,
+   "gz": "files/a862345024bd5f9393e69740c75baaeadca8ff105319475feab904cf49e8ac4d.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -50,9 +50,9 @@
    "gz": "files/aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "eb813f2842b97d21bc062b6db3296accf0ce84be676d8437f5e6721577518af8",
-   "size": 11030,
-   "gz": "files/eb813f2842b97d21bc062b6db3296accf0ce84be676d8437f5e6721577518af8.gz"
+   "sha256": "084fa4e082ab3c8040188295697dc06ef6e39becaf348d82bbe529b4faa95a9b",
+   "size": 11695,
+   "gz": "files/084fa4e082ab3c8040188295697dc06ef6e39becaf348d82bbe529b4faa95a9b.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "c4483ee6bc419ef5d6ddebc892570fe828781ebc9a80ea1d9bfb46b12602143e",
@@ -60,9 +60,9 @@
    "gz": "files/c4483ee6bc419ef5d6ddebc892570fe828781ebc9a80ea1d9bfb46b12602143e.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "b2866d89a679df27c50ccd1f2b217c40095967e06ef9f52da9c8210a76621077",
-   "size": 5267,
-   "gz": "files/b2866d89a679df27c50ccd1f2b217c40095967e06ef9f52da9c8210a76621077.gz"
+   "sha256": "03e4d7d68b54f65f22a7177b59bfa5046a98c6556a8f02c72d979a6958a2874f",
+   "size": 7684,
+   "gz": "files/03e4d7d68b54f65f22a7177b59bfa5046a98c6556a8f02c72d979a6958a2874f.gz"
   },
   "resources/app/ui/bunny3d.json": {
    "sha256": "14ed5fcea6a7324bd28190431b49c7e1308b9a0c2dbbdbff3ad688d64de1eeda",
@@ -100,9 +100,9 @@
    "gz": "files/e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9.gz"
   },
   "resources/app/blender/lib/ds_map.py": {
-   "sha256": "fbe7434013d1812734b45e91e55a14f6118b6c6012051ed51b58864d63f3ae3f",
-   "size": 8390,
-   "gz": "files/fbe7434013d1812734b45e91e55a14f6118b6c6012051ed51b58864d63f3ae3f.gz"
+   "sha256": "39df59a73ea7a3d69a1c715a4347e12cebc7a6ca6d2b293948df78e3a42e4a8a",
+   "size": 9259,
+   "gz": "files/39df59a73ea7a3d69a1c715a4347e12cebc7a6ca6d2b293948df78e3a42e4a8a.gz"
   },
   "resources/app/blender/lib/dynamics.py": {
    "sha256": "b29d3fdfc50711f4bfb05d3b30bf26cfa244cb55d09e06c1e0f912c2d930b450",
@@ -184,20 +184,25 @@
    "size": 14232,
    "gz": "files/9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985.gz"
   },
+  "resources/app/ui/src/features2.js": {
+   "sha256": "1772ca3b12f9c52342b432652531a1c40b57bb8ed3783c172abb0bd0128bdef2",
+   "size": 21881,
+   "gz": "files/1772ca3b12f9c52342b432652531a1c40b57bb8ed3783c172abb0bd0128bdef2.gz"
+  },
   "resources/app/ui/src/idle.js": {
    "sha256": "63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef",
    "size": 8014,
    "gz": "files/63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef.gz"
   },
   "resources/app/ui/src/library.js": {
-   "sha256": "e14b3ada2bf46c5ad59215ecd1385d740426b805068882f417264ed72e3fba41",
-   "size": 16552,
-   "gz": "files/e14b3ada2bf46c5ad59215ecd1385d740426b805068882f417264ed72e3fba41.gz"
+   "sha256": "ea89f002dda1a5a9098a15dddd2ada885e142812a41235073044c6712ac3dbaa",
+   "size": 17026,
+   "gz": "files/ea89f002dda1a5a9098a15dddd2ada885e142812a41235073044c6712ac3dbaa.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "6283e5abf37da71ca4e1ed6533ad8f74205d90c93349c647f6312dfb72172721",
-   "size": 141636,
-   "gz": "files/6283e5abf37da71ca4e1ed6533ad8f74205d90c93349c647f6312dfb72172721.gz"
+   "sha256": "c4c19a2e3ba9bd0870b89848262a867d7d797294e49e604509c0d455eb15b2a1",
+   "size": 152819,
+   "gz": "files/c4c19a2e3ba9bd0870b89848262a867d7d797294e49e604509c0d455eb15b2a1.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -215,14 +220,14 @@
    "gz": "files/979ad596560b79cc2ee15aca4dae75b5b4c5a2d422601d710923a57fb3804e28.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "aaadcc3d3b54706f090bf9abde89558adca16d889110cee0b6a2aa0a8a5568e8",
-   "size": 8180,
-   "gz": "files/aaadcc3d3b54706f090bf9abde89558adca16d889110cee0b6a2aa0a8a5568e8.gz"
+   "sha256": "6d89149fcc5565b9e52e6b157a88dd465210652f51065433191d42aad46840ed",
+   "size": 8316,
+   "gz": "files/6d89149fcc5565b9e52e6b157a88dd465210652f51065433191d42aad46840ed.gz"
   },
   "resources/app/ui/src/rig.js": {
-   "sha256": "f7a8e0a931b2a09d52829c9667f88383b5548159b594163b43cc2112fa13fd71",
-   "size": 21827,
-   "gz": "files/f7a8e0a931b2a09d52829c9667f88383b5548159b594163b43cc2112fa13fd71.gz"
+   "sha256": "2f24414d909905595f8636d7daf75523fd13c662a20bdf2340373e13dcbcb295",
+   "size": 23057,
+   "gz": "files/2f24414d909905595f8636d7daf75523fd13c662a20bdf2340373e13dcbcb295.gz"
   },
   "resources/app/ui/src/storytime.js": {
    "sha256": "883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521",
@@ -235,9 +240,9 @@
    "gz": "files/6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "17f87496b86a41c08a0e13b61eef8e9cb8f4d6c7f8567927c3bead2caacbc6c6",
-   "size": 13849,
-   "gz": "files/17f87496b86a41c08a0e13b61eef8e9cb8f4d6c7f8567927c3bead2caacbc6c6.gz"
+   "sha256": "25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735",
+   "size": 14261,
+   "gz": "files/25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e",

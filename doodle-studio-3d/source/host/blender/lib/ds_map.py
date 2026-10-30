@@ -96,6 +96,19 @@ def rotation_path(pose_bone):
     return {'QUATERNION': 'rotation_quaternion', 'AXIS_ANGLE': 'rotation_axis_angle'}.get(pose_bone.rotation_mode, 'rotation_euler')
 
 
+SQUASH_FREE = ('head', 'upper_arm_fk.L', 'upper_arm_fk.R')
+
+
+def squash_setup(arm):
+    """A shot that squashes the belly: the head and arms stop inheriting scale (they keep the
+    character's own size as their pose scale), so the face never changes size."""
+    arm['ds_squash'] = 1
+    for n in SQUASH_FREE:
+        b = arm.data.bones.get(n)
+        if b is not None:
+            b.inherit_scale = 'NONE'
+
+
 def apply_pose(arm, controls, values, S, settings=None, face_bone='face'):
     """Pose the rig from one frame of Doodle Studio track values (degrees)."""
     pb = arm.pose.bones
@@ -121,6 +134,16 @@ def apply_pose(arm, controls, values, S, settings=None, face_bone='face'):
     breath = max(0.0, min(1.0, float(values.get('breath', 0.0)) / 90.0))
     t = pb['torso']
     t.location = t.bone.matrix_local.to_3x3().inverted() @ (Vector((0, -.015 * breath, .07 * breath)) * S)
+    # belly squash and stretch (SQUASH Body -30..30 %, + squashes down, volume kept)
+    q = max(-0.3, min(0.3, float(values.get('squashBody', 0.0)) / 100.0))
+    w = 1.0 / math.sqrt(1.0 - q)
+    t.scale = (w, 1.0 - q, w)
+    if arm.get('ds_squash'):
+        # head and arms ride on the belly without taking its scale (see squash_setup)
+        for n in SQUASH_FREE:
+            b = pb.get(n)
+            if b is not None:
+                b.scale = (s, s, s)
     # ear / eye-bump size: EAR Scale (100 = normal), EAR Squash (+ flattens, - stretches tall, volume kept)
     for side, k in (('L', 'earL'), ('R', 'earR')):
         e = pb.get(f'ear.{side}')

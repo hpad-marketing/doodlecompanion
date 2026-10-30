@@ -8,13 +8,14 @@ import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecover
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
 import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
-import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
+import { libraryPanel, libraryRows, loadLibrary, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 import { modal, historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
 import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
 import * as A2 from './animtools2.js';
 import * as S2 from './storytime2.js';
 import * as P from './post.js';
+import * as F2 from './features2.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -44,7 +45,7 @@ const thumbs = new Map();   // slide id -> small picture (not saved)
 
 const PARTS = [
   ['whole', 'Whole', ['bodyX', 'bodyY', 'depth', 's', 'turn', 'bodyRot', 'breath', 'legReach']],
-  ['body', 'Body', ['bodyTilt', 'torsoBow', 'torsoTwist']],
+  ['body', 'Body', ['bodyTilt', 'torsoBow', 'torsoTwist', 'squashBody']],
   ['head', 'Head', ['headYaw', 'headNod', 'rot']],
   ['ears', 'Ears', ['earLFold', 'earLForward', 'earLScale', 'earLSquash', 'earRFold', 'earRForward', 'earRScale', 'earRSquash']],
   ['nose', 'Nose', ['noseWiggle', 'noseSniff']],
@@ -62,7 +63,7 @@ const LABEL = {
   armL: 'Raise', armLForward: 'Forward', elbowL: 'Elbow bend', wristL: 'Wrist roll', armR: 'Raise', armRForward: 'Forward', elbowR: 'Elbow bend', wristR: 'Wrist roll',
   legL: 'Lift', legLOut: 'Out', kneeL: 'Knee bend', footL: 'Foot roll', legR: 'Lift', legROut: 'Out', kneeR: 'Knee bend', footR: 'Foot roll',
   'cam.yaw': 'Orbit', 'cam.pitch': 'Height angle', 'cam.dist': 'Distance', 'cam.lens': 'Lens (mm)', 'cam.roll': 'Roll (Dutch)',
-  'cam.tx': 'Aim left / right', 'cam.ty': 'Aim near / far', 'cam.tz': 'Aim height', 'cam.focus': 'Focus distance', 'cam.fstop': 'Aperture (f-stop)', squash: 'Squash / stretch',
+  'cam.tx': 'Aim left / right', 'cam.ty': 'Aim near / far', 'cam.tz': 'Aim height', 'cam.focus': 'Focus distance', 'cam.fstop': 'Aperture (f-stop)', squash: 'Squash / stretch', squashBody: 'Squash / stretch',
   expression: 'Expression', gaze: 'Gaze', mouth: 'Speech mouth', blink: 'Blink',
 };
 const TIPS = {
@@ -74,11 +75,12 @@ const TIPS = {
   'cam.focus': 'Rack focus: metres from the camera to the sharp plane. 0 keeps everything sharp. Key it to pull focus between two things.',
   'cam.fstop': 'Lower is a shallower focus (more blur). Only used when Focus distance is above 0.',
   squash: 'Plus squashes down and out, minus stretches up and thin. Volume stays the same and the feet stay planted.',
+  squashBody: 'The belly: plus squashes down and out, minus stretches up and thin. Volume stays the same, the feet stay planted and the face never changes size. Animate › Squash and stretch keys a whole hit for you.',
 };
 const EXTRA_RANGE = { legReach: [0, 100, 1], earLScale: [50, 150, 1], earRScale: [50, 150, 1], earLSquash: [-50, 30, 1], earRSquash: [-50, 30, 1], noseWiggle: [-100, 100, 1], noseSniff: [0, 100, 1],
   bodyX: [-400, 400, 1], bodyY: [-200, 200, 1], depth: [-4, 4, 0.05], s: [0.3, 2, 0.01], bodyRot: [-45, 45, 1], breath: [0, 90, 1],
   'cam.yaw': [-180, 180, 1], 'cam.pitch': [-60, 89, 1], 'cam.dist': [0.2, 60, 0.05], 'cam.lens': [12, 200, 1], 'cam.roll': [-45, 45, 1],
-  'cam.tx': [-10, 10, 0.01], 'cam.ty': [-10, 10, 0.01], 'cam.tz': [-0.5, 10, 0.01], 'cam.focus': [0, 60, 0.05], 'cam.fstop': [0.7, 22, 0.1], squash: [-30, 30, 1] };
+  'cam.tx': [-10, 10, 0.01], 'cam.ty': [-10, 10, 0.01], 'cam.tz': [-0.5, 10, 0.01], 'cam.focus': [0, 60, 0.05], 'cam.fstop': [0.7, 22, 0.1], squash: [-30, 30, 1], squashBody: [-30, 30, 1] };
 const LENSES = [15, 24, 35, 50, 85, 135];
 const VIEWS = [['Front', { yaw: 0, pitch: 4 }], ['¾ left', { yaw: -40, pitch: 6 }], ['¾ right', { yaw: 40, pitch: 6 }], ['Side', { yaw: 90, pitch: 2 }],
   ['Back', { yaw: 180, pitch: 4 }], ['Low angle', { pitch: -25, tz: 0.45 }], ['High angle', { pitch: 45 }], ['Top down', { pitch: 85 }]];
@@ -477,6 +479,113 @@ async function postAct(a) {
   }
 }
 
+// ---------------------------------------------------------------- feature picks part 2 (features2.js)
+let previzOn = false;
+const f2Ctx = () => ({ ...anim2Ctx(), charName, detectBeats: () => detectBeats(envelopeNow(), sceneStart(), project.length, scene.fps) });
+async function featRun(a) { try { const r = await feat(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
+async function feat(a) {
+  const c = f2Ctx(), F = a.frame ?? frame, done = (r, message) => ({ ...r, message });
+  const changed = () => { dirty = true; apply(); drawTracks(); updateHud(); };
+  switch (a.action) {
+    case 'squash': { pushUndo('Squash and stretch'); const r = F2.squashMove(c, a.kind || 'land', F, a.amount ?? 20); changed(); return done(r, `${F2.SQUASH_MOVES[r.kind]} squash at frame ${F}: anticipation, hit, overshoot, settle`); }
+    case 'contact': {
+      const limb = a.limb || 'armL', to = Math.min(project.length - 1, a.to ?? F + 24);
+      pushUndo('Hand contact'); const r = F2.handContact(c, limb, a.where || 'hip', a.from ?? F, to); changed();
+      return done(r, `${F2.CONTACTS[r.where]} (${limb === 'armL' ? 'left' : 'right'}), frames ${r.from}–${r.to}${r.worstErrorCm > 1.5 ? `, off by up to ${r.worstErrorCm} cm: the arm is at its limit` : ''}`);
+    }
+    case 'beat_cam': { pushUndo('Beat camera'); const r = F2.beatCamera(c, a.style || 'punch', { amount: a.amount ?? 0.08, angles: a.angles || null }); changed(); return done(r, `${F2.BEAT_STYLES[r.style]}: ${r.beats} beats`); }
+    case 'save_angle': { const r = F2.saveAngle(c, a.name); dirty = true; return done(r, `Angle "${r.angle}" saved`); }
+    case 'angles': return { angles: scene.angles || {} };
+    case 'delete_angle': { if (scene.angles) delete scene.angles[a.name]; dirty = true; return { angles: Object.keys(scene.angles || {}) }; }
+    case 'cut_to': { pushUndo('Cut to angle'); const r = F2.cutTo(c, a.name, F); changed(); return done(r, `Cut to ${r.angle} at frame ${F}`); }
+    case 'cam_markers': { pushUndo('Camera cuts'); const r = F2.camMarkers(c); changed(); return done(r, `${r.cuts.length} cuts from "cam:" markers`); }
+    case 'plan_path': { pushUndo('Floor-plan path'); const r = F2.floorPath(c, a.points, a.from ?? F, Math.min(project.length - 1, a.to ?? project.length - 1), a.step ?? 3); changed(); return done(r, `Camera path keyed: ${r.metres} m over frames ${r.from}–${r.to}`); }
+    case 'plan_info': return F2.camPlanPos(project, F);
+    case 'previz': { previzOn = a.on ?? !previzOn; F2.setPreviz(view, previzOn); apply(); return done({ previz: previzOn }, previzOn ? 'Previz grey: blocking in plain grey' : 'Previz off'); }
+    case 'render_previz': { const r = await (a.scene ? renderScene(true, false, true) : render(false, true, null, true)); return { started: !!r }; }
+    case 'stick': { pushUndo('Pose from stick figure'); const r = F2.poseFromStick(c, a.strokes || [], a.aspect || view.camera.aspect, F); changed(); return done(r, `Posed from the stick figure (${Object.keys(r.limbs).length} limbs, lean ${r.bodyTilt}°)`); }
+    case 'script': return scriptToBlocking(a.text || '', { captions: !!a.captions });
+    case 'measure': { const r = F2.measure(view, valuesNow()); apply(); return r; }
+    default: throw Error('Unknown action ' + a.action);
+  }
+}
+async function scriptToBlocking(text, { captions = false } = {}) {
+  const parsed = F2.parseScript(text, scene.fps);
+  if (!parsed.length) throw Error('Paste a script: scene headings (INT. / EXT. or #), lines like "BUNNY: hi", actions in (brackets)');
+  await loadLibrary(api);
+  const rows = libraryRows(), made = [], missed = [];
+  pushUndo('Script to blocking');
+  for (const sh of parsed) {
+    const code = nextCode(scene, scene.shots.length - 1), s = newShotData(code, Math.max(sh.frames, scene.fps));
+    s.label = sh.name.slice(0, 40);
+    scene.shots.push(s); scene.active = scene.shots.length - 1; frame = 0; useScene(scene);
+    let moves = 0;
+    for (const l of sh.lines) {
+      if (l.say) {
+        project.markers.push({ f: l.f, note: (l.who ? l.who + ': ' : '') + l.say });
+        if (captions) P.addCaption(scene, project, l.f, l.f + l.length, l.say, 'en');
+      }
+      for (const act of l.acts) {
+        const r = F2.actionFor(rows, act);
+        if (!r) { missed.push(act); continue; }
+        try { await useItem(libCtx(), r.id, { frame: l.f, prompt: false }); moves++; } catch { missed.push(act); }
+      }
+    }
+    project.markers.sort((x, y) => x.f - y.f);
+    made.push({ shot: s.code, name: s.label, lines: sh.lines.length, moves, seconds: +(s.length / scene.fps).toFixed(1) });
+  }
+  dirty = true; useScene(scene);
+  return { shots: made, missed, message: `${made.length} shot${made.length > 1 ? 's' : ''} blocked from the script${missed.length ? `; no library match for: ${missed.slice(0, 4).join(', ')}` : ''}` };
+}
+function stickMode() {
+  const fr = $('#frame');
+  document.getElementById('stick-layer')?.remove(); document.querySelector('.stick-bar')?.remove();
+  const cv = h('canvas', { id: 'stick-layer' }), strokes = [];
+  fr.append(cv);
+  const size = () => { cv.width = fr.clientWidth; cv.height = fr.clientHeight; redraw(); };
+  const redraw = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.strokeStyle = '#1F1F1D'; g.lineWidth = 4; g.lineCap = g.lineJoin = 'round'; for (const s of strokes) { g.beginPath(); s.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); } };
+  let cur = null;
+  const xy = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); cur = [xy(e)]; strokes.push(cur); });
+  cv.addEventListener('pointermove', e => { if (cur) { cur.push(xy(e)); redraw(); } });
+  cv.addEventListener('pointerup', () => { cur = null; });
+  const close = () => { cv.remove(); bar.remove(); };
+  const bar = h('div', { class: 'stick-bar' }, h('span', {}, 'Draw a stick figure: a head circle, a body line, then arms and legs'),
+    h('button', { class: 'primary', onclick: () => { const W = cv.width, H = cv.height; featRun({ action: 'stick', strokes: strokes.map(s => s.map(([x, y]) => [x / W, y / H])), aspect: W / H }); close(); } }, 'Pose it'),
+    h('button', { onclick: () => { strokes.length = 0; redraw(); } }, 'Clear'), h('button', { onclick: close }, 'Cancel'));
+  fr.append(bar);
+  size();
+}
+function contactDialog() {
+  modal({ h }, 'Hand contact', close => {
+    const to = h('input', { type: 'number', min: frame, max: project.length - 1, value: Math.min(project.length - 1, frame + 24), style: 'width:64px', 'aria-label': 'To frame' });
+    const limb = h('select', { 'aria-label': 'Which hand' }, h('option', { value: 'armL' }, 'Left hand'), h('option', { value: 'armR' }, 'Right hand'));
+    return [h('p', { class: 'hint' }, `The paw rests on the ${charName()}'s body and stays on that spot as he moves, a paw's thickness off the hoodie. It never goes into the head.`),
+      h('div', { class: 'row' }, limb, h('label', { class: 'row' }, ` from frame ${frame} to `, to)),
+      h('div', { class: 'row', style: 'flex-wrap:wrap' }, ...Object.entries(F2.CONTACTS).map(([k, n]) => h('button', { onclick: () => { close(); featRun({ action: 'contact', limb: limb.value, where: k, to: Number(to.value) }); } }, n)), h('button', { onclick: close }, 'Cancel'))];
+  });
+}
+function angleDialog() {
+  const names = Object.keys(scene.angles || {});
+  modal({ h }, 'Multi-cam angles', close => {
+    const name = h('input', { type: 'text', value: String.fromCharCode(65 + names.length), style: 'width:80px', 'aria-label': 'Angle name' });
+    return [h('p', { class: 'hint' }, 'Save the camera as a named angle, then cut to it at the playhead, on the beat, or with markers like "cam: B".'),
+      h('div', { class: 'row' }, name, h('button', { onclick: () => { close(); featRun({ action: 'save_angle', name: name.value }).then(() => angleDialog()); } }, 'Save this angle')),
+      h('div', { class: 'ds-list' }, ...names.map(n => h('div', { class: 'row' }, h('b', { style: 'min-width:5em' }, n),
+        h('button', { onclick: () => { close(); featRun({ action: 'cut_to', name: n }); } }, 'Cut to it here'), h('button', { onclick: () => { close(); featRun({ action: 'delete_angle', name: n }).then(() => angleDialog()); } }, 'Delete')))),
+      h('div', { class: 'row' }, h('button', { onclick: () => { close(); featRun({ action: 'cam_markers' }); } }, 'Cuts from "cam:" markers'), h('button', { onclick: close }, 'Close'))];
+  });
+}
+function scriptDialog() {
+  modal({ h }, 'Script to blocking', close => {
+    const ta = h('textarea', { rows: 12, style: 'width:100%', placeholder: 'INT. KITCHEN\nBUNNY: (waves) Hi, I made toast.\n(shocked) It is on fire.\n\n# The fix\nBUNNY: (shrug) Cereal it is.' });
+    const caps = h('input', { type: 'checkbox' });
+    return [h('p', { class: 'hint' }, 'Each scene heading becomes a shot. Each line gets a marker and its length from the words; actions in (brackets) pick a motion or a face from the library. Undo puts it all back.'),
+      ta, h('label', { class: 'row' }, caps, ' Also add each line as a caption'),
+      h('div', { class: 'row' }, h('button', { class: 'primary', onclick: () => { close(); featRun({ action: 'script', text: ta.value, captions: caps.checked }); } }, 'Block it'), h('button', { onclick: close }, 'Cancel'))];
+  });
+}
+
 // ---------------------------------------------------------------- animator tools part 2 (animtools2.js)
 let ikOn = false, pathWhat = null, pathPts = null, pathSig = '', pathPops = [], curves = false, editLayer = -1, balanceOn = false, balanceNow = null, multi = [], refLoaded = null;
 const graphSel = {};
@@ -644,7 +753,10 @@ const MENUS = [
   ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
-  ['Camera', [...LENSES.map(l => [`${l} mm lens`, () => camSet({ lens: l })]), '-', ...VIEWS.map(([n, c]) => [n, () => camSet(c)]), '-', ['Dolly zoom: wide, keep size', () => dollyTo(18)], ['Dolly zoom: long, keep size', () => dollyTo(100)]]],
+  ['Camera', [...LENSES.map(l => [`${l} mm lens`, () => camSet({ lens: l })]), '-', ...VIEWS.map(([n, c]) => [n, () => camSet(c)]), '-', ['Dolly zoom: wide, keep size', () => dollyTo(18)], ['Dolly zoom: long, keep size', () => dollyTo(100)], '-',
+    ['Multi-cam angles…', () => angleDialog()], ['Beat-synced camera…', () => pick2('Beat-synced camera', Object.entries(F2.BEAT_STYLES), st => featRun({ action: 'beat_cam', style: st }))],
+    ['Floor-plan camera path…', () => F2.planDialog(f2Ctx(), { h, modal }, (pts, a, b) => featRun({ action: 'plan_path', points: pts, from: a, to: b }))], '-',
+    ['Previz grey on / off', () => featRun({ action: 'previz' })], ['Render a previz of this shot', () => featRun({ action: 'render_previz' })]]],
   ['Animate', [['Breakdown halfway (tween)', () => breakdown(animCtx(), 50)], ['Stepped blocking on / off', () => toggleStepped()], '-',
     ['Simplify keys', () => toast(`Removed ${simplify(animCtx()).removed} keys the curves did not need`, 4000)],
     ['Loop check', () => { const r = loopCheck(animCtx()); toast(r.seamless ? 'Seamless: the last frame matches the first' : `Not seamless: ${r.mismatched.map(m => LABEL[m.id] || m.id).slice(0, 4).join(', ')}${r.mismatched.length > 4 ? '…' : ''}`, 5000); }],
@@ -656,7 +768,8 @@ const MENUS = [
     ['Time warp…', () => warpDialog()], ['Moving hold from the playhead…', () => holdPrompt()], ['Euler filter (no 360° flips)', () => toast(`Euler filter: ${A2.eulerFilter(anim2Ctx()).fixed} flips unwound`)], '-',
     ['Add animation layer', () => newLayer()], ['Copy keys (this shot)', () => copyKeysNow(), 'Ctrl+Shift+C'], ['Paste keys at the playhead', () => { try { pasteKeysNow(); } catch (e) { toast(e.message); } }, 'Ctrl+Shift+V'],
     ['Retarget the scene to…', () => pick2('Retarget the scene to', CHARACTERS.map(c => [c[0], c[1]]), c => retargetTo(c).catch(e => toast(e.message, 5000)))], '-',
-    ['Reference video…', () => referenceVideo().catch(e => toast(e.message, 5000))], ['Remove reference video', () => clearReference()]]],
+    ['Reference video…', () => referenceVideo().catch(e => toast(e.message, 5000))], ['Remove reference video', () => clearReference()], '-',
+    ['Squash and stretch at the playhead…', () => pick2('Squash and stretch', Object.entries(F2.SQUASH_MOVES), k => featRun({ action: 'squash', kind: k }))], ['Hand contact (hip, belly, chest)…', () => contactDialog()], ['Pose from a stick figure (draw it)', () => stickMode()]]],
   ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
     ['Export YouTube chapters', () => exportChapters()], ['Chapter cards from the chapter markers', () => storyRun('chapter_cards')], '-',
     ['Cold open: flash forward to this shot…', () => storyRun('cold_open')], ['Story beat map…', () => beatMapDialog()], ['Mood strip…', () => S2.moodStripDialog(s2Ctx())],
@@ -666,7 +779,7 @@ const MENUS = [
     ['Sponsor segue after this shot…', () => { const n = prompt('Sponsor name:'); if (n) storyRun('sponsor', { name: n }); }], '-',
     ['Make Shorts from this video', () => storyRun('shorts')], ['Import retention CSV (YouTube Studio)…', () => retentionImport()], ['Clear the retention overlay', () => storyRun('retention_clear')], '-', ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())], '-',
     ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()],
-    ['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()]]],
+    ['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Script to blocking…', () => scriptDialog()]]],
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
     ['Overnight batch…', () => batchDialog(prodCtx())], ['Cancel sleep after renders', () => api('sleep-when-done', { on: false }).then(() => toast('The PC will stay awake'))], '-',
     ['Render presets…', () => presetsDialog(prodCtx())], ['Pack project…', () => pack(prodCtx()).catch(e => toast(e.message, 5000))], ['Clean up cache…', () => cacheDialog(prodCtx()).catch(e => toast(e.message, 5000))]]],
@@ -793,7 +906,7 @@ function buildPanel() {
       h('div', { class: 'row' }, h('button', { class: 'primary', onclick: () => renderScene() }, 'Render scene'), h('button', { onclick: () => render() }, `Render ${project.code}`),
         h('button', { onclick: () => render(true) }, 'This frame')),
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => renderScene(true), title: 'Every shot at half size without cloth: a fast check of timing and cuts' }, 'Quick preview scene'),
-        h('button', { onclick: () => render(false, true), title: 'This shot at half size without cloth' }, 'Quick preview shot'), h('button', { onclick: cancelRender }, 'Cancel')),
+        h('button', { onclick: () => render(false, true), title: 'This shot at half size without cloth' }, 'Quick preview shot'), h('button', { onclick: () => render(false, true, null, true), title: 'Grey clay blocking pass: fastest, no cloth, no springs' }, 'Previz (grey)'), h('button', { onclick: cancelRender }, 'Cancel')),
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => runPreflight(false), title: 'Audio, lip sync, captions and the moderator PASS, before the final export' }, 'Check before export')),
       h('div', { id: 'render-estimate', class: 'hint' }, ''), h('div', { id: 'render-status', class: 'hint' }, ''), autosavePanel(), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
         h('button', { onclick: pickBlender }, 'Change…')));
@@ -1429,23 +1542,23 @@ const ALL_IDS = () => BUNNY_IDS.concat(FACE_IDS, CAM_IDS);
 const character = () => scene.character || 'bunny';
 const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s));
 const idleNow = () => idleFor(project, data.face.faces, character());
-async function render(still = false, preview = false, stillFrame = null) {
+async function render(still = false, preview = false, stillFrame = null, previz = false) {
   if (!still && !preview && !(await diskOk(polCtx()))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
     const post = still ? null : await buildPost([scene.active], false);
-    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: bridge(project), fps: scene.fps, width: scene.width, height: scene.height, post });
+    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: previz ? { ...bridge(project), previz: true } : bridge(project), fps: scene.fps, width: scene.width, height: scene.height, post });
     toast(r.message || 'Render started');
     pollRender();
     return r;
   } catch (e) { toast('Render failed to start: ' + e.message, 5000); throw e; }
 }
-async function renderScene(preview = false, checked = false) {
+async function renderScene(preview = false, checked = false, previz = false) {
   if (!preview && !checked) return runPreflight(true);
   if (!preview && !(await diskOk(polCtx(), 10))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
-    const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: bridge(bindShot(scene, s)) }));
+    const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: previz ? { ...bridge(bindShot(scene, s)), previz: true } : bridge(bindShot(scene, s)) }));
     const post = await buildPost(scene.shots.map((_, i) => i), true);
     const r = await api('render-scene', { name: scene.name, fps: scene.fps, width: scene.width, height: scene.height, audio: scene.audio?.path || null, preview, shots, post });
     toast(r.message || 'Scene render started');
@@ -1652,7 +1765,7 @@ function loop() {
       return r;
     },
     setStage(patch, shotOnly) {
-      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet'].includes(k));
+      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet'].includes(k));
       if (bad.length) throw Error('Unknown stage keys: ' + bad.join(', '));
       const r = setStage(libCtx(), patch, !!shotOnly);
       if (tab === 'library') buildPanel();
@@ -1699,6 +1812,8 @@ function loop() {
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // features2.js (MCP tool "features")
+    async features(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await feat(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // post.js (MCP tool "post")
     async post(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await postAct(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // storytime2.js (MCP tool "story2")

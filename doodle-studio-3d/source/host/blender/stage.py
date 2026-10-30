@@ -39,7 +39,7 @@ def _library():
 
 def needed(shot):
     st = shot.get('stage') or {}
-    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet')))
+    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet')))
 
 
 def setup(shot, log):
@@ -65,7 +65,9 @@ def setup(shot, log):
         dl.set_time(st['time'])
     if st.get('sky'):
         dl.sky(st['sky'])
-    dl.set_shadows(bool(st.get('shadows')))
+    dl.set_shadows(bool(st.get('shadows') or st.get('halftone')))
+    if st.get('halftone'):
+        done.append('halftone %d materials' % halftone(int(st.get('halftone_cells') or 90)))
     if st.get('outfit'):
         dl.insert('outfit-' + st['outfit'])
         done.append('outfit ' + st['outfit'])
@@ -78,6 +80,54 @@ def setup(shot, log):
         done.append('mouths ' + st['mouthSet'])
     log('stage: ' + (', '.join(done) or 'light only'))
     return [dict(i) for i in shot.get('items') or []]
+
+
+def halftone(cells=90):
+    """Comic-book halftone: inside the toon materials, the cel-shadow factor is multiplied by a
+    screen-space dot grid (Window coordinates), so shadows print as ink dots. Opt-in."""
+    sc = bpy.context.scene
+    aspect = sc.render.resolution_x / max(1, sc.render.resolution_y)
+    n = 0
+    for m in bpy.data.materials:
+        if not m.get('dsl_toon') or not m.node_tree or m.get('dsl_halftone'):
+            continue
+        nt = m.node_tree
+        mix = next((x for x in nt.nodes if x.bl_idname == 'ShaderNodeMix' and x.inputs['Factor'].is_linked and x.inputs['B'].is_linked
+                    and x.inputs['B'].links[0].from_node.bl_idname == 'ShaderNodeMix' and not x.inputs['A'].is_linked), None)
+        if mix is None:
+            continue
+        fac = mix.inputs['Factor'].links[0].from_socket
+        tc = nt.nodes.new('ShaderNodeTexCoord')
+        grid = nt.nodes.new('ShaderNodeVectorMath')
+        grid.operation = 'MULTIPLY'
+        grid.inputs[1].default_value = (cells * aspect, cells, 1.0)
+        nt.links.new(tc.outputs['Window'], grid.inputs[0])
+        frac = nt.nodes.new('ShaderNodeVectorMath')
+        frac.operation = 'FRACTION'
+        nt.links.new(grid.outputs[0], frac.inputs[0])
+        centre = nt.nodes.new('ShaderNodeVectorMath')
+        centre.operation = 'SUBTRACT'
+        centre.inputs[1].default_value = (0.5, 0.5, 0.0)
+        nt.links.new(frac.outputs[0], centre.inputs[0])
+        flat = nt.nodes.new('ShaderNodeVectorMath')
+        flat.operation = 'MULTIPLY'
+        flat.inputs[1].default_value = (1.0, 1.0, 0.0)
+        nt.links.new(centre.outputs[0], flat.inputs[0])
+        dist = nt.nodes.new('ShaderNodeVectorMath')
+        dist.operation = 'LENGTH'
+        nt.links.new(flat.outputs[0], dist.inputs[0])
+        dot = nt.nodes.new('ShaderNodeMath')
+        dot.operation = 'LESS_THAN'
+        dot.inputs[1].default_value = 0.34
+        nt.links.new(dist.outputs['Value'], dot.inputs[0])
+        both = nt.nodes.new('ShaderNodeMath')
+        both.operation = 'MULTIPLY'
+        nt.links.new(fac, both.inputs[0])
+        nt.links.new(dot.outputs[0], both.inputs[1])
+        nt.links.new(both.outputs[0], mix.inputs['Factor'])
+        m['dsl_halftone'] = 1
+        n += 1
+    return n
 
 
 def place(items, log):
