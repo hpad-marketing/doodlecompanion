@@ -200,6 +200,16 @@ const api = {
     const r = await dialog.showOpenDialog(main, { title: 'Reference video', filters: [{ name: 'Video', extensions: ['mp4', 'm4v', 'webm', 'mov'] }], properties: ['openFile'] });
     return { path: r.canceled ? null : r.filePaths[0] || null };
   },
+  // a real photo for a cut-in: any image the user picks, read once
+  async 'pick-image'() {
+    const r = await dialog.showOpenDialog(main, { title: 'Photo for a cut-in', filters: [{ name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp'] }], properties: ['openFile'] });
+    return { path: r.canceled ? null : r.filePaths[0] || null };
+  },
+  async 'read-image'({ path: p }) {
+    if (!/[.](png|jpe?g|webp)$/i.test(String(p))) throw Error('Not an image file');
+    if (fs.statSync(p).size > 30e6) throw Error('Image over 30 MB');
+    return { data: fs.readFileSync(p).toString('base64'), type: /png$/i.test(p) ? 'image/png' : /webp$/i.test(p) ? 'image/webp' : 'image/jpeg' };
+  },
   async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
   async 'read-audio'({ path: p }) {
     if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');

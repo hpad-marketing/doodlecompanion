@@ -93,6 +93,15 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     return { ...r, tag, out, check, report };
   }
 
+  // the censor bleep: a plain sine tone, 16-bit mono WAV
+  function toneWav(hz, seconds, sr = 44100) {
+    const n = Math.round(sr * seconds), b = Buffer.alloc(44 + n * 2);
+    b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22);
+    b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr * 2, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40);
+    for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(0.5 * 32767 * Math.sin(2 * Math.PI * hz * i / sr)), 44 + i * 2);
+    return b;
+  }
+
   async function runJob(j) {
     const f = folders(j.name);
     const shots = j.req.shots;
@@ -120,7 +129,8 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       return;
     }
     j.rules = done.every(d => !d.rules || d.rules === 'PASS') ? 'PASS' : done.map(d => d.rules).find(r => r && r !== 'PASS');
-    if (!j.scene) { j.state = 'done'; j.video = done[0]?.out; j.id = path.basename(done[0]?.out || j.id); return; }
+    // a single shot is joined too when it carries storytime post (looks, cut-ins, captions)
+    if (!j.scene && (j.req.still || !j.req.post)) { j.state = 'done'; j.video = done[0]?.out; j.id = path.basename(done[0]?.out || j.id); return; }
     // join the shots in order
     const tag = nextVersion(f.renders, base(j.name));
     const out = path.join(f.renders, tag + '.mp4');
@@ -130,7 +140,16 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     j.step = 'joining shots';
     const k = j.req.preview ? 0.5 : 1;   // quick previews render at half size
     const args = ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'ds_concat.py'), '--', out, String(j.req.fps), String(Math.round(j.req.width * k)), String(Math.round(j.req.height * k))];
-    if (j.req.audio && fs.existsSync(j.req.audio)) args.push('--audio', j.req.audio);
+    // a single shot's own voice is already inside its render; only a scene adds the scene audio
+    if (j.scene && j.req.audio && fs.existsSync(j.req.audio)) args.push('--audio', j.req.audio);
+    if (j.req.post) {
+      const post = { ...j.req.post };
+      // the imagination bubble can play another shot of this scene: its fresh render
+      post.movies = (post.movies || []).map(m => (m.shotRef ? { ...m, path: done.find(d => d.code === m.shotRef)?.out || null } : m));
+      if ((post.bleeps || []).length) { post.bleep = path.join(check, 'bleep.wav'); fs.writeFileSync(post.bleep, toneWav(1000, 3)); }
+      fs.writeFileSync(path.join(check, 'post.json'), JSON.stringify(post, null, 1));
+      args.push('--post', path.join(check, 'post.json'));
+    }
     args.push('--', ...done.map(d => d.out));
     j.frameBase = 0;
     const r = await runBlender(j, args, path.join(check, 'blender.log'));
