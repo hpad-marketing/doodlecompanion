@@ -6,10 +6,11 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
+import { historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -103,11 +104,14 @@ function toast(msg, ms = 2200) {
 }
 
 // ---------------------------------------------------------------- undo
-function snapshot() { return JSON.stringify(scene); }
-function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 200) undoStack.shift(); redoStack = []; dirty = true; }
-function restore(json) { useScene(migrate(JSON.parse(json))); }
-function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); }
-function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); }
+// each entry is the scene before a change, with a name for the Undo history panel
+let nextLabel = null;
+const entry = label => ({ json: JSON.stringify(scene), label: label || nextLabel || 'Edit', at: Date.now() });
+function pushUndo(label) { undoStack.push(entry(label)); if (undoStack.length > 200) undoStack.shift(); redoStack = []; dirty = true; }
+function restore(e) { useScene(migrate(JSON.parse(e.json))); }
+function undo() { if (!undoStack.length) return; const e = undoStack.pop(); redoStack.push({ ...entry(e.label) }); restore(e); }
+function redo() { if (!redoStack.length) return; const e = redoStack.pop(); undoStack.push(entry(e.label)); restore(e); }
+function jumpTo(i) { while (undoStack.length > i) undo(); }
 
 // ---------------------------------------------------------------- scene and shots (same model as the 2D app)
 function useScene(sc) {
@@ -252,7 +256,7 @@ const MENUS = [
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
-  ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
+  ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M']]],
   ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
@@ -266,6 +270,9 @@ const MENUS = [
     ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))]]],
   ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
     ['Export YouTube chapters', () => exportChapters()], ['Story bible…', () => bibleDialog(polCtx())]]],
+  ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
+    ['Overnight batch…', () => batchDialog(prodCtx())], ['Cancel sleep after renders', () => api('sleep-when-done', { on: false }).then(() => toast('The PC will stay awake'))], '-',
+    ['Render presets…', () => presetsDialog(prodCtx())], ['Pack project…', () => pack(prodCtx()).catch(e => toast(e.message, 5000))], ['Clean up cache…', () => cacheDialog(prodCtx()).catch(e => toast(e.message, 5000))]]],
   ['Help', [['Controls and shortcuts', showHelp, 'F1']]],
 ];
 
@@ -277,7 +284,7 @@ function buildMenu() {
     for (const it of items) {
       if (it === '-') { list.append(h('hr')); continue; }
       const [label, fn, key] = it;
-      list.append(h('button', { role: 'menuitem', onclick: () => { closeMenus(); fn(); } }, h('span', {}, label), key ? h('kbd', {}, key) : null));
+      list.append(h('button', { role: 'menuitem', onclick: () => { closeMenus(); nextLabel = label.replace(/…$/, ''); try { fn(); } finally { nextLabel = null; } } }, h('span', {}, label), key ? h('kbd', {}, key) : null));
     }
     const btn = h('button', { 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: e => { const m = e.currentTarget.parentElement; const open = !m.classList.contains('open'); closeMenus(); if (open) { m.classList.add('open'); e.currentTarget.setAttribute('aria-expanded', 'true'); } } }, name);
     bar.append(h('div', { class: 'menu' }, btn, list));
@@ -299,9 +306,9 @@ function control(id) {
   const slider = h('input', { type: 'range', min: lo, max: hi, step, value: v, 'aria-label': LABEL[id] || id });
   const num = h('input', { type: 'number', min: lo, max: hi, step, value: round(v), 'aria-label': (LABEL[id] || id) + ' value' });
   const dot = h('span', { class: 'keydot', title: 'Key this value at the playhead (click again to remove the key)' });
-  slider.addEventListener('pointerdown', () => pushUndo());
+  slider.addEventListener('pointerdown', () => pushUndo(LABEL[id] || id));
   slider.addEventListener('input', () => { setValue(id, Number(slider.value)); num.value = round(Number(slider.value)); });
-  num.addEventListener('change', () => { pushUndo(); setValue(id, Number(num.value)); });
+  num.addEventListener('change', () => { pushUndo(LABEL[id] || id); setValue(id, Number(num.value)); });
   dot.addEventListener('click', () => {
     pushUndo();
     if (hasKey(project, id, frame)) deleteKey(project, id, frame); else setKey(project, id, frame, current(id));
@@ -364,17 +371,20 @@ function buildPanel() {
       h('h3', {}, `Scene: ${scene.shots.length} shot${scene.shots.length > 1 ? 's' : ''}, ${(sceneFrames() / scene.fps).toFixed(1)} s`),
       field('Frame rate', scene, 'fps', { type: 'number', min: 12, max: 60 }),
       field('Width (px)', scene, 'width', { type: 'number', min: 64, max: 3840 }), field('Height (px)', scene, 'height', { type: 'number', min: 64, max: 3840 }));
-    c.append(h('div', { class: 'chips', style: 'margin:6px 0' }, ...[['Reel 9:16', 1080, 1920], ['YouTube 16:9', 1920, 1080], ['Square 1:1', 1080, 1080]].map(([n, w, hh]) =>
-      h('button', { 'aria-pressed': String(project.width === w && project.height === hh), onclick: () => { pushUndo(); project.width = w; project.height = hh; layout(); buildPanel(); } }, n))));
+    c.append(h('div', { class: 'chips', style: 'margin:6px 0' }, ...presets().map(p =>
+      h('button', { 'aria-pressed': String(scene.width === p.width && scene.height === p.height && scene.fps === p.fps), title: `${p.width}×${p.height}, ${p.fps} fps`, onclick: () => applyPreset(prodCtx(), p.name) }, p.name)),
+      h('button', { title: 'Add, rename or change presets', onclick: () => presetsDialog(prodCtx()) }, 'Edit…')));
     c.append(h('h3', {}, 'Blender render'), h('p', { class: 'hint' }, 'Renders run in the background in Blender: hoodie cloth, ear and tail springs, the collision solver, then the 3D rule checks. Render scene renders every shot in order and joins them into one video; shots that have not changed since their last render are reused. Everything goes to DeepInDoodles\\<scene>\\work: videos in renders, logs and rule reports in checks. Only the approved final goes at the top.'),
       h('div', { class: 'row' }, h('button', { class: 'primary', onclick: () => renderScene() }, 'Render scene'), h('button', { onclick: () => render() }, `Render ${project.code}`),
         h('button', { onclick: () => render(true) }, 'This frame')),
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => renderScene(true), title: 'Every shot at half size without cloth: a fast check of timing and cuts' }, 'Quick preview scene'),
         h('button', { onclick: () => render(false, true), title: 'This shot at half size without cloth' }, 'Quick preview shot'), h('button', { onclick: cancelRender }, 'Cancel')),
-      h('div', { id: 'render-status', class: 'hint' }, ''), autosavePanel(), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
+      h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => runPreflight(false), title: 'Audio, lip sync, captions and the moderator PASS, before the final export' }, 'Check before export')),
+      h('div', { id: 'render-estimate', class: 'hint' }, ''), h('div', { id: 'render-status', class: 'hint' }, ''), autosavePanel(), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
         h('button', { onclick: pickBlender }, 'Change…')));
     api('settings', {}).then(s => { const el = $('#blender-path'); if (el) el.textContent = s.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
     pollRender();
+    estimate(prodCtx(), sceneFrames()).then(e => { const el = $('#render-estimate'); if (el) el.textContent = 'Scene: ' + e.text; });
   }
 }
 
@@ -426,6 +436,33 @@ async function storyboard() {
   toast('Storyboard saved: ' + (r.path || 'work\\storyboard'), 5000);
   return { path: r.path, shots: scene.shots.length };
 }
+
+// ---------------------------------------------------------------- production.js: history, change log, presets, preflight, batch, health
+function showFrame(s, f) {
+  const i = scene.shots.indexOf(s);
+  if (i >= 0 && i !== scene.active) { scene.active = i; project = bindShot(scene, s); }
+  frame = Math.max(0, Math.min(project.length - 1, f | 0)); apply();
+}
+const prodCtx = () => ({
+  h, api, toast, view: () => view, scene: () => scene, project: () => project, frame: () => frame, file: () => filePath, showFrame, valueAt,
+  pushUndo, history: () => undoStack.map(e => ({ label: e.label, at: e.at })), jumpTo,
+  setLabel: l => { nextLabel = l; },
+  replaceScene: sc => { useScene(migrate(sc)); dirty = true; },
+  changed: lengthToo => { dirty = true; if (lengthToo) { layout(); buildTimelineTools(); } apply(); drawTracks(); buildPanel(); updateHud(); },
+  rebuild: () => buildPanel(),
+  envelope: () => envelopeNow(),
+  bridgeFor: (sc, s) => toBridgeShot(bindShot(sc, s), ALL_IDS(), data.face.faces, sc.character || 'bunny', stageOf(sc, s)),
+  autosaveMinutes: () => autosaveSettings().minutes, setAutosave: p => { const r = setAutosave(p); startAutosave(polCtx()); return r; },
+  importAudio: () => importAudio(),
+});
+const envelopeNow = () => (audioInfo() ? audioEnvelope(scene.fps) : null);
+async function runPreflight(thenRender) {
+  const r = preflight(prodCtx(), scene, { envelope: envelopeNow(), project2d: projector(prodCtx()) });
+  r.estimate = (await estimate(prodCtx(), sceneFrames())).text;
+  preflightDialog(prodCtx(), r, () => renderScene(false, true));
+  return r;
+}
+window.ds3dClaude = { begin: (tool, n) => claude.begin(prodCtx(), tool, n), end: (n, failed) => { claude.end(prodCtx(), n, failed); updateHud(); } };
 
 // ---------------------------------------------------------------- polish.js: autosave, versions, command search, markers
 const polCtx = () => ({
@@ -834,7 +871,8 @@ async function render(still = false, preview = false, stillFrame = null) {
     return r;
   } catch (e) { toast('Render failed to start: ' + e.message, 5000); throw e; }
 }
-async function renderScene(preview = false) {
+async function renderScene(preview = false, checked = false) {
+  if (!preview && !checked) return runPreflight(true);
   if (!preview && !(await diskOk(polCtx(), 10))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
@@ -882,6 +920,7 @@ function bindKeys() {
     if (e.target.matches('input,select,textarea')) return;
     const k = e.key, c = e.ctrlKey || e.metaKey;
     if (c && k.toLowerCase() === 'k') { e.preventDefault(); commandSearch(polCtx()); }
+    else if (c && k.toLowerCase() === 'h' && !e.shiftKey) { e.preventDefault(); historyDialog(prodCtx()); }
     else if (c && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
     else if (c && k.toLowerCase() === 's') { e.preventDefault(); saveShot(e.shiftKey); }
     else if (c && k.toLowerCase() === 'o') { e.preventDefault(); openShot(); }
@@ -944,7 +983,7 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
       idle: { ...idleOf(project), events: idleNow()?.events || [] },
       keyed: Object.fromEntries(Object.entries(project.tracks).map(([id, ks]) => [id, ks.map(k => [k.f, round(k.v), k.ease])])) }),
     setValues(values, at, key) {
-      pushUndo();
+      pushUndo('Set ' + Object.keys(values).map(id => LABEL[id] || id).slice(0, 3).join(', ') + (Object.keys(values).length > 3 ? '…' : ''));
       if (at != null) goto(at);
       const was = autoKey; if (key != null) autoKey = !!key;
       try { for (const [id, v] of Object.entries(values)) setValue(id, Number(v)); } finally { autoKey = was; }
@@ -972,7 +1011,12 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
     moveShot(ref, to) { const i = shotIndex(ref); moveShot(Math.max(0, Math.min(scene.shots.length - 1, to)) - i, i); return this.state(); },
     deleteShot(ref) { const i = shotIndex(ref); if (scene.shots.length === 1) throw Error('A scene needs at least one shot'); pushUndo(); scene.shots.splice(i, 1); scene.active = Math.min(i, scene.shots.length - 1); useScene(scene); return this.state(); },
     render: (opts = {}) => render(opts.still != null, !!opts.preview, opts.still),
-    renderScene: (opts = {}) => renderScene(!!opts.preview),
+    async renderScene(opts = {}) {
+      if (opts.preview) return renderScene(true);
+      const r = preflight(prodCtx(), scene, { envelope: envelopeNow(), project2d: projector(prodCtx()) });
+      if (!r.ok) throw Error('The export preflight blocks this render: ' + r.checks.filter(c => !c.ok).map(c => `${c.label} (${c.detail})`).join('; ') + '. Fix these, or the user can override in Tools › Check before export.');
+      return renderScene(false, true);
+    },
     // carousel
     carousel() { const c = carouselOf(scene); return { size: c.size, slides: c.slides.map((s, i) => ({ index: i, id: s.id, shot: scene.shots.find(x => x.uid === s.shot)?.code || null, frame: s.frame, bubbles: s.bubbles })) }; },
     carouselSnap(shot, at) {
@@ -1060,6 +1104,32 @@ function loop() { view.render(); if (fpsTick() && fpsText()) updateHud(); reques
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // production.js (MCP tool "production")
+    async production(a = {}) {
+      const c = prodCtx();
+      const out = {
+        history: () => c.history().map((e, i) => ({ index: i, label: e.label, at: new Date(e.at).toISOString() })),
+        undo_to: () => { if (a.index == null) throw Error('index from history'); jumpTo(Number(a.index)); return { undoLeft: undoStack.length }; },
+        presets: () => presets(),
+        preset: () => applyPreset(c, a.name),
+        preflight: () => { const r = preflight(c, scene, { envelope: envelopeNow(), project2d: projector(c) }); return { ok: r.ok, checks: r.checks }; },
+        moderator_pass: () => { pushUndo('Moderator PASS'); return recordModeratorPass(scene, a.note || 'recorded by the moderator over MCP'); },
+        estimate: () => estimate(c, sceneFrames(), !!a.preview),
+        health: () => health(c),
+        fix: () => healthFix(c, a.fix),
+        pack: () => pack(c),
+        batch: async () => {
+          const jobs = [{ name: scene.name, scene }];
+          for (const f of a.files || []) { const r = await api('open-file', { file: f }); jobs.push({ name: r.project.name, scene: migrate(r.project) }); }
+          return runBatch(c, jobs, { preview: !!a.preview, sleep: false });
+        },
+        change_log: () => ({ changes: claude.list(), meter: claude.meter(scene) }),
+        revert_change: () => claude.revert(c, Number(a.index)),
+        meter: () => claude.meter(scene),
+      }[a.action];
+      if (!out) throw Error('action must be history, undo_to, presets, preset, preflight, moderator_pass, estimate, health, fix, pack, batch, change_log, revert_change or meter');
+      return out();
+    },
   };
   document.body.dataset.ready = '1';
   loop();

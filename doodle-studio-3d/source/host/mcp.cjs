@@ -27,6 +27,8 @@ const TOOLS = [
     { action: { enum: ['list', 'snap', 'size', 'move', 'remove', 'bubble', 'export'] }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, size: { enum: ['4:5', '1:1', '9:16'] }, slide: { type: 'integer', minimum: 0 }, to: { type: 'integer', minimum: 0 }, bubble: { type: 'object' } }, ['action']],
   ['set_idle', 'Idle life for the active shot (or every shot with allShots=true): blink=true turns Auto blink on, twitch=true turns Auto ear twitch on (the Frog\'s eye bumps pop instead). blinkEvery / twitchEvery are the average seconds between them (each gap is randomised); seed fixes the timing so renders repeat. Keyed blinks and ear moves always win. Returns the settings and the frames where blinks and twitches land.',
     { blink: { type: 'boolean' }, twitch: { type: 'boolean' }, blinkEvery: { type: 'number', minimum: 1.5, maximum: 12 }, twitchEvery: { type: 'number', minimum: 2, maximum: 30 }, seed: { type: 'integer', minimum: 1, maximum: 9999 }, allShots: { type: 'boolean' } }],
+  ['production', 'Production tools. action=history (undo history with labels) | undo_to (index: go back to just before that change) | presets | preset (name: apply a render preset to the scene) | estimate (render time at this PC\'s speed; preview) | preflight (the export gate: audio imported, lip sync sampled, captions short and in the safe zone below the face, moderator PASS for this exact version) | moderator_pass (note: the moderator records an overall PASS for the current version; any later edit voids it) | health (health check) | fix (fix: pick-blender, pick-library, autosave, relink-audio, trim-keys, renumber) | pack (scene + audio into work\\pack) | batch (files: more .ds3d scenes in DeepInDoodles to queue after this one; preview) | change_log (every Claude change this session + token meter) | revert_change (index: undo just that change; later edits stay) | meter (token estimate for this scene).',
+    { action: { enum: ['history', 'undo_to', 'presets', 'preset', 'estimate', 'preflight', 'moderator_pass', 'health', 'fix', 'pack', 'batch', 'change_log', 'revert_change', 'meter'] }, index: { type: 'integer', minimum: 0 }, name: { type: 'string' }, note: { type: 'string' }, fix: { type: 'string' }, files: { type: 'array', items: { type: 'string' } }, preview: { type: 'boolean' } }, ['action']],
   ['render_status', 'Progress of the current render (frame, frames, minutes left, queue).', {}],
   ['set_character', 'Put Bunny, the Koala or the Frog on stage for the whole scene. They share one rig, so every key, motion and camera move carries over; the Koala adds nose controls, and the Frog\'s ears are rigid eye bumps.', { character: { enum: ['bunny', 'koala', 'frog'] } }, ['character']],
   ['library_list', 'Search the Doodle Library on this PC and the built-in Blender pieces. category: motion (757 incl. mocap and performance), expression (faces and story beats), prop, scenery, set, outfit, accessory, effect, reaction, story, sound. Returns ids for library_use, plus mouthSets for set_stage. Without a query it lists the first matches of the category.',
@@ -101,6 +103,7 @@ module.exports = ({ call, api }) => {
       : call(`ds3d.importAudio(${a.action === 'remove' ? 'null' : JSON.stringify(a.path || '')})`),
     story: a => call(`ds3d.story(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
+    production: a => call(`ds3d.production(${JSON.stringify(a || {})})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
 
@@ -116,9 +119,16 @@ module.exports = ({ call, api }) => {
         const fn = handlers[params?.name];
         if (!fn) return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Unknown tool ' + params?.name } };
         try {
+          // the app logs each call (Claude change log, per-change undo, token meter)
+          await call(`window.ds3dClaude && ds3dClaude.begin(${JSON.stringify(params.name)}, ${JSON.stringify(params.arguments || {}).length})`).catch(() => {});
           const out = await fn(params.arguments || {});
-          return ok({ content: [{ type: 'text', text: JSON.stringify(out ?? { ok: true }) }] });
-        } catch (e) { return ok({ isError: true, content: [{ type: 'text', text: String(e && e.message || e) }] }); }
+          const text = JSON.stringify(out ?? { ok: true });
+          await call(`window.ds3dClaude && ds3dClaude.end(${text.length}, false)`).catch(() => {});
+          return ok({ content: [{ type: 'text', text }] });
+        } catch (e) {
+          await call(`window.ds3dClaude && ds3dClaude.end(0, true)`).catch(() => {});
+          return ok({ isError: true, content: [{ type: 'text', text: String(e && e.message || e) }] });
+        }
       }
       if (id === undefined) return null;   // notifications
       return { jsonrpc: '2.0', id, error: { code: -32601, message: 'Method not found: ' + method } };

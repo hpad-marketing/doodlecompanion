@@ -19,6 +19,31 @@ module.exports=({app,dialog,net,window,logDir})=>{
  // copy, replacing the one before.
  try{if(fs.existsSync(old)){fs.rmSync(previous,{recursive:true,force:true});fs.renameSync(old,previous);}}catch{try{fs.rmSync(old,{recursive:true,force:true});}catch{}}
  for(const dir of [root,__dirname])try{for(const name of fs.readdirSync(dir))if(/\.old-\d+$/.test(name))try{fs.unlinkSync(path.join(dir,name));}catch{}}catch{}
+ // Update safety check (hard rule: an update must never break the MCP). A new version is
+ // on probation until its MCP answers; if it doesn't, or the app fails to start twice,
+ // the previous version comes back by itself and this version is skipped.
+ const writeState=s=>{try{fs.mkdirSync(work,{recursive:true});fs.writeFileSync(stateFile,JSON.stringify(s,null,2));}catch{}};
+ const walk=(d,rel='')=>{let out=[];try{for(const e of fs.readdirSync(path.join(d,rel),{withFileTypes:true})){const r=path.join(rel,e.name);out=out.concat(e.isDirectory()?walk(d,r):[r]);}}catch{}return out;};
+ function rollback(reason){
+  const s=state(),from=path.join(previous,'files');
+  if(!s.probation||!fs.existsSync(from)){log('rollback not possible ('+reason+'): no previous version kept');return false;}
+  let back={};try{back=JSON.parse(fs.readFileSync(path.join(previous,'version.json'),'utf8'));}catch{}
+  const aside=path.join(work,'failed-'+(s.version||'unknown'));
+  for(const rel of walk(from)){const dst=path.join(root,rel),bad=path.join(aside,rel);try{fs.mkdirSync(path.dirname(bad),{recursive:true});if(fs.existsSync(dst))fs.renameSync(dst,bad);fs.mkdirSync(path.dirname(dst),{recursive:true});fs.copyFileSync(path.join(from,rel),dst);}catch(e){log('rollback '+rel+': '+e.message);}}
+  writeState({version:back.version||'',skip:[...new Set([...(s.skip||[]),s.version])],rolledBack:{from:s.version,reason,at:new Date().toISOString()}});
+  log('rolled back '+s.version+' -> '+(back.version||'?')+': '+reason);
+  return true;
+ }
+ {const s=state();if(s.probation){s.launches=(s.launches||0)+1;writeState(s);if(s.launches>=3&&rollback('the new version did not start properly twice')){restartNow();}}}
+ function restartNow(){try{app.relaunch();}catch{}app.exit(0);}
+ // main.cjs calls this once the window is up, with a probe of the app's own MCP
+ async function verify(probe){
+  const s=state();if(!s.probation)return 'stable';
+  let ok=false,why='';for(let i=0;i<3&&!ok;i++){try{ok=await probe();}catch(e){why=e.message;}if(!ok)await new Promise(r=>setTimeout(r,2000));}
+  if(ok){delete s.probation;delete s.launches;s.verified=new Date().toISOString();writeState(s);log('safety check passed for '+s.version+': MCP answers');return 'verified';}
+  if(rollback('the MCP did not answer'+(why?' ('+why+')':''))){const win=window();if(win&&!win.isDestroyed())await dialog.showMessageBox(win,{type:'warning',title:'Doodle Studio 3D update',message:'The update was undone',detail:'Version '+s.version+' started without its MCP connection, so the previous version is back. Doodle Studio 3D restarts now.'});restartNow();return 'rolled back';}
+  return 'failed';
+ }
  const sha=file=>new Promise(done=>{const hash=crypto.createHash('sha256');fs.createReadStream(file).on('error',()=>done('')).on('data',d=>hash.update(d)).on('end',()=>done(hash.digest('hex')));});
  async function get(url){let error;for(let i=0;i<3;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;error=Error(url+' '+r.status);}catch(e){error=e;}await new Promise(r=>setTimeout(r,1000*(i+1)));}throw error;}
  // One updater at a time, even with several Doodle Studio windows open.
@@ -31,6 +56,7 @@ module.exports=({app,dialog,net,window,logDir})=>{
   busy=true;const unlock=lock();if(!unlock){busy=false;if(manual)tell('Already checking for updates','Another Doodle Studio window is installing it.');return 'busy';}
   try{
    const m=await (await get(base+'manifest.json')).json();
+   if((state().skip||[]).includes(m.version)){if(manual)tell('An update was held back','Version '+m.version+' broke the MCP connection on this PC and was undone. The next fixed version installs as usual.');return 'skipped';}
    if(m.version===state().version){if(manual)tell('Doodle Studio 3D is up to date','You have version '+m.version+'.');return 'current';}
    if(m.runtime){let mine='';try{mine=fs.readFileSync(path.join(root,'version'),'utf8').trim();}catch{}
     if(mine!==m.runtime){log('update '+m.version+' needs runtime '+m.runtime+', have '+mine);if(!runtimeWarned||manual){runtimeWarned=true;dialog.showMessageBox(window(),{type:'info',title:'Doodle Studio 3D update',message:'Doodle Studio 3D '+m.version+' needs a full download',detail:'This update changes the app window itself, so it can\'t install in place. Ask Claude for the full build.'});}return;}}
@@ -53,7 +79,7 @@ module.exports=({app,dialog,net,window,logDir})=>{
      if(fs.existsSync(dst))fs.renameSync(dst,aside);done.push([dst,aside]);fs.renameSync(path.join(staged,file),dst);}}
    catch(error){for(const [dst,aside] of done.reverse()){try{fs.rmSync(dst,{force:true});}catch{}try{if(fs.existsSync(aside))fs.renameSync(aside,dst);}catch{}}throw error;}
    fs.rmSync(staged,{recursive:true,force:true});
-   fs.writeFileSync(stateFile,JSON.stringify({version:m.version,notes:m.notes||'',installed:new Date().toISOString()},null,2));log('installed '+m.version);
+   writeState({version:m.version,notes:m.notes||'',installed:new Date().toISOString(),probation:true,launches:0,skip:state().skip||[]});log('installed '+m.version+' (on probation until its MCP answers)');
    const win=window();if(!win||win.isDestroyed())return 'installed';
    const choice=await dialog.showMessageBox(win,{type:'info',title:'Doodle Studio 3D updated',message:'Doodle Studio 3D '+m.version+' is installed',detail:(m.notes?m.notes+'\n\n':'')+'Restart to start using it. Your projects stay as they are. If you choose Later, the new version opens next time you start Doodle Studio.',buttons:['Restart now','Later'],defaultId:0,cancelId:1});
    if(choice.response===0&&!win.isDestroyed()){restartAsked=Date.now();win.close();}
@@ -69,5 +95,5 @@ module.exports=({app,dialog,net,window,logDir})=>{
   spawn('powershell.exe',['-NoProfile','-WindowStyle','Hidden','-Command',`$i=0;while((Get-Process -Id ${process.pid} -ErrorAction SilentlyContinue) -and $i -lt 60){Start-Sleep -Milliseconds 500;$i++};Start-Sleep -Milliseconds 800;Start-Process -FilePath '${exe}'`],{detached:true,stdio:'ignore',windowsHide:true}).unref();
  });
  setTimeout(check,45000);setInterval(check,60*60000);
- return {check};
+ return {check,verify,rollback};
 };

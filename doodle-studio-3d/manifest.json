@@ -1,8 +1,8 @@
 {
- "version": "20261030-130129",
- "notes": "Scene audio: import a voice or music track for the whole scene, hear it while you play, see its waveform under the timeline, and let it drive any control (Animate > Audio drives a control). Turntable camera, 3D headline text, and a new Story menu: hook and retention check, YouTube chapters from markers, loop-back ending, story bible and running-gag tracker. New MCP tools: audio and story.",
+ "version": "20261030-131512",
+ "notes": "Never lose work, and safer exports. Edit > Undo history (Ctrl+H). Tools > Claude change log undoes any single Claude change and shows a token meter. Render presets you can edit, with a render-time estimate. Tools > Check before export blocks a final render until the audio is in, lip sync is sampled, captions are short and below the face, and the moderator PASS matches this version. Overnight batch that can sleep the PC, Health check with one-click fixes, Pack project, Clean up cache, a nightly backup of every scene (7 days), and an update safety check that rolls an update back by itself if the MCP stops answering.",
  "runtime": "44.9.0",
- "published": "2026-10-30T13:01:30.048Z",
+ "published": "2026-10-30T13:15:12.946Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "fe1d5f473491de6966d01ee3a54d524f7bcf4b56463b55313a6d1879189cd093",
-   "size": 13794,
-   "gz": "files/fe1d5f473491de6966d01ee3a54d524f7bcf4b56463b55313a6d1879189cd093.gz"
+   "sha256": "50c7f5853dba56ee46502b1c96b3c0a2676ad059f1f7f0e06c0a3299781eac7a",
+   "size": 21366,
+   "gz": "files/50c7f5853dba56ee46502b1c96b3c0a2676ad059f1f7f0e06c0a3299781eac7a.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "de47601371c63740cd6829b7d40b1aac272561b9cdee91d39e6349dcf3546257",
-   "size": 19728,
-   "gz": "files/de47601371c63740cd6829b7d40b1aac272561b9cdee91d39e6349dcf3546257.gz"
+   "sha256": "aaca6373166aa9fadb494872300eacc10df4eca5da789f8e8fb333b11adeb420",
+   "size": 21595,
+   "gz": "files/aaca6373166aa9fadb494872300eacc10df4eca5da789f8e8fb333b11adeb420.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -30,9 +30,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "abe846d6de06cd5db1d75db68ed16fd361dfdaa5ce468d528e0b1522a74afd2d",
-   "size": 16778,
-   "gz": "files/abe846d6de06cd5db1d75db68ed16fd361dfdaa5ce468d528e0b1522a74afd2d.gz"
+   "sha256": "6e45488363a518da91be6b1dbf963d290060263f497c3bf464958c2393313c2f",
+   "size": 17545,
+   "gz": "files/6e45488363a518da91be6b1dbf963d290060263f497c3bf464958c2393313c2f.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "a4b77ac6d1396f004c62e334530f70c0d36eba94d5b2ee26046a21b349e7d11b",
@@ -40,9 +40,9 @@
    "gz": "files/a4b77ac6d1396f004c62e334530f70c0d36eba94d5b2ee26046a21b349e7d11b.gz"
   },
   "resources/app/updater.cjs": {
-   "sha256": "6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd",
-   "size": 8322,
-   "gz": "files/6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd.gz"
+   "sha256": "08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de",
+   "size": 11263,
+   "gz": "files/08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
    "sha256": "aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390",
@@ -190,14 +190,19 @@
    "gz": "files/a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "99cab023876c9619450877cfea8651df9ab87d09854a10a6128c96d46dcf91a6",
-   "size": 76928,
-   "gz": "files/99cab023876c9619450877cfea8651df9ab87d09854a10a6128c96d46dcf91a6.gz"
+   "sha256": "732cbed1fc3be9d4ecaedc05a397d03a0bbda48ddd1c19d3c86785100d2965d9",
+   "size": 82860,
+   "gz": "files/732cbed1fc3be9d4ecaedc05a397d03a0bbda48ddd1c19d3c86785100d2965d9.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
    "size": 8289,
    "gz": "files/74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf.gz"
+  },
+  "resources/app/ui/src/production.js": {
+   "sha256": "0505a42aff196fbaf269654aa8902e5af5167394de6761d85b9ba70bfcf71707",
+   "size": 24343,
+   "gz": "files/0505a42aff196fbaf269654aa8902e5af5167394de6761d85b9ba70bfcf71707.gz"
   },
   "resources/app/ui/src/project.js": {
    "sha256": "5378785f33b7d02110a101b26605bde1b15925ed273483a4043ceb5567c2bee4",
@@ -215,14 +220,14 @@
    "gz": "files/883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "48f14322047dad156c00fe6ca64e204bb25a4bf9099ec60a8e254655f268b379",
-   "size": 10846,
-   "gz": "files/48f14322047dad156c00fe6ca64e204bb25a4bf9099ec60a8e254655f268b379.gz"
+   "sha256": "1217526fa5f1d45b35fb4035aa85b917b65c46b058989a94a440b0b888a2d005",
+   "size": 11159,
+   "gz": "files/1217526fa5f1d45b35fb4035aa85b917b65c46b058989a94a440b0b888a2d005.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "de28cb67ecfdb3d6c6be295e7a63270dd77ac913e5c1ad509d0aeb94699fc42b",
-   "size": 11989,
-   "gz": "files/de28cb67ecfdb3d6c6be295e7a63270dd77ac913e5c1ad509d0aeb94699fc42b.gz"
+   "sha256": "3b6f85aa98cb65706ab70382d9c2031e9bff2a73a36e9acd25209c1f55ef028a",
+   "size": 12392,
+   "gz": "files/3b6f85aa98cb65706ab70382d9c2031e9bff2a73a36e9acd25209c1f55ef028a.gz"
   },
   "resources/app/ui/vendor/three.module.js": {
    "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb",

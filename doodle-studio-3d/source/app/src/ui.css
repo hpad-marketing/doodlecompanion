@@ -139,3 +139,9 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 #onion-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #frame.mirrored #view,#frame.mirrored #onion-layer{transform:scaleX(-1)}
 #tracks canvas.wave{position:absolute;left:0;top:0;height:22px;opacity:.75;pointer-events:none}
+
+/* preflight and health check rows */
+.preflight { align-items: flex-start; gap: 8px; padding: 4px 0; }
+.preflight > b:first-child { width: 1.2em; text-align: center; }
+.preflight.bad > b:first-child { color: var(--fg); background: var(--accent, #E0A64B); border-radius: 4px; }
+.preflight small { opacity: .8; }

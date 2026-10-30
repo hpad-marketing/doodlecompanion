@@ -244,6 +244,15 @@ export class Viewport {
     this.setCamera({});
   }
 
+  // the middle of the posed head in world space (caption checks, rule lights)
+  headPoint() {
+    const b = this.rig.bones.get('head');
+    if (!b) return new THREE.Vector3(0, 0, 0.55);
+    const v = b.headV.clone().add(b.tailV).multiplyScalar(0.5).applyMatrix4(this.rig.A.get('head') || new THREE.Matrix4());
+    this.group.updateMatrixWorld();
+    return v.applyMatrix4(this.group.matrixWorld);
+  }
+
   render() {
     const [w, h] = this.size || [this.canvas.width, this.canvas.height];
     const pr = this.renderer.getPixelRatio();
