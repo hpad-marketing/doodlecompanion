@@ -3,7 +3,7 @@
 const VERSION = '2025-06-18';
 
 const TOOLS = [
-  ['get_state', 'Read the open shot: name, frame, length, fps, size, every current value and every key.', {}],
+  ['get_state', 'Read the open scene and its active shot: scene name, the ordered shot list, frame, length, fps, size, every current value and every key of the active shot.', {}],
   ['list_controls', 'List every controllable value (Bunny pose, face, camera) with its id, label, group and min/max. Expression, gaze and mouth names are included.', {}],
   ['set_values', 'Set Bunny pose, face and camera values, e.g. {"armL":90,"headYaw":20,"cam.lens":24}. With frame, jumps there first. key=true sets keys at that frame (default follows the app\'s Auto keys switch). Values are clamped to Bunny\'s joint limits.',
     { values: { type: 'object', additionalProperties: { type: 'number' } }, frame: { type: 'integer', minimum: 0 }, key: { type: 'boolean' } }, ['values']],
@@ -11,13 +11,20 @@ const TOOLS = [
   ['delete_key', 'Remove one key.', { id: { type: 'string' }, frame: { type: 'integer', minimum: 0 } }, ['id', 'frame']],
   ['set_ease', 'Easing from a key to the next: ease, linear, in, out or hold.', { id: { type: 'string' }, frame: { type: 'integer' }, ease: { enum: ['ease', 'linear', 'in', 'out', 'hold'] } }, ['id', 'frame', 'ease']],
   ['goto', 'Move the playhead.', { frame: { type: 'integer', minimum: 0 } }, ['frame']],
-  ['set_shot', 'Change the shot name, length (frames), fps, width or height.', { name: { type: 'string' }, length: { type: 'integer', minimum: 1 }, fps: { type: 'integer', minimum: 12, maximum: 60 }, width: { type: 'integer' }, height: { type: 'integer' } }],
+  ['set_shot', 'Change the active shot\'s name (label) or length (frames), or the scene name, fps, width or height.', { scene: { type: 'string' }, name: { type: 'string' }, length: { type: 'integer', minimum: 1 }, fps: { type: 'integer', minimum: 12, maximum: 60 }, width: { type: 'integer' }, height: { type: 'integer' } }],
+  ['add_shot', 'Add a shot right after the active one (auto-coded sh010, sh020, ...) and make it active. duplicate=true copies the active shot; otherwise it starts holding the pose and camera the active shot ends on.', { duplicate: { type: 'boolean' } }],
+  ['select_shot', 'Make a shot active for editing, by code (e.g. "sh020") or 0-based index.', { shot: { type: ['string', 'integer'] } }, ['shot']],
+  ['move_shot', 'Reorder: move a shot (code or index) to a new 0-based position in the scene.', { shot: { type: ['string', 'integer'] }, to: { type: 'integer', minimum: 0 } }, ['shot', 'to']],
+  ['delete_shot', 'Delete a shot (code or index). Undo brings it back.', { shot: { type: ['string', 'integer'] } }, ['shot']],
   ['undo', 'Undo the last change.', {}],
   ['redo', 'Redo.', {}],
   ['save', 'Save the shot (to its file, or to DeepInDoodles\\<name>\\work\\ if it has none yet).', {}],
-  ['render', 'Render in Blender in the background: cloth, springs, collision, then the 3D rule checks. The MP4 goes to DeepInDoodles\\<name>\\work\\renders. still=frame renders one PNG; preview=true is half size without cloth.', { still: { type: 'integer', minimum: 0 }, preview: { type: 'boolean' } }],
+  ['render', 'Render the active shot in Blender in the background: cloth, springs, collision, then the 3D rule checks. The MP4 goes to DeepInDoodles\\<scene>\\work\\renders as <Scene>_<shot>_v###.mp4; logs and rule reports to work\\checks. still=frame renders one PNG; preview=true is half size without cloth.', { still: { type: 'integer', minimum: 0 }, preview: { type: 'boolean' } }],
+  ['render_scene', 'Render every shot of the scene in order and join them into one video, work\\renders\\<Scene>_v###.mp4. Shots unchanged since their last render are reused. preview=true is half size without cloth.', { preview: { type: 'boolean' } }],
   ['apply_camera_preset', 'One-click camera presets. Pick a target (bunny, face, eyes, hands, feet or a registered object) and frame it in a shot size (ews, ws, fs, mfs, ms, mcu, cu, ecu) and angle (eye, shoulder, hip, knee, ground, low, worm, high, overhead, dutch-l/r, tq-l/r, profile-l/r, back), or a view (pov, ots-l, ots-r, oth). move keys a camera move from frame (default the playhead) for seconds (push-in, pull-out, pan-l, whip-in-l, crane-up, arc-r, orbit, vertigo-in, handheld, follow...). list=true returns every id. lookAtCamera=true makes Bunny keep looking into the lens for the whole shot (neck first, then he re-plants his body); false turns it off.',
     { list: { type: 'boolean' }, lookAtCamera: { type: 'boolean' }, target: { type: 'string' }, size: { type: 'string' }, angle: { type: 'string' }, placement: { enum: ['center', 'left', 'right'] }, view: { type: 'string' }, move: { type: 'string' }, seconds: { type: 'number', minimum: 0.1 }, frame: { type: 'integer', minimum: 0 } }],
+  ['carousel', 'Snapshot carousel for Instagram: list the slides, snap a frame as a new slide, edit slides and speech bubbles, or export. action=list | snap (shot code/index and frame; default the playhead) | size (size: 4:5, 1:1 or 9:16) | move (slide, to) | remove (slide) | bubble (slide, bubble: {text, assetId: speech|thought|shout|whisper, tail: down-left|down-right|left|right|none, x, y as 0-1 fractions; index to edit an existing one, delete:true to remove it}) | export (renders every slide in Blender and saves numbered PNGs with bubbles to DeepInDoodles\\<scene>\\work\\carousel).',
+    { action: { enum: ['list', 'snap', 'size', 'move', 'remove', 'bubble', 'export'] }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, size: { enum: ['4:5', '1:1', '9:16'] }, slide: { type: 'integer', minimum: 0 }, to: { type: 'integer', minimum: 0 }, bubble: { type: 'object' } }, ['action']],
   ['render_status', 'Progress of the current render (frame, frames, minutes left, queue).', {}],
 ];
 
@@ -35,7 +42,18 @@ module.exports = ({ call, api }) => {
     redo: () => call('(ds3d.redo(), ds3d.state())'),
     save: () => call('ds3d.save()'),
     render: a => call(`ds3d.render(${JSON.stringify(a || {})})`),
+    render_scene: a => call(`ds3d.renderScene(${JSON.stringify(a || {})})`),
+    add_shot: a => call(`ds3d.addShot(${!!a.duplicate})`),
+    select_shot: a => call(`ds3d.selectShot(${JSON.stringify(a.shot)})`),
+    move_shot: a => call(`ds3d.moveShot(${JSON.stringify(a.shot)}, ${Number(a.to)})`),
+    delete_shot: a => call(`ds3d.deleteShot(${JSON.stringify(a.shot)})`),
     apply_camera_preset: a => call(a.list ? 'ds3dCameraPresets.list()' : `ds3dCameraPresets.apply(${JSON.stringify(a)})`),
+    carousel: a => {
+      const op = { list: 'ds3d.carousel()', snap: `ds3d.carouselSnap(${JSON.stringify(a.shot ?? null)}, ${a.frame ?? 'null'})`, export: '(ds3d.carouselExport(), ds3d.carousel())' }[a.action];
+      if (op) return call(op);
+      const edit = a.action === 'size' ? { size: a.size } : a.action === 'move' ? { slide: a.slide, to: a.to } : a.action === 'remove' ? { slide: a.slide, remove: true } : { slide: a.slide, bubble: a.bubble || {} };
+      return call(`ds3d.carouselEdit(${JSON.stringify(edit)})`);
+    },
     render_status: () => api['render-status'](),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
