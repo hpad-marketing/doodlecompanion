@@ -3,6 +3,31 @@
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 
+// reference videos the user picked: served by a random token, with Range requests so the
+// editor can seek them. Only files registered through ref-video are reachable.
+const refs = new Map();
+const VIDEO = { '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime' };
+function registerRef(file) {
+  const ext = path.extname(String(file)).toLowerCase();
+  if (!VIDEO[ext]) throw Error('Reference video must be mp4, m4v, webm or mov');
+  if (!fs.statSync(file).isFile()) throw Error('Not a file');
+  const token = require('node:crypto').randomBytes(12).toString('hex');
+  refs.set(token, file);
+  return { url: `/ref/${token}${ext}`, path: file };
+}
+async function serveRef(req, res, name) {
+  const file = refs.get(name.replace(/[.][a-z0-9]+$/i, ''));
+  if (!file) { res.writeHead(404); return res.end(); }
+  const size = (await fs.promises.stat(file)).size, type = VIDEO[path.extname(file).toLowerCase()];
+  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (!m) { res.writeHead(200, { 'content-type': type, 'content-length': size, 'accept-ranges': 'bytes' }); return fs.createReadStream(file).pipe(res); }
+  let a = m[1] === '' ? size - Number(m[2]) : Number(m[1]), b = m[1] !== '' && m[2] !== '' ? Number(m[2]) : size - 1;
+  a = Math.max(0, a); b = Math.min(size - 1, b);
+  if (a > b) { res.writeHead(416, { 'content-range': `bytes */${size}` }); return res.end(); }
+  res.writeHead(206, { 'content-type': type, 'content-length': b - a + 1, 'content-range': `bytes ${a}-${b}/${size}`, 'accept-ranges': 'bytes' });
+  fs.createReadStream(file, { start: a, end: b }).pipe(res);
+}
+
 module.exports = function start({ root, port = 54190, api = {}, mcp = null, statics = {} }) {
   const server = http.createServer(async (req, res) => {
     try {
@@ -12,6 +37,7 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null, stat
         for await (const chunk of req) body += chunk;
         return mcp(req, res, body);
       }
+      if (url.pathname.startsWith('/ref/')) return serveRef(req, res, url.pathname.slice(5));
       if (url.pathname.startsWith('/api/')) {
         // the editor's own calls: same-origin only
         const o = req.headers.origin;
@@ -42,3 +68,4 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null, stat
   });
   return new Promise((ok, fail) => { server.once('error', fail); server.listen(port, '127.0.0.1', () => ok(server)); });
 };
+module.exports.registerRef = registerRef;

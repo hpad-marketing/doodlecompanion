@@ -3,7 +3,7 @@
 // storytime pieces). Motions and faces become keys on the timeline; everything else
 // is stored on the shot and built in Blender by the library's own add-on, so the
 // render matches what the add-on makes in Blender.
-import { valueAt, setKey, stageOf } from './project.js';
+import { valueAt, setKey, stageOf, DISCRETE } from './project.js';
 
 export const CHARACTERS = [['bunny', 'Bunny'], ['koala', 'Koala'], ['frog', 'Frog']];
 const TIMES = ['day', 'golden', 'night'];
@@ -29,7 +29,7 @@ export const EXTRA = [
 export const CATEGORIES = [['motion', 'Motions'], ['expression', 'Faces'], ['prop', 'Props'], ['scenery', 'Scenery'], ['effect', 'Effects'], ['reaction', 'Reactions'], ['story', 'Storytime'], ['sound', 'Sounds']];
 
 let lib = null, loading = null;
-const ui = { cat: 'motion', q: '', mirror: false, hold: '', shotOnly: false };
+const ui = { cat: 'motion', q: '', mirror: false, blend: 0, hold: '', shotOnly: false };
 
 export async function loadLibrary(api, force = false) {
   if (lib && !force) return lib;
@@ -54,7 +54,7 @@ export async function useItem(ctx, ref, opts = {}) {
   const row = typeof ref === 'string' ? libraryRows().find(r => r.id === ref) : ref;
   if (!row) throw Error(`No library item ${ref}. library_list finds ids.`);
   const project = ctx.project(), f0 = opts.frame ?? ctx.frame();
-  if (row.category === 'motion') return useMotion(ctx, row, f0, !!opts.mirror);
+  if (row.category === 'motion') return useMotion(ctx, row, f0, !!opts.mirror, Math.max(0, Math.round(opts.blend || 0)));
   if (row.category === 'expression') return useFace(ctx, row, f0);
   if (row.category === 'set') return setStage(ctx, { set: row.data?.room || row.id.replace(/^set-/, '') }, opts.shotOnly);
   if (row.category === 'outfit') return setStage(ctx, { outfit: row.data?.outfit }, opts.shotOnly);
@@ -80,13 +80,18 @@ export async function useItem(ctx, ref, opts = {}) {
   return { added: item, items: project.items };
 }
 
-async function useMotion(ctx, row, f0, mirror) {
+// blend > 0 crossfades the clip in over that many frames from whatever was already
+// animated there (clip blending), instead of cutting straight to its first pose
+async function useMotion(ctx, row, f0, mirror, blend = 0) {
   const m = await ctx.api('library-motion', { id: row.id });
   const project = ctx.project(), known = new Set(ctx.trackIds()), names = ctx.data().face.gazes;
   ctx.pushUndo();
   const base = {};
   for (const id of RELATIVE) base[id] = valueAt(project, id, f0);
   let first = null;
+  const was = {}, mix = f => { const t = Math.min(1, f / blend); return t * t * (3 - 2 * t); };
+  if (blend) for (const id of known) if (project.tracks[id]?.length && !DISCRETE.has(id)) was[id] = Array.from({ length: blend + 1 }, (_, i) => valueAt(project, id, f0 + i));
+  const written = new Set();
   for (const [f, vals] of m.poses) {
     for (let [id, v] of Object.entries(vals)) {
       if (mirror) {
@@ -98,12 +103,19 @@ async function useMotion(ctx, row, f0, mirror) {
       if (!known.has(id)) continue;
       if (RELATIVE.has(id)) { first ??= {}; if (!(id in first)) first[id] = v; v = base[id] + v - first[id]; }
       setKey(project, id, f0 + f, v);
+      written.add(id);
     }
+  }
+  // crossfade, baked frame by frame over the window so sparse clip keys blend evenly
+  for (const id of written) {
+    if (!was[id]) continue;
+    const clipV = was[id].map((_, f) => valueAt(project, id, f0 + f));
+    clipV.forEach((v, f) => setKey(project, id, f0 + f, +(was[id][f] + (v - was[id][f]) * mix(f)).toFixed(3), 'linear'));
   }
   const end = f0 + m.frames;
   if (end > project.length) project.length = end;
   ctx.changed(true);
-  return { motion: row.id, name: row.name, from: f0, to: end, mirrored: mirror, length: project.length };
+  return { motion: row.id, name: row.name, from: f0, to: end, mirrored: mirror, blend, length: project.length };
 }
 
 function useFace(ctx, row, f) {
@@ -201,7 +213,8 @@ export function libraryPanel(ctx) {
   const opts = h('div', { class: 'row' });
   if (ui.cat === 'motion') {
     const m = h('input', { type: 'checkbox' }); m.checked = ui.mirror; m.addEventListener('change', () => { ui.mirror = m.checked; });
-    opts.append(h('label', { class: 'hint', title: 'Swap left and right' }, m, ' Mirror'));
+    const b = h('input', { type: 'number', min: 0, max: 60, step: 1, value: ui.blend, style: 'width:52px', 'aria-label': 'Blend in frames' }); b.addEventListener('change', () => { ui.blend = Math.max(0, Number(b.value) || 0); });
+    opts.append(h('label', { class: 'hint', title: 'Swap left and right' }, m, ' Mirror'), h('label', { class: 'hint', title: 'Clip blending: crossfade from the animation already there into the clip over this many frames. 0 cuts straight in.' }, 'Blend in ', b, ' frames'));
   }
   if (ui.cat === 'prop') {
     const s = h('select', { 'aria-label': 'Hold' }, h('option', { value: '' }, 'Not held'), h('option', { value: 'L' }, 'In left hand'), h('option', { value: 'R' }, 'In right hand'));
@@ -211,7 +224,7 @@ export function libraryPanel(ctx) {
   const fill = () => {
     const found = search(rows, { category: ui.cat, query: ui.q });
     list.replaceChildren(...found.map(r => h('button', { class: 'lib-item', role: 'listitem', title: (r.description || r.sub || '') + '\nClick to add at the playhead',
-      onclick: () => useItem(ctx, r, { mirror: ui.mirror, hold: ui.hold, shotOnly: ui.shotOnly }).then(res => { if (res) ctx.toast(`Added ${r.name}`); rebuild(); }).catch(e => ctx.toast(e.message, 4000)) },
+      onclick: () => useItem(ctx, r, { mirror: ui.mirror, blend: ui.blend, hold: ui.hold, shotOnly: ui.shotOnly }).then(res => { if (res) ctx.toast(`Added ${r.name}`); rebuild(); }).catch(e => ctx.toast(e.message, 4000)) },
       r.preview ? h('img', { src: '/lib/' + r.preview, alt: '', loading: 'lazy' }) : null, h('span', {}, r.name, h('small', {}, r.sub || '', r.frames ? ` · ${r.frames} f` : '')))));
     if (!found.length) list.append(h('p', { class: 'hint' }, lib ? 'Nothing matches.' : 'Loading the library…'));
   };

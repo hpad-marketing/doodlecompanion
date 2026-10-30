@@ -6,12 +6,13 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope, streamFrom as audioStreamFrom } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
-import { historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
+import { modal, historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
 import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
+import * as A2 from './animtools2.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -123,6 +124,7 @@ function useScene(sc) {
   refreshAll();
   if ((scene.audio?.path || null) !== (audioInfo()?.path || null)) loadAudio(api, scene.audio?.path).then(drawTracks).catch(e => toast('Audio: ' + e.message, 5000));
   if (character() !== loadedChar) ensureCharacter().then(refreshAll).catch(e => toast(e.message, 5000));
+  syncReferenceFile();
 }
 
 // ---------------------------------------------------------------- characters (library.js)
@@ -207,11 +209,16 @@ function setValue(id, v, { record = true } = {}) {
   const [lo, hi] = range(id);
   if (!DISCRETE.has(id)) v = snapValue(id, v, LENSES);
   if (!DISCRETE.has(id)) v = Math.max(lo, Math.min(hi, v));
-  if (autoKey && record) { setKey(project, id, frame, v); delete preview[id]; dirty = true; scheduleTracks(); }
+  if (autoKey && record) { keyAt(id, v); delete preview[id]; dirty = true; scheduleTracks(); }
   else preview[id] = v;
   apply();
 }
 
+// a key at the playhead in the base or the layer being edited, so the final pose shows v
+function keyAt(id, v) {
+  const t = DISCRETE.has(id) ? project : T();
+  setKey(t, id, frame, project.layers?.length ? +A2.keyValue(project, t, id, frame, v).toFixed(3) : v);
+}
 let tracksQueued = false;
 function scheduleTracks() { if (tracksQueued) return; tracksQueued = true; requestAnimationFrame(() => { tracksQueued = false; drawTracks(); }); }
 
@@ -221,21 +228,167 @@ function apply() {
   // idle life plays in the viewport too, except on a value being tried out unkeyed
   const idle = idleNow()?.frames[frame];
   if (idle) for (const [id, v] of Object.entries(idle)) if (!(id in preview)) vals[id] = v;
+  if (pathWhat && !playing) {
+    const sig = JSON.stringify([project.tracks, project.layers, project.length, loadedChar]);
+    if (sig !== pathSig) { const t = performance.now(); pathPts = A2.pathOf(anim2Ctx(), pathWhat); pathPops = A2.arcCheck(pathPts); pathSig = sig; perf('motion path', performance.now() - t); }
+  }
   view.pose(vals);
   const cam = {};
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
   if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
+  // live checks first, so the HUD below shows this frame's lights
+  if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
+  if (balanceOn) { balanceNow = A2.balance(view); drawCog(); }
   syncPanel();
   drawPlayhead();
   updateHud();
   overlayDraw?.();
   if (view3.onion || onionShown) { const t = performance.now(); drawOnion(animCtx()); onionShown = view3.onion; perf('onion skin', performance.now() - t); }
   showNotes(project, frame);
-  if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
+  if (pathWhat && pathPts) A2.drawPath(anim2Ctx(), pathPts, pathKeys(), pathPops);
+  A2.syncReference(sceneStart() / scene.fps + frame / project.fps, playing);
 }
 let ruleLights = true, rules = null;
 let onionShown = false;
+
+// ---------------------------------------------------------------- animator tools part 2 (animtools2.js)
+let ikOn = false, pathWhat = null, pathPts = null, pathSig = '', pathPops = [], curves = false, editLayer = -1, balanceOn = false, balanceNow = null, multi = [], refLoaded = null;
+const graphSel = {};
+const T = () => (editLayer >= 0 && project.layers?.[editLayer]) || project;
+const valuesNow = () => Object.fromEntries(BUNNY_IDS.concat(FACE_IDS).map(id => [id, current(id)]));
+const PATHS = [['armL', 'Left hand'], ['armR', 'Right hand'], ['legL', 'Left foot'], ['legR', 'Right foot'], ['head', 'Head']];
+const POSE_PART_NAMES = { face: 'Face', hands: 'Hands', ears: 'Ears', upper: 'Upper body', whole: 'Whole pose' };
+const anim2Ctx = () => ({
+  ...animCtx(), range, current, character, label: id => LABEL[id] || id, trackIds: () => BUNNY_IDS.concat(FACE_IDS),
+  putPose: v => putPose(Object.fromEntries(Object.entries(v).filter(([id]) => BUNNY_IDS.includes(id) || FACE_IDS.includes(id)))),
+  popUndo: () => undoStack.pop(), selectKey: (id, f) => { selected = { id, f }; },
+});
+const pathKeys = () => new Set((pathWhat === 'head' ? ['headYaw', 'headNod', 'rot'] : A2.LIMB[pathWhat].ids).flatMap(id => (project.tracks[id] || []).map(k => k.f)));
+function showPath(what) {
+  pathWhat = what || null; pathSig = ''; pathPts = null; pathPops = [];
+  if (!pathWhat) A2.drawPath(anim2Ctx(), null);
+  apply();
+  if (pathWhat) toast(pathPops.length ? `${PATHS.find(p => p[0] === pathWhat)[1]} path: ${pathPops.length} popping arc${pathPops.length > 1 ? 's' : ''} (marked ×). Animate › Fix popping arcs smooths them.` : `${PATHS.find(p => p[0] === pathWhat)[1]} path: arcs are clean`, 5000);
+  return { what: pathWhat, pops: pathPops };
+}
+function fixArcs(what = pathWhat || 'armR') {
+  const c = anim2Ctx(), pops = A2.arcCheck(A2.pathOf(c, what));
+  if (!pops.length) { apply(); toast('No popping arcs on that path'); return { fixed: 0, popsBefore: 0, popsAfter: 0 }; }
+  const r = A2.arcFix(c, what, pops), after = A2.arcCheck(A2.pathOf(c, what));
+  pathSig = ''; apply();
+  toast(`Smoothed ${pops.length} popping arc${pops.length > 1 ? 's' : ''}${after.length ? `, ${after.length} left` : ''}`, 4000);
+  return { ...r, popsBefore: pops.length, popsAfter: after.length };
+}
+function drawCog() {
+  const fr = $('#frame');
+  let c = document.getElementById('cog-layer');
+  if (!balanceOn || !balanceNow) { c?.remove(); return; }
+  if (!c) { c = document.createElement('canvas'); c.id = 'cog-layer'; fr.insertBefore(c, $('#hud')); }
+  c.width = fr.clientWidth; c.height = fr.clientHeight;
+  const g = c.getContext('2d'), w = balanceNow.cog.clone(), floor = balanceNow.cog.clone();
+  floor.z = 0;
+  const P = v => { v.project(view.camera); return [(v.x + 1) / 2 * c.width, (1 - v.y) / 2 * c.height]; };
+  const [x, y] = P(w), [fx, fy] = P(floor);
+  g.strokeStyle = '#1F1F1D'; g.lineWidth = 2; g.setLineDash([5, 4]); g.beginPath(); g.moveTo(x, y); g.lineTo(fx, fy); g.stroke(); g.setLineDash([]);
+  g.fillStyle = balanceNow.balanced === false ? '#1F1F1D' : '#E0A64B'; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(fx - 8, fy); g.lineTo(fx + 8, fy); g.stroke();
+}
+function toggleIk(on = !ikOn) { ikOn = on; $('#view')?.classList.toggle('ik', ikOn); toast(ikOn ? 'IK drag: drag a hand or foot in the viewport. It keys the arm or leg controls, so FK stays in step. Shift+drag still moves the camera aim.' : 'IK drag off: dragging orbits the camera', 4000); if (tab === 'pose') buildPanel(); return { ik: ikOn }; }
+function newLayer(name) { pushUndo('Add layer'); editLayer = A2.addLayer(project, name); dirty = true; buildTimelineTools(); drawTracks(); apply(); toast(`Keys now go to ${T().name}. Pick Base in the timeline to edit the base animation.`, 4000); return layersInfo(); }
+const layersInfo = () => ({ editing: editLayer >= 0 && project.layers?.[editLayer] ? T().name : 'Base', layers: (project.layers || []).map((L, i) => ({ index: i, name: L.name, on: L.on !== false, weight: L.weight ?? 1, controls: Object.keys(L.tracks).length })) });
+function copyKeysNow(opts) { const r = A2.copyKeys(anim2Ctx(), opts); toast(`Copied ${r.controls} controls, ${r.frames} frames. Paste in any shot or character (Ctrl+Shift+V).`, 4000); return r; }
+function pasteKeysNow(at) { const r = A2.pasteKeys(anim2Ctx(), at); toast(`Pasted ${r.keys} keys at frame ${r.at}${r.skipped.length ? `; ${r.skipped.length} controls this character does not have were left out` : ''}`, 4000); return r; }
+async function retargetTo(c) {
+  if (!CHARACTERS.some(x => x[0] === c)) throw Error('character must be one of ' + CHARACTERS.map(x => x[0]).join(', '));
+  pushUndo('Retarget to ' + c);
+  scene.character = c;
+  await ensureCharacter();
+  const known = new Set(ALL_IDS().filter(id => !/^nose/.test(id) || view.rig.bones.has('nose'))), dropped = new Set();
+  let clamped = 0;
+  for (const s of scene.shots) {
+    const before = JSON.stringify(s.tracks), r = A2.retargetTracks(s.tracks, known, range);
+    s.tracks = r.tracks; r.dropped.forEach(d => dropped.add(d));
+    if (JSON.stringify(s.tracks) !== before) clamped++;
+    for (const L of s.layers || []) L.tracks = A2.retargetTracks(L.tracks, known, range).tracks;
+  }
+  dirty = true; refreshAll();
+  toast(`Retargeted to the ${charName()}: every shot keeps its animation inside the ${charName()}'s joint limits`, 4000);
+  return { character: c, shots: scene.shots.length, shotsAdjusted: clamped, dropped: [...dropped] };
+}
+async function referenceVideo(p, opts = {}) {
+  if (p === undefined) p = (await api('pick-video', {})).path;
+  if (!p) return null;
+  const r = await api('ref-video', { path: p });
+  pushUndo('Reference video');
+  scene.reference = { path: p, offset: Number(opts.offset ?? scene.reference?.offset ?? 0), opacity: Math.max(0.1, Math.min(1, Number(opts.opacity ?? 0.6))) };
+  dirty = true;
+  const ref = A2.setReference(view, r.url, scene.reference);
+  refLoaded = p;
+  await Promise.race([ref.ready, new Promise(ok => setTimeout(ok, 4000))]);
+  apply();
+  toast('Reference video behind the character. It plays with the timeline and never renders.', 4000);
+  return { reference: scene.reference, ...A2.referenceInfo() };
+}
+function clearReference() { A2.clearReference(view); refLoaded = null; if (scene.reference) { pushUndo('Remove reference video'); delete scene.reference; dirty = true; } return { reference: null }; }
+// shown again when a scene that has one is opened
+function syncReferenceFile() {
+  const p = scene.reference?.path || null;
+  if (p === refLoaded) return;
+  if (!p) { A2.clearReference(view); refLoaded = null; return; }
+  refLoaded = p;
+  api('ref-video', { path: p }).then(r => { A2.setReference(view, r.url, scene.reference); }).catch(e => toast('Reference video: ' + e.message, 5000));
+}
+const pick2 = (title, items, run) => modal({ h }, title, close => [h('div', { class: 'row', style: 'flex-wrap:wrap' }, ...items.map(([id, n]) => h('button', { onclick: () => { close(); run(id); } }, n))), h('button', { onclick: close }, 'Cancel')]);
+function pinDialog() {
+  modal({ h }, 'Pin a hand or foot', close => {
+    const to = h('input', { type: 'number', min: frame + 1, max: project.length - 1, value: Math.min(project.length - 1, frame + 24), style: 'width:64px', 'aria-label': 'To frame' });
+    return [h('p', { class: 'hint' }, `Keeps it where it is at frame ${frame} while the body moves: a planted foot, a hand on a table or a wall. Keys the arm or leg every 2 frames up to the frame below.`),
+      h('label', { class: 'row' }, 'Up to frame ', to),
+      h('div', { class: 'row', style: 'flex-wrap:wrap' }, ...PATHS.slice(0, 4).map(([id, n]) => h('button', { onclick: () => { close(); const r = A2.pin(anim2Ctx(), id, frame, Number(to.value)); toast(`${n} pinned, ${r.keys} keys, drift at most ${r.worstErrorCm} cm`, 5000); } }, n))),
+      h('button', { onclick: close }, 'Cancel')];
+  });
+}
+function warpDialog() {
+  modal({ h }, 'Time warp', close => {
+    const amt = h('input', { type: 'range', min: 0, max: 2, step: 0.1, value: 1, 'aria-label': 'Strength' });
+    return [h('p', { class: 'hint' }, 'Speed ramp for the whole shot: keys, markers and items slide in time. Undo puts them back.'),
+      h('label', { class: 'ctl' }, h('span', { class: 'name' }, 'Strength'), amt),
+      h('div', { class: 'row', style: 'flex-wrap:wrap' }, ...Object.keys(A2.WARPS).map(w => h('button', { onclick: () => { close(); A2.timeWarp(anim2Ctx(), w, Number(amt.value)); toast('Time warp: ' + w); } }, w[0].toUpperCase() + w.slice(1)))),
+      h('button', { onclick: close }, 'Cancel')];
+  });
+}
+function holdPrompt() {
+  const n = prompt('Moving hold: the pose keeps drifting the way it was moving, so it never goes dead. How many frames from the playhead?', '12');
+  if (!n) return;
+  const r = A2.movingHold(anim2Ctx(), frame, Math.min(project.length - 1, frame + Math.max(2, Number(n) || 12)));
+  toast(r.drifting ? `Moving hold on ${r.drifting} controls` : 'Nothing was moving into this frame, so nothing drifts', 4000);
+}
+function poseLibraryPanel() {
+  const name = h('input', { type: 'text', placeholder: 'Pose name', style: 'width:9em', 'aria-label': 'Pose name', maxlength: 40 });
+  const pp = h('select', { 'aria-label': 'Which part to save' }, ...Object.entries(POSE_PART_NAMES).map(([k, n]) => h('option', { value: k }, n)));
+  const list = A2.poses();
+  return h('div', {}, h('h3', {}, 'Pose library'),
+    h('div', { class: 'row' }, name, pp, h('button', { onclick: () => { if (!name.value.trim()) return toast('Name the pose first'); const r = A2.savePose(anim2Ctx(), name.value.trim(), pp.value); buildPanel(); toast(`Saved ${r.name} (${POSE_PART_NAMES[r.part]}, ${Object.keys(r.values).length} controls)`); } }, 'Save pose')),
+    list.length ? h('div', { class: 'chips pose-lib' }, ...list.map(p => h('button', { title: `${POSE_PART_NAMES[p.part]}, saved on the ${p.character}. Click to key it at the playhead (only those controls); right-click to delete.`,
+      onclick: () => { A2.applyPose(anim2Ctx(), p.name); toast(`${p.name} keyed`); }, oncontextmenu: e => { e.preventDefault(); if (confirm(`Delete the pose "${p.name}"?`)) { A2.deletePose(p.name); buildPanel(); } } }, p.name, h('small', {}, ' · ' + POSE_PART_NAMES[p.part]))))
+      : h('p', { class: 'hint' }, 'Save just the face, hands, ears, upper body or the whole pose, then key it in any shot, on any character.'));
+}
+// dope sheet: shift-click several keys, drag one to move them all
+function moveKeys(list, by) {
+  const tr = T().tracks, group = list.map(({ id, f }) => ({ id, k: tr[id]?.find(k => k.f === f) })).filter(g => g.k);
+  if (!group.length) throw Error('None of those keys exist');
+  pushUndo(`Move ${group.length} keys`);
+  const d = Math.max(-Math.min(...group.map(g => g.k.f)), Math.min(project.length - 1 - Math.max(...group.map(g => g.k.f)), Math.round(by)));
+  for (const g of group) g.k.f += d;
+  settleKeys(group);
+  apply(); drawTracks();
+  return { moved: group.length, by: d };
+}
+function settleKeys(group) {
+  const tr = T().tracks, moving = new Set(group.map(g => g.k));
+  for (const id of new Set(group.map(g => g.id))) tr[id] = Object.values(Object.fromEntries([...tr[id].filter(x => !moving.has(x)), ...tr[id].filter(x => moving.has(x))].map(x => [x.f, x]))).sort((a, b) => a.f - b.f);
+}
 
 // ---------------------------------------------------------------- carousel (carousel.js)
 function slideThumb() {
@@ -263,7 +416,7 @@ const MENUS = [
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M'], ['Draw a review note on this frame', () => reviewNote(), 'N'], ['Tap a beat marker', () => tapBeat(), 'B']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], '-',
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
   ['Camera', [...LENSES.map(l => [`${l} mm lens`, () => camSet({ lens: l })]), '-', ...VIEWS.map(([n, c]) => [n, () => camSet(c)]), '-', ['Dolly zoom: wide, keep size', () => dollyTo(18)], ['Dolly zoom: long, keep size', () => dollyTo(100)]]],
@@ -273,7 +426,12 @@ const MENUS = [
     ['Make seamless loop', () => { makeLoop(animCtx()); toast('Last frame keyed to match the first'); }],
     ['Audio drives a control…', () => audioDriveDialog()], ['Mark beats from the audio', () => markBeats()],
     ['Retime shot…', () => { const x = prompt('Speed: below 1 is slower, above 1 is faster (e.g. 0.8 or 1.25). Keys after the playhead move.', '1'); if (x) retime(animCtx(), 1 / Number(x), frame); }], '-',
-    ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))]]],
+    ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))], '-',
+    ['IK drag on / off', () => toggleIk(), 'I'], ['Pin a hand or foot…', () => pinDialog()], ['Motion path…', () => pick2('Motion path', [...PATHS, ['', 'Off']], showPath)], ['Fix popping arcs on the path', () => fixArcs()], '-',
+    ['Time warp…', () => warpDialog()], ['Moving hold from the playhead…', () => holdPrompt()], ['Euler filter (no 360° flips)', () => toast(`Euler filter: ${A2.eulerFilter(anim2Ctx()).fixed} flips unwound`)], '-',
+    ['Add animation layer', () => newLayer()], ['Copy keys (this shot)', () => copyKeysNow(), 'Ctrl+Shift+C'], ['Paste keys at the playhead', () => { try { pasteKeysNow(); } catch (e) { toast(e.message); } }, 'Ctrl+Shift+V'],
+    ['Retarget the scene to…', () => pick2('Retarget the scene to', CHARACTERS.map(c => [c[0], c[1]]), c => retargetTo(c).catch(e => toast(e.message, 5000)))], '-',
+    ['Reference video…', () => referenceVideo().catch(e => toast(e.message, 5000))], ['Remove reference video', () => clearReference()]]],
   ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
     ['Export YouTube chapters', () => exportChapters()], ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())]]],
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
@@ -327,10 +485,13 @@ function control(id) {
   num.addEventListener('change', () => { pushUndo(LABEL[id] || id); setValue(id, Number(num.value)); });
   dot.addEventListener('click', () => {
     pushUndo();
-    if (hasKey(project, id, frame)) deleteKey(project, id, frame); else setKey(project, id, frame, current(id));
+    const tt = DISCRETE.has(id) ? project : T();
+    if (hasKey(tt, id, frame)) deleteKey(tt, id, frame); else keyAt(id, current(id));
     delete preview[id]; apply(); drawTracks();
   });
-  const row = h('label', { class: 'ctl', 'data-id': id, title: TIPS[id] || '' }, h('span', { class: 'name' }, dot, LABEL[id] || id), slider, num);
+  const name = h('span', { class: 'name', title: 'Double-click to reset this control to rest' }, dot, LABEL[id] || id);
+  name.addEventListener('dblclick', e => { e.preventDefault(); pushUndo('Reset ' + (LABEL[id] || id)); setValue(id, defaults(id)); drawTracks(); buildPanel(); });
+  const row = h('label', { class: 'ctl', 'data-id': id, title: TIPS[id] || '' }, name, slider, num);
   return row;
 }
 const round = v => Math.round(v * 100) / 100;
@@ -348,7 +509,12 @@ function buildPanel() {
       h('button', { onclick: () => keyGroup(ids), title: 'Set a key on every control of this part' }, 'Key this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of ids) setValue(id, defaults(id)); }, title: 'Back to rest for this part' }, 'Reset this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of BUNNY_IDS) setValue(id, defaults(id)); }, title: 'Back to rest for the whole body' }, 'Reset whole pose')));
+    c.append(h('div', { class: 'row', style: 'margin-top:6px' },
+      h('button', { 'aria-pressed': String(ikOn), onclick: () => toggleIk(), title: 'Drag a hand or foot in the viewport; the arm or leg follows inside its joint limits (I)' }, 'IK drag'),
+      h('button', { onclick: () => pinDialog(), title: 'Keep a hand or foot where it is while the body moves' }, 'Pin hand or foot…'),
+      h('button', { 'aria-pressed': String(!!pathWhat), onclick: () => (pathWhat ? showPath(null) : pick2('Motion path', PATHS, showPath)), title: 'Show a motion path with a dot per frame; popping arcs are marked ×' }, 'Motion path')));
     c.append(posePanel());
+    c.append(poseLibraryPanel());
     c.append(h('p', { class: 'hint' }, `Every joint stops at the ${charName()}'s limits, so nothing can bend past its anatomy. Left and right follow Doodle Studio.${part === 'ears' && data.ear_width_lock ? ' The Frog\'s eye bumps are rigid, so they grow and squash only a little.' : ''}`));
   } else if (tab === 'face') {
     const F = data.face;
@@ -627,7 +793,7 @@ async function exportChapters() {
 let keyFilter = 'all';
 function toggleStepped() { pushUndo(); project.stepped = !project.stepped; apply(); buildTimelineTools(); toast(project.stepped ? 'Stepped blocking: keys hold' : 'Smooth in-betweens'); }
 const animCtx = () => ({
-  h, api, toast, pushUndo, goto, view: () => view, scene: () => scene, project: () => project, frame: () => frame,
+  h, api, toast, pushUndo, goto, audioStream: () => (audioInfo() ? audioStreamFrom(sceneStart() / scene.fps) : null), view: () => view, scene: () => scene, project: () => project, frame: () => frame,
   poseIds: () => BUNNY_IDS.concat(FACE_IDS),
   valuesAt: f => { const v = {}; for (const id of BUNNY_IDS.concat(FACE_IDS)) v[id] = valueAt(project, id, f); return v; },
   changed: lengthToo => { dirty = true; apply(); drawTracks(); if (lengthToo) buildTimelineTools(); updateHud(); },
@@ -736,10 +902,20 @@ function frameBunny() { camSet({ tx: 0, ty: 0, tz: 0.52, dist: 3.0 * current('ca
 function bindViewport() {
   const cv = $('#view');
   let drag = null;
-  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); cv.classList.add('dragging'); pushUndo(); drag = { x: e.clientX, y: e.clientY, shift: e.shiftKey, cam: Object.fromEntries(CAM_IDS.map(id => [id, current(id)])) }; });
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId); cv.classList.add('dragging');
+    if (ikOn && !e.shiftKey) {
+      const hit = A2.pick(view, e.clientX, e.clientY);
+      if (hit && A2.LIMB[hit.part]) { pushUndo('IK drag'); drag = { x: e.clientX, y: e.clientY, ik: A2.ikDrag(view, valuesNow(), hit.part, range), limb: hit.part }; return; }
+    }
+    pushUndo('Camera'); drag = { x: e.clientX, y: e.clientY, shift: e.shiftKey, cam: Object.fromEntries(CAM_IDS.map(id => [id, current(id)])) };
+  });
   cv.addEventListener('pointermove', e => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 3) drag.moved = true;
+    if (!drag.moved) return;
+    if (drag.ik) { const r = drag.ik(e.clientX, e.clientY); if (r) for (const [id, v] of Object.entries(r.values)) setValue(id, v); return; }
     if (drag.shift) {
       const d = drag.cam['cam.dist'], yaw = drag.cam['cam.yaw'] * Math.PI / 180, k = d / cv.clientHeight * 0.8;
       setValue('cam.tx', drag.cam['cam.tx'] - dx * k * Math.cos(yaw));
@@ -750,9 +926,15 @@ function bindViewport() {
       setValue('cam.pitch', drag.cam['cam.pitch'] + dy * 0.3);
     }
   });
-  const end = () => { if (drag) { drag = null; cv.classList.remove('dragging'); drawTracks(); } };
-  cv.addEventListener('pointerup', end);
-  cv.addEventListener('pointercancel', end);
+  const end = (e, cancel) => {
+    if (!drag) return;
+    const was = drag;
+    drag = null; cv.classList.remove('dragging');
+    if (!was.moved) { undoStack.pop(); if (!cancel) clickPick(was.x, was.y); }
+    drawTracks();
+  };
+  cv.addEventListener('pointerup', e => end(e, false));
+  cv.addEventListener('pointercancel', e => end(e, true));
   cv.addEventListener('wheel', e => {
     e.preventDefault();
     pushUndo();
@@ -760,6 +942,17 @@ function bindViewport() {
     else setValue('cam.dist', current('cam.dist') * Math.exp(e.deltaY * 0.001));
     drawTracks();
   }, { passive: false });
+}
+
+// a click on the character opens that part's controls
+const PICKED = { ears: 'ears', head: 'head', body: 'body', armL: 'armL', armR: 'armR', legL: 'legL', legR: 'legR', whole: 'whole' };
+function clickPick(x, y) {
+  const hit = A2.pick(view, x, y);
+  if (!hit) return null;
+  part = PICKED[hit.part] || 'whole';
+  if (tab !== 'pose') { tab = 'pose'; buildTabs(); layout(); }
+  buildPanel();
+  return { part, mesh: hit.mesh };
 }
 
 function buildRail() {
@@ -789,12 +982,15 @@ function updateHud() {
       h('span', { class: 'rule ' + (rules.clips.length ? 'bad' : 'ok'), title: rules.clips.length ? 'Inside the head: ' + rules.clips.join(', ') : 'Hands and arms clear of the head' }, rules.clips.length ? '✗ Arm in head' : '✓ No clip'),
       h('span', { class: 'rule ' + (rules.belowFloor || rules.inAir ? 'bad' : 'ok'), title: `Lowest foot ${Math.round(rules.feet * 100)} cm from the floor` }, rules.belowFloor ? '✗ Feet in floor' : rules.inAir ? '✗ In the air' : '✓ Grounded'),
       h('span', { class: 'rule ' + ((project.ink ?? 100) === 100 ? 'ok' : 'bad'), title: 'Line weight equals Bunny\'s everywhere' }, (project.ink ?? 100) === 100 ? '✓ Line weight' : `✗ Line ${project.ink}%`)] : []),
+    ...(balanceOn && balanceNow ? [h('span', { class: 'rule ' + (balanceNow.balanced === false ? 'bad' : 'ok'), title: 'Centre of gravity over the feet' }, balanceNow.balanced == null ? 'Balance: off the floor' : balanceNow.balanced ? '✓ Balanced' : `✗ Off balance ${balanceNow.offCm} cm`)] : []),
+    ...(editLayer >= 0 && project.layers?.[editLayer] ? [h('span', {}, 'Keying: ' + T().name)] : []), ...(ikOn ? [h('span', {}, 'IK drag')] : []),
     ...(snap.on ? [h('span', {}, 'Snap')] : []));
   $('#status').textContent = (filePath ? filePath.split(/[\\/]/).pop() : 'Not saved') + (dirty ? ' •' : '');
 }
 
 // ---------------------------------------------------------------- timeline
 function buildTimelineTools() {
+  if (!project.layers?.[editLayer]) editLayer = -1;
   const g = (name, ...kids) => h('div', { class: 'ux-group' }, h('span', { class: 'ux-group-name' }, name), ...kids);
   const ib = (n, title, fn, id) => h('button', { class: 'icon', title, 'aria-label': title, onclick: fn, id }, icon(n));
   const box = h('input', { id: 'frame-box', type: 'number', min: 0, title: 'Current frame' });
@@ -815,9 +1011,22 @@ function buildTimelineTools() {
       ib('trash', 'Delete selected key (Delete)', deleteSelected), ease,
       h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped'),
       (() => { const s = h('select', { title: 'Show only these keys on the timeline', 'aria-label': 'Key filter' }, ...Object.entries(FILTERS).map(([k, n]) => h('option', { value: k }, n))); s.value = keyFilter; s.addEventListener('change', () => { keyFilter = s.value; drawTracks(); }); return s; })()),
-    g('Edit', h('button', { onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'), h('button', { onclick: redo, title: 'Redo (Ctrl+Shift+Z)' }, 'Redo')));
+    g('Edit', h('button', { onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'), h('button', { onclick: redo, title: 'Redo (Ctrl+Shift+Z)' }, 'Redo'),
+      h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves')),
+    g('Layers', (() => {
+      const s = h('select', { title: 'Where new keys go: the base animation or a layer on top of it', 'aria-label': 'Keys go to' }, h('option', { value: -1 }, 'Base'), ...(project.layers || []).map((L, i) => h('option', { value: i }, L.name + (L.on === false ? ' (muted)' : ''))));
+      s.value = String(editLayer);
+      s.addEventListener('change', () => { editLayer = Number(s.value); selected = null; multi = []; buildTimelineTools(); drawTracks(); apply(); });
+      return s;
+    })(), h('button', { onclick: () => newLayer(), title: 'Add an animation layer: its keys add on top of the base, so you can push a whole move without touching its keys' }, '+ Layer'),
+      ...(editLayer >= 0 && project.layers?.[editLayer] ? (() => {
+        const L = project.layers[editLayer], w = h('input', { type: 'number', min: 0, max: 200, step: 5, value: Math.round((L.weight ?? 1) * 100), style: 'width:56px', title: 'How strongly this layer adds on top, in percent', 'aria-label': 'Layer weight percent' });
+        w.addEventListener('change', () => { pushUndo('Layer weight'); L.weight = Math.max(0, Math.min(2, Number(w.value) / 100)); dirty = true; apply(); });
+        return [h('button', { 'aria-pressed': String(L.on === false), onclick: () => { pushUndo('Mute layer'); L.on = L.on === false; dirty = true; buildTimelineTools(); apply(); }, title: 'Mute this layer to compare with the base' }, 'Mute'), w, h('span', {}, '%')];
+      })() : [])));
 }
 
+function toggleCurves(on = !curves) { curves = on; buildTimelineTools(); drawTracks(); return { curves }; }
 const pxPerFrame = () => Math.max(3, ($('#tracks').clientWidth - 170) / Math.max(1, project.length));
 
 function drawTracks() {
@@ -838,17 +1047,30 @@ function drawTracks() {
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Audio'), lane([wave])));
+  if (curves) {
+    const live = id => project.tracks[id]?.length && !DISCRETE.has(id);
+    let ids = (PARTS.find(p => p[0] === part)?.[2] || []).filter(live), what = PARTS.find(p => p[0] === part)?.[1];
+    if (!ids.length) { ids = filterIds(keyFilter, BUNNY_IDS).filter(live); what = 'all keyed'; }
+    const wrap = h('div', { class: 'graph-wrap' });
+    rows.push(h('div', { class: 'trow graph-row' }, h('div', { class: 'tname group', title: 'Pick a part on the Pose tab (or click it in the viewport) to see its curves' }, 'Curves · ' + (ids.length ? what : 'no keys')), wrap));
+    box.replaceChildren(...rows, h('div', { id: 'playhead' }));
+    const gctx = { ...anim2Ctx(), changed: () => { dirty = true; apply(); } };
+    wrap.append(A2.graphEditor(gctx, wrap, ids, graphSel).canvas);
+    drawPlayhead();
+    return;
+  }
+  const TR = T().tracks;
   const groups = [['Bunny', filterIds(keyFilter, BUNNY_IDS.concat(FACE_IDS))], ['Camera', filterIds(keyFilter, CAM_IDS)]].filter(g => g[1].length);
   for (const [gname, ids] of groups) {
-    const keyed = ids.filter(id => project.tracks[id]);
-    rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname group' }, gname), lane(summaryKeys(keyed, ppf))));
+    const keyed = ids.filter(id => TR[id]);
+    rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname group' }, gname + (gname === 'Bunny' && T() !== project ? ' · ' + T().name : '')), lane(summaryKeys(keyed, ppf))));
     const idle = gname === 'Bunny' && idleNow();
     if (idle) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Auto blinks (top) and twitches (bottom). Click one to go there; settings are on the Face tab.' }, 'Idle life'),
       lane(idle.events.map(e => h('div', { class: 'idle-mark ' + e.kind, style: `left:${e.f * ppf + 2}px`, title: `${e.kind === 'blink' ? 'Blink' + (e.why === 'turn' ? ' on a head turn' : e.why === 'double' ? ' (double)' : '') : 'Twitch ' + (e.sides === 'LR' ? 'both' : e.sides === 'L' ? 'left' : 'right')} at frame ${e.f}`, onclick: () => goto(e.f) })))));
     for (const id of keyed) {
       const nm = (PARTS.find(p => p[2].includes(id) && p[0] !== 'whole')?.[1] || (id.startsWith('cam.') ? '' : '')) ;
       rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: id }, (nm ? nm + ' · ' : '') + (LABEL[id] || id)),
-        lane(project.tracks[id].map(k => keyEl(id, k, ppf)))));
+        lane(TR[id].map(k => keyEl(id, k, ppf)))));
     }
   }
   const ph = h('div', { id: 'playhead' });
@@ -858,24 +1080,43 @@ function drawTracks() {
 
 function summaryKeys(ids, ppf) {
   const fs = new Set();
-  for (const id of ids) for (const k of project.tracks[id]) fs.add(k.f);
+  for (const id of ids) for (const k of T().tracks[id]) fs.add(k.f);
   return [...fs].map(f => h('div', { class: 'key', style: `left:${f * ppf + 2}px;opacity:.55`, title: `Frame ${f}`, onclick: () => goto(f) }));
 }
 
 function keyEl(id, k, ppf) {
-  const el = h('div', { class: 'key' + (selected && selected.id === id && selected.f === k.f ? ' sel' : ''), style: `left:${k.f * ppf + 2}px`, title: `${LABEL[id] || id}: ${round(k.v)} at frame ${k.f} (${EASES[k.ease || 'ease']}). Drag to move.` });
+  const inMulti = multi.some(m => m.k === k);
+  const el = h('div', { class: 'key' + ((selected && selected.id === id && selected.f === k.f) || inMulti ? ' sel' : ''), style: `left:${k.f * ppf + 2}px`, title: `${LABEL[id] || id}: ${round(k.v)} at frame ${k.f} (${EASES[k.ease || 'ease']}). Drag to move; Shift+click to select several and move them together.` });
   el.addEventListener('pointerdown', e => {
     e.stopPropagation();
+    const tr = T().tracks;
+    if (e.shiftKey) {
+      const i = multi.findIndex(m => m.k === k);
+      if (i >= 0) multi.splice(i, 1);
+      else {
+        const sk = selected && tr[selected.id]?.find(x => x.f === selected.f);
+        if (!multi.length && sk && sk !== k) multi.push({ id: selected.id, k: sk });
+        multi.push({ id, k });
+      }
+      selected = { id, f: k.f };
+      drawTracks();
+      return;
+    }
+    if (!inMulti) multi = [];
     selected = { id, f: k.f };
     $('#ease-select').value = k.ease || 'ease';
-    const x0 = e.clientX, f0 = k.f;
+    const group = (multi.length ? multi : [{ id, k }]).map(m => ({ ...m, f0: m.k.f }));
+    const x0 = e.clientX, lo = -Math.min(...group.map(g => g.f0)), hi = project.length - 1 - Math.max(...group.map(g => g.f0));
     let moved = false;
-    pushUndo();
+    pushUndo(group.length > 1 ? `Move ${group.length} keys` : 'Move key');
     const mv = ev => {
-      const nf = Math.max(0, Math.min(project.length - 1, f0 + Math.round((ev.clientX - x0) / ppf)));
-      if (nf !== k.f && !project.tracks[id].some(o => o !== k && o.f === nf)) { k.f = nf; project.tracks[id].sort((a, b) => a.f - b.f); selected.f = nf; moved = true; el.style.left = `${nf * ppf + 2}px`; }
+      const d = Math.max(lo, Math.min(hi, Math.round((ev.clientX - x0) / ppf)));
+      if (group.length === 1) {
+        const nf = group[0].f0 + d;
+        if (nf !== k.f && !tr[id].some(o => o !== k && o.f === nf)) { k.f = nf; tr[id].sort((a, b) => a.f - b.f); selected.f = nf; moved = true; el.style.left = `${nf * ppf + 2}px`; }
+      } else if (group.some(g => g.k.f !== g.f0 + d)) { for (const g of group) g.k.f = g.f0 + d; moved = true; selected.f = k.f; scheduleTracks(); }
     };
-    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); if (!moved) undoStack.pop(); goto(k.f); drawTracks(); };
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); if (group.length > 1) settleKeys(group); if (!moved) undoStack.pop(); goto(k.f); drawTracks(); };
     addEventListener('pointermove', mv); addEventListener('pointerup', up);
   });
   return el;
@@ -898,7 +1139,8 @@ function goto(f) {
 
 function keyGroup(ids) {
   pushUndo();
-  for (const id of ids) setKey(project, id, frame, current(id));
+  const vals = ids.map(id => [id, current(id)]);
+  for (const [id, v] of vals) if (T() === project || !DISCRETE.has(id)) keyAt(id, v);
   for (const id of ids) delete preview[id];
   apply(); drawTracks();
   toast(`Keyed ${ids.length} values at frame ${frame}`);
@@ -906,7 +1148,10 @@ function keyGroup(ids) {
 
 function deleteSelected() {
   if (!selected) return toast('Select a key first');
-  pushUndo(); deleteKey(project, selected.id, selected.f); selected = null; apply(); drawTracks();
+  pushUndo(multi.length > 1 ? `Delete ${multi.length} keys` : 'Delete key');
+  if (multi.length > 1) { const tr = T().tracks; for (const m of multi) { const i = tr[m.id]?.indexOf(m.k); if (i >= 0) tr[m.id].splice(i, 1); if (tr[m.id] && !tr[m.id].length) delete tr[m.id]; } multi = []; }
+  else deleteKey(T(), selected.id, selected.f);
+  selected = null; apply(); drawTracks();
 }
 function clearAll() { if (!confirm(`Clear every key in ${project.code}?`)) return; pushUndo(); project.tracks = {}; apply(); drawTracks(); }
 
@@ -1017,6 +1262,10 @@ function bindKeys() {
     if (!c && k.toLowerCase() === 'l') { loopPlay = !loopPlay; toast(loopPlay ? 'Playback loops' : 'Playback stops at the end'); return; }
     if (!c && k.toLowerCase() === 'n') { reviewNote(); return; }
     if (!c && k.toLowerCase() === 'b') { tapBeat(); return; }
+    if (c && e.shiftKey && k.toLowerCase() === 'c') { e.preventDefault(); copyKeysNow(); return; }
+    if (c && e.shiftKey && k.toLowerCase() === 'v') { e.preventDefault(); try { pasteKeysNow(); } catch (er) { toast(er.message); } return; }
+    if (!c && !e.shiftKey && k.toLowerCase() === 'i') { toggleIk(); return; }
+    if (k === 'Escape' && multi.length) { multi = []; drawTracks(); return; }
     if (c && k.toLowerCase() === 'c' && !e.shiftKey) { poseBuf.copy = poseNow(); toast('Pose copied'); return; }
     if (c && k.toLowerCase() === 'v' && !e.shiftKey) { if (poseBuf.copy) putPose(poseBuf.copy); return; }
     if (c && k.toLowerCase() === 'k') { e.preventDefault(); commandSearch(polCtx()); }
@@ -1213,6 +1462,57 @@ function loop() {
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // animtools2.js (MCP tool "anim2")
+    async anim2(a = {}) {
+      const c = anim2Ctx();
+      if (a.shot != null) selectShot(a.shot);
+      if (a.frame != null) goto(a.frame);
+      const limb = () => { if (!A2.LIMB[a.limb]) throw Error('limb must be armL, armR, legL or legR'); return a.limb; };
+      const out = {
+        pick: () => { const r = view.renderer.domElement.getBoundingClientRect(); return clickPick(r.left + (a.x ?? 0.5) * r.width, r.top + (a.y ?? 0.5) * r.height); },
+        ik_mode: () => toggleIk(a.on ?? !ikOn),
+        ik: () => {
+          const L = limb(), r = A2.ikMove(view, valuesNow(), L, { target: a.target, offset: a.offset }, range);
+          pushUndo('IK ' + L); for (const [id, v] of Object.entries(r.values)) setValue(id, v); drawTracks();
+          return { limb: L, values: r.values, missedCm: +(r.error * 100).toFixed(1), end: A2.v3(A2.endPoint(view, valuesNow(), L)) };
+        },
+        end_point: () => { const L = limb(), p = A2.endPoint(view, valuesNow(), L); apply(); const q = p.clone().project(view.camera); return { limb: L, frame, at: A2.v3(p), screen: [+((q.x + 1) / 2).toFixed(4), +((1 - q.y) / 2).toFixed(4)] }; },
+        pin: () => A2.pin(c, limb(), a.from ?? frame, a.to ?? project.length - 1, a.step ?? 2),
+        path: () => { const r = showPath(a.what === undefined ? 'armR' : a.what); return { ...r, frames: pathPts?.length || 0, points: a.points && pathPts ? pathPts.map(A2.v3) : undefined }; },
+        fix_arcs: () => fixArcs(a.what || pathWhat || 'armR'),
+        curves: () => toggleCurves(a.on ?? !curves),
+        time_warp: () => A2.timeWarp(c, a.warp, a.amount ?? 1),
+        moving_hold: () => A2.movingHold(c, a.from ?? frame, a.to ?? Math.min(project.length - 1, frame + 12), a.amount ?? 0.06),
+        save_pose: () => { const r = A2.savePose(c, a.name || 'Pose', a.part || 'whole'); if (tab === 'pose') buildPanel(); return r; },
+        poses: () => A2.poses(),
+        apply_pose: () => A2.applyPose(c, a.name),
+        delete_pose: () => { A2.deletePose(a.name); if (tab === 'pose') buildPanel(); return A2.poses().map(p => p.name); },
+        copy_keys: () => A2.copyKeys(c, { from: a.from ?? 0, to: a.to ?? project.length - 1, part: a.part || 'whole' }),
+        paste_keys: () => A2.pasteKeys(c, a.at ?? frame),
+        move_keys: () => moveKeys(a.keys || [], a.by || 0),
+        add_layer: () => newLayer(a.name),
+        layers: () => layersInfo(),
+        layer: () => {
+          const i = a.index ?? editLayer, L = project.layers?.[i];
+          if (i >= 0 && !L) throw Error('No layer ' + i + '; add_layer makes one');
+          pushUndo('Layer');
+          if (L && a.on != null) L.on = !!a.on;
+          if (L && a.weight != null) L.weight = Math.max(0, Math.min(2, Number(a.weight)));
+          if (L && a.name) L.name = String(a.name).slice(0, 30);
+          if (a.edit != null) editLayer = a.edit ? i : -1;
+          dirty = true; buildTimelineTools(); drawTracks(); apply();
+          return layersInfo();
+        },
+        euler_filter: () => A2.eulerFilter(c),
+        balance: () => { const b = A2.balance(view); if (a.on != null) { balanceOn = !!a.on; apply(); if (!balanceOn) drawCog(); } return { balanced: b.balanced, grounded: b.grounded, offCm: b.offCm, cog: A2.v3(b.cog) }; },
+        reference: () => (a.clear ? clearReference() : referenceVideo(a.path, a)),
+        reference_info: () => ({ reference: scene.reference || null, video: A2.referenceInfo() }),
+        retarget: () => retargetTo(a.character),
+        playblast: () => playblast(animCtx()),
+      }[a.action];
+      if (!out) throw Error('action must be pick, ik_mode, ik, end_point, pin, path, fix_arcs, curves, time_warp, moving_hold, save_pose, poses, apply_pose, delete_pose, copy_keys, paste_keys, move_keys, add_layer, layers, layer, euler_filter, balance, reference, reference_info, retarget or playblast');
+      return out();
+    },
     // workflow.js (MCP tool "workflow")
     workflow(a = {}) {
       const c = wfCtx();

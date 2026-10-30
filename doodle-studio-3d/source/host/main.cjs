@@ -195,6 +195,12 @@ const api = {
     const r = await dialog.showOpenDialog(main, { title: 'Import audio for this scene', defaultPath: path.join(settings.get().rendersRoot, 'Audio'), filters: [{ name: 'Audio', extensions: ['wav', 'mp3', 'm4a', 'aac', 'ogg', 'flac'] }], properties: ['openFile'] });
     return { path: r.canceled ? null : r.filePaths[0] || null };
   },
+  // reference video for the animator: shown on a plane in the viewport, never rendered
+  async 'pick-video'() {
+    const r = await dialog.showOpenDialog(main, { title: 'Reference video', filters: [{ name: 'Video', extensions: ['mp4', 'm4v', 'webm', 'mov'] }], properties: ['openFile'] });
+    return { path: r.canceled ? null : r.filePaths[0] || null };
+  },
+  async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
   async 'read-audio'({ path: p }) {
     if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');
     if (fs.statSync(p).size > 300e6) throw Error('Audio file over 300 MB');
