@@ -23,7 +23,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await ev(() => ds3d.setValues({ headYaw: 20 }, 10, true));
   let hist = await prod({ action: 'history' });
   ok(hist.length >= 2, 'history lists changes: ' + hist.map(x => x.label).join(', '));
-  await p.click('#menubar .menu button:has-text("Edit")');
+  await p.click('#menubar .menu > button:has-text("Edit")');
   await p.click('#menubar .menu-list button:has-text("Undo history")');
   ok(await p.locator('.ds-modal[aria-label="Undo history"] .ds-list button').count() === hist.length + 1, 'Undo history panel shows every change plus Now');
   await p.locator('.ds-modal[aria-label="Undo history"] .ds-list button').nth(1).click();   // just before the newest change
@@ -43,7 +43,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(!st.keyed.armR && st.keyed.earLFold, 'per-change undo removes only that change: ' + JSON.stringify(r));
   hist = await prod({ action: 'history' });
   ok(hist.at(-1).label === 'Undo Claude: set values', 'the per-change undo is itself undoable');
-  await p.click('#menubar .menu button:has-text("Tools")');
+  await p.click('#menubar .menu > button:has-text("Tools")');
   await p.click('#menubar .menu-list button:has-text("Claude change log")');
   ok(await p.locator('.ds-modal[aria-label="Claude change log"] button:has-text("Undone")').count() === 1, 'change log dialog marks it undone');
   await p.keyboard.press('Escape'); await ev(() => document.querySelectorAll('.ds-modal').forEach(m => m.remove()));
@@ -94,7 +94,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await prod({ action: 'fix', fix: 'renumber' });
   hc = await prod({ action: 'health' });
   ok(hc.items.find(i => i.id === 'keys').ok && hc.items.find(i => i.id === 'codes').ok, 'one-click fixes clear both');
-  await p.click('#menubar .menu button:has-text("Tools")');
+  await p.click('#menubar .menu > button:has-text("Tools")');
   await p.click('#menubar .menu-list button:has-text("Health check")');
   await p.waitForSelector('.ds-modal[aria-label="Health check"]');
   ok(await p.locator('.ds-modal[aria-label="Health check"] .preflight').count() >= 8, 'health check dialog lists the checks');

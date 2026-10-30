@@ -1,7 +1,7 @@
 // Local server for Doodle Studio 3D: serves the editor and its /api (files, renders).
 // Bound to 127.0.0.1 only. The 2D Doodle Studio's ports (54183 etc.) are never touched.
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary' };
 
 // reference videos the user picked: served by a random token, with Range requests so the
 // editor can seek them. Only files registered through ref-video are reachable.
@@ -57,7 +57,7 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null, stat
       const pre = Object.keys(statics).find(k => p.startsWith(k + path.sep) || p.startsWith(k + '/'));
       const base = pre ? path.resolve(statics[pre]()) : root;
       const file = pre ? path.join(base, p.slice(pre.length + 1)) : path.join(root, p);
-      if (!file.startsWith(base + path.sep) || (pre && !/[.](png|jpg|webp|ttf)$/i.test(file))) { res.writeHead(403); return res.end(); }
+      if (!file.startsWith(base + path.sep) || (pre && !/[.](png|jpg|webp|ttf|glb)$/i.test(file))) { res.writeHead(403); return res.end(); }
       const data = await fs.promises.readFile(file);
       res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
       res.end(data);

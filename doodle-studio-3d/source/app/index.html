@@ -5,29 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Doodle Studio 3D</title>
 <link rel="stylesheet" href="src/ui.css">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+<link rel="stylesheet" href="src/ux2d.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
 </head>
-<body>
+<body class="ux2d">
 <nav id="menubar" aria-label="Menu"></nav>
-<header class="topbar">
-  <h1>DOODLE STUDIO 3D</h1>
-  <input id="shot-name" aria-label="Scene name" title="Scene name. Everything for it goes to DeepInDoodles\<name>." style="width:220px">
-  <span class="keys-label">KEYS</span>
-  <button id="auto-key" aria-pressed="true" title="Auto: every change you make sets a key at the playhead. Off: changes are only a preview until you press Key.">Auto</button>
-  <button id="render-btn" class="primary" title="Render every shot of the scene in order and join them into one video (Ctrl+Shift+E)">Render scene</button>
-</header>
-<main id="canvas-wrap">
-  <div id="frame"><canvas id="view" aria-label="3D viewport"></canvas><div id="hud"></div></div>
-  <div id="rail"></div>
-</main>
-<aside id="panel">
-  <div id="tabs" role="tablist"></div>
-  <div id="panel-content"></div>
-</aside>
-<section id="timeline">
-  <div id="timeline-tools"></div>
-  <div id="tracks"></div>
-</section>
+<div id="workspace" data-layout="classic">
+  <section class="dock" id="dock-canvas" data-dock="canvas" aria-label="Canvas">
+    <header class="dock-title"><span class="grip" aria-hidden="true">⠿</span><b>Canvas</b><span class="dock-hint">Drag to rearrange · pull outside to detach</span><span class="dock-btns"></span></header>
+    <div class="canvas-top" id="canvas-top"></div>
+    <div class="canvas-body">
+      <main id="canvas-wrap">
+        <div id="frame"><canvas id="view" aria-label="3D viewport"></canvas><div id="hud"></div></div>
+      </main>
+      <div id="rail" role="toolbar" aria-label="Canvas tools"></div>
+    </div>
+  </section>
+  <section class="dock" id="dock-tools" data-dock="tools" aria-label="Tools">
+    <header class="dock-title"><span class="grip" aria-hidden="true">⠿</span><b>Tools</b><span class="dock-hint">Drag to rearrange · pull outside to detach</span><span class="dock-btns"></span></header>
+    <aside id="panel">
+      <header class="topbar">
+        <h1>DOODLE STUDIO 3D</h1>
+        <input id="shot-name" aria-label="Scene name" title="Scene name. Everything for it goes to DeepInDoodles\&lt;name&gt;.">
+        <select id="shot-select" aria-label="Shot" title="The shot you are editing. Shots play in this order in the scene."></select>
+        <button id="shots-btn" title="Add, duplicate, move, rename or delete shots">Shots…</button>
+        <button id="render-btn" title="Render every shot of the scene in order and join them into one video (Ctrl+Shift+E)">Render</button>
+        <button id="save-btn" title="Save the scene (Ctrl+S)">Save</button>
+      </header>
+      <div id="tabs" role="tablist"></div>
+      <div id="subtabs" role="tablist"><div class="sub-chips"></div><button id="auto-key" aria-pressed="true" title="Auto: every change you make sets a key at the playhead. Manual: changes are only a preview until you press Key.">Keys: Auto</button></div>
+      <div id="panel-content"></div>
+      <div id="statusline" role="status">Ready.</div>
+    </aside>
+  </section>
+  <section class="dock" id="dock-timeline" data-dock="timeline" aria-label="Timeline">
+    <header class="dock-title"><span class="grip" aria-hidden="true">⠿</span><b>Timeline</b><span class="dock-hint">Drag to rearrange · pull outside to detach</span><span class="dock-btns"></span></header>
+    <section id="timeline">
+      <div id="timeline-tools"></div>
+      <div id="tracks"></div>
+    </section>
+  </section>
+</div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

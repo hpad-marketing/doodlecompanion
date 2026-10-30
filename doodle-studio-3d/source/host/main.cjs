@@ -104,6 +104,10 @@ const renders = require('./render.cjs')({
   },
 });
 
+// 3D view models of library sets, props and scenery (models.cjs): Blender converts each once
+const stageModels = require('./models.cjs')({ libraryDir: () => settings.get().libraryDir, cacheDir: () => path.join(dataDir, 'models'),
+  command: (ids, dir) => { const exe = renders.blender(); return exe ? [exe, ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'preview_export.py'), '--', settings.get().libraryDir, dir, ...ids]] : null; } });
+
 function insideRenders(p) {
   const root = path.resolve(settings.get().rendersRoot), f = path.resolve(String(p || ''));
   if (!f.startsWith(root + path.sep) || path.extname(f).toLowerCase() !== '.png') throw Error('Only PNGs inside DeepInDoodles');
@@ -111,6 +115,8 @@ function insideRenders(p) {
 }
 
 const api = {
+  'stage-models': req => stageModels.models(req),
+  'models-info': () => stageModels.info(),
   // the scene file lives at DeepInDoodles\<Scene>\work\<Scene>.ds3d
   async save({ project, path: p, auto }) {
     let file = p;
@@ -333,7 +339,7 @@ else {
     });
     const mcp = require('./mcp.cjs')({ call, api });
     api['mcp-replay'] = ({ name, args }) => mcp.replay(name, args);
-    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir } });
+    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models') } });
     let saved = {};
     try { saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'window.json'), 'utf8')); } catch {}
     const valid = saved.bounds && screen.getAllDisplays().some(d => saved.bounds.x < d.workArea.x + d.workArea.width && saved.bounds.x + saved.bounds.width > d.workArea.x);
@@ -343,7 +349,16 @@ else {
     main.removeMenu();
     main.webContents.on('will-navigate', (e, url) => { if (!url.startsWith(`http://127.0.0.1:${PORT}/`)) e.preventDefault(); });
     // only the viewport pop-out may open, and it goes to the second screen: the Kamvas pen display stays the primary
-    main.webContents.setWindowOpenHandler(({ frameName }) => {
+    main.webContents.setWindowOpenHandler(({ frameName, features }) => {
+      // detached Tools and Timeline docks (ux2d.js): their own windows, where they were last left
+      if (/^ds3d-panel-(tools|timeline)$/.test(frameName)) {
+        const f = Object.fromEntries(String(features || '').split(',').map(x => x.split('=').map(s => s.trim())).filter(x => x[0]).map(([k, v]) => [k, Number(v)]));
+        const primary = screen.getPrimaryDisplay(), other = screen.getAllDisplays().filter(d => d.id !== primary.id)[0], wa = (other || primary).workArea;
+        const w = Math.min(f.width || 1400, wa.width), hh = Math.min(f.height || 600, wa.height);
+        const on = Number.isFinite(f.left) && screen.getAllDisplays().some(d => f.left >= d.workArea.x - 20 && f.left < d.workArea.x + d.workArea.width && f.top >= d.workArea.y - 20 && f.top < d.workArea.y + d.workArea.height);
+        return { action: 'allow', overrideBrowserWindowOptions: { x: on ? f.left : wa.x + Math.round((wa.width - w) / 2), y: on ? f.top : wa.y + Math.round((wa.height - hh) / 2), width: w, height: hh,
+          title: 'Doodle Studio 3D', icon, backgroundColor: '#E0A64B', autoHideMenuBar: true, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } } };
+      }
       if (frameName !== 'ds3d-viewport') return { action: 'deny' };
       const primary = screen.getPrimaryDisplay(), other = screen.getAllDisplays().filter(d => d.id !== primary.id).sort((a, b) => b.workArea.width * b.workArea.height - a.workArea.width * a.workArea.height)[0];
       const wa = (other || primary).workArea, w = Math.min(1100, wa.width), hh = Math.min(1300, wa.height);

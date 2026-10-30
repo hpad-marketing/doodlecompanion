@@ -102,7 +102,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(await p.locator('#quickbar button').count() >= 1, 'recent command on the favourites bar');
   await p.locator('#quickbar button').first().click({ button: 'right' });
   ok(await p.locator('#quickbar button.fav').count() === 1, 'right-click pins it as a favourite');
-  await p.click('#menubar .menu button:has-text("Help")');
+  await p.click('#menubar .menu > button:has-text("Help")');
   await p.click('#menubar .menu-list button:has-text("Keyboard shortcuts")');
   ok(await p.locator('.ds-modal .hotkeys kbd.mine').count() === 1, 'shortcut editor shows your key');
   await p.screenshot({ path: path.join(out, 'hotkeys.png') });

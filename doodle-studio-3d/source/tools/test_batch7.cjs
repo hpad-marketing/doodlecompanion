@@ -32,7 +32,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   let e = await A({ action: 'end_point', limb: 'armR' });
   let [x, y] = scr(e.screen);
   await p.mouse.click(x, y);
-  ok(await p.locator('#panel-content .chips button[aria-pressed="true"]').first().textContent() === 'Right arm', 'clicking the hand picks the right arm');
+  ok(await p.locator('#subtabs .sub-chips button[aria-pressed="true"]').first().textContent() === 'Right arm', 'clicking the hand picks the right arm');
   ok((await A({ action: 'pick', x: 0.5, y: 0.02 })) === null, 'clicking empty sky picks nothing');
 
   // IK drag in the viewport
@@ -69,7 +69,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
 
   // graph editor: drag a key down
   await ev(() => { ds3d.project.tracks = {}; ds3d.setValues({ armL: 0 }, 0, true); ds3d.setValues({ armL: 80 }, 20, true); ds3d.setValues({ armL: 10 }, 39, true); });
-  await p.click('#panel-content .chips button:has-text("Left arm")');
+  await p.click('#subtabs .sub-chips button:has-text("Left arm")');
   await p.click('#curves-btn');
   const g = p.locator('#tracks canvas.graph');
   ok(await g.count() === 1, 'Curves shows the graph editor');
@@ -173,7 +173,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.keyboard.press('Escape');
 
   // per-control reset (double-click the name)
-  await p.click('#panel-content .chips button:has-text("Left arm")');
+  await p.click('#subtabs .sub-chips button:has-text("Left arm")');
   await ev(() => ds3d.setValues({ elbowL: 70 }, 0, true));
   await p.locator('#panel-content label.ctl[data-id="elbowL"] .name').dblclick();
   ok((await val('elbowL', 0)) === 0, 'double-click resets one control');
