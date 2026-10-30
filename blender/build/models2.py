@@ -405,7 +405,7 @@ def cycad():
 def barn():
     p = Piece('barn')
     p.prism([(-1.4, 0), (-1.4, 1.6), (-0.9, 2.3), (0, 2.75), (0.9, 2.3), (1.4, 1.6), (1.4, 0)], 2.0)
-    p.box(1.0, 0.04, 1.4, 0, -1.01, 0, mat='i')
+    p.box(1.0, 0.04, 1.4, 0, -1.01, 0)
     p.box(0.04, 0.03, 1.4, 0, -1.04, 0)
     p.box(0.5, 0.04, 0.4, 0, -1.01, 1.8)
     return p
@@ -437,7 +437,7 @@ def scarecrow():
     p = Piece('scarecrow')
     p.cyl(0.03, 1.5, 0, 0, 0, seg=8)
     p.box(0.9, 0.05, 0.05, 0, 0, 1.15)
-    p.box(0.36, 0.16, 0.45, 0, 0, 0.75, bevel=0.04, mat='i')
+    p.box(0.36, 0.16, 0.45, 0, 0, 0.75, bevel=0.04)
     p.sphere(0.14, 0, 0, 1.4)
     p.cyl(0.24, 0.02, 0, 0, 1.48, seg=20)
     p.cyl(0.1, 0.14, 0, 0, 1.5, r2=0.07, seg=16)
@@ -558,7 +558,7 @@ def garden_chair():
 def house_back():
     p = Piece('house_back')
     p.prism([(-3.0, 0), (-3.0, 2.4), (0, 3.6), (3.0, 2.4), (3.0, 0)], 0.2)
-    p.box(0.9, 0.04, 1.9, 1.4, -0.12, 0, mat='i')
+    p.box(0.9, 0.04, 1.9, 1.4, -0.12, 0)
     p.box(1.0, 0.04, 0.8, -1.3, -0.12, 1.0)
     p.box(0.04, 0.05, 0.8, -1.3, -0.15, 1.0)
     return p
@@ -691,7 +691,7 @@ def chai_stall():
         for y in (-0.33, 0.33):
             p.cyl(0.03, 1.2, x, y, 0.9, seg=8)
     p.box(2.0, 1.1, 0.04, 0, -0.1, 2.1, rx=-8)
-    p.box(1.0, 0.04, 0.35, 0, -0.38, 1.68, mat='i')  # signboard
+    p.box(1.0, 0.04, 0.35, 0, -0.38, 1.68)  # signboard
     return p
 
 
@@ -784,7 +784,7 @@ def bus():
     p = Piece('bus')
     p.box(4.2, 1.1, 1.3, 0, 0, 0.3, bevel=0.15)
     for x in (-1.5, -0.5, 0.5, 1.5):
-        p.box(0.75, 0.04, 0.45, x, -0.56, 0.9, mat='i')
+        p.box(0.75, 0.04, 0.45, x, -0.56, 0.9)
     for x in (-1.4, 1.4):
         p.cyl(0.3, 0.12, x, -0.5, 0.3, rx=90, seg=20, mat='i')
     return p
@@ -922,7 +922,7 @@ def drying_rack():
 def balcony_wall():
     p = Piece('balcony_wall')
     p.box(0.25, 3.0, 2.6, 0, 0, 0)
-    p.box(0.05, 0.9, 1.9, 0.15, 0.6, 0, mat='i')  # door back into the flat
+    p.box(0.05, 0.9, 1.9, 0.15, 0.6, 0)  # door back into the flat
     return p
 
 
@@ -1011,7 +1011,7 @@ def letterboxes():
 def lift_door():
     p = Piece('lift_door')
     p.box(1.3, 0.1, 2.2, 0, 0, 0)
-    p.box(1.0, 0.04, 1.9, 0, -0.05, 0, mat='i')
+    p.box(1.0, 0.04, 1.9, 0, -0.05, 0)
     p.box(0.02, 0.05, 1.9, 0, -0.08, 0)
     p.box(0.1, 0.04, 0.24, 0.8, -0.03, 1.0)
     p.box(0.3, 0.04, 0.12, 0, -0.05, 2.0)
@@ -1022,7 +1022,7 @@ def lift_door():
 def big_window_view():
     p = Piece('big_window_view')
     p.box(2.0, 0.08, 1.4, 0, 0, 0)
-    p.box(1.8, 0.1, 1.2, 0, 0, 0.1, mat='i')
+    p.box(1.8, 0.1, 1.2, 0, 0, 0.1)
     p.box(0.04, 0.12, 1.2, 0, -0.01, 0.1)
     import random
     rnd = random.Random(5)
@@ -1065,7 +1065,7 @@ def salon_mirror():
     p.box(1.4, 0.4, 0.06, 0, 0, 0.85, bevel=0.01, seg=1)
     p.box(1.3, 0.35, 0.8, 0, 0, 0.05)
     p.box(1.0, 0.04, 1.0, 0, 0.18, 1.15)
-    p.box(0.9, 0.05, 0.9, 0, 0.15, 1.2, mat='i')
+    p.box(0.9, 0.05, 0.9, 0, 0.15, 1.2)
     p.cyl(0.035, 0.18, -0.4, 0, 0.91, seg=12)
     p.cyl(0.03, 0.12, -0.3, 0, 0.91, seg=12, mat='i')
     return p
@@ -1107,7 +1107,7 @@ def bank_counter():
 @model
 def token_display():
     p = Piece('token_display')
-    p.box(0.7, 0.08, 0.3, 0, 0, 0, bevel=0.02, seg=2, mat='i')
+    p.box(0.7, 0.08, 0.3, 0, 0, 0, bevel=0.02, seg=2)
     p.box(0.6, 0.04, 0.2, 0, -0.04, 0.05)
     return p
 
@@ -1128,7 +1128,7 @@ def stanchions():
 def atm():
     p = Piece('atm')
     p.box(0.7, 0.6, 1.5, 0, 0, 0, bevel=0.03)
-    p.box(0.5, 0.05, 0.35, 0, -0.3, 1.05, mat='i')
+    p.box(0.5, 0.05, 0.35, 0, -0.3, 1.05)
     p.box(0.5, 0.2, 0.05, 0, -0.35, 0.85, rx=20)
     p.box(0.2, 0.03, 0.03, 0.12, -0.31, 0.7, mat='i')
     return p
@@ -1202,7 +1202,7 @@ def berths():
 def train_window():
     p = Piece('train_window')
     p.box(1.4, 0.08, 1.0, 0, 0, 0, bevel=0.05)
-    p.box(1.2, 0.1, 0.8, 0, 0, 0.1, mat='i')
+    p.box(1.2, 0.1, 0.8, 0, 0, 0.1)
     for i in range(5):
         p.box(1.2, 0.12, 0.03, 0, -0.01, 0.2 + i * 0.15)  # window bars
     return p
@@ -1236,7 +1236,7 @@ def overhead_bins():
     p = Piece('overhead_bins')
     p.box(1.6, 3.0, 0.4, 0, 0, 0, bevel=0.06)
     for y in (-1.0, 0.0, 1.0):
-        p.box(1.62, 0.02, 0.32, 0, y, 0.04, mat='i')
+        p.box(1.62, 0.02, 0.32, 0, y, 0.04)
     return p
 
 
@@ -1273,7 +1273,7 @@ def seatbelt_sign():
 def lab_bench():
     p = Piece('lab_bench')
     p.box(1.8, 0.7, 0.9, 0, 0, 0)
-    p.box(1.9, 0.75, 0.05, 0, 0, 0.9, mat='i')
+    p.box(1.9, 0.75, 0.05, 0, 0, 0.9)
     p.box(0.3, 0.3, 0.06, -0.5, 0, 0.95)  # sink
     p.tube([(-0.5, 0.2, 0.95), (-0.5, 0.2, 1.25), (-0.5, 0.05, 1.25), (-0.5, 0.05, 1.15)], 0.015)
     return p
@@ -1304,7 +1304,7 @@ def microscope():
 def server_rack():
     p = Piece('server_rack')
     for i, x in enumerate((-0.7, 0.0, 0.7)):
-        p.box(0.6, 0.8, 2.0, x, 0, 0, bevel=0.01, seg=1, mat='i')
+        p.box(0.6, 0.8, 2.0, x, 0, 0, bevel=0.01, seg=1)
         for k in range(8):
             p.box(0.5, 0.02, 0.12, x, -0.41, 0.2 + k * 0.22)
             p.sphere(0.012, x + 0.18, -0.43, 0.26 + k * 0.22, seg=6)
@@ -1371,7 +1371,7 @@ def throne():
     p.prism([(-0.4, 0.65), (-0.4, 1.6), (-0.2, 1.75), (0, 1.9), (0.2, 1.75), (0.4, 1.6), (0.4, 0.65)], 0.15, y=0.3)
     for x in (-0.42, 0.42):
         p.box(0.12, 0.6, 0.3, x, -0.02, 0.65, bevel=0.04)
-    p.box(0.6, 0.5, 0.08, 0, -0.05, 0.65, bevel=0.03, mat='i')
+    p.box(0.6, 0.5, 0.08, 0, -0.05, 0.65, bevel=0.03)
     return p
 
 
@@ -1379,7 +1379,7 @@ def throne():
 def banner():
     p = Piece('banner')
     p.cyl(0.02, 0.9, -0.45, 0, 0, rx=0, ry=90, seg=8)
-    p.prism([(-0.4, 0), (0.4, 0), (0.4, -1.4), (0, -1.2), (-0.4, -1.4)], 0.02, z=-0.02, mat='i')
+    p.prism([(-0.4, 0), (0.4, 0), (0.4, -1.4), (0, -1.2), (-0.4, -1.4)], 0.02, z=-0.02)
     p.prism([(-0.12, -0.5), (0, -0.3), (0.12, -0.5), (0, -0.7)], 0.03, z=-0.02)
     return p
 
@@ -1398,7 +1398,7 @@ def arches():
 @model
 def red_carpet():
     p = Piece('red_carpet')
-    p.box(1.2, 4.5, 0.01, 0, 0, 0, mat='i')
+    p.box(1.2, 4.5, 0.01, 0, 0, 0)
     p.box(1.0, 4.4, 0.004, 0, 0, 0.01)
     return p
 
@@ -1421,7 +1421,7 @@ def consoles():
     p = Piece('consoles')
     for x, rz in ((-1.1, 20), (1.1, -20)):
         p.box(1.2, 0.6, 0.85, x, 0, 0, rz=rz, bevel=0.04)
-        p.box(1.1, 0.5, 0.04, x, -0.06, 0.88, rz=rz, rx=20, mat='i')
+        p.box(1.1, 0.5, 0.04, x, -0.06, 0.88, rz=rz, rx=20)
         for k in range(4):
             p.sphere(0.03, x - 0.3 + k * 0.2, -0.2, 0.95, seg=8)
     return p
@@ -1431,7 +1431,7 @@ def consoles():
 def space_window():
     p = Piece('space_window')
     p.prism([(-2.0, 0.0), (-2.2, 1.3), (-1.4, 2.0), (1.4, 2.0), (2.2, 1.3), (2.0, 0.0)], 0.12)
-    p.prism([(-1.8, 0.15), (-1.95, 1.2), (-1.3, 1.8), (1.3, 1.8), (1.95, 1.2), (1.8, 0.15)], 0.14, mat='i')
+    p.prism([(-1.8, 0.15), (-1.95, 1.2), (-1.3, 1.8), (1.3, 1.8), (1.95, 1.2), (1.8, 0.15)], 0.14)
     import random
     rnd = random.Random(9)
     for _ in range(26):

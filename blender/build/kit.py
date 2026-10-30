@@ -18,6 +18,13 @@ class Piece:
         self.grp = self.bm.faces.layers.int.new('dsl_group')
         self.g = 0
         self.mat_index = {'m': 0, 'i': 1}
+        self.meta = {}  # extras the builder stores on the object (text spot, screen face, place mode)
+
+    def __setitem__(self, k, v):
+        self.meta[k] = v
+
+    def __getitem__(self, k):
+        return self.meta[k]
 
     def _add(self, bm2, mat='m', M=None):
         if M is not None:

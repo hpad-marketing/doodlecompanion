@@ -469,6 +469,44 @@ def _search(kind, side, hf, A, local, samp, upright, body, budget=5000, reach_k=
 
 
 def attach(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
+    """Hold `ob`, then look again from the pose the arm ended in: moving the arm moves his
+    sleeve, so a spot that was clear before the arm moved can be blocked after. Up to three
+    looks; the cleanest one is kept."""
+    arm = rig()
+    start = _arm_pose(arm) if arm else None
+    rep = _attach_once(ob, side, pose, frame, check, force_kind)
+    if not check or rep.get('ok') or rep.get('kind') in ('two', 'wear') or rep.get('note'):
+        return rep
+    best = (_badness(rep), start)
+    for _ in range(2):
+        start = _arm_pose(arm)
+        rep = _attach_once(ob, side, pose, frame, check, force_kind)
+        if rep.get('ok'):
+            return rep
+        if _badness(rep) < best[0]:
+            best = (_badness(rep), start)
+    if _badness(rep) > best[0]:  # go back to the cleanest look: same arm pose in, same answer out
+        _arm_pose(arm, best[1])
+        rep = _attach_once(ob, side, pose, frame, check, force_kind)
+    return rep
+
+
+def _badness(rep):
+    return (0 if rep.get('touch', True) else 100) + rep.get('stray_mm', 0) + rep.get('clip_mm', 0)
+
+
+def _arm_pose(arm, pose=None):
+    """Read (or put back) the pose of every bone: a snapshot to retry a grip from."""
+    if pose is None:
+        return {pb.name: (pb.location.copy(), pb.rotation_quaternion.copy(), pb.rotation_euler.copy())
+                for pb in arm.pose.bones}
+    for pb in arm.pose.bones:
+        if pb.name in pose:
+            pb.location, pb.rotation_quaternion, pb.rotation_euler = pose[pb.name]
+    bpy.context.view_layer.update()
+
+
+def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
     """Hold `ob` properly. Returns a report dict (kind, side, contact result).
 
     One hand: the arm switches to IK and carries at the side (Bunny's arms are short and
@@ -493,7 +531,7 @@ def attach(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
             return rep
         # his arms are too short to reach round it: carry it in one hand at his side instead
         alt_kind = 'fist' if sp['contact'] == 'ends' else 'palm'
-        rep2 = attach(ob, side='R', pose=pose, frame=frame, check=check, force_kind=alt_kind)
+        rep2 = _attach_once(ob, side='R', pose=pose, frame=frame, check=check, force_kind=alt_kind)
         rep2['note'] = 'too big for both of his short arms, so he carries it in one hand'
         if not rep2.get('ok'):
             return rep2

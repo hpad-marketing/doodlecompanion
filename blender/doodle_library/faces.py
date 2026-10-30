@@ -6,6 +6,8 @@ Mouth sets reuse the 3D Bunny's DS_Face node group on a second face object,
 so each of the 14 approved sets wraps onto the head with the same ink, boil and
 per-expression mouth offsets as the built-in mouths.
 """
+import json
+
 import bpy
 
 from . import index, paths
@@ -25,7 +27,9 @@ def face_bone():
 def apply_expression(item, frame=None, key=True):
     arm, fb = face_bone()
     frame = bpy.context.scene.frame_current if frame is None else frame
-    data = item['data']
+    data = _resolve_story_face(arm, fb, item['data'])
+    if data is None:
+        return  # this face was made for another character
     for k in FACE_PROPS:
         if k in data and k in fb.keys():
             fb[k] = int(data[k])
@@ -171,3 +175,44 @@ def use_mouth_set(item):
     fb['mouth_set'] = n
     arm.update_tag()
     return n
+
+
+# ---------------------------------------------------------------- story-beat faces (expressions-v2)
+def rig_species(arm):
+    return str(arm.get('species', 'bunny')).lower()
+
+
+def _resolve_story_face(arm, fb, data):
+    """Turn a by-name story-beat row into face-bone values for THIS rig.
+
+    - species: rows made for one character are skipped on the others
+    - expression_name: Bunny, Koala and Frog number faces differently, so look it up
+    - mouth_set: talking mouths switch to the named set ('mouths-x-through-teeth')
+    - speech_map: lip sync remaps visemes (pucker faces talk through Pucker 01-04)
+    """
+    sp = data.get('species')
+    if sp and rig_species(arm) not in sp:
+        return None
+    if 'expression_name' not in data:
+        return data
+    txt = bpy.data.texts.get('DOODLE_STUDIO_RIG.json')
+    names = json.loads(txt.as_string()).get('faces', []) if txt else []
+    names = [n if isinstance(n, str) else n.get('name') for n in names]
+    if data['expression_name'] not in names:
+        raise RuntimeError('This rig has no face "%s". Rebuild it with the story-beat face library.' % data['expression_name'])
+    out = dict(data)
+    out['expression'] = names.index(data['expression_name'])
+    if out.get('gaze', -1) < 0:
+        out.pop('gaze', None)
+    # talking plan, read by lip sync (keyed alongside the face, constant interpolation)
+    fb['talk_mode'] = data.get('talk', 'own')
+    fb['speech_map'] = json.dumps(data.get('speech_map') or {})
+    want = data.get('mouth_set')
+    if want:
+        from . import index
+        ids = [s['id'] for s in index.blob('mouths/mouth_sets.json')['sets']]
+        if want in ids:
+            use_mouth_set({'id': want, 'data': {'set': want}})
+    elif 'mouth_set' in fb.keys():
+        fb['mouth_set'] = 0
+    return out

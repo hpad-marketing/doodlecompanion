@@ -1,0 +1,1336 @@
+{
+ "version": 1,
+ "rows": [
+  {
+   "id": "face-beat-duck-pout",
+   "name": "Duck-face pout",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Duck-face pout",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "pucker",
+    "gaze": -1,
+    "speech_map": {
+     "0": 0,
+     "6": 15,
+     "10": 15,
+     "11": 15,
+     "7": 15,
+     "1": 16,
+     "5": 16,
+     "8": 16,
+     "3": 17,
+     "12": 17,
+     "9": 17,
+     "13": 17,
+     "4": 18,
+     "2": 18,
+     "14": 18,
+     "15": 15,
+     "16": 16,
+     "17": 17,
+     "18": 18
+    }
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-pucker"
+   ]
+  },
+  {
+   "id": "face-beat-teeth-cringe",
+   "name": "Teeth-clench cringe",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Teeth-clench cringe",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "teeth",
+    "gaze": -1,
+    "mouth_set": "mouths-x-through-teeth"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-teeth"
+   ]
+  },
+  {
+   "id": "face-beat-sheepish",
+   "name": "Sheepish grin",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Sheepish grin",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-shrink",
+   "name": "Wish I could vanish",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Wish I could vanish",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-second-hand",
+   "name": "Second-hand cringe",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Second-hand cringe",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": -35,
+     "earLForward": 0,
+     "earRForward": 24
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-shy-away",
+   "name": "Shy look-away",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Cringe",
+   "data": {
+    "expression_name": "Shy look-away",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "cringe",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-pinpoint",
+   "name": "Pinpoint panic",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Pinpoint panic",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-full-scream",
+   "name": "Full scream",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Full scream",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-sweat-smile",
+   "name": "Nervous sweat smile",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Nervous sweat smile",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "teeth",
+    "gaze": -1,
+    "mouth_set": "mouths-x-through-teeth"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-teeth"
+   ]
+  },
+  {
+   "id": "face-beat-gulp",
+   "name": "Gulp",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Gulp",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "none",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-none"
+   ]
+  },
+  {
+   "id": "face-beat-buffering",
+   "name": "Brain buffering",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Brain buffering",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": -35,
+     "earLForward": 0,
+     "earRForward": 24
+    },
+    "talk": "none",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-none"
+   ]
+  },
+  {
+   "id": "face-beat-overwhelmed",
+   "name": "Too many tabs open",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Panic",
+   "data": {
+    "expression_name": "Too many tabs open",
+    "ears": {
+     "earLFold": -14,
+     "earRFold": -35,
+     "earLForward": 8,
+     "earRForward": 26
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "panic",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-realisation",
+   "name": "Slow realisation",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Slow realisation",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": 0,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-hollow",
+   "name": "Hollow stare",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Hollow stare",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-thousand-yard",
+   "name": "Thousand-yard stare",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Thousand-yard stare",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-gloom",
+   "name": "Gloom lines",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Gloom lines",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-terrified",
+   "name": "Terrified, teary",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Terrified, teary",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-cold-sweat",
+   "name": "Cold sweat side-eye",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Dread",
+   "data": {
+    "expression_name": "Cold sweat side-eye",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": -35,
+     "earLForward": 0,
+     "earRForward": 24
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "dread",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-scheming",
+   "name": "Scheming grin",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Scheming grin",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-side-smirk",
+   "name": "Side-eye smirk",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Side-eye smirk",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": 0,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-hmph",
+   "name": "Hmph, chin up",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Hmph, chin up",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-cat-smile",
+   "name": "Cat smile :3",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Cat smile :3",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": 0,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-evil-laugh",
+   "name": "Villain laugh",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Villain laugh",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "teeth",
+    "gaze": -1,
+    "mouth_set": "mouths-x-through-teeth"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-teeth"
+   ]
+  },
+  {
+   "id": "face-beat-told-you",
+   "name": "Told you so",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Smug",
+   "data": {
+    "expression_name": "Told you so",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "smug",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-eye-roll",
+   "name": "Eye roll",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Eye roll",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-pursed",
+   "name": "Pursed and done",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Pursed and done",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": 0,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-huff",
+   "name": "Puffed-cheek huff",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Puffed-cheek huff",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-grumpy-pout",
+   "name": "Grumpy pout",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Grumpy pout",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-seething",
+   "name": "Seething smile",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Seething smile",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "teeth",
+    "gaze": -1,
+    "mouth_set": "mouths-x-through-teeth"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-teeth"
+   ]
+  },
+  {
+   "id": "face-beat-steaming",
+   "name": "Steaming mad",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Annoyed",
+   "data": {
+    "expression_name": "Steaming mad",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "annoyed",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-lip-wobble",
+   "name": "Lip wobble",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Sad",
+   "data": {
+    "expression_name": "Lip wobble",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "sad",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-puppy-eyes",
+   "name": "Puppy eyes",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Sad",
+   "data": {
+    "expression_name": "Puppy eyes",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "pucker",
+    "gaze": -1,
+    "speech_map": {
+     "0": 0,
+     "6": 15,
+     "10": 15,
+     "11": 15,
+     "7": 15,
+     "1": 16,
+     "5": 16,
+     "8": 16,
+     "3": 17,
+     "12": 17,
+     "9": 17,
+     "13": 17,
+     "4": 18,
+     "2": 18,
+     "14": 18,
+     "15": 15,
+     "16": 16,
+     "17": 17,
+     "18": 18
+    }
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "sad",
+    "talk-pucker"
+   ]
+  },
+  {
+   "id": "face-beat-soul-leaves",
+   "name": "Soul leaves body",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Sad",
+   "data": {
+    "expression_name": "Soul leaves body",
+    "ears": {
+     "earLFold": -14,
+     "earRFold": -35,
+     "earLForward": 8,
+     "earRForward": 26
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "sad",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-brave-smile",
+   "name": "Brave smile through tears",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Sad",
+   "data": {
+    "expression_name": "Brave smile through tears",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "sad",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-starry",
+   "name": "Starry eyes",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Joy",
+   "data": {
+    "expression_name": "Starry eyes",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "joy",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-squee",
+   "name": "Squee",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Joy",
+   "data": {
+    "expression_name": "Squee",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "joy",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-bliss",
+   "name": "Bliss melt",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Joy",
+   "data": {
+    "expression_name": "Bliss melt",
+    "ears": {
+     "earLFold": -14,
+     "earRFold": -35,
+     "earLForward": 8,
+     "earRForward": 26
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "joy",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-beaming",
+   "name": "Proud beam",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Joy",
+   "data": {
+    "expression_name": "Proud beam",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "teeth",
+    "gaze": -1,
+    "mouth_set": "mouths-x-through-teeth"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "joy",
+    "talk-teeth"
+   ]
+  },
+  {
+   "id": "face-beat-mouth-side",
+   "name": "Mouth-to-side thinking",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Thinking",
+   "data": {
+    "expression_name": "Mouth-to-side thinking",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": -35,
+     "earLForward": 0,
+     "earRForward": 24
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "thinking",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-huh-squint",
+   "name": "\"Huh?\" squint",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Thinking",
+   "data": {
+    "expression_name": "\"Huh?\" squint",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": -35,
+     "earLForward": 0,
+     "earRForward": 24
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "thinking",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-lightbulb",
+   "name": "Lightbulb",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Thinking",
+   "data": {
+    "expression_name": "Lightbulb",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "thinking",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-double-take",
+   "name": "Double take",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Thinking",
+   "data": {
+    "expression_name": "Double take",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "none",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "thinking",
+    "talk-none"
+   ]
+  },
+  {
+   "id": "face-beat-ew-sneer",
+   "name": "\"Ew\" sneer",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Disgust / surprise",
+   "data": {
+    "expression_name": "\"Ew\" sneer",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "side",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "disgust / surprise",
+    "talk-side"
+   ]
+  },
+  {
+   "id": "face-beat-gag",
+   "name": "Gag",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Disgust / surprise",
+   "data": {
+    "expression_name": "Gag",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "none",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "disgust / surprise",
+    "talk-none"
+   ]
+  },
+  {
+   "id": "face-beat-jaw-drop",
+   "name": "Jaw drop",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Disgust / surprise",
+   "data": {
+    "expression_name": "Jaw drop",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "disgust / surprise",
+    "talk-own"
+   ]
+  },
+  {
+   "id": "face-beat-frog-grin",
+   "name": "Frog wide grin",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Frog wide grin",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "frog"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "frog"
+   ]
+  },
+  {
+   "id": "face-beat-frog-throat",
+   "name": "Frog throat puff",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Frog throat puff",
+    "ears": {
+     "earLFold": 0,
+     "earRFold": 0,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "frog"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "frog"
+   ]
+  },
+  {
+   "id": "face-beat-frog-sad-squash",
+   "name": "Frog bump squash",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Frog bump squash",
+    "ears": {
+     "earLFold": -35,
+     "earRFold": -35,
+     "earLForward": 22,
+     "earRForward": 22
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "frog"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "frog"
+   ]
+  },
+  {
+   "id": "face-beat-frog-surprise-pop",
+   "name": "Frog bump pop",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Frog bump pop",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "frog"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "frog"
+   ]
+  },
+  {
+   "id": "face-beat-koala-scrunch",
+   "name": "Koala nose scrunch",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Koala nose scrunch",
+    "ears": {
+     "earLFold": -30,
+     "earRFold": -30,
+     "earLForward": 0,
+     "earRForward": 0
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "koala"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "koala"
+   ]
+  },
+  {
+   "id": "face-beat-koala-sniff",
+   "name": "Koala sniff",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Koala sniff",
+    "ears": {
+     "earLFold": 8,
+     "earRFold": 8,
+     "earLForward": -6,
+     "earRForward": -6
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "koala"
+    ]
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "koala"
+   ]
+  },
+  {
+   "id": "face-beat-bunny-ears-cover",
+   "name": "Bunny ears over eyes",
+   "category": "expression",
+   "kind": "face",
+   "sub": "Story beats \u00b7 Character only",
+   "data": {
+    "expression_name": "Bunny ears over eyes",
+    "ears": {
+     "earLFold": 12,
+     "earRFold": 12,
+     "earLForward": 35,
+     "earRForward": 35
+    },
+    "talk": "own",
+    "gaze": -1,
+    "species": [
+     "bunny"
+    ],
+    "ears_note": "Bunny only; Koala and Frog droop instead"
+   },
+   "source": "expressions-v2",
+   "tags": [
+    "story-beat",
+    "character only",
+    "talk-own",
+    "bunny"
+   ]
+  }
+ ],
+ "talk": {
+  "own": "normal lip-sync mouths; back to this mouth in pauses",
+  "pucker": "lip sync remapped onto Pucker 01-04 (speech 15-18)",
+  "teeth": "lip sync uses the \"Through teeth\" mouth set",
+  "side": "normal lip-sync mouths shifted to this mouth's side",
+  "none": "reaction hold; a spoken line switches to the normal face"
+ }
+}

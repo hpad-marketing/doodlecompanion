@@ -122,6 +122,16 @@ for ps in presets:
                      'description': ps.get('note', ''), 'data': {'set': ps['id']}, 'source': 'doodle-studio', 'tags': []})
 set_rows.insert(0, {'id': 'mouthset-builtin', 'name': 'Doodle Studio (built-in)', 'category': 'mouth_set',
                     'kind': 'mouth_set', 'sub': 'Speech sets', 'data': {'set': None}, 'source': 'doodle-studio', 'tags': []})
+# sets made by other tools (e.g. the story-beat 'Through teeth' set), already in library form
+import glob  # noqa: E402
+for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'extra', 'mouth-set-*.json'))):
+    ms = json.load(open(f))
+    if ms['id'] in [x['id'] for x in sets]:
+        continue
+    sets.append(ms)
+    set_rows.append({'id': 'mouthset-' + ms['id'].replace('mouths-', ''), 'name': ms['name'], 'category': 'mouth_set',
+                     'kind': 'mouth_set', 'sub': 'Expression sets' if '-x-' in ms['id'] else 'Speech sets',
+                     'description': ms.get('note', ''), 'data': {'set': ms['id']}, 'source': 'doodle-studio', 'tags': []})
 json.dump({'version': 1, 'stride': 100, 'sets': sets}, open(os.path.join(out, 'mouths', 'mouth_sets.json'), 'w'))
 print('mouth sets', len(sets))
 
@@ -135,5 +145,8 @@ for r in bg['rooms']:
                       'outdoor': r['outdoor'], 'props': props}, 'source': 'doodle-studio', 'tags': []})
 print('sets', len(room_rows))
 
-for name, part in (('motions', rows), ('faces', face_rows), ('mouth_sets', set_rows), ('sets', room_rows)):
+# story-beat faces (expressions-v2): stored by face name, since Bunny, Koala and Frog number faces differently
+story_rows = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'extra', 'story-beat-rows.json')))['rows']
+for name, part in (('motions', rows), ('faces', face_rows), ('mouth_sets', set_rows), ('sets', room_rows),
+                   ('faces_story', story_rows)):
     json.dump(part, open(os.path.join(out, 'index_parts', name + '.json'), 'w'), indent=0)
