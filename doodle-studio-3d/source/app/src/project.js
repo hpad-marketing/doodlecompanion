@@ -5,7 +5,7 @@
 import { idleLayer, idleOn } from './idle.js';
 
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
-export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52 };
+export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52, focus: 0, fstop: 2.8 };   // focus 0 = everything sharp
 export const EASES = { ease: 'Ease in and out', linear: 'Linear', in: 'Ease in', out: 'Ease out', hold: 'Hold' };
 
 const easeFn = {
@@ -138,11 +138,12 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
     if (idle?.frames[f]) Object.assign(v, idle.frames[f]);
     const cam = {};
     for (const k of Object.keys(CAM_DEFAULT)) cam[k] = valueAt(project, 'cam.' + k, f);
+    if (project.horizonLock) cam.roll = 0;   // the horizon stays level whatever the keys say
     for (const k of Object.keys(v)) if (k.startsWith('cam.')) delete v[k];
     v.cam = cam;
     frames.push(v);
   }
-  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3 } };
+  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3, ...(project.ink && project.ink !== 100 ? { ink_px: +(12.73 * project.ink / 100).toFixed(3) } : {}) } };
   // Bunny-only shots with no stage stay byte-identical to older builds, so their render cache holds
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;

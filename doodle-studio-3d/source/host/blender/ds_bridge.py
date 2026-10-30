@@ -103,6 +103,12 @@ def camera_3d(c, t):
     cam.rotation_euler = q.to_euler('XYZ')
     cam.data.type = 'PERSP'
     cam.data.lens = c['lens']
+    # rack focus: a focus distance above 0 turns depth of field on
+    focus = float(c.get('focus', 0.0) or 0.0)
+    cam.data.dof.use_dof = focus > 0
+    if focus > 0:
+        cam.data.dof.focus_distance = focus
+        cam.data.dof.aperture_fstop = float(c.get('fstop', 2.8) or 2.8)
 
 # the room set, light, outfit and accessories come first: outfits re-bind to the rig
 stage_items = stage.setup(shot, lambda m: print(m, flush=True))
@@ -149,6 +155,10 @@ for i, vals in enumerate(frames):
     cam.keyframe_insert('location', frame=f)
     cam.keyframe_insert('rotation_euler', frame=f)
     cam.data.keyframe_insert('ortho_scale' if cam.data.type == 'ORTHO' else 'lens', frame=f)
+    if cam.data.dof.use_dof or 'cam' in vals:
+        cam.data.dof.keyframe_insert('use_dof', frame=f)
+        cam.data.dof.keyframe_insert('focus_distance', frame=f)
+        cam.data.dof.keyframe_insert('aperture_fstop', frame=f)
 
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
