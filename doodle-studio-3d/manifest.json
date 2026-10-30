@@ -1,8 +1,8 @@
 {
- "version": "20261030-163541",
- "notes": "Mirror pose is about 20x faster (no more hangs); camera presets warn when a framing cuts off a co-star and a new 'group' target frames everyone; the Blender rule check fails a co-star cut off by the frame edge; Library browser shows Outfits and Accessories.",
+ "version": "20261030-165701",
+ "notes": "Restores the 3D faces to the build 030354 look: big pupils tucked under the lid instead of round, centred pupils. The ochre seal is kept. Line weight now follows the camera zoom, as in 2D. The moderator gate and the Blender rule checks no longer run or block exports.",
  "runtime": "44.9.0",
- "published": "2026-10-30T16:35:41.661Z",
+ "published": "2026-10-30T16:57:03.864Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -15,9 +15,9 @@
    "gz": "files/58a651e489c11fcd22e5ecb7c8089c7022a4cd6857db73a2f8da451d00baf44e.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "c44e0906d4ab4a72e572c6608e6321977e7733ecea683aa5f37193e5fe61010e",
-   "size": 38070,
-   "gz": "files/c44e0906d4ab4a72e572c6608e6321977e7733ecea683aa5f37193e5fe61010e.gz"
+   "sha256": "3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3",
+   "size": 37821,
+   "gz": "files/3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -30,9 +30,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "79e8334b66b6b8a801850976e7128c24b39a82d1b19f9875948a2ec76ffed038",
-   "size": 20015,
-   "gz": "files/79e8334b66b6b8a801850976e7128c24b39a82d1b19f9875948a2ec76ffed038.gz"
+   "sha256": "d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa",
+   "size": 20179,
+   "gz": "files/d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "ae68ae6eda24442a2362a7ad6a7e66b251f90b27ff20cd0f94e5245659adad4d",
@@ -50,14 +50,14 @@
    "gz": "files/08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
-   "sha256": "aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390",
-   "size": 4037229,
-   "gz": "files/aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390.gz"
+   "sha256": "225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d",
+   "size": 3201595,
+   "gz": "files/225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "861acd2bfc04c85ec6e4ea9777b6b2b294c88818ff4f3aa6083118faf8002c67",
-   "size": 14404,
-   "gz": "files/861acd2bfc04c85ec6e4ea9777b6b2b294c88818ff4f3aa6083118faf8002c67.gz"
+   "sha256": "4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2",
+   "size": 15352,
+   "gz": "files/4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -70,9 +70,9 @@
    "gz": "files/10547c517141f00820ae4b26938ac989dd01886dfd1abccf7243d5d2b1027910.gz"
   },
   "resources/app/ui/bunny3d.json": {
-   "sha256": "14ed5fcea6a7324bd28190431b49c7e1308b9a0c2dbbdbff3ad688d64de1eeda",
-   "size": 7327716,
-   "gz": "files/14ed5fcea6a7324bd28190431b49c7e1308b9a0c2dbbdbff3ad688d64de1eeda.gz"
+   "sha256": "4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b",
+   "size": 5100444,
+   "gz": "files/4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -85,14 +85,14 @@
    "gz": "files/0f3dc40e664079788827408bf58999e3cdeb4d4dd8aa4b273650d5e452aec8b5.gz"
   },
   "resources/app/blender/chars/frog.blend": {
-   "sha256": "62a3621ef6edd70622564587c5ee522cb943eea5a5a129b96c6984b538013659",
-   "size": 4336434,
-   "gz": "files/62a3621ef6edd70622564587c5ee522cb943eea5a5a129b96c6984b538013659.gz"
+   "sha256": "d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae",
+   "size": 3172314,
+   "gz": "files/d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae.gz"
   },
   "resources/app/blender/chars/koala.blend": {
-   "sha256": "e83e2ed65b8e10110a9fc3d251e8f67c198b92b058edf462be0fc318a377c401",
-   "size": 4628321,
-   "gz": "files/e83e2ed65b8e10110a9fc3d251e8f67c198b92b058edf462be0fc318a377c401.gz"
+   "sha256": "3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33",
+   "size": 3481894,
+   "gz": "files/3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33.gz"
   },
   "resources/app/blender/lib/cast.py": {
    "sha256": "5d7829dbdbdc5ddb67697948acd5e3dda85baebd6e7eb28146d18025d03d2da4",
@@ -170,14 +170,14 @@
    "gz": "files/9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517.gz"
   },
   "resources/app/ui/chars/frog.json": {
-   "sha256": "aa8d1597d10c039a22c251d2803f3cbcd4b6d9028dc6c03c0bf885f6adb294ad",
-   "size": 7194718,
-   "gz": "files/aa8d1597d10c039a22c251d2803f3cbcd4b6d9028dc6c03c0bf885f6adb294ad.gz"
+   "sha256": "f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9",
+   "size": 5692519,
+   "gz": "files/f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9.gz"
   },
   "resources/app/ui/chars/koala.json": {
-   "sha256": "6a9e06afeb4d545b3fff6de68a71d941fda17af97760948389dd400349e7252e",
-   "size": 7965169,
-   "gz": "files/6a9e06afeb4d545b3fff6de68a71d941fda17af97760948389dd400349e7252e.gz"
+   "sha256": "38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775",
+   "size": 6067752,
+   "gz": "files/38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775.gz"
   },
   "resources/app/ui/src/animtools.js": {
    "sha256": "cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf",
@@ -225,9 +225,9 @@
    "gz": "files/cd175f22776dcd854d77f4a6d8a063e9e837c2b92ebcc10cd55eead17c54d69d.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "7c393945e51bc877ccd929f91157531e3c105abb3525f60e603f58b762cb3566",
-   "size": 183272,
-   "gz": "files/7c393945e51bc877ccd929f91157531e3c105abb3525f60e603f58b762cb3566.gz"
+   "sha256": "e649aa9d8646df1b2fc39b41ca23cba7d374bb5e778f86dfac55ff29116442b7",
+   "size": 183252,
+   "gz": "files/e649aa9d8646df1b2fc39b41ca23cba7d374bb5e778f86dfac55ff29116442b7.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -245,9 +245,9 @@
    "gz": "files/fd0f190492252134bd5137e01e9a7150ca71c502a4f1e9ba0dd1c48ff723dec4.gz"
   },
   "resources/app/ui/src/production.js": {
-   "sha256": "d2c8d8cd40b13b65a3c27c7fdc45c5aa8cf9c9babffa8aa430858a72657916ef",
-   "size": 27285,
-   "gz": "files/d2c8d8cd40b13b65a3c27c7fdc45c5aa8cf9c9babffa8aa430858a72657916ef.gz"
+   "sha256": "8f464d533074f8b79325026f7ede329d10e8f0a5f655edeb7d414fd6304bbe33",
+   "size": 27036,
+   "gz": "files/8f464d533074f8b79325026f7ede329d10e8f0a5f655edeb7d414fd6304bbe33.gz"
   },
   "resources/app/ui/src/project.js": {
    "sha256": "b21d7b12dc0baa9d844b4daab1fac3ac97777c835da23243105532488b811975",

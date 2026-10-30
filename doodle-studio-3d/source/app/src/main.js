@@ -1113,7 +1113,7 @@ function buildPanel() {
         h('button', { onclick: () => render(true) }, 'This frame')),
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => renderScene(true), title: 'Every shot at half size without cloth: a fast check of timing and cuts' }, 'Quick preview scene'),
         h('button', { onclick: () => render(false, true), title: 'This shot at half size without cloth' }, 'Quick preview shot'), h('button', { onclick: () => render(false, true, null, true), title: 'Grey clay blocking pass: fastest, no cloth, no springs' }, 'Previz (grey)'), h('button', { onclick: cancelRender }, 'Cancel')),
-      h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => runPreflight(false), title: 'Audio, lip sync, captions and the moderator PASS, before the final export' }, 'Check before export')),
+      h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { onclick: () => runPreflight(false), title: 'Audio, lip sync and captions, before the final export' }, 'Check before export')),
       h('div', { id: 'render-estimate', class: 'hint' }, ''), h('div', { id: 'render-status', class: 'hint' }, ''), autosavePanel(), h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'),
         h('button', { onclick: pickBlender }, 'Change…')));
     api('settings', {}).then(s => { const el = $('#blender-path'); if (el) el.textContent = s.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
