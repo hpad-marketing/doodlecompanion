@@ -9,7 +9,7 @@
     dl.switch_set('bedroom'); dl.set_prop('rug', False)
     dl.save_motion('My wave', (1, 48)); dl.save_expression('Smirk')
 """
-from . import (assets, collide, faces, fx, grips, index, interact, lighting, motions, packs, placement, sets, storytime,
+from . import (assets, collide, faces, fx, grips, index, interact, lighting, motions, outfits, packs, placement, sets, storytime,
                style, text3d)
 
 items = index.items
@@ -36,6 +36,8 @@ def insert(item_id, frame=None, **opts):
         return r
     if cat == 'mouth_set':
         return faces.use_mouth_set(it if it['data'].get('set') else None)
+    if cat == 'outfit':
+        return outfits.dress(it)
     if cat == 'set':
         return sets.switch_set(it['data']['room'])
     ob = assets.insert_object(it, opts.get('location'))
@@ -44,6 +46,7 @@ def insert(item_id, frame=None, **opts):
     return ob
 
 
+undress = outfits.undress
 save_motion = lambda name, frame_range=None, **kw: motions.save_action(name, frame_range, **kw)
 save_expression = faces.save_expression
 save_objects = assets.save_objects

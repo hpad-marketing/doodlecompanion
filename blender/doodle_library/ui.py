@@ -218,9 +218,11 @@ class DSL_PT_library(DSLPanel, bpy.types.Panel):
             opts.prop(wm, 'dsl_opt_camera', toggle=True)
         elif cat == 'prop':
             opts.prop(wm, 'dsl_opt_hold', toggle=True)
-        label = {'motion': 'Insert at playhead', 'expression': 'Key face at playhead', 'mouth_set': 'Use these mouths',
+        label = {'motion': 'Insert at playhead', 'expression': 'Key face at playhead', 'mouth_set': 'Use these mouths', 'outfit': 'Wear this',
                  'prop': 'Add prop', 'scenery': 'Add to scene', 'card': 'Add card'}.get(cat, 'Insert')
         L.operator('dsl.insert', text=label, icon='ADD').item_id = it['id']
+        if cat == 'outfit':
+            L.operator('dsl.undress', icon='LOOP_BACK')
         row = L.row(align=True)
         row.operator('dsl.save_motion', text='Save motion', icon='ACTION')
         row.operator('dsl.save_face', text='Save face', icon='USER')

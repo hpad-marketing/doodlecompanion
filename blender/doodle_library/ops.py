@@ -56,6 +56,18 @@ class DSL_OT_insert(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class DSL_OT_undress(bpy.types.Operator):
+    bl_idname = 'dsl.undress'
+    bl_label = 'Back to hoodie'
+    bl_description = 'Take the outfit off and bring the hoodie back'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @_report_errors
+    def execute(self, context):
+        api.undress()
+        return {'FINISHED'}
+
+
 class _Named:
     name: StringProperty(name='Name', default='')
 
@@ -277,7 +289,7 @@ class DSL_OT_add_text(bpy.types.Operator):
         return {'FINISHED'}
 
 
-CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_OT_refresh, DSL_OT_insert, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
+CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_OT_refresh, DSL_OT_insert, DSL_OT_undress, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
            DSL_OT_set_all, DSL_OT_declutter, DSL_OT_camera, DSL_OT_parallax, DSL_OT_retarget, DSL_OT_inbox,
            DSL_OT_open_folder, DSL_OT_prefs)
 
