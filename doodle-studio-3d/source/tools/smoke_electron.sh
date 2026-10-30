@@ -18,6 +18,7 @@ call storyboard '{}' 200
 call set_shot_look '{"horizonLock":true,"ink":120}' 200
 call anim_tool '{"action":"loop_check"}' 200
 call anim_tool '{"action":"onion","on":true}' 200
+call story '{"action":"retention"}' 200
 call set_character '{"character":"koala"}' 200
 call library_list '{"category":"motion","query":"wave","limit":2}' 300
 call library_use '{"id":"motion-wave-hello","frame":0}' 200

@@ -20,6 +20,7 @@ export const EXTRA = [
   { id: 'story:chat', name: 'Chat bubbles', category: 'story', sub: 'Storytime', ask: 'Message', def: 'hi' },
   { id: 'story:label', name: 'Pinned label', category: 'story', sub: 'Storytime', ask: 'Label text', def: 'Me' },
   { id: 'story:journey', name: 'Journey map', category: 'story', sub: 'Storytime', ask: 'Stops, separated by commas', def: 'Home, School' },
+  { id: 'text:headline', name: '3D headline', category: 'story', sub: 'Storytime', ask: 'Headline text', def: 'WAIT WHAT' },
   { id: 'story:end_screen', name: 'End screen', category: 'story', sub: 'Storytime' },
   { id: 'story:horror', name: 'Horror mode', category: 'story', sub: 'Storytime' },
   ...['pop', 'message', 'typing', 'whoosh', 'boing', 'click', 'bell', 'pin', 'draw', 'horror_drone', 'thunder', 'sting']

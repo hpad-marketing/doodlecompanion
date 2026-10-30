@@ -134,6 +134,16 @@ const api = {
     if (!/[.](webm|mp4|png|json|txt)$/i.test(String(p))) throw Error('Only video, image and text files');
     const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
   },
+  // scene audio: any voice or music file the user picks
+  async 'pick-audio'() {
+    const r = await dialog.showOpenDialog(main, { title: 'Import audio for this scene', defaultPath: path.join(settings.get().rendersRoot, 'Audio'), filters: [{ name: 'Audio', extensions: ['wav', 'mp3', 'm4a', 'aac', 'ogg', 'flac'] }], properties: ['openFile'] });
+    return { path: r.canceled ? null : r.filePaths[0] || null };
+  },
+  async 'read-audio'({ path: p }) {
+    if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');
+    if (fs.statSync(p).size > 300e6) throw Error('Audio file over 300 MB');
+    return { data: fs.readFileSync(p).toString('base64') };
+  },
   async 'render-status'() { return renders.status(); },
   async 'render-cancel'() { return renders.cancel(); },
   async settings(patch) { if (patch && Object.keys(patch).length) settings.set(patch); return { ...settings.get(), blenderFound: renders.blender() || null }; },

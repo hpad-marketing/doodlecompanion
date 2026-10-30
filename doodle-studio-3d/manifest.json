@@ -1,8 +1,8 @@
 {
- "version": "20261030-125503",
- "notes": "Batch 3, part 1 (animator tools): new Animate menu with breakdown (tween), Stepped blocking, Simplify keys, Loop check, Make seamless loop, Retime shot, Playblast (viewport video with a frame counter, to work\\playblast); Breakdown slider and Overlap down a chain on the Pose tab; Snap, Overshoot and Bounce eases; View menu Onion skin (O), Silhouette check, Mirror view; timeline key filter (body, arms and hands, face and ears, camera). MCP: anim_tool.",
+ "version": "20261030-130129",
+ "notes": "Scene audio: import a voice or music track for the whole scene, hear it while you play, see its waveform under the timeline, and let it drive any control (Animate > Audio drives a control). Turntable camera, 3D headline text, and a new Story menu: hook and retention check, YouTube chapters from markers, loop-back ending, story bible and running-gag tracker. New MCP tools: audio and story.",
  "runtime": "44.9.0",
- "published": "2026-10-30T12:55:03.308Z",
+ "published": "2026-10-30T13:01:30.048Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "2db81f614a7747de82a34c7a746f2340dc1aea5d96e6094d2512c32280ebfb7c",
-   "size": 13106,
-   "gz": "files/2db81f614a7747de82a34c7a746f2340dc1aea5d96e6094d2512c32280ebfb7c.gz"
+   "sha256": "fe1d5f473491de6966d01ee3a54d524f7bcf4b56463b55313a6d1879189cd093",
+   "size": 13794,
+   "gz": "files/fe1d5f473491de6966d01ee3a54d524f7bcf4b56463b55313a6d1879189cd093.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "54b36d33c3260e025f9d3c4060e3aff533c96750604705df0186902e22ad50a2",
-   "size": 18030,
-   "gz": "files/54b36d33c3260e025f9d3c4060e3aff533c96750604705df0186902e22ad50a2.gz"
+   "sha256": "de47601371c63740cd6829b7d40b1aac272561b9cdee91d39e6349dcf3546257",
+   "size": 19728,
+   "gz": "files/de47601371c63740cd6829b7d40b1aac272561b9cdee91d39e6349dcf3546257.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -60,9 +60,9 @@
    "gz": "files/82ebc4420f9cd8813cb56ea79930c97b0f21d44e8e9cc89f78e1810733526e84.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "63ca8f6aabb786e22ed2084dc924e87c5fdc700c97dea369f7aad43cdc477e7b",
-   "size": 5119,
-   "gz": "files/63ca8f6aabb786e22ed2084dc924e87c5fdc700c97dea369f7aad43cdc477e7b.gz"
+   "sha256": "b2866d89a679df27c50ccd1f2b217c40095967e06ef9f52da9c8210a76621077",
+   "size": 5267,
+   "gz": "files/b2866d89a679df27c50ccd1f2b217c40095967e06ef9f52da9c8210a76621077.gz"
   },
   "resources/app/ui/bunny3d.json": {
    "sha256": "14ed5fcea6a7324bd28190431b49c7e1308b9a0c2dbbdbff3ad688d64de1eeda",
@@ -164,6 +164,11 @@
    "size": 10027,
    "gz": "files/7b80c8ddc5d0d3876238f2dded478c789fb7ba254806d268ef491dadc590f549.gz"
   },
+  "resources/app/ui/src/audio.js": {
+   "sha256": "bcb23e9fc5ffb83f99c12a234e4492499243862d9beaaee5b121cb0829335ead",
+   "size": 3171,
+   "gz": "files/bcb23e9fc5ffb83f99c12a234e4492499243862d9beaaee5b121cb0829335ead.gz"
+  },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2",
    "size": 40964,
@@ -180,14 +185,14 @@
    "gz": "files/63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef.gz"
   },
   "resources/app/ui/src/library.js": {
-   "sha256": "ff96502c25fdc540ec3e54ba837399c39786ad6f2b39f9dc65ed5e825a964504",
-   "size": 15088,
-   "gz": "files/ff96502c25fdc540ec3e54ba837399c39786ad6f2b39f9dc65ed5e825a964504.gz"
+   "sha256": "a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219",
+   "size": 15213,
+   "gz": "files/a26912f2db090fb7967906e9251fd95d4d78f41148dcd249a777d5a0808ab219.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "9d8c35176e91ce8f65e05268af7d2d32d5a5017ab3f17bff1474007f7aa86761",
-   "size": 72169,
-   "gz": "files/9d8c35176e91ce8f65e05268af7d2d32d5a5017ab3f17bff1474007f7aa86761.gz"
+   "sha256": "99cab023876c9619450877cfea8651df9ab87d09854a10a6128c96d46dcf91a6",
+   "size": 76928,
+   "gz": "files/99cab023876c9619450877cfea8651df9ab87d09854a10a6128c96d46dcf91a6.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -204,10 +209,15 @@
    "size": 21827,
    "gz": "files/f7a8e0a931b2a09d52829c9667f88383b5548159b594163b43cc2112fa13fd71.gz"
   },
+  "resources/app/ui/src/storytime.js": {
+   "sha256": "883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521",
+   "size": 5807,
+   "gz": "files/883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521.gz"
+  },
   "resources/app/ui/src/ui.css": {
-   "sha256": "38fcad6356f336861c2d1961468340a9ccf42d4ad9c589ea07e2387e80b93945",
-   "size": 10750,
-   "gz": "files/38fcad6356f336861c2d1961468340a9ccf42d4ad9c589ea07e2387e80b93945.gz"
+   "sha256": "48f14322047dad156c00fe6ca64e204bb25a4bf9099ec60a8e254655f268b379",
+   "size": 10846,
+   "gz": "files/48f14322047dad156c00fe6ca64e204bb25a4bf9099ec60a8e254655f268b379.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "de28cb67ecfdb3d6c6be295e7a63270dd77ac913e5c1ad509d0aeb94699fc42b",
