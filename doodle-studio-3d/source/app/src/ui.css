@@ -1,0 +1,104 @@
+/* Doodle Studio 3D: the 2D Doodle Studio's own look (studio.css + ux-overhaul.css tokens),
+   with a dark mode that swaps the two brand colours. */
+:root{--bg:#E0A64B;--fg:#1F1F1D;--line:2px solid var(--fg);color-scheme:light;accent-color:#1F1F1D}
+body[data-theme=dark]{--bg:#1F1F1D;--fg:#E0A64B;--line:2px solid #E0A64B;color-scheme:dark;accent-color:#E0A64B}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,sans-serif;overflow:hidden;display:grid;
+  grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:30px 52px minmax(0,1fr) var(--timeline-height,230px);
+  grid-template-areas:'menu menu' 'header header' 'canvas panel' 'timeline timeline'}
+button,select,input,summary{font:inherit;color:var(--fg)}
+button{min-height:30px;min-width:30px;padding:0 10px;border:var(--line);border-radius:2px;font-size:13px;font-weight:750;background:var(--bg);color:var(--fg);cursor:pointer;white-space:nowrap}
+button:hover{outline:1px solid var(--fg);outline-offset:-4px}
+button[aria-pressed=true],button.on,button.primary{background:var(--fg);color:var(--bg)}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{border:var(--line);border-radius:2px;background:var(--bg);color:var(--fg);padding:3px 6px;font:13px system-ui,sans-serif;min-height:30px}
+input[type=range]{padding:0;min-height:24px;accent-color:var(--fg);border:0;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{background:var(--bg);border:2px solid var(--fg);border-radius:2px;height:8px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-7px;width:16px;height:16px;border-radius:50%;background:var(--fg)}
+input[type=range]{-webkit-appearance:none;appearance:none}
+input[type=number]{width:70px;text-align:right;font-weight:700}
+label{font-size:12px;font-weight:650}
+h1,h2{font-family:Impact,'Arial Black',system-ui,sans-serif;font-weight:900;letter-spacing:.5px;margin:0}
+h2{font-size:18px;margin:4px 0 10px}
+h3{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;opacity:.85}
+.hint{font-size:12px;margin:6px 0;opacity:.9}
+.hidden{display:none!important}
+
+/* menu bar (same as the 2D app's #doodle-menubar) */
+#menubar{grid-area:menu;position:relative;z-index:60;display:flex;align-items:stretch;padding:0 6px;background:#1F1F1D;color:#E0A64B;font:600 13px system-ui,sans-serif}
+body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
+#menubar>.menu{position:relative}
+#menubar>.menu>button{height:30px;min-height:30px;border:0;background:transparent;color:#E0A64B;font-weight:600;padding:0 10px}
+#menubar>.menu>button[aria-expanded=true]{background:#E0A64B;color:#1F1F1D}
+#menubar .menu-list{position:absolute;top:30px;left:0;min-width:240px;background:#1F1F1D;border:2px solid #E0A64B;padding:4px;display:none;flex-direction:column;gap:2px}
+#menubar .menu.open .menu-list{display:flex}
+#menubar .menu-list button{text-align:left;border:0;background:transparent;color:#E0A64B;font-weight:600;display:flex;justify-content:space-between;gap:16px}
+#menubar .menu-list button:hover{background:#E0A64B;color:#1F1F1D;outline:0}
+#menubar .menu-list kbd{font:11px system-ui;opacity:.75}
+#menubar .menu-list hr{border:0;border-top:1px solid #E0A64B;opacity:.4;margin:3px 0;width:100%}
+#menubar .spacer{flex:1}
+#menubar .status{align-self:center;font-size:12px;opacity:.85;padding:0 8px}
+
+/* header */
+.topbar{grid-area:header;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:var(--line)}
+.topbar h1{font-size:22px;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .keys-label{font-size:12px;font-weight:800;letter-spacing:.06em}
+
+/* viewport */
+#canvas-wrap{grid-area:canvas;position:relative;min-width:0;min-height:0;display:grid;place-items:center;overflow:hidden;background:var(--bg)}
+#frame{position:relative;border:var(--line);background:#E0A64B}
+#frame canvas{display:block;width:100%;height:100%;cursor:grab}
+#frame canvas.dragging{cursor:grabbing}
+#hud{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+#hud span{background:#1F1F1D;color:#E0A64B;font:700 11px system-ui;padding:3px 6px;border-radius:2px}
+#rail{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px}
+#rail button{width:52px;min-height:44px;padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:9px}
+#rail button svg{width:20px;height:20px}
+
+/* side panel */
+#panel{grid-area:panel;border-left:var(--line);min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+#tabs{display:flex;border-bottom:var(--line)}
+#tabs button{flex:1;min-width:0;border:0;border-right:1px solid var(--fg);border-radius:0;min-height:44px;padding:4px}
+#tabs button:last-child{border-right:0}
+#panel-content{overflow:auto;padding:10px 12px;scrollbar-width:thin}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chips button{min-height:28px;padding:0 9px;font-size:12px}
+.ctl{display:grid;grid-template-columns:minmax(96px,8.5em) minmax(60px,1fr) 64px;align-items:center;gap:8px;min-height:32px}
+.ctl input[type=number]{width:64px;height:28px;min-height:28px;padding:0 4px}
+.ctl .name{display:flex;align-items:center;gap:4px}
+.ctl .keydot{width:10px;height:10px;transform:rotate(45deg);border:2px solid var(--fg);flex:none}
+.ctl .keydot.has{background:var(--fg)}
+.ctl .keydot.on{background:var(--fg);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row>select{flex:1}
+.gaze{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
+.gaze button{min-height:36px;padding:0}
+
+/* timeline (two rows of labelled groups, like the 2D app) */
+#timeline{grid-area:timeline;border-top:var(--line);display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0}
+#timeline-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;padding:4px 8px;border-bottom:1px solid var(--fg)}
+.ux-group{display:flex;align-items:center;gap:3px;flex:none}
+.ux-group-name{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-right:3px;opacity:.75}
+.ux-group button,.ux-group select,.ux-group input{height:28px;min-height:28px;padding:0 6px;font-size:12px}
+.ux-group button.icon{width:30px;padding:0;display:inline-grid;place-items:center}
+.ux-group button.icon svg{width:16px;height:16px}
+#frame-box{width:60px}
+.clock{font:800 12px system-ui;min-width:96px;text-align:right}
+#tracks{position:relative;overflow:auto;min-height:0}
+#tracks .ruler,#tracks .trow{display:grid;grid-template-columns:170px minmax(0,1fr)}
+#tracks .ruler{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--fg);height:22px}
+#tracks .ruler .lane,#tracks .trow .lane{position:relative}
+#tracks .ruler .lane{cursor:ew-resize}
+#tracks .tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--fg);font-size:10px;padding-left:2px;opacity:.7}
+#tracks .trow{height:22px;border-bottom:1px solid color-mix(in srgb,var(--fg) 25%,transparent)}
+#tracks .tname{font-size:11px;font-weight:700;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--fg);cursor:pointer}
+#tracks .tname.group{font-weight:900;text-transform:uppercase;font-size:10px;letter-spacing:.04em}
+#tracks .key{position:absolute;top:5px;width:10px;height:10px;margin-left:-5px;transform:rotate(45deg);background:var(--fg);border:1px solid var(--bg);cursor:pointer}
+#tracks .key.sel{background:var(--bg);border:2px solid var(--fg)}
+#playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);pointer-events:none;z-index:3}
+
+/* dialogs */
+dialog{border:var(--line);background:var(--bg);color:var(--fg);padding:16px;max-width:560px}
+dialog::backdrop{background:rgba(31,31,29,.45)}
+.toast{position:fixed;left:50%;bottom:250px;transform:translateX(-50%);background:#1F1F1D;color:#E0A64B;padding:8px 14px;border-radius:2px;font-weight:700;z-index:99;box-shadow:0 0 0 2px #E0A64B}

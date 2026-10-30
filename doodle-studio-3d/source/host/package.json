@@ -1,0 +1,7 @@
+{
+  "name": "doodle-studio-3d",
+  "productName": "Doodle Studio 3D",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.cjs"
+}
