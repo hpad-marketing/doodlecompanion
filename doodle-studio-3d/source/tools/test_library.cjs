@@ -46,14 +46,17 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(bridge.stage.set === 'bedroom' && bridge.stage.time === 'night' && bridge.stage.accessories[0] === 'bowtie', 'bridge stage merged: ' + JSON.stringify(bridge.stage));
   ok(bridge.items.length === 3 && bridge.items.find(i => i.hold === 'R'), 'bridge carries 3 items');
   ok(bridge.frames[0].noseWiggle === 60 && bridge.frames[0].legReach === 40 && bridge.frames[0].earRScale === 100, 'species tracks in frames');
-  // UI tab
-  await p.click('#tabs button:has-text("Library")');
+  // UI: motions live in Animate › Motion library, everything else in the Library tab (section chips in #subtabs)
+  await p.click('#tabs button:has-text("Animate")');
+  await p.click('#subtabs .sub-chips button:has-text("Motion library")');
   await p.waitForTimeout(400);
-  ok(await p.locator('.lib-item').count() > 10, 'Library tab lists motions');
+  ok(await p.locator('.lib-item').count() > 10, 'Motion library lists motions');
   await p.fill('.library input[type=search]', 'wave');
   ok(await p.locator('.lib-item').count() >= 1, 'search finds wave');
   await p.fill('.library input[type=search]', '');
-  await p.click('.library .chips button:has-text("Props")');
+  await p.click('#tabs button:has-text("Library")');
+  await p.click('#subtabs .sub-chips button:has-text("Props")');
+  await p.waitForTimeout(300);
   ok(await p.locator('.lib-item').count() > 10, 'props listed');
   await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'library-tab.png') });
   // undo back to Bunny
