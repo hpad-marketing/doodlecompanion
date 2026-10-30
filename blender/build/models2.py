@@ -1448,7 +1448,7 @@ def box_flaps():
     p.box(w, 0.06, 1.3, 0, 2.2, h, rx=-25)      # back flap, open
     p.box(0.06, 3.0, 1.3, -w / 2, 0.6, h, ry=30)
     p.box(0.06, 3.0, 1.3, w / 2, 0.6, h, ry=-30)
-    p.box(w, 0.02, 0.12, 0, 2.17, 1.2, mat='i')  # tape line
+    p.box(w, 0.02, 0.12, 0, 2.17, 1.2)  # tape line
     return p
 
 

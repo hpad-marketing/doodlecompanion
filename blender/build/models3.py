@@ -326,8 +326,13 @@ def react_exclaim():
 
 @pack('reactions')
 def react_sweat():
-    pts = [(0, 0.16)] + [(0.07 * math.cos(a), 0.07 * math.sin(a)) for a in [math.pi * (-0.15 + 1.3 * i / 16) for i in range(17)]]
-    return _sym('react_sweat', [(x, z) for x, z in pts][::-1])
+    return _sym('react_sweat', _drop(0.07, 0.16))
+
+
+def _drop(r, tip):
+    """Teardrop: point on top, round at the bottom."""
+    return [(0, tip)] + [(r * math.cos(a), r * math.sin(a)) for a in
+                         [math.pi * (0.15 - 1.3 * k / 16) for k in range(17)]]
 
 
 @pack('reactions')
@@ -406,9 +411,7 @@ def react_dizzy():
 
 @pack('reactions')
 def react_tear():
-    p = _sym('react_tear', [(0, 0.12)] + [(0.045 * math.cos(a), 0.045 * math.sin(a)) for a in
-                                          [math.pi * (-0.2 + 1.4 * i / 14) for i in range(15)]][::-1])
-    return p
+    return _sym('react_tear', _drop(0.045, 0.12))
 
 
 @pack('reactions')
@@ -510,7 +513,7 @@ def frame_big():
 def frame_round():
     p = Piece('frame_round')
     p.cyl(0.22, 0.03, 0, 0.015, 0.22, rx=90, seg=32)
-    _screen(p, 0.36, 0.36, 0, -0.016, 0.04)
+    _screen(p, 0.28, 0.28, 0, -0.016, 0.08)
     p['place'] = 'wall'
     return p
 
@@ -1124,13 +1127,11 @@ def paper_plane():
 @pack('fantasy')
 def magic_carpet():
     p = Piece('magic_carpet')
-    rows = []
-    for j in range(6):
-        y = -0.6 + j * 0.24
-        p.box(1.8, 0.24, 0.025, 0, y, 0.4 + 0.04 * math.sin(j * 1.3), bevel=0.0)
+    p.box(1.8, 1.3, 0.03, 0, 0, 0.4, bevel=0.01, seg=1)
+    p.box(1.6, 1.1, 0.032, 0, 0, 0.4)
     for x in (-0.92, 0.92):
         for j in range(6):
-            p.tube([(x, -0.6 + j * 0.24, 0.41), (x * 1.08, -0.6 + j * 0.24, 0.39)], 0.008, mat='i')
+            p.tube([(x, -0.55 + j * 0.22, 0.415), (x * 1.08, -0.55 + j * 0.22, 0.4)], 0.008, mat='i')
     p['seat'] = (0, 0, 0.44)
     p['float'] = True
     return p
@@ -1168,7 +1169,7 @@ def noodle_box():
 def cutting_chai():
     p = Piece('cutting_chai')
     p.cyl(0.025, 0.07, r2=0.032, seg=10)
-    p.cyl(0.026, 0.045, 0, 0, 0.002, r2=0.03, seg=10)
+    p.torus(0.03, 0.002, 0, 0, 0.05, seg=16, seg2=4, mat='i')  # where the chai comes up to
     p['steam'] = (0, 0, 0.075)
     return p
 
@@ -1228,9 +1229,9 @@ def pumpkin():
 @pack('festival')
 def ghost_cutout():
     p = Piece('ghost_cutout')
-    pts = [(0.3 * math.cos(a), 0.9 + 0.3 * math.sin(a)) for a in [math.pi * i / 16 for i in range(17)]]
-    pts += [(-0.3, 0.0), (-0.2, 0.08), (-0.1, 0.0), (0.0, 0.08), (0.1, 0.0), (0.2, 0.08), (0.3, 0.0)][::-1][::-1]
-    p.prism(pts[:17] + [(-0.3, 0.0), (-0.2, 0.08), (-0.1, 0.0), (0.0, 0.08), (0.1, 0.0), (0.2, 0.08), (0.3, 0.0)][::-1][::-1][::-1], 0.02)
+    top = [(0.3 * math.cos(a), 0.9 + 0.3 * math.sin(a)) for a in [math.pi * i / 16 for i in range(17)]]
+    hem = [(-0.3, 0.0), (-0.2, 0.08), (-0.1, 0.0), (0.0, 0.08), (0.1, 0.0), (0.2, 0.08), (0.3, 0.0)]
+    p.prism(top + hem, 0.02)
     for x in (-0.1, 0.1):
         p.cyl(0.035, 0.01, x, -0.015, 0.9, rx=90, seg=10, mat='i')
     return p
@@ -1396,8 +1397,8 @@ def basketball_hoop():
 @pack('sports', hold=('fist', 'z', ''))
 def dumbbell_pair():
     p = Piece('dumbbell_pair')
-    p.cyl(0.012, 0.16, 0, 0, -0.08, ry=90, seg=8, mat='i')
-    for x in (-0.08, 0.06):
+    p.cyl(0.012, 0.2, -0.1, 0, 0, ry=90, seg=8, mat='i')
+    for x in (-0.1, 0.07):
         p.cyl(0.04, 0.03, x, 0, 0, ry=90, seg=6)
     return p
 
@@ -1510,14 +1511,12 @@ def fg_arch():
 # ================================================================== camera: clean backdrops + skies
 @pack('backdrop')
 def cyc_backdrop():
+    """Seamless sweep: floor curving up into the wall, no corner anywhere."""
+    from models4 import sweep_shell
     p = Piece('cyc_backdrop')
-    prof = [(0, -5.0), (0, 0.8)] + [(1.2 - 1.2 * math.cos(a), 0.8 + 1.2 * math.sin(a)) for a in
-                                    [math.pi / 2 * i / 8 for i in range(1, 9)]] + [(3.6, 2.0)]
-    rows = [(y, z) for z, y in prof]
-    for (y0, z0), (y1, z1) in zip(rows, rows[1:]):
-        p.box(14.0, abs(y1 - y0) + 0.001, 0.001, 0, (y0 + y1) / 2, (z0 + z1) / 2,
-              rx=-math.degrees(math.atan2(z1 - z0, y1 - y0)))
-    return p
+    prof = [(-4.0, 0.0), (0.4, 0.0)] + [(0.4 + 1.2 * math.sin(a), 1.2 - 1.2 * math.cos(a))
+                                        for a in [math.pi / 2 * i / 12 for i in range(1, 13)]] + [(1.6, 3.4)]
+    return sweep_shell(p, prof, 12.0)
 
 
 @pack('backdrop')

@@ -22,8 +22,60 @@ def path():
     return paths.lib_path('library.json')
 
 
+KEEP = {'blender', 'cmu-mocap', 'mesh2motion', 'performance'}  # rows other tools add survive a rebuild
+PART_ORDER = ['motions', 'faces', 'faces_story', 'mouth_sets', 'props', 'packs', 'scenery', 'sets_rooms']
+
+
+def merge_parts(lib, quiet=True):
+    """Rebuild library.json from index_parts/*.json, keeping your own saves, rows from other
+    tools and every use count. Runs by itself when a library update brings newer parts."""
+    import glob
+    p = os.path.join(lib, 'library.json')
+    old = json.load(open(p, encoding='utf-8')) if os.path.exists(p) else {'version': 1, 'items': []}
+    usage = {i['id']: {k: i[k] for k in ('uses', 'last_used') if k in i} for i in old['items']}
+    items = [i for i in old['items'] if i.get('source') in KEEP or str(i.get('source', '')).startswith('ext:')]
+    ids = {i['id'] for i in items}
+    parts = sorted(glob.glob(os.path.join(lib, 'index_parts', '*.json')),
+                   key=lambda f: PART_ORDER.index(os.path.basename(f)[:-5]) if os.path.basename(f)[:-5] in PART_ORDER
+                   else 99)
+    for f in parts:
+        if os.path.basename(f) == 'sets.json':
+            continue  # Doodle Studio auto-layout rules: superseded by the hand-dressed room sets
+        for row in json.load(open(f, encoding='utf-8')):
+            if row['id'] in ids:
+                continue
+            row.update(usage.get(row['id'], {}))
+            row.setdefault('uses', 0)
+            prev = os.path.join(lib, 'previews', row['category'], row['id'] + '.png')
+            if os.path.exists(prev):
+                row['preview'] = 'previews/%s/%s.png' % (row['category'], row['id'])
+            items.append(row)
+            ids.add(row['id'])
+    tmp = '%s.%d.tmp' % (p, os.getpid())
+    with open(tmp, 'w', encoding='utf-8') as fh:
+        json.dump({'version': 1, 'items': items}, fh, indent=1)
+    os.replace(tmp, p)
+    if not quiet:
+        from collections import Counter
+        print(Counter(i['category'] for i in items))
+    return items
+
+
+def _parts_newer(p):
+    import glob
+    parts = glob.glob(os.path.join(os.path.dirname(p), 'index_parts', '*.json'))
+    if not parts:
+        return False
+    return not os.path.exists(p) or max(os.path.getmtime(f) for f in parts) > os.path.getmtime(p)
+
+
 def load(force=False):
     p = path()
+    try:
+        if _parts_newer(p):
+            merge_parts(os.path.dirname(p))
+    except OSError as e:
+        print('Doodle Library: could not merge the library update:', e)
     if not os.path.exists(p):
         return {'version': 1, 'items': []}
     m = os.path.getmtime(p)
@@ -37,7 +89,7 @@ def load(force=False):
 def save(data):
     p = path()
     os.makedirs(os.path.dirname(p), exist_ok=True)
-    tmp = p + '.tmp'
+    tmp = '%s.%d.tmp' % (p, os.getpid())  # two Blenders saving at once never share a temp file
     with open(tmp, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=1)
     os.replace(tmp, p)
@@ -80,7 +132,10 @@ def mark_used(item_id):
         if i['id'] == item_id:
             i['uses'] = i.get('uses', 0) + 1
             i['last_used'] = time.strftime('%Y-%m-%dT%H:%M:%S')
-    save(data)
+    try:
+        save(data)
+    except OSError as e:  # usage counts are a nicety: never fail an insert over them
+        print('Doodle Library: could not save usage count:', e)
 
 
 def blob(rel):

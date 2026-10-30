@@ -15,11 +15,18 @@ import common  # noqa: E402
 import models  # noqa: E402
 import rooms as R  # noqa: E402
 import models2  # noqa: E402,F401  (registers the second batch of models)
+import models3  # noqa: E402  (asset-pack pieces: a few dress the new sets too)
+import models4  # noqa: E402,F401  (worlds packs: spooky, adventure, show, everyday)
 from rooms2 import ROOMS2  # noqa: E402
+from rooms3 import ROOMS3  # noqa: E402
 
 ALL_ROOMS = dict(R.ROOMS)
 ALL_ROOMS.update(ROOMS2)
-INDOOR = ('indoor', 'attic', 'cabin', 'box', 'cave')
+ALL_ROOMS.update(ROOMS3)
+# pack pieces used in a set get a mesh here, but stay out of the scenery list (they live in packs.blend)
+SET_ONLY = {e[2]: models3.M3[e[2]] for rm in ALL_ROOMS.values() for e in rm['props']
+            if e[2] not in models.M and e[2] in models3.M3}
+INDOOR = ('indoor', 'attic', 'cabin', 'box', 'cave', 'corner')
 # far things are drawn at their real look; scale them with distance so they read at their drawn size
 FAR = ('cloud', 'birds', 'sun', 'starfield', 'ringed_planet', 'comet', 'kites')
 
@@ -31,8 +38,9 @@ CAM_Y = -3.98  # default camera distance (see doodle_library.sets)
 
 # ------------------------------------------------------------------ meshes, one per model
 meshes = {}
-for name, fn in models.M.items():
+for name, fn in list(models.M.items()) + list(SET_ONLY.items()):
     piece = fn()
+    piece = piece[0] if isinstance(piece, tuple) else piece  # moving parts stay with the pack version
     ob = piece.build(mats)
     me = ob.data
     me.name = 'DSL_' + name
@@ -96,6 +104,12 @@ def shell(kind, room_id):
         quad(r1, t2, t1, r0, 5)
         f = bm.faces.new((t3, t2, r1))     # gable
         f[grp] = 6
+    elif kind == 'corner':     # floor, back wall and one side wall: a clean half-room
+        f0, f1, f2, f3 = V(-hw, R.ROOM_FRONT, 0), V(hw, R.ROOM_FRONT, 0), V(hw, R.WALL_Y, 0), V(-hw, R.WALL_Y, 0)
+        t2, t3, t0 = V(hw, R.WALL_Y, R.WALL_H), V(-hw, R.WALL_Y, R.WALL_H), V(-hw, R.ROOM_FRONT, R.WALL_H)
+        quad(f0, f1, f2, f3, 0)
+        quad(f3, f2, t2, t3, 1)
+        quad(f0, f3, t3, t0, 3)
     elif kind == 'cave':       # just the floor: the rock walls are a prop
         quad(V(-6, -6, 0), V(6, -6, 0), V(6, 6, 0), V(-6, 6, 0), 0)
     elif kind == 'none':       # nothing to stand on: clouds, space
@@ -207,6 +221,9 @@ for room_id, room in ALL_ROOMS.items():
             z = base.location.z + surface_height(base.data) * base.scale.z
         ob.location = (x, y, z)
         ob.rotation_euler = (0, 0, math.radians(rz))
+        if room.get('ink'):  # the ink backdrop: same sweep, ink material
+            ob.data = me.copy()
+            ob.data.materials[0] = mats['DS_ink']
         ob['dsl_set'], ob['dsl_prop'], ob['dsl_label'], ob['dsl_model'] = room_id, slug, label, model
         ob['dsl_default'] = 1 if on else 0
         if on_top:
@@ -227,6 +244,8 @@ bpy.data.libraries.write(os.path.join(out, 'sets', 'sets.blend'), set(set_objs),
 # scenery: every model on its own, marked as an asset
 scen, srows = [], []
 for name, me in meshes.items():
+    if name in SET_ONLY:
+        continue
     ob = bpy.data.objects.new('scenery-' + name, me)
     ob.scale = (R.WORLD,) * 3
     ob['dsl_id'] = 'scenery-' + name

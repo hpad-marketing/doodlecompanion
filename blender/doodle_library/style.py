@@ -28,9 +28,15 @@ def look():
 
 
 # ---------------------------------------------------------------- settings
+SETTINGS_NIGHT = 'Night: unlit surfaces sink toward ink, lamps light pools around them'
+
+
 def settings():
     ob = bpy.data.objects.get('DSL_settings')
     if ob:
+        if 'night' not in ob:  # files saved before time of day
+            ob['night'] = 0.0
+            ob.id_properties_ui('night').update(min=0.0, max=1.0, description=SETTINGS_NIGHT)
         return ob
     ob = bpy.data.objects.new('DSL_settings', None)
     ob.empty_display_size = 0.05
@@ -47,6 +53,7 @@ def settings():
         'shade_mix': (0.32, 0.0, 1.0, 'How far the shadow colour moves from mustard toward ink'),
         'form': (0.0, 0.0, 1.0, 'Also shade the sides turned away from the light (toon form shading)'),
         'ambient': (0.45, 0.0, 5.0, 'World light level an unlit surface still gets (tunes the cast-shadow test)'),
+        'night': (0.0, 0.0, 1.0, SETTINGS_NIGHT),
     }
     for k, (v, mn, mx, desc) in props.items():
         ob[k] = v
@@ -71,6 +78,10 @@ def _driver(sock_owner, path, target, data_path, expr='v'):
     return fc
 
 
+TOON_VERSION = 2   # bump when the toon shader changes: older materials get rebuilt
+NIGHT_DIM = 0.72   # how far toward ink an unlit surface goes at night
+
+
 def toon_material(name, hexcol, driven=True):
     """Flat brand colour; with DSL_settings.shadows up, shadowed parts darken toward ink.
 
@@ -81,10 +92,10 @@ def toon_material(name, hexcol, driven=True):
     """
     lk = look()
     m = bpy.data.materials.get(name)
-    if m and m.get('dsl_toon'):
+    if m and m.get('dsl_toon', 0) >= TOON_VERSION:
         return m
     m = m or bpy.data.materials.new(name)
-    m['dsl_toon'] = 1
+    m['dsl_toon'] = TOON_VERSION
     m.use_nodes = True
     nt = m.node_tree
     nt.nodes.clear()
@@ -117,7 +128,7 @@ def toon_material(name, hexcol, driven=True):
     L.new(s2r.outputs['Color'], bw.inputs[0])
     vals = {}
     for i, (k, default) in enumerate((('shadows', 0.0), ('shade_mix', 0.32), ('form', 0.0), ('ambient', 0.45),
-                                      ('energy', 6.0), ('lx', 0.0), ('ly', 0.0), ('lz', 1.0))):
+                                      ('energy', 6.0), ('lx', 0.0), ('ly', 0.0), ('lz', 1.0), ('night', 0.0))):
         v = node('ShaderNodeValue', -900, -100 - 90 * i)
         v.name = v.label = 'DSL ' + k
         v.outputs[0].default_value = default
@@ -146,12 +157,26 @@ def toon_material(name, hexcol, driven=True):
     mix.inputs['A'].default_value = lk.hex_linear(hexcol)
     L.new(shade.outputs['Result'], mix.inputs['B'])
     L.new(fac, mix.inputs['Factor'])
-    L.new(mix.outputs['Result'], em.inputs['Color'])
+    # night: everything sinks toward ink except where a lamp's light lands (sun is off at night)
+    dim = node('ShaderNodeMix', 950, -250, data_type='RGBA')
+    dim.inputs['A'].default_value = lk.hex_linear(hexcol)
+    dim.inputs['B'].default_value = lk.hex_linear(INK_HEX)
+    dim.inputs['Factor'].default_value = NIGHT_DIM
+    lit = math('MINIMUM', math('MULTIPLY', bw.outputs[0], 1.6, 800, -450), 1.0, 950, -450)
+    lamp = node('ShaderNodeMix', 1050, -300, data_type='RGBA')
+    L.new(dim.outputs['Result'], lamp.inputs['A'])
+    lamp.inputs['B'].default_value = lk.hex_linear(hexcol)
+    L.new(lit, lamp.inputs['Factor'])
+    night = node('ShaderNodeMix', 1100, -100, data_type='RGBA')
+    L.new(mix.outputs['Result'], night.inputs['A'])
+    L.new(lamp.outputs['Result'], night.inputs['B'])
+    L.new(vals['night'].outputs[0], night.inputs['Factor'])
+    L.new(night.outputs['Result'], em.inputs['Color'])
     m.diffuse_color = lk.hex_linear(hexcol)
     if driven:
         st = settings()
         sun = ensure_sun()
-        for k in ('shadows', 'shade_mix', 'form', 'ambient'):
+        for k in ('shadows', 'shade_mix', 'form', 'ambient', 'night'):
             _driver(vals[k].outputs[0], 'default_value', st, '["%s"]' % k)
         _driver(vals['energy'].outputs[0], 'default_value', sun, 'data.energy')
         for i, ax in enumerate('xyz'):

@@ -82,10 +82,19 @@ def spec(ob_or_id):
         kind, axis, extra = 'wear', 'z', ''
     elif key in GRIPS:
         kind, axis, extra = GRIPS[key]
+    elif _pack_grip(pid):
+        kind, axis, extra = _pack_grip(pid)
     else:  # your own props: guess from the shape
         kind, axis, extra = _guess(ob_or_id) if not isinstance(ob_or_id, str) else ('fist', 'z', '')
     return {'kind': kind, 'axis': axis, 'upright': extra == 'upright',
             'contact': extra if kind == 'two' else '', 'id': pid}
+
+
+def _pack_grip(pid):
+    """Asset-pack hand props carry their researched grip in their library row."""
+    it = index.get(pid) or {}
+    g = (it.get('data') or {}).get('grip')
+    return tuple(g) if isinstance(g, (list, tuple)) and len(g) == 3 else None
 
 
 def _guess(ob):
@@ -296,14 +305,42 @@ def _limits(ob, kind, A, slide, upright, lean=0.0):
 # ---------------------------------------------------------------- body + reach
 class Body:
     """Every character body in the file (Bunny, Koala, Frog ...) for clip tests. The holding
-    hand, its cuff and forearm sleeve are left out: they are meant to touch the prop."""
+    hand, its cuff and forearm sleeve are left out: they are meant to touch the prop.
 
-    def __init__(self, sides=('R',), holder='BUNNY'):
+    The holding arm's upper sleeve moves with every spot the search tries, so it is not
+    tested as a mesh (that would be the sleeve where the arm is NOW) but as a capsule from
+    the shoulder toward the tried hand spot, as thick as the sleeve really is."""
+
+    def __init__(self, sides=('R',), holder='BUNNY', static=False):
         from . import collide
-        self._b = collide.Bodies(exclude=collide.holder_parts(holder, sides))
+        moving = [bpy.data.objects.get('%s_sleeve_up.%s' % (holder, s)) for s in sides]
+        moving = [o for o in moving if o] if not static else []
+        self._b = collide.Bodies(exclude=collide.holder_parts(holder, sides) + moving)
+        self._arms = []
+        arm = bpy.data.objects.get(holder + '_rig')
+        for s, ob in zip(sides, moving):
+            pb = arm.pose.bones.get('DEF-upper_arm.' + s) if arm else None
+            if not pb:
+                continue
+            S, E = arm.matrix_world @ pb.head, arm.matrix_world @ pb.tail
+            pts, _ = _mesh_points(ob)
+            d = sorted(_seg_dist(p, S, E) for p in pts)
+            r = d[int(len(d) * 0.8)] if d else 0.03
+            self._arms.append((s, S, (E - S).length, r))
 
-    def clips(self, pts):
-        return self._b.count(pts)
+    def clips(self, pts, H=None):
+        n = self._b.count(pts)
+        if H is not None:
+            for s, S, l1, r in self._arms:
+                E = S + (H - S).normalized() * l1
+                n += sum(1 for p in pts if _seg_dist(p, S, E) < r - 0.002)
+        return n
+
+
+def _seg_dist(p, a, b):
+    ab = b - a
+    t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-12)))
+    return (a + ab * t - p).length
 
 
 def _root():
@@ -395,7 +432,7 @@ def _sample(pts, n=400):
     return [pts[int(i * step)] for i in range(n)]
 
 
-def _search(kind, side, hf, A, local, samp, upright, body, budget=5000, reach_k=0.97):
+def _search(kind, side, hf, A, local, samp, upright, body, budget=5000, reach_k=0.97, at=None):
     """Find the hand spot, prop turn, lean and grip slide that keep the prop out of Bunny.
 
     Candidates are ranked by how natural they look (facing the camera, upright, arm relaxed,
@@ -411,6 +448,8 @@ def _search(kind, side, hf, A, local, samp, upright, body, budget=5000, reach_k=
     for f in (0.35, 0.6, 0.15, 0.0):
         for dn in (0.55, 0.3, 0.8, 1.2):
             spots.append(sh + (out + fwd * f - up * dn).normalized() * reach)
+    if at is not None:  # the hand stays where it is: only the prop's turn, lean and slide are searched
+        spots = [at]
     yaws = (0, 180, 90, -90, 45, -45, 135, -135)
     leans = (0, 15, 30, 45, 60, 75)  # upright things pay extra to tilt past 30 (see cost)
     fbs = (0, 20, -20)
@@ -458,7 +497,7 @@ def _search(kind, side, hf, A, local, samp, upright, body, budget=5000, reach_k=
             cz = sum((q.dot(up) for q in pr), 0.0) / len(pr)
             opts.append((H + Rb @ hf['C'] + out * (hf['hw'] * 0.6 + r_out) - up * cz, 1.5, True))
         for Gs, extra, cup in opts:
-            clip = body.clips([Gs + q for q in ps])
+            clip = body.clips([Gs + q for q in ps], H)
             score = clip * 10 + cost + extra
             if best is None or score < best['score']:
                 best = dict(score=score, clip=clip, Rp=Rp, Rb=Rb, H=H, G=Gs, yaw=yaw, lean=lean, fb=fb,
@@ -473,21 +512,43 @@ def attach(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
     sleeve, so a spot that was clear before the arm moved can be blocked after. Up to three
     looks; the cleanest one is kept."""
     arm = rig()
-    start = _arm_pose(arm) if arm else None
-    rep = _attach_once(ob, side, pose, frame, check, force_kind)
+    if arm is None:
+        return _attach_once(ob, side, pose, frame, check, force_kind)
+
+    def look(kind=None, at=None):
+        start = _arm_pose(arm)
+        r = _attach_once(ob, side, pose, frame, check, kind or force_kind, at=at)
+        return r, (start, kind or force_kind, at)
+
+    def hand_at(r):
+        if r.get('kind') in ('two', 'wear'):
+            return None
+        hf = hand_frame(r.get('side', side or 'R'))
+        return (arm.matrix_world @ arm.pose.bones[hf['bone']].matrix).translation.copy()
+
+    rep, how = look()
     if not check or rep.get('ok') or rep.get('kind') in ('two', 'wear') or rep.get('note'):
         return rep
-    best = (_badness(rep), start)
-    for _ in range(2):
-        start = _arm_pose(arm)
-        rep = _attach_once(ob, side, pose, frame, check, force_kind)
+    best = (_badness(rep), how)
+    tries = [dict(at=hand_at(rep)), dict(at=hand_at(rep))]
+    if not force_kind:
+        tries += [dict(kind=k) for k in ALT_KIND.get(rep.get('kind'), ())]
+    for t in tries:
+        if t.get('kind'):
+            _arm_pose(arm, best[1][0])  # other grips start from the cleanest pose so far
+        if 'at' in t and t['at'] is None:
+            continue
+        rep, how = look(**t)
+        if t.get('kind') and rep.get('ok'):
+            rep['note'] = 'held as %s: the usual grip touched him' % t['kind']
         if rep.get('ok'):
             return rep
         if _badness(rep) < best[0]:
-            best = (_badness(rep), start)
-    if _badness(rep) > best[0]:  # go back to the cleanest look: same arm pose in, same answer out
-        _arm_pose(arm, best[1])
-        rep = _attach_once(ob, side, pose, frame, check, force_kind)
+            best = (_badness(rep), how)
+    if how is not best[1]:  # put back the cleanest look: same arm pose in, same answer out
+        start, kind, at = best[1]
+        _arm_pose(arm, start)
+        rep = _attach_once(ob, side, pose, frame, check, kind, at=at)
     return rep
 
 
@@ -506,7 +567,11 @@ def _arm_pose(arm, pose=None):
     bpy.context.view_layer.update()
 
 
-def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
+# what else a hand does with the same object when the usual grip can't stay clear of him
+ALT_KIND = {'pinch': ('fist',), 'hook': ('fist',), 'fist': ('palm', 'pinch'), 'palm': ('fist',)}
+
+
+def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=None, at=None):
     """Hold `ob` properly. Returns a report dict (kind, side, contact result).
 
     One hand: the arm switches to IK and carries at the side (Bunny's arms are short and
@@ -543,10 +608,10 @@ def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=No
     A = _handle_axis(ob, sp['axis'])
     local = [p * scale for p in _prop_local_points(ob)]
     samp = _sample(local, 600)
-    body = Body((side,))
-    best = _search(sp['kind'], side, hf, A, local, samp, sp['upright'], body)
+    body = Body((side,), static=at is not None)
+    best = _search(sp['kind'], side, hf, A, local, samp, sp['upright'], body, at=at)
     if best['clip'] and sp['kind'] == 'palm':
-        alt = _search('fist', side, hf, AXES['z'], local, samp, sp['upright'], body)
+        alt = _search('fist', side, hf, AXES['z'], local, samp, sp['upright'], body, at=at)
         if alt['clip'] < best['clip']:
             best = alt
     kind, Rp, Rb, H = best['kind'], best['Rp'], best['Rb'], best['H']
@@ -909,7 +974,7 @@ def check_contact(ob, body=True):
         hbvh, hpts = _bvh(bpy.data.objects.get('BUNNY_hand.' + sd))
         overlap = bool(pbvh.overlap(hbvh))
         gap = 0.0 if overlap else min(pbvh.find_nearest(p)[3] for p in hpts)
-        if gap > 0.003:
+        if gap > 0.0035:  # within 3 mm (plus rounding): sits inside the ink line
             res['touch'] = False
             res['gap_mm'] = max(res['gap_mm'], round(gap * 1000, 1))
         if kind != 'two' and overlap:

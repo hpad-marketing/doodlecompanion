@@ -122,6 +122,14 @@ def switch_set(room_id, keep_choices=True, shadows=None):
     sc['dsl_set_state'] = state
     if shadows is not None:
         style.set_shadows(shadows)
+    try:  # seats, beds, counters and tables get their sit / lie / lean / grab spots
+        from . import interact
+        interact.auto_anchors([o for o in coll.all_objects if o.type == 'MESH' and not o.get('dsl_shell')])
+    except Exception as e:
+        print('Doodle Library: spots not added:', e)
+    if sc.get('dsl_time', 'day') != 'day':  # keep the time of day: the new room's lamps switch on too
+        from . import lighting
+        lighting.set_time(sc['dsl_time'])
     index.mark_used(item['id'])
     return coll
 

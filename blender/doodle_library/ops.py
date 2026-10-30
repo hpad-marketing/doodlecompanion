@@ -283,14 +283,14 @@ CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_
 
 
 def register():
-    from . import collide, placement
-    for c in CLASSES + placement.classes + collide.classes:
+    from . import collide, ops_packs, placement
+    for c in CLASSES + placement.classes + collide.classes + ops_packs.classes:
         bpy.utils.register_class(c)
     collide.register()
 
 
 def unregister():
-    from . import collide, placement
+    from . import collide, ops_packs, placement
     collide.unregister()
-    for c in reversed(CLASSES + placement.classes + collide.classes):
+    for c in reversed(CLASSES + placement.classes + collide.classes + ops_packs.classes):
         bpy.utils.unregister_class(c)

@@ -39,6 +39,9 @@ def insert_object(item, location=None, collection=None, style_it=True):
         ob.location = location
     if style_it:
         style.apply_style(ob, bpy.context.scene.camera, seed=hash(item['id']) % 97 * 0.13)
+    if ob.get('dsl_pack') or ob.get('dsl_parts'):
+        from . import packs
+        packs.dress(ob)  # lids, wheels, typed labels, lights, seats ...
     index.mark_used(item['id'])
     return ob
 

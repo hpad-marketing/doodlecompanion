@@ -9,7 +9,8 @@
     dl.switch_set('bedroom'); dl.set_prop('rug', False)
     dl.save_motion('My wave', (1, 48)); dl.save_expression('Smirk')
 """
-from . import assets, collide, faces, grips, index, motions, placement, sets, style, text3d
+from . import (assets, collide, faces, fx, grips, index, interact, lighting, motions, packs, placement, sets, storytime,
+               style, text3d)
 
 items = index.items
 get = index.get
@@ -59,6 +60,32 @@ resolve_collision = collide.resolve
 bake_collisions = collide.bake
 collision_guard = collide.set_guard
 fit_lip_sync = faces.fit_speech  # re-fit keyed speech mouths to the faces on screen
+# asset packs
+set_open = packs.set_open              # lids, doors, curtains: set_open(ob, 1.0, frame)
+set_label = packs.set_label            # type new words on a sign, placard or bubble
+set_screen = packs.set_screen          # your image or MP4 on a screen, frame or poster
+react = packs.react                    # react('heart', frame): pops over Bunny's head
+frame_shot = packs.frame_shot          # foreground framing piece onto a third
+add_effect = fx.add_effect             # rain, snow, leaves, confetti, dust, smoke ...
+set_effect_amount = fx.set_amount
+set_time = lighting.set_time           # day, golden, night (lamps switch on)
+sky = lighting.sky                     # day, sunset, stars, storm
+lightning = lighting.lightning
+flicker = lighting.flicker
+sit = interact.sit                     # Bunny sits on the nearest (or given) sit spot
+put_on = interact.put_on               # a prop rests on a table's grab spot
+add_spots = interact.auto_anchors
+physics = interact.physics             # ball, paper, pillow, book, beanbag
+simulate = interact.simulate
+squish = interact.squish
+# storytime kit (open-source fonts, CC0 sounds, all local)
+chat = storytime.chat                  # chat([('them', 'you up?'), ('me', 'no')], frame)
+pin_label = storytime.label            # label + arrow pointing at an object
+journey = storytime.journey            # map with a path drawing itself between stops
+time_skip = storytime.time_skip        # '3 hours later' card
+horror = storytime.horror              # opt-in horror light kit (off by default)
+end_screen = storytime.end_screen      # end screen + subscribe press
+story_sound = storytime.sound
 use_mouth_set = lambda item_id=None: faces.use_mouth_set(index.get(item_id) if item_id else None)
 sets_list = sets.sets
 switch_set = sets.switch_set

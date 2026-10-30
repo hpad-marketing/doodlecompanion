@@ -1,0 +1,3 @@
+These sounds were synthesised from scratch by make_sounds.py for the Doodle Library.
+They are dedicated to the public domain under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/

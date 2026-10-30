@@ -295,6 +295,26 @@ class DSL_PT_object(DSLPanel, bpy.types.Panel):
             for n in mod.node_group.nodes:
                 if n.bl_idname == 'GeometryNodeStringToCurves':
                     box.template_ID(n, 'font', open='font.open')
+        from . import packs
+        if packs.parts_of(ob) or packs.meta(ob, 'screen') or packs.label_of(ob) or ob.get('dsl_pack'):
+            box = L.box()
+            r = box.row(align=True)
+            if any(p['dsl_part'] in ('hinge', 'slide') for p in packs.parts_of(ob)):
+                op = r.operator('dsl.open', text='Open', icon='DISCLOSURE_TRI_DOWN')
+                op.amount = 1.0
+                op = r.operator('dsl.open', text='Close', icon='DISCLOSURE_TRI_RIGHT')
+                op.amount = 0.0
+            if packs.meta(ob, 'screen'):
+                r.operator('dsl.screen', text='Show my clip', icon='FILE_MOVIE')
+            if packs.meta(ob, 'foreground'):
+                r.operator_menu_enum('dsl.frame_shot', 'side', text='Frame the shot', icon='CAMERA_DATA')
+            if any(c.get('dsl_anchor') == 'sit' for c in ob.children):
+                r.operator('dsl.sit', text='Sit Bunny here', icon='ARMATURE_DATA')
+            t = packs.label_of(ob)
+            if t:
+                tm = text3d.text_modifier(t)
+                box.prop(tm, '["%s"]' % text3d._ids(tm)['Text'], text='Words')
+            box.operator_menu_enum('dsl.physics', 'kind', text='Physics', icon='PHYSICS')
         kind = ob.get('dsl_grip_kind')
         if kind:
             box = L.box()
@@ -311,6 +331,36 @@ class DSL_PT_object(DSLPanel, bpy.types.Panel):
             r.operator('dsl.drop', text='Drop', icon='TRIA_DOWN_BAR')
             if ob.get('dsl_id', '').startswith('prop-') or ob.type == 'MESH' and ob.get('dsl_id'):
                 box.operator('dsl.hold', text='Put in hand', icon='VIEW_PAN')
+
+
+class DSL_PT_life(DSLPanel, bpy.types.Panel):
+    bl_label = 'Scene life'
+
+    def draw(self, context):
+        L = self.layout
+        now = context.scene.get('dsl_time', 'day')
+        row = L.row(align=True)
+        row.label(text='Time')
+        for t in ('day', 'golden', 'night'):
+            row.operator('dsl.time', text=t.capitalize(), depress=(now == t)).kind = t
+        row = L.row(align=True)
+        row.operator_menu_enum('dsl.sky', 'kind', text='Sky', icon='LIGHT_SUN')
+        row.operator('dsl.lightning', text='Lightning', icon='LIGHT')
+        row = L.row(align=True)
+        row.operator_menu_enum('dsl.effect', 'kind', text='Add effect', icon='FORCE_TURBULENCE')
+        row.operator_menu_enum('dsl.react', 'kind', text='Reaction', icon='OUTLINER_OB_FONT')
+        row = L.row(align=True)
+        row.operator('dsl.sit', text='Sit on nearest seat', icon='ARMATURE_DATA')
+        L.label(text='Storytime')
+        row = L.row(align=True)
+        row.operator('dsl.chat', text='Chat', icon='OUTLINER_DATA_GP_LAYER')
+        row.operator('dsl.pin_label', text='Label', icon='FORWARD')
+        row.operator('dsl.journey', text='Map', icon='WORLD')
+        row = L.row(align=True)
+        row.operator('dsl.time_skip', text='Time skip', icon='TIME')
+        h = bool(context.scene.get('dsl_horror', False))
+        row.operator('dsl.horror', text='Horror', icon='GHOST_ENABLED' if h else 'GHOST_DISABLED', depress=h)
+        row.operator('dsl.end_screen', text='End screen', icon='PLAY')
 
 
 class DSL_PT_look(DSLPanel, bpy.types.Panel):
@@ -372,7 +422,8 @@ WM_PROPS = dict(
     dsl_parallax_amount=FloatProperty(name='Amount', default=1.0, min=0.1, max=3.0),
 )
 
-CLASSES = (DSLItem, DSLSetProp, DSL_UL_items, DSL_PT_library, DSL_PT_background, DSL_PT_object, DSL_PT_look)
+CLASSES = (DSLItem, DSLSetProp, DSL_UL_items, DSL_PT_library, DSL_PT_background, DSL_PT_object, DSL_PT_life,
+           DSL_PT_look)
 
 
 def register():
