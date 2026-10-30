@@ -35,6 +35,10 @@ const TOOLS = [
     { id: { type: 'string' }, frame: { type: 'integer', minimum: 0 }, shot: { type: ['string', 'integer'] }, mirror: { type: 'boolean' }, hold: { enum: ['L', 'R', ''] }, text: { type: 'string' }, at: { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3 }, shotOnly: { type: 'boolean' } }, ['id']],
   ['set_stage', 'Set the stage the scene renders on: set (room id, e.g. "bedroom"), setProps ({"rug": false} to hide pieces of the set), time (day, golden, night), sky (day, sunset, stars, storm), shadows (cel shadows, off unless true), outfit (track, ziphoodie, raincoat; brand black), accessories (["bowtie", "squareglasses", "necktie"]), mouthSet (an id from library_list mouthSets). null clears a key. shotOnly=true sets it for the active shot only, on top of the scene. Returns the merged stage.',
     { stage: { type: 'object' }, shotOnly: { type: 'boolean' } }, ['stage']],
+  ['storyboard', 'Save a storyboard sheet PNG: every shot\'s first, middle and last frame from the live viewport, with its code, name, length, start time, set and outfit, in DeepInDoodles\\<scene>\\work\\storyboard.', {}],
+  ['mirror_pose', 'Swap left and right in the whole pose and face and key it at frame (default the playhead).', { frame: { type: 'integer', minimum: 0 } }],
+  ['blend_poses', 'Key an in-between of two poses at frame: a and b are value maps like set_values takes (e.g. from get_state values); t is 0 (all a) to 100 (all b). Faces switch at 50.', { a: { type: 'object' }, b: { type: 'object' }, t: { type: 'number', minimum: 0, maximum: 100 }, frame: { type: 'integer', minimum: 0 } }, ['a', 'b', 't']],
+  ['set_shot_look', 'Per-shot look: horizonLock=true keeps the horizon level (roll and Dutch presets ignored); ink is the line weight in percent of Doodle Studio\'s ink (100 = normal, 40-250), applied to every line in the shot so weights stay equal. Rack focus is the cam.focus and cam.fstop values (focus 0 = all sharp).', { horizonLock: { type: 'boolean' }, ink: { type: 'number', minimum: 40, maximum: 250 } }],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
@@ -76,6 +80,10 @@ module.exports = ({ call, api }) => {
     },
     library_use: a => { const { id, ...opts } = a; return call(`ds3d.libraryUse(${JSON.stringify(id)}, ${JSON.stringify(opts)})`); },
     set_stage: a => call(`ds3d.setStage(${JSON.stringify(a.stage || {})}, ${!!a.shotOnly})`),
+    storyboard: () => call('ds3d.storyboard()'),
+    mirror_pose: a => call(`ds3d.mirrorPose(${a.frame ?? 'null'})`),
+    blend_poses: a => call(`ds3d.blendPoses(${JSON.stringify(a.a)}, ${JSON.stringify(a.b)}, ${Number(a.t)}, ${a.frame ?? 'null'})`),
+    set_shot_look: a => call(`ds3d.setShotLook(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));

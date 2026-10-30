@@ -53,7 +53,7 @@ const LABEL = {
   armL: 'Raise', armLForward: 'Forward', elbowL: 'Elbow bend', wristL: 'Wrist roll', armR: 'Raise', armRForward: 'Forward', elbowR: 'Elbow bend', wristR: 'Wrist roll',
   legL: 'Lift', legLOut: 'Out', kneeL: 'Knee bend', footL: 'Foot roll', legR: 'Lift', legROut: 'Out', kneeR: 'Knee bend', footR: 'Foot roll',
   'cam.yaw': 'Orbit', 'cam.pitch': 'Height angle', 'cam.dist': 'Distance', 'cam.lens': 'Lens (mm)', 'cam.roll': 'Roll (Dutch)',
-  'cam.tx': 'Aim left / right', 'cam.ty': 'Aim near / far', 'cam.tz': 'Aim height',
+  'cam.tx': 'Aim left / right', 'cam.ty': 'Aim near / far', 'cam.tz': 'Aim height', 'cam.focus': 'Focus distance', 'cam.fstop': 'Aperture (f-stop)', squash: 'Squash / stretch',
   expression: 'Expression', gaze: 'Gaze', mouth: 'Speech mouth', blink: 'Blink',
 };
 const TIPS = {
@@ -61,12 +61,15 @@ const TIPS = {
   'cam.pitch': 'Positive looks down from above (high angle). Negative looks up from below (low angle). The whole set moves with the camera.',
   'cam.dist': 'How far the camera is from what it aims at, in metres.',
   'cam.lens': 'Focal length. 15–24 mm is wide and distorts; 85–135 mm is long and flattens.',
-  'cam.roll': 'Tilts the frame for a Dutch angle.',
+  'cam.roll': 'Tilts the frame for a Dutch angle. Horizon lock keeps it level.',
+  'cam.focus': 'Rack focus: metres from the camera to the sharp plane. 0 keeps everything sharp. Key it to pull focus between two things.',
+  'cam.fstop': 'Lower is a shallower focus (more blur). Only used when Focus distance is above 0.',
+  squash: 'Plus squashes down and out, minus stretches up and thin. Volume stays the same and the feet stay planted.',
 };
 const EXTRA_RANGE = { legReach: [0, 100, 1], earLScale: [50, 150, 1], earRScale: [50, 150, 1], earLSquash: [-50, 30, 1], earRSquash: [-50, 30, 1], noseWiggle: [-100, 100, 1], noseSniff: [0, 100, 1],
   bodyX: [-400, 400, 1], bodyY: [-200, 200, 1], depth: [-4, 4, 0.05], s: [0.3, 2, 0.01], bodyRot: [-45, 45, 1], breath: [0, 90, 1],
   'cam.yaw': [-180, 180, 1], 'cam.pitch': [-60, 89, 1], 'cam.dist': [0.2, 60, 0.05], 'cam.lens': [12, 200, 1], 'cam.roll': [-45, 45, 1],
-  'cam.tx': [-10, 10, 0.01], 'cam.ty': [-10, 10, 0.01], 'cam.tz': [-0.5, 10, 0.01] };
+  'cam.tx': [-10, 10, 0.01], 'cam.ty': [-10, 10, 0.01], 'cam.tz': [-0.5, 10, 0.01], 'cam.focus': [0, 60, 0.05], 'cam.fstop': [0.7, 22, 0.1], squash: [-30, 30, 1] };
 const LENSES = [15, 24, 35, 50, 85, 135];
 const VIEWS = [['Front', { yaw: 0, pitch: 4 }], ['¾ left', { yaw: -40, pitch: 6 }], ['¾ right', { yaw: 40, pitch: 6 }], ['Side', { yaw: 90, pitch: 2 }],
   ['Back', { yaw: 180, pitch: 4 }], ['Low angle', { pitch: -25, tz: 0.45 }], ['High angle', { pitch: 45 }], ['Top down', { pitch: 85 }]];
@@ -209,6 +212,7 @@ function apply() {
   view.pose(vals);
   const cam = {};
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
+  if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
   syncPanel();
   drawPlayhead();
@@ -237,7 +241,7 @@ const carCtx = () => ({
 const MENUS = [
   ['File', [['New scene', newShot, 'Ctrl+N'], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
-  ['Shot', [['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
+  ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
@@ -303,6 +307,7 @@ function buildPanel() {
       h('button', { onclick: () => keyGroup(ids), title: 'Set a key on every control of this part' }, 'Key this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of ids) setValue(id, defaults(id)); }, title: 'Back to rest for this part' }, 'Reset this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of BUNNY_IDS) setValue(id, defaults(id)); }, title: 'Back to rest for the whole body' }, 'Reset whole pose')));
+    c.append(posePanel());
     c.append(h('p', { class: 'hint' }, `Every joint stops at the ${charName()}'s limits, so nothing can bend past its anatomy. Left and right follow Doodle Studio.${part === 'ears' && data.ear_width_lock ? ' The Frog\'s eye bumps are rigid, so they grow and squash only a little.' : ''}`));
   } else if (tab === 'face') {
     const F = data.face;
@@ -324,7 +329,9 @@ function buildPanel() {
       h('button', { onclick: () => dollyTo(100), title: 'Dolly zoom: go long while moving out, so Bunny keeps his size and the room flattens' }, 'Dolly long')));
     c.append(h('h3', {}, 'Angle'), h('div', { class: 'chips' }, ...VIEWS.map(([n, v]) => h('button', { onclick: () => camSet(v) }, n))));
     c.append(h('h3', {}, 'Camera'), ...CAM_IDS.map(control));
-    c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: () => keyGroup(CAM_IDS) }, 'Key camera'), h('button', { onclick: frameBunny }, 'Frame Bunny')));
+    c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: () => keyGroup(CAM_IDS) }, 'Key camera'), h('button', { onclick: frameBunny }, 'Frame Bunny'),
+      h('button', { onclick: () => { pushUndo(); setValue('cam.focus', round(current('cam.dist'))); drawTracks(); }, title: 'Rack focus: put the sharp plane on what the camera aims at. Key it at two frames to pull focus.' }, 'Focus on aim'),
+      h('button', { 'aria-pressed': String(!!project.horizonLock), onclick: () => { pushUndo(); project.horizonLock = !project.horizonLock; apply(); buildPanel(); }, title: 'Keep the horizon level in this shot: roll and Dutch presets are ignored' }, 'Horizon lock')));
     c.append(h('p', { class: 'hint' }, 'Drag in the viewport to orbit, Shift+drag to move the aim, wheel to move in and out, Alt+wheel to change the lens. The set moves with the camera, so angles stay physically true.'));
     c.append(cameraPresetsPanel(presetCtx()));
   } else if (tab === 'library') {
@@ -334,6 +341,7 @@ function buildPanel() {
   } else if (tab === 'render') {
     const field = (label, obj, key, attrs) => { const i = h('input', { ...attrs, value: obj[key] }); i.addEventListener('change', () => { pushUndo(); obj[key] = attrs.type === 'number' ? Number(i.value) : i.value; buildTimelineTools(); drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
     c.append(h('h3', {}, `Shot ${project.code}`), field('Name', project, 'label', { type: 'text', placeholder: 'optional, e.g. intro' }), field('Length (frames)', project, 'length', { type: 'number', min: 1, max: 54000 }),
+      h('span', { title: 'Line weight for this shot in Blender, as a percent of Doodle Studio\'s ink (100 = Bunny\'s usual weight). Every line in the shot changes together, so weights stay equal.' }, field('Line weight (%)', project, 'ink', { type: 'number', min: 40, max: 250, placeholder: '100' })),
       h('h3', {}, `Scene: ${scene.shots.length} shot${scene.shots.length > 1 ? 's' : ''}, ${(sceneFrames() / scene.fps).toFixed(1)} s`),
       field('Frame rate', scene, 'fps', { type: 'number', min: 12, max: 60 }),
       field('Width (px)', scene, 'width', { type: 'number', min: 64, max: 3840 }), field('Height (px)', scene, 'height', { type: 'number', min: 64, max: 3840 }));
@@ -361,6 +369,80 @@ function syncPanel() {
     const dot = row.querySelector('.keydot');
     if (dot) { dot.classList.toggle('has', !!project.tracks[id]); dot.classList.toggle('on', hasKey(project, id, frame)); }
   }
+}
+
+// ---------------------------------------------------------------- storyboard: every shot's start, middle and end on one sheet
+async function storyboard() {
+  const keep = { active: scene.active, frame };
+  const cw = 220, ch = Math.round(cw * scene.height / scene.width), pad = 14, head = 26, title = 46;
+  const sheet = document.createElement('canvas');
+  sheet.width = pad + 3 * (cw + pad) + 200;
+  sheet.height = title + scene.shots.length * (ch + head + pad) + pad;
+  const g = sheet.getContext('2d');
+  g.fillStyle = '#E0A64B'; g.fillRect(0, 0, sheet.width, sheet.height);
+  g.fillStyle = g.strokeStyle = '#1F1F1D'; g.lineWidth = 3; g.font = '800 22px system-ui, sans-serif';
+  g.fillText(`${scene.name}: ${scene.shots.length} shots, ${(sceneFrames() / scene.fps).toFixed(1)} s`, pad, 31);
+  let t0 = 0;
+  for (const [i, s] of scene.shots.entries()) {
+    scene.active = i; project = bindShot(scene, s);
+    const y = title + i * (ch + head + pad);
+    g.font = '800 16px system-ui, sans-serif';
+    g.fillText(`${shotName(s)}   ${(s.length / scene.fps).toFixed(1)} s   from ${(t0 / scene.fps).toFixed(1)} s`, pad, y + 18);
+    for (const [k, f] of [0, Math.floor(s.length / 2), s.length - 1].entries()) {
+      frame = f; apply(); view.render();
+      const x = pad + k * (cw + pad);
+      g.drawImage(view.renderer.domElement, x, y + head, cw, ch);
+      g.strokeRect(x, y + head, cw, ch);
+    }
+    const st = stageOf(scene, s), notes = [st.set && 'Set: ' + st.set, st.outfit && 'Outfit: ' + st.outfit, s.items?.length && `${s.items.length} library items`, s.markers?.length && `${s.markers.length} markers`].filter(Boolean);
+    g.font = '600 13px system-ui, sans-serif';
+    notes.forEach((n, j) => g.fillText(n, pad + 3 * (cw + pad), y + head + 16 + j * 18));
+    t0 += s.length;
+  }
+  scene.active = keep.active; project = bindShot(scene, scene.shots[keep.active]); frame = keep.frame; refreshAll();
+  const root = (await api('settings', {})).rendersRoot;
+  const safe = (scene.name || 'Untitled').replace(/[\\/:*?"<>|]/g, '_');
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  const r = await api('write-png', { path: `${root}/${safe}/work/storyboard/${safe.replace(/ /g, '_')}_storyboard_${stamp}.png`, data: sheet.toDataURL('image/png').split(',')[1] });
+  toast('Storyboard saved: ' + (r.path || 'work\\storyboard'), 5000);
+  return { path: r.path, shots: scene.shots.length };
+}
+
+// ---------------------------------------------------------------- pose tools: mirror, copy / paste, blend A to B
+const POSE_IDS = () => BUNNY_IDS.filter(id => !['bodyX', 'bodyY', 'depth', 's'].includes(id)).concat(FACE_IDS);
+const poseNow = () => Object.fromEntries(POSE_IDS().map(id => [id, current(id)]));
+const poseBuf = { copy: null, A: null, B: null, t: 50 };
+function mirrorValues(v) {
+  const out = {}, names = data.face.gazes;
+  for (let [id, x] of Object.entries(v)) {
+    const m = /^(arm|elbow|wrist|leg|knee|foot|ear)([LR])(.*)$/.exec(id);
+    if (m) id = m[1] + (m[2] === 'L' ? 'R' : 'L') + m[3];
+    if (['turn', 'headYaw', 'rot', 'bodyTilt', 'torsoTwist', 'bodyRot', 'noseWiggle'].includes(id)) x = -x;
+    if (id === 'gaze') { const j = names.indexOf((names[x] || '').replace(/Left|Right/, w => w === 'Left' ? 'Right' : 'Left')); if (j >= 0) x = j; }
+    out[id] = x;
+  }
+  return out;
+}
+function putPose(v) { pushUndo(); for (const [id, x] of Object.entries(v)) setValue(id, x); drawTracks(); buildPanel(); }
+function blendPose(t) {
+  const { A, B } = poseBuf;
+  if (!A || !B) return toast('Set pose A and pose B first');
+  const k = t / 100, v = {};
+  for (const id of Object.keys(A)) v[id] = DISCRETE.has(id) ? (k < 0.5 ? A[id] : B[id]) : A[id] + (B[id] - A[id]) * k;
+  putPose(v);
+}
+function posePanel() {
+  const t = h('input', { type: 'range', min: 0, max: 100, step: 1, value: poseBuf.t, 'aria-label': 'Blend from A to B' });
+  t.addEventListener('change', () => { poseBuf.t = Number(t.value); blendPose(poseBuf.t); });
+  const slot = k => h('button', { 'aria-pressed': String(!!poseBuf[k]), onclick: () => { poseBuf[k] = poseNow(); buildPanel(); toast(`Pose ${k} set`); }, title: `Remember the pose at the playhead as ${k}` }, `Set ${k}`);
+  return h('div', {}, h('h3', {}, 'Pose tools'),
+    h('div', { class: 'row' },
+      h('button', { onclick: () => putPose(mirrorValues(poseNow())), title: 'Swap left and right in the whole pose and face, keyed at the playhead' }, 'Mirror pose'),
+      h('button', { onclick: () => { poseBuf.copy = poseNow(); toast('Pose copied'); }, title: 'Copy the whole pose and face' }, 'Copy pose'),
+      h('button', { onclick: () => poseBuf.copy ? putPose(poseBuf.copy) : toast('Copy a pose first'), title: 'Key the copied pose at the playhead' }, 'Paste'),
+      h('button', { onclick: () => poseBuf.copy ? putPose(mirrorValues(poseBuf.copy)) : toast('Copy a pose first'), title: 'Key the copied pose at the playhead, left and right swapped' }, 'Paste mirrored')),
+    h('div', { class: 'row', style: 'margin-top:4px' }, slot('A'), slot('B'), h('span', {}, 'A'), t, h('span', {}, 'B')),
+    h('p', { class: 'hint' }, 'Blend keys an in-between of poses A and B at the playhead. Faces switch at the halfway point.'));
 }
 
 // ---------------------------------------------------------------- idle life (idle.js)
@@ -809,6 +891,10 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       if (tab === 'library') buildPanel();
       return r;
     },
+    storyboard: () => storyboard(),
+    mirrorPose(at) { if (at != null) goto(at); putPose(mirrorValues(poseNow())); return this.state(); },
+    blendPoses(a, b, t, at) { if (at != null) goto(at); poseBuf.A = a; poseBuf.B = b; blendPose(Math.max(0, Math.min(100, Number(t)))); return this.state(); },
+    setShotLook(p) { pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); apply(); buildPanel(); return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100 }; },
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
