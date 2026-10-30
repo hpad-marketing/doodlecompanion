@@ -2,7 +2,7 @@
 
 For the person making the videos, and for any AI assistant (Claude, ChatGPT or another) that drives the app through its MCP.
 
-Written against build 20261030-192645: all 162 approved features, plus the fixes from the stress test. The moderator gate and the Blender rule check are retired (your call, 30 Oct), so the rules below are kept by the rig, the presets, preflight and your eye. When the app and this guide disagree, trust the app: `list_controls`, `library_list` and `apply_camera_preset {list:true}` always report what's actually there.
+Written against build 20261030-195859: all 162 approved features, plus the fixes from the stress test. The moderator gate and the Blender rule check are retired (your call, 30 Oct), so the rules below are kept by the rig, the presets, preflight and your eye. When the app and this guide disagree, trust the app: `list_controls`, `library_list` and `apply_camera_preset {list:true}` always report what's actually there.
 
 This is a map, not a recipe book. Each feature gets what it does, where it shines, and a few uses beyond the obvious one. The recipes at the end are starting points to remix. They're not templates to repeat.
 
@@ -544,16 +544,15 @@ Each recipe ends with "push it further", which points at features the recipe did
 
 ## 7. Known limits and troubleshooting
 
-As of build 20261030-192645. The live list is `doodle-studio/stress-3d/BUGS.md`.
+As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
-- **Held props can still be too big for his hand.** The mug comes out about 2.5× his hand and sits inside his head and shirt, so it doesn't show. A fix is with the pipeline. Until then, check a still before you build a shot on a held prop, and prefer props on the set to props in hand.
-- **A medium shot of Bunny reads as a close-up.** With the camera level at eye height, his big head fills the 9:16 frame. Use `fs` when you want his body in the shot.
+- **Small held props come out small.** One-hand props are capped at his hand's length (a mug is about 14 cm), so at a side angle they can read as a round blob in his hand. Turn the prop or the camera until its shape reads, and check a still. On bent-arm frames a held prop can still touch his shirt by about 1 cm.
 - **Raised arms clip the head** unless they also reach forward. The solver lowers them, and the user chose to keep the arms as they are. `anim2 ik` now warns when a pose puts the arm in the head.
 - **From a medium shot inward, 9:16 crops the sides of his head.** The eyes stay in frame.
 - **5 props graze a sleeve when held:** cake, lantern, light bulb, skateboard, flask.
 - **Cloth is skipped in previews.** Check outfits in a full still.
 - **Lip sync keys the shot as it is.** Retime or split a shot, then run `audio lipsync` again. Sample a few frames by eye: the engine reads the sound, not the words.
-- **A missing library item crashes the render.** If a stage names an outfit, set or prop that isn't in the library, Blender stops with a Python `KeyError` ("see blender.log"). Read `work\checks\<render>\blender.log`, then run `production action=health`.
+- **A missing library item is skipped.** If a stage names an outfit or accessory that isn't in the library, the render leaves it out and says so in `work\checks\<render>\blender.log`. `library_list` shows the real ids.
 - **"Blender was not found":** set it under Render › Blender location, or run `production action=fix {fix: pick-blender}`.
 - **"Needs a yes first":** the call would replace unsaved work. Ask the user, then repeat it with `force: true`.
 

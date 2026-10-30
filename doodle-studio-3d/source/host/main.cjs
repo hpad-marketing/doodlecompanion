@@ -108,9 +108,11 @@ const renders = require('./render.cjs')({
 const stageModels = require('./models.cjs')({ libraryDir: () => settings.get().libraryDir, cacheDir: () => path.join(dataDir, 'models'),
   command: (ids, dir) => { const exe = renders.blender(); return exe ? [exe, ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'preview_export.py'), '--', settings.get().libraryDir, dir, ...ids]] : null; } });
 
-function insideRenders(p) {
+// a path the app (or Claude) may read or write: inside DeepInDoodles, with one of the given extensions
+function insideRenders(p, exts = ['.png']) {
   const root = path.resolve(settings.get().rendersRoot), f = path.resolve(String(p || ''));
-  if (!f.startsWith(root + path.sep) || path.extname(f).toLowerCase() !== '.png') throw Error('Only PNGs inside DeepInDoodles');
+  if (!f.startsWith(root + path.sep)) throw Error('Only files inside DeepInDoodles');
+  if (!exts.includes(path.extname(f).toLowerCase())) throw Error(`Only ${exts.join(', ')} files here`);
   return f;
 }
 
@@ -133,7 +135,7 @@ const api = {
   },
   // Save as for Claude: only to a .ds3d inside the renders folder, never a dialog
   async 'save-at'({ project, path: p }) {
-    const file = insideRenders(String(p).endsWith('.ds3d') ? p : p + '.ds3d');
+    const file = insideRenders(String(p).endsWith('.ds3d') ? p : p + '.ds3d', ['.ds3d']);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     atomicWrite(file, JSON.stringify(project, null, 1));
     return { path: file };
@@ -176,7 +178,7 @@ const api = {
     return { versions: fs.readdirSync(dir).filter(f => f.endsWith('.ds3d')).sort().reverse().map(f => ({ file: path.join(dir, f), name: f, at: fs.statSync(path.join(dir, f)).mtime.toISOString() })) };
   },
   async 'open-file'({ file }) {
-    const project = JSON.parse(fs.readFileSync(insideRenders(file), 'utf8'));
+    const project = JSON.parse(fs.readFileSync(insideRenders(file, ['.ds3d', '.json']), 'utf8'));
     if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
     return { project: unpack(project, file), path: file };
   },
@@ -201,7 +203,7 @@ const api = {
   async 'write-png'({ path: p, data }) { const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f }; },
   async 'write-file'({ path: p, data }) {
     if (!/[.](webm|mp4|png|json|txt|wav|srt|csv)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
-    const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
+    const f = insideRenders(p, ['.webm', '.mp4', '.png', '.json', '.txt', '.wav', '.srt', '.csv']); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
   },
   // scene audio: any voice or music file the user picks
   async 'pick-audio'() {

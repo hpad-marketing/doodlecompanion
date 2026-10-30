@@ -1,8 +1,8 @@
 {
- "version": "20261030-195859",
- "notes": "Held props are sized against his real hand (the old measure read the prop too small, so a mug came out about twice his hand); an unknown outfit or accessory id is skipped instead of failing the render; the medium shot shows him from the waist up with his whole head in frame; guide updated from the stress test.",
+ "version": "20261030-202108",
+ "notes": "Open Scene and Save As accept .ds3d scene files inside DeepInDoodles again (the path check only allowed PNGs); saving video, sound and text exports works again; guide refreshed. The MCP connection, port and tools are unchanged.",
  "runtime": "44.9.0",
- "published": "2026-10-30T19:59:00.042Z",
+ "published": "2026-10-30T20:21:08.350Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,9 +10,9 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "b6748007b08dea683ce0a3258a2a4e6736283e9395dddde02f02bafaa9b7c353",
-   "size": 26841,
-   "gz": "files/b6748007b08dea683ce0a3258a2a4e6736283e9395dddde02f02bafaa9b7c353.gz"
+   "sha256": "32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487",
+   "size": 27122,
+   "gz": "files/32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487.gz"
   },
   "resources/app/mcp.cjs": {
    "sha256": "62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "0f30ff907fb3a1bf510eaf2121f9a8b428d799552b9dd22aaf09941ec74e9e98",
-   "size": 40411,
-   "gz": "files/0f30ff907fb3a1bf510eaf2121f9a8b428d799552b9dd22aaf09941ec74e9e98.gz"
+   "sha256": "f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5",
+   "size": 40236,
+   "gz": "files/f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
