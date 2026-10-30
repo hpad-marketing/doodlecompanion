@@ -130,6 +130,10 @@ const api = {
   // carousel bubbles are drawn in the window, so it reads and writes the slide PNGs, inside DeepInDoodles only
   async 'read-png'({ path: p }) { return { data: fs.readFileSync(insideRenders(p)).toString('base64') }; },
   async 'write-png'({ path: p, data }) { const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f }; },
+  async 'write-file'({ path: p, data }) {
+    if (!/[.](webm|mp4|png|json|txt)$/i.test(String(p))) throw Error('Only video, image and text files');
+    const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
+  },
   async 'render-status'() { return renders.status(); },
   async 'render-cancel'() { return renders.cancel(); },
   async settings(patch) { if (patch && Object.keys(patch).length) settings.set(patch); return { ...settings.get(), blenderFound: renders.blender() || null }; },

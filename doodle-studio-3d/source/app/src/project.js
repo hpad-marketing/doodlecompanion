@@ -6,7 +6,7 @@ import { idleLayer, idleOn } from './idle.js';
 
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
 export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52, focus: 0, fstop: 2.8 };   // focus 0 = everything sharp
-export const EASES = { ease: 'Ease in and out', linear: 'Linear', in: 'Ease in', out: 'Ease out', hold: 'Hold' };
+export const EASES = { ease: 'Ease in and out', linear: 'Linear', in: 'Ease in (slow start)', out: 'Ease out (slow in)', snap: 'Snap', overshoot: 'Overshoot', bounce: 'Bounce', hold: 'Hold' };
 
 const easeFn = {
   ease: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
@@ -14,6 +14,15 @@ const easeFn = {
   in: t => t * t * t,
   out: t => 1 - Math.pow(1 - t, 3),
   hold: () => 0,
+  snap: t => 1 - Math.pow(1 - t, 6),                       // gets there almost at once, then settles
+  overshoot: t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); },   // past the key, then back
+  bounce: t => {                                           // lands and bounces twice
+    const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+    if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+    return n * (t -= 2.625 / d) * t + 0.984375;
+  },
 };
 
 // A scene holds its shots in play order, like the 2D Doodle Studio. Shots are
@@ -76,7 +85,7 @@ export function valueAt(project, id, f) {
   while (keys[i].f < f) i++;
   const a = keys[i - 1], b = keys[i];
   if (f === b.f) return b.v;
-  if (DISCRETE.has(id)) return a.v;
+  if (DISCRETE.has(id) || project.stepped) return a.v;   // stepped: blocking pass, every key holds
   const t = (f - a.f) / (b.f - a.f);
   return a.v + (b.v - a.v) * easeFn[a.ease || 'ease'](t);
 }

@@ -15,5 +15,6 @@ start({ root: path.join(__dirname, '..', 'app'), statics: { lib: () => process.e
   'save-version': ({ project, label }) => { const f = path.join(out, 'versions', `${project.name}_${label}.ds3d`); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(project)); return { path: f }; },
   'list-versions': () => { const d = path.join(out, 'versions'); return { versions: fs.existsSync(d) ? fs.readdirSync(d).map(n => ({ file: path.join(d, n), name: n, at: new Date().toISOString() })) : [] }; },
   'open-file': ({ file }) => ({ project: JSON.parse(fs.readFileSync(file, 'utf8')), path: file }), disk: () => ({ root: out, freeGB: 3, totalGB: 100 }),
+  'write-file': ({ path: p, data }) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(data, 'base64')); return { path: p }; },
   'export-bridge': ({ shot, name }) => { const f = path.join(out, name + '.shot.json'); fs.writeFileSync(f, JSON.stringify(shot)); return { path: f }; },
 } }).then(() => console.log('dev server up'));
