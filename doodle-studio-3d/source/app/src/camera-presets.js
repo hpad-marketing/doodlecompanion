@@ -254,7 +254,8 @@ function makeBunnyTarget(view, ctx, part) {
         case 'ws': return { points: B.pick(() => true), box: [-0.62, 0.02] };
         case 'fs': return { points: B.pick(() => true), xPoints: B.pick(() => true), box: [-0.86, 0.86], xBox: [-0.9, 0.9] };
         case 'mfs': return { points: B.pick(z => z >= m.legMid), xPoints: skull, box: [-1, 0.86], xBox: [-1, 1], anchor: 'top' };
-        case 'ms': return { points: B.pick(z => z >= m.waist), xPoints: skull, box: [-1, 0.86], xBox: [-1.08, 1.08], anchor: 'top' };
+        // ms keeps his whole head in the width and the waist above the frame edge, so it reads wider than mcu on a level camera
+        case 'ms': return { points: B.pick(z => z >= m.waist - 0.04), xPoints: skull, box: [-0.92, 0.86], xBox: [-0.96, 0.96], anchor: 'top' };
         case 'mcu': return { points: B.pick(z => z >= m.chest && z <= m.skullTop), xPoints: skull, box: [-1, 0.74], xBox: [-1.18, 1.18], anchor: 'top' };
         case 'cu': return { points: skull, xPoints: eyes, box: [-1.05, 1.05], xBox: [-1.15, 1.15] };
         case 'ecu': return { points: eyes, xPoints: eyes, box: [-0.35, 0.35], xBox: [-1.5, 1.5] };

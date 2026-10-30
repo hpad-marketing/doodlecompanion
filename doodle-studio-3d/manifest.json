@@ -1,8 +1,8 @@
 {
- "version": "20261030-192645",
- "notes": "Frog back to the older look with eyes inside pulled-back bumps; big lid-tucked pupils on every face (Bunny, Koala, Frog); Frog's newer faces lifted into the bumps; up to 5 co-stars (6 characters on stage) and a Bunny co-star with a Bunny lead; Help > Guide and get_guide tool; held props sized to the hand and kept off the body; set pieces kept off characters and slivers hidden; eye-level presets keep the horizon level; object framing fixed; rain and text no longer count as see-through; version numbers never clash.",
+ "version": "20261030-195859",
+ "notes": "Held props are sized against his real hand (the old measure read the prop too small, so a mug came out about twice his hand); an unknown outfit or accessory id is skipped instead of failing the render; the medium shot shows him from the waist up with his whole head in frame; guide updated from the stress test.",
  "runtime": "44.9.0",
- "published": "2026-10-30T19:26:47.880Z",
+ "published": "2026-10-30T19:59:00.042Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -75,9 +75,9 @@
    "gz": "files/c6502f061afb5ce5c5c70d4f394ae107f7ea439ab9f86206ee6468b1b620b11e.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "bc021725df905265c04e314744e1553667d0f9965ed38d8c2816da617d100630",
-   "size": 10749,
-   "gz": "files/bc021725df905265c04e314744e1553667d0f9965ed38d8c2816da617d100630.gz"
+   "sha256": "aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e",
+   "size": 11518,
+   "gz": "files/aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e.gz"
   },
   "resources/app/ui/bunny3d.json": {
    "sha256": "2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "4ed5e6aaf19c3f0103ad63ab890cd5731e5f1481512b542d8eda7533421d6241",
-   "size": 40805,
-   "gz": "files/4ed5e6aaf19c3f0103ad63ab890cd5731e5f1481512b542d8eda7533421d6241.gz"
+   "sha256": "0f30ff907fb3a1bf510eaf2121f9a8b428d799552b9dd22aaf09941ec74e9e98",
+   "size": 40411,
+   "gz": "files/0f30ff907fb3a1bf510eaf2121f9a8b428d799552b9dd22aaf09941ec74e9e98.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -210,9 +210,9 @@
    "gz": "files/923890fc7d0b6c1d1480cb7eb776f74ebb7a8c5310018c862f3b6a18a5ac23ce.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
-   "sha256": "b8c68701627c22f8cf2c71d3684a8e2fabd5bab40dd398303bc0d00589946ba7",
-   "size": 41947,
-   "gz": "files/b8c68701627c22f8cf2c71d3684a8e2fabd5bab40dd398303bc0d00589946ba7.gz"
+   "sha256": "61093dfc3acac4b3c717bd644e688f09a6dc3310f2a1d31b6256869acf990799",
+   "size": 42086,
+   "gz": "files/61093dfc3acac4b3c717bd644e688f09a6dc3310f2a1d31b6256869acf990799.gz"
   },
   "resources/app/ui/src/carousel.js": {
    "sha256": "9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985",

@@ -69,11 +69,18 @@ def setup(shot, log):
     dl.set_shadows(bool(st.get('shadows') or st.get('halftone')))
     if st.get('halftone'):
         done.append('halftone %d materials' % halftone(int(st.get('halftone_cells') or 90)))
+    # an id that isn't in this library (a typo, or a piece only on another PC) is skipped, never fatal (B10)
     if st.get('outfit'):
-        dl.insert('outfit-' + st['outfit'])
-        done.append('outfit ' + st['outfit'])
+        try:
+            dl.insert('outfit-' + st['outfit'])
+            done.append('outfit ' + st['outfit'])
+        except KeyError:
+            log(f'stage: no outfit "{st["outfit"]}" in the library, skipped (library_list category outfit)')
     for acc in st.get('accessories') or []:
-        dl.insert('accessory-' + acc)
+        try:
+            dl.insert('accessory-' + acc)
+        except KeyError:
+            log(f'stage: no accessory "{acc}" in the library, skipped')
     if st.get('mouthSet'):
         # a set from mouths/mouth_sets.json by its id (mouths-bouncy, ...)
         from doodle_library import faces
@@ -151,6 +158,14 @@ def halftone(cells=90):
     return n
 
 
+def _world_size(ob):
+    """Longest side in metres, in the object's own axes (a turned box's world bounds would read up to 1.7x)."""
+    if ob.type == 'EMPTY':
+        return 0.0
+    k = ob.matrix_world.to_scale()
+    return max(abs(ob.dimensions[i] / (ob.scale[i] or 1) * k[i]) for i in range(3))
+
+
 def fit_to_hand(ob, side, log):
     """Small one-hand props (mugs, phones, apples) are modelled at their own size; held by
     Bunny's short arms they come in no bigger than his hand allows, so they never reach into
@@ -163,9 +178,10 @@ def fit_to_hand(ob, side, log):
         if hand is None:
             return
         bpy.context.view_layer.update()
-        h = max(hand.dimensions)
-        big = max(ob.dimensions)
-        cap = 1.1 * h
+        # world sizes: the grip empty the prop hangs from (and the rig) carry scale of their own
+        h = _world_size(hand)
+        big = _world_size(ob)
+        cap = 1.0 * h
         if big > cap > 0:
             k = cap / big
             ob.scale = ob.scale * k
