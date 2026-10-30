@@ -100,11 +100,14 @@ def leg_chain(ob, side, hip_z, knee_z, ankle_z, S, blend=0.07):
                 g.add([v.index], w, 'REPLACE')
 
 
-def hem_follow(ob, hip, hem_z, S, front=0.85, back=0.35):
+def hem_follow(ob, hip, hem_z, S, front=0.85, back=0.35, split=False):
     """The hoodie's lower panel rides on each thigh, so a high knee lifts the hem instead of poking through it."""
     hx, hy, hz = hip
     gt = vgroup(ob, 'torso')
     gl = {s: vgroup(ob, f'DEF-thigh.{s}') for s in 'LR'}
+    if split:  # MCH-hem_back/front copy the thigh's rotation (see rig.setup_leg_reach)
+        gb = {s: vgroup(ob, f'MCH-hem_back.{s}') for s in 'LR'}
+        gf = {s: vgroup(ob, f'MCH-hem_front.{s}') for s in 'LR'}
     for v in ob.data.vertices:
         c = v.co
         down = smoothstep(hz, hz - 0.75 * (hz - hem_z), c.z)  # 0 at the hip, 1 near the hem
@@ -115,7 +118,15 @@ def hem_follow(ob, hip, hem_z, S, front=0.85, back=0.35):
         for s, sx in (('L', -1.0), ('R', 1.0)):
             lat = smoothstep(-0.25 * hx, 0.45 * hx, sx * c.x)
             w = down * fy * lat
-            if w > 1e-4:
+            if w <= 1e-4:
+                continue
+            tot += w
+            if split:
+                # back share follows the thigh always; the extra front share lets go as the legs reach
+                wb = down * back * lat
+                for g, ww in ((gb[s], wb), (gf[s], w - wb)):
+                    if ww > 1e-4:
+                        g.add([v.index], ww, 'REPLACE')
+            else:
                 gl[s].add([v.index], w, 'REPLACE')
-                tot += w
         gt.add([v.index], max(0.0, 1.0 - tot), 'REPLACE')

@@ -68,7 +68,14 @@ class G:
     def node(self, kind, **props):
         nd = self.n.new(kind)
         for k, v in props.items():
-            setattr(nd, k, v)
+            if hasattr(nd, k):
+                setattr(nd, k, v)
+            else:  # Blender 5: some enum properties became menu input sockets
+                name = k.replace('_', ' ').title()
+                sock = nd.inputs.get(name)
+                if sock is None:
+                    raise AttributeError(f'{kind} has no {k}')
+                sock.default_value = v.replace('_', ' ').title() if isinstance(v, str) else v
         nd.location = (self.x, 0)
         self.x += 180
         return nd

@@ -62,6 +62,7 @@ export const shotSeconds = (scene, shot) => shot.length / scene.fps;
 export function defaults(id) {
   if (id.startsWith('cam.')) return CAM_DEFAULT[id.slice(4)] ?? 0;
   if (id === 's') return 1;
+  if (id === 'earLScale' || id === 'earRScale') return 100;   // percent of the character's own ear size
   return 0;
 }
 
@@ -119,8 +120,17 @@ export function idleFor(project, faceNames = [], character = 'bunny') {
   return layer;
 }
 
+// The stage a shot renders on: the scene's set, light, outfit and so on, with this
+// shot's own overrides on top. Library items placed in the shot ride along.
+export const STAGE_KEYS = ['set', 'setProps', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet'];
+export function stageOf(scene, shot) {
+  const st = { ...(scene.stage || {}), ...(shot.stage || {}) };
+  for (const k of Object.keys(st)) if (st[k] == null || st[k] === '' || (Array.isArray(st[k]) && !st[k].length)) delete st[k];
+  return st;
+}
+
 // Blender bridge shot: one entry per frame, cam block per frame
-export function toBridgeShot(project, allIds, faceNames, character) {
+export function toBridgeShot(project, allIds, faceNames, character, stage = {}) {
   const frames = [];
   const idle = idleFor(project, faceNames, character);
   for (let f = 0; f < project.length; f++) {
@@ -132,5 +142,10 @@ export function toBridgeShot(project, allIds, faceNames, character) {
     v.cam = cam;
     frames.push(v);
   }
-  return { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3 } };
+  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3 } };
+  // Bunny-only shots with no stage stay byte-identical to older builds, so their render cache holds
+  if (character && character !== 'bunny') out.character = character;
+  if (Object.keys(stage).length) out.stage = stage;
+  if (project.items?.length) out.items = project.items;
+  return out;
 }

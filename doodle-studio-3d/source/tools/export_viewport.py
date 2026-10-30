@@ -171,6 +171,8 @@ for ob in bpy.data.objects:
                 ws += [(nm, g.weight * f) for nm, f in segment_weights(name, co) if f > 0]
             else:
                 ws.append((name, g.weight))
+        if not ws and ob.parent_type == 'BONE' and ob.parent_bone:
+            ws = [(ob.parent_bone, 1.0)]  # rigid on its bone (the Koala's nose)
         acc = {}
         for nm, w in ws:
             acc[nm] = acc.get(nm, 0) + w
@@ -234,7 +236,8 @@ head_surface = bpy.data.objects['BUNNY_head_surface']
 out = {
     'version': 1, 'S': meta['S'], 'controls': meta['controls'], 'ds_bones': meta.get('bones'),
     'bones': bones, 'skinBones': skin_names, 'meshes': meshes, 'settings': settings,
-    'floor_z': arm.get('floor_z', 0.0), 'ear_curl': arm.get('ear_curl', 0.6),
+    'floor_z': arm.get('floor_z', 0.0), 'species': arm.get('species', 'bunny'), 'species_scale': arm.get('species_scale', 1.0),
+    'ear_width_lock': bool(arm.get('ear_width_lock', False)), 'ear_curl': arm.get('ear_curl', 0.6),
     'colors': {'ink': '#1F1F1D', 'mustard': '#E0A64B'},
     'face': {k: face_lib[k] for k in ('units', 'plane', 'faces', 'speech', 'gazes', 'speech_offsets_px', 'items')},
 }

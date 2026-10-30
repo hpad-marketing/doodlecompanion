@@ -73,6 +73,8 @@ export class Viewport {
     this.group = new THREE.Group();
     this.scene.add(this.group);
     const headBone = this.data.skinBones.indexOf('head');
+    // the Frog's eyes sit on its rigid eye bumps, which the ear bones carry
+    const faceBones = new Set([headBone, ...(this.data.ear_width_lock ? this.data.skinBones.flatMap((n, i) => /^DEF-ear/.test(n) ? [i] : []) : [])]);
     for (const m of this.meshes) {
       const g = new THREE.BufferGeometry();
       const pos = subdivide(m, m.cage);
@@ -94,7 +96,7 @@ export class Viewport {
         const cageMask = new Float32Array(m.cageCount * 3);
         for (let v = 0; v < m.cageCount; v++) {
           let w = 0;
-          for (let k = 0; k < 4; k++) if (m.skinIndex[4 * v + k] === headBone) w += m.skinWeight[4 * v + k];
+          for (let k = 0; k < 4; k++) if (faceBones.has(m.skinIndex[4 * v + k])) w += m.skinWeight[4 * v + k];
           cageMask[3 * v] = w;
         }
         const sub = subdivide(m, cageMask);
@@ -118,6 +120,24 @@ export class Viewport {
       }
       this.objects.push({ m, g, mesh, outline, buf: pos });
     }
+  }
+
+  // Bunny, the Koala or the Frog: same rig code, their own rest data, meshes and faces
+  setCharacter(data) {
+    if (data === this.data) return;
+    this.scene.remove(this.group);
+    for (const o of this.objects) { o.g.dispose(); o.mesh.material.dispose(); o.outline?.material.dispose(); }
+    this.faceTex.dispose();
+    this.data = data;
+    this.rig = new BunnyRig(data);
+    this.meshes = data.meshes.map(decodeMesh);
+    this.objects = [];
+    this._faceInk = 0;
+    this.faceState = { expression: 0, gaze: 0, mouth: 0, blink: 0 };
+    this.buildFace();
+    this.buildBunny();
+    this.grid.position.z = data.floor_z || 0;
+    this.pose(this.values || {});
   }
 
   pose(values) {

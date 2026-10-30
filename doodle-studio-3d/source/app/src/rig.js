@@ -216,7 +216,7 @@ export class BunnyRig {
     for (const [owner, bone] of Object.entries(OWNER_BONE)) local.set(bone, this.dsRotation(owner, values));
     // whole-character turn, placement and scale (root)
     const rootB = this.bones.get('root');
-    const turn = Number(values.turn ?? 0), s = Number(values.s ?? 1) || 1;
+    const turn = Number(values.turn ?? 0), s = (Number(values.s ?? 1) || 1) * (this.data.species_scale || 1);   // Frog 0.75
     const off = new Vector3(Number(values.bodyX ?? 0) / STAGE_BODY_UNIT, Number(values.depth ?? 0), -Number(values.bodyY ?? 0) / STAGE_BODY_UNIT).multiplyScalar(this.S);
     const rootR = new Matrix4().makeRotationZ(turn * RAD).multiply(new Matrix4().makeScale(s, s, s));
     local.set('root', new Matrix4().makeTranslation(off.x, off.y, off.z).multiply(this.about(rootB.headV, rootR)));
@@ -230,6 +230,30 @@ export class BunnyRig {
       const curl = new Quaternion().slerp(q, this.earCurl);
       local.set(`ear_tip.${side}`, new Matrix4().makeRotationFromQuaternion(curl));
     }
+    // species controls (ds_map.py): ear / eye-bump size and squash, the Koala's nose, sitting leg reach
+    const scaleAbout = (b, sx, sy, sz) => {
+      const B0 = new Matrix4().extractRotation(b.restM);
+      return this.about(b.headV, B0.clone().multiply(new Matrix4().makeScale(sx, sy, sz)).multiply(B0.clone().invert()));
+    };
+    const post = new Map();   // bone -> extra local after its rotation (scale about the head)
+    for (const side of ['L', 'R']) {
+      const b = this.bones.get(`ear.${side}`);
+      if (!b) continue;
+      const u = Math.max(0.5, Math.min(1.5, Number(values[`ear${side}Scale`] ?? 100) / 100));
+      const q = Math.max(-0.5, Math.min(this.data.ear_width_lock ? 0.12 : 0.3, Number(values[`ear${side}Squash`] ?? 0) / 100));
+      const w = u / Math.sqrt(1 - q);
+      if (u !== 1 || q !== 0) post.set(b.name, scaleAbout(b, this.data.ear_width_lock ? Math.min(w, 1) : w, u * (1 - q), w));
+    }
+    const nose = this.bones.get('nose');
+    if (nose) {
+      const wig = Math.max(-1, Math.min(1, Number(values.noseWiggle ?? 0) / 100)), sn = Math.max(0, Math.min(1, Number(values.noseSniff ?? 0) / 100));
+      if (wig || sn) post.set('nose', new Matrix4().makeTranslation(0.06 * wig * this.S, 0, 0.05 * sn * this.S).multiply(scaleAbout(nose, 1 + 0.12 * sn, 1 + 0.12 * sn, 1 + 0.12 * sn)));
+    }
+    const reach = this.bones.has('MCH-hem_front.L') ? Math.max(0, Math.min(1, Number(values.legReach ?? 0) / 100)) : 0;
+    const U = new Map();      // thigh / shin without the reach stretch (their children don't inherit it)
+    const stretch = new Set(reach ? ['thigh_fk.L', 'shin_fk.L', 'thigh_fk.R', 'shin_fk.R'] : []);
+    for (const n of stretch) post.set(n, scaleAbout(this.bones.get(n), 1, 1 + reach, 1));
+    const NOSCALE = { 'shin_fk.L': 'thigh_fk.L', 'shin_fk.R': 'thigh_fk.R', 'foot_fk.L': 'shin_fk.L', 'foot_fk.R': 'shin_fk.R' };
     const resolve = name => {
       if (A.has(name)) return A.get(name);
       const b = this.bones.get(name);
@@ -237,13 +261,32 @@ export class BunnyRig {
       let M;
       if (FOLLOWS[name]) M = resolve(FOLLOWS[name]).clone();
       else {
-        const parent = b.parent ? resolve(b.parent) : new Matrix4();
+        let parent = b.parent ? resolve(b.parent) : new Matrix4();
+        if (reach && NOSCALE[name] && U.has(b.parent)) {
+          // inherit_scale NONE (+ the character's own scale back): the head moves with the parent's
+          // stretch, the bone itself stays unstretched
+          const d = b.headV.clone().applyMatrix4(post.get(b.parent)).sub(b.headV);
+          parent = U.get(b.parent).clone().multiply(new Matrix4().makeTranslation(d.x, d.y, d.z));
+        }
+        const hem = /^MCH-hem_(front|back)[.][LR]$/.exec(name);
+        if (hem) {
+          // copies the thigh's rotation; the front lets go as the legs reach
+          const th = `thigh_fk.${name.slice(-1)}`, R = local.get(th) || new Matrix4();
+          const k = hem[1] === 'front' ? 1 - reach : 1;
+          const q = new Quaternion().slerp(new Quaternion().setFromRotationMatrix(R), k);
+          M = parent.clone().multiply(this.about(this.bones.get(th).headV, new Matrix4().makeRotationFromQuaternion(q)));
+          A.set(name, M);
+          return M;
+        }
         M = parent.clone();
         if (name === 'root') M.multiply(local.get('root'));
         else {
           if (name === 'torso') M.multiply(new Matrix4().makeTranslation(torsoT.x, torsoT.y, torsoT.z));
           const R = local.get(name);
           if (R) M.multiply(this.about(b.hinge ? this.hingePivot(b, R) : b.headV, R));
+          if (stretch.has(name)) U.set(name, M.clone());
+          const P = post.get(name);
+          if (P) M.multiply(P);
         }
         const ex = this.extra.get(name);
         if (ex) M.multiply(this.about(b.headV, ex));

@@ -3,7 +3,7 @@
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 
-module.exports = function start({ root, port = 54190, api = {}, mcp = null }) {
+module.exports = function start({ root, port = 54190, api = {}, mcp = null, statics = {} }) {
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
@@ -27,8 +27,11 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null }) {
       }
       let p = path.normalize(decodeURIComponent(url.pathname)).replace(/^([/\\])+/, '');
       if (!p) p = 'index.html';
-      const file = path.join(root, p);
-      if (!file.startsWith(root)) { res.writeHead(403); return res.end(); }
+      // extra read-only folders, e.g. lib/ -> the Doodle Library's previews on this PC
+      const pre = Object.keys(statics).find(k => p.startsWith(k + path.sep) || p.startsWith(k + '/'));
+      const base = pre ? path.resolve(statics[pre]()) : root;
+      const file = pre ? path.join(base, p.slice(pre.length + 1)) : path.join(root, p);
+      if (!file.startsWith(base + path.sep) || (pre && !/[.](png|jpg|webp)$/i.test(file))) { res.writeHead(403); return res.end(); }
       const data = await fs.promises.readFile(file);
       res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
       res.end(data);

@@ -115,12 +115,32 @@ def apply_pose(arm, controls, values, S, settings=None, face_bone='face'):
     root.location = Vector((0, 0, 0))
     off = Vector((x / BODY_UNIT, d, -y / BODY_UNIT)) * S
     root.location = root.bone.matrix_local.to_3x3().inverted() @ off
-    s = float(values.get('s', 1.0))
+    s = float(values.get('s', 1.0)) * float(arm.get('species_scale', 1.0))  # Frog 0.75: real size vs Bunny
     root.scale = (s, s, s)
     # breathing lifts the hoodie mass
     breath = max(0.0, min(1.0, float(values.get('breath', 0.0)) / 90.0))
     t = pb['torso']
     t.location = t.bone.matrix_local.to_3x3().inverted() @ (Vector((0, -.015 * breath, .07 * breath)) * S)
+    # ear / eye-bump size: EAR Scale (100 = normal), EAR Squash (+ flattens, - stretches tall, volume kept)
+    for side, k in (('L', 'earL'), ('R', 'earR')):
+        e = pb.get(f'ear.{side}')
+        if e is None:
+            continue
+        u = max(0.5, min(1.5, float(values.get(k + 'Scale', 100.0)) / 100.0))
+        qm = 0.12 if arm.get('ear_width_lock') else 0.3  # past this the Frog bumps meet the eyes / Koala ears melt into the head
+        q = max(-0.5, min(qm, float(values.get(k + 'Squash', 0.0)) / 100.0))
+        w = u / math.sqrt(1.0 - q)
+        e.scale = (min(w, 1.0) if arm.get('ear_width_lock') else w, u * (1.0 - q), w)
+    # species nose (Koala): NOSE Wiggle -100..100 nudges it sideways, NOSE Sniff 0-100 lifts and puffs it
+    n = pb.get('nose')
+    if n is not None:
+        wig = max(-1.0, min(1.0, float(values.get('noseWiggle', 0.0)) / 100.0))
+        sn = max(0.0, min(1.0, float(values.get('noseSniff', 0.0)) / 100.0))
+        n.location = n.bone.matrix_local.to_3x3().inverted() @ (Vector((0.06 * wig, 0, 0.05 * sn)) * S)
+        n.scale = (1 + 0.12 * sn,) * 3
+    # sitting leg reach (Doodle Studio 0-100 %)
+    if 'leg_reach' in arm:
+        arm['leg_reach'] = max(0.0, min(1.0, float(values.get('legReach', 0.0)) / 100.0))
     # face states
     f = pb.get(face_bone)
     if f is not None:

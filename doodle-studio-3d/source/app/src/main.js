@@ -3,7 +3,8 @@ import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
-import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 
 const $ = s => document.querySelector(s);
@@ -33,10 +34,11 @@ let carouselSel = null, overlayDraw = null;
 const thumbs = new Map();   // slide id -> small picture (not saved)
 
 const PARTS = [
-  ['whole', 'Whole', ['bodyX', 'bodyY', 'depth', 's', 'turn', 'bodyRot', 'breath']],
+  ['whole', 'Whole', ['bodyX', 'bodyY', 'depth', 's', 'turn', 'bodyRot', 'breath', 'legReach']],
   ['body', 'Body', ['bodyTilt', 'torsoBow', 'torsoTwist']],
   ['head', 'Head', ['headYaw', 'headNod', 'rot']],
-  ['ears', 'Ears', ['earLFold', 'earLForward', 'earRFold', 'earRForward']],
+  ['ears', 'Ears', ['earLFold', 'earLForward', 'earLScale', 'earLSquash', 'earRFold', 'earRForward', 'earRScale', 'earRSquash']],
+  ['nose', 'Nose', ['noseWiggle', 'noseSniff']],
   ['armL', 'Left arm', ['armL', 'armLForward', 'elbowL', 'wristL']],
   ['armR', 'Right arm', ['armR', 'armRForward', 'elbowR', 'wristR']],
   ['legL', 'Left leg', ['legL', 'legLOut', 'kneeL', 'footL']],
@@ -46,6 +48,8 @@ const LABEL = {
   bodyX: 'Left / right', bodyY: 'Up / down', depth: 'Near / far', s: 'Size', turn: 'Turn around', bodyRot: 'Rotate whole figure', breath: 'Breath',
   bodyTilt: 'Body tilt', torsoBow: 'Bow', torsoTwist: 'Twist', headYaw: 'Turn', headNod: 'Nod', rot: 'Tilt',
   earLFold: 'Left ear fold', earLForward: 'Left ear forward', earRFold: 'Right ear fold', earRForward: 'Right ear forward',
+  earLScale: 'Left ear size %', earRScale: 'Right ear size %', earLSquash: 'Left ear squash', earRSquash: 'Right ear squash',
+  legReach: 'Sitting leg reach', noseWiggle: 'Nose wiggle', noseSniff: 'Nose sniff',
   armL: 'Raise', armLForward: 'Forward', elbowL: 'Elbow bend', wristL: 'Wrist roll', armR: 'Raise', armRForward: 'Forward', elbowR: 'Elbow bend', wristR: 'Wrist roll',
   legL: 'Lift', legLOut: 'Out', kneeL: 'Knee bend', footL: 'Foot roll', legR: 'Lift', legROut: 'Out', kneeR: 'Knee bend', footR: 'Foot roll',
   'cam.yaw': 'Orbit', 'cam.pitch': 'Height angle', 'cam.dist': 'Distance', 'cam.lens': 'Lens (mm)', 'cam.roll': 'Roll (Dutch)',
@@ -59,7 +63,8 @@ const TIPS = {
   'cam.lens': 'Focal length. 15–24 mm is wide and distorts; 85–135 mm is long and flattens.',
   'cam.roll': 'Tilts the frame for a Dutch angle.',
 };
-const EXTRA_RANGE = { bodyX: [-400, 400, 1], bodyY: [-200, 200, 1], depth: [-4, 4, 0.05], s: [0.3, 2, 0.01], bodyRot: [-45, 45, 1], breath: [0, 90, 1],
+const EXTRA_RANGE = { legReach: [0, 100, 1], earLScale: [50, 150, 1], earRScale: [50, 150, 1], earLSquash: [-50, 30, 1], earRSquash: [-50, 30, 1], noseWiggle: [-100, 100, 1], noseSniff: [0, 100, 1],
+  bodyX: [-400, 400, 1], bodyY: [-200, 200, 1], depth: [-4, 4, 0.05], s: [0.3, 2, 0.01], bodyRot: [-45, 45, 1], breath: [0, 90, 1],
   'cam.yaw': [-180, 180, 1], 'cam.pitch': [-60, 89, 1], 'cam.dist': [0.2, 60, 0.05], 'cam.lens': [12, 200, 1], 'cam.roll': [-45, 45, 1],
   'cam.tx': [-10, 10, 0.01], 'cam.ty': [-10, 10, 0.01], 'cam.tz': [-0.5, 10, 0.01] };
 const LENSES = [15, 24, 35, 50, 85, 135];
@@ -104,7 +109,37 @@ function useScene(sc) {
   frame = Math.max(0, Math.min(project.length - 1, frame));
   selected = null;
   refreshAll();
+  if (character() !== loadedChar) ensureCharacter().then(refreshAll).catch(e => toast(e.message, 5000));
 }
+
+// ---------------------------------------------------------------- characters (library.js)
+let loadedChar = 'bunny';
+const charData = {};
+const charName = () => (CHARACTERS.find(c => c[0] === character()) || [0, 'Bunny'])[1];
+const shownParts = () => PARTS.filter(p => p[0] !== 'nose' || view.rig.bones.has('nose'));
+async function ensureCharacter() {
+  const c = character();
+  if (c === loadedChar) return;
+  charData[c] ||= await (await fetch(c === 'bunny' ? 'bunny3d.json' : `chars/${c}.json`)).json();
+  data = charData[c];
+  view.setCharacter(data);
+  loadedChar = c;
+}
+async function setCharacter(c) {
+  if (!CHARACTERS.some(x => x[0] === c)) throw Error('character must be one of ' + CHARACTERS.map(x => x[0]).join(', '));
+  if (c === character()) return;
+  pushUndo();
+  scene.character = c;
+  await ensureCharacter();
+  refreshAll();
+  toast(`${charName()} on stage`);
+}
+const libCtx = () => ({
+  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, data: () => data,
+  trackIds: () => BUNNY_IDS.concat(FACE_IDS), setCharacter: c => setCharacter(c).catch(e => toast(e.message, 5000)),
+  changed: keys => { dirty = true; apply(); drawTracks(); if (keys) buildTimelineTools(); updateHud(); },
+  rebuild: () => { if (tab === 'library') { const y = $('#panel-content').scrollTop; buildPanel(); $('#panel-content').scrollTop = y; } },
+});
 function shotIndex(ref) {
   if (ref == null) return scene.active;
   const i = typeof ref === 'number' ? ref : scene.shots.findIndex(s => s.code === ref || s.uid === ref);
@@ -231,7 +266,7 @@ function buildMenu() {
 function closeMenus() { document.querySelectorAll('#menubar .menu.open').forEach(m => { m.classList.remove('open'); m.querySelector('button').setAttribute('aria-expanded', 'false'); }); }
 
 // ---------------------------------------------------------------- side panel
-const TABS = [['pose', 'Pose'], ['face', 'Face'], ['camera', 'Camera'], ['carousel', 'Carousel'], ['render', 'Render']];
+const TABS = [['pose', 'Pose'], ['face', 'Face'], ['library', 'Library'], ['camera', 'Camera'], ['carousel', 'Carousel'], ['render', 'Render']];
 function buildTabs() {
   $('#tabs').replaceChildren(...TABS.map(([id, name]) => h('button', { role: 'tab', 'aria-pressed': String(tab === id), onclick: () => { tab = id; buildTabs(); buildPanel(); layout(); overlayDraw?.(); } }, name)));
 }
@@ -259,14 +294,16 @@ function buildPanel() {
   const c = $('#panel-content');
   c.replaceChildren();
   if (tab === 'pose') {
-    c.append(h('div', { class: 'chips' }, ...PARTS.map(([id, name]) => h('button', { 'aria-pressed': String(part === id), onclick: () => { part = id; buildPanel(); } }, name))));
+    const parts = shownParts();
+    if (!parts.some(p => p[0] === part)) part = 'whole';
+    c.append(h('div', { class: 'chips' }, ...parts.map(([id, name]) => h('button', { 'aria-pressed': String(part === id), onclick: () => { part = id; buildPanel(); } }, name))));
     const ids = PARTS.find(p => p[0] === part)[2];
     c.append(h('h3', {}, PARTS.find(p => p[0] === part)[1]), ...ids.map(control));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' },
       h('button', { onclick: () => keyGroup(ids), title: 'Set a key on every control of this part' }, 'Key this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of ids) setValue(id, defaults(id)); }, title: 'Back to rest for this part' }, 'Reset this part'),
       h('button', { onclick: () => { pushUndo(); for (const id of BUNNY_IDS) setValue(id, defaults(id)); }, title: 'Back to rest for the whole body' }, 'Reset whole pose')));
-    c.append(h('p', { class: 'hint' }, 'Every joint stops at Bunny\'s limits, so nothing can bend past his anatomy. Left and right follow Doodle Studio.'));
+    c.append(h('p', { class: 'hint' }, `Every joint stops at the ${charName()}'s limits, so nothing can bend past its anatomy. Left and right follow Doodle Studio.${part === 'ears' && data.ear_width_lock ? ' The Frog\'s eye bumps are rigid, so they grow and squash only a little.' : ''}`));
   } else if (tab === 'face') {
     const F = data.face;
     const sel = (id, names) => {
@@ -290,6 +327,8 @@ function buildPanel() {
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: () => keyGroup(CAM_IDS) }, 'Key camera'), h('button', { onclick: frameBunny }, 'Frame Bunny')));
     c.append(h('p', { class: 'hint' }, 'Drag in the viewport to orbit, Shift+drag to move the aim, wheel to move in and out, Alt+wheel to change the lens. The set moves with the camera, so angles stay physically true.'));
     c.append(cameraPresetsPanel(presetCtx()));
+  } else if (tab === 'library') {
+    c.append(libraryPanel(libCtx()));
   } else if (tab === 'carousel') {
     c.append(carouselPanel(carCtx()));
   } else if (tab === 'render') {
@@ -424,7 +463,9 @@ function layout() {
 }
 
 function updateHud() {
-  $('#hud').replaceChildren(h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
+  const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
+  $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
+    h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
     h('span', {}, `F${frame}`));
   $('#status').textContent = (filePath ? filePath.split(/[\\/]/).pop() : 'Not saved') + (dirty ? ' •' : '');
 }
@@ -577,7 +618,7 @@ async function exportBridge() {
 }
 const ALL_IDS = () => BUNNY_IDS.concat(FACE_IDS, CAM_IDS);
 const character = () => scene.character || 'bunny';
-const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character());
+const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s));
 const idleNow = () => idleFor(project, data.face.faces, character());
 async function render(still = false, preview = false, stillFrame = null) {
   scene.name = $('#shot-name').value || scene.name;
@@ -668,7 +709,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
 // ---------------------------------------------------------------- boot
 (async () => {
   try { if (localStorage.getItem('ds3d.theme') === 'dark') document.body.dataset.theme = 'dark'; } catch {}
-  data = await (await fetch('bunny3d.json')).json();
+  data = charData.bunny = await (await fetch('bunny3d.json')).json();
   view = new Viewport($('#view'), data);
   BUNNY_IDS = PARTS.flatMap(p => p[2]);
   buildMenu(); buildTabs(); buildRail(); bindViewport(); bindKeys(); bindCameraPresets(presetCtx());
@@ -678,6 +719,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
   $('#shot-name').addEventListener('change', e => { scene.name = e.target.value; dirty = true; });
   new ResizeObserver(() => { if (!window.__fixedSize) { layout(); drawTracks(); } }).observe($('#canvas-wrap'));
   refreshAll();
+  window.ds3dLibraryExtra = () => EXTRA.map(({ ask, def, ...r }) => r);
   window.ds3d = {
     get project() { return project; }, get scene() { return scene; }, set scene(s) { useScene(migrate(s)); }, goto, setValue, keyGroup, view, get frame() { return frame; },
     // MCP surface (called by the desktop host)
@@ -686,7 +728,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       return { id, label: LABEL[id] || id, min, max, group: id.startsWith('cam.') ? 'camera' : FACE_IDS.includes(id) ? 'face' : PARTS.find(p => p[2].includes(id))?.[1] };
     }),
     names: () => ({ expressions: data.face.faces, gazes: data.face.gazes, mouths: data.face.speech }),
-    state: () => ({ scene: scene.name, shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
+    state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
       frame, length: project.length, fps: scene.fps, width: scene.width, height: scene.height, autoKey, file: filePath, unsaved: dirty,
       values: Object.fromEntries([...BUNNY_IDS, ...FACE_IDS, ...CAM_IDS].map(id => [id, round(current(id))])),
       idle: { ...idleOf(project), events: idleNow()?.events || [] },
@@ -752,6 +794,23 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       return this.carousel();
     },
     carouselExport: () => exportCarousel(carCtx()),
+    // library, stage and characters (library.js)
+    async setCharacter(c) { await setCharacter(c); return { character: character(), controls: shownParts().map(p => p[1]) }; },
+    async libraryUse(id, opts = {}) {
+      if (opts.shot != null) selectShot(opts.shot);
+      const r = await useItem(libCtx(), id, { ...opts, prompt: false });
+      if (tab === 'library') buildPanel();
+      return r;
+    },
+    setStage(patch, shotOnly) {
+      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet'].includes(k));
+      if (bad.length) throw Error('Unknown stage keys: ' + bad.join(', '));
+      const r = setStage(libCtx(), patch, !!shotOnly);
+      if (tab === 'library') buildPanel();
+      return r;
+    },
+    removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
+    stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
   };

@@ -43,6 +43,11 @@ def check_frame(objs, arm, ear_sets=None, tol=0.0015):
     out['foot_low'] = [round(z, 4) for z in lows]
     out['grounded'] = -tol < min(lows) < 0.02
     out['below_floor'] = min(lows) < -tol
+    if arm.get('ear_width_lock'):
+        # Frog: the 'ears' are rigid eye bumps that sit ~1 mm apart by design and never move apart or fold
+        out['ears_touch'] = False
+        out['ears_touch_note'] = 'rigid eye bumps (ear_width_lock): not checked'
+        return out
     if ear_sets is None:
         ear_sets = collision.ear_vertex_sets(objs['head'])
     out['ears_touch'] = collision.ears_touch(objs['head'], ear_sets)
