@@ -239,6 +239,7 @@ if flag('--check'):
         if f == rng[0] or f == rng[-1] or (f - rng[0]) % 3 == 0:
             r.update(rules_scene.contact(scenery, held_props, objs.values(), cast))
         r.update(rules_scene.framing(scenery, sc.camera))
+        r.update(rules_scene.costar_framing(cast, sc.camera, objs.values()))
         hz = rules_scene.horizon(sc.camera)
         if hz is not None:
             shot_report['horizon'].append(hz)

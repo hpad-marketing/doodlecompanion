@@ -212,13 +212,13 @@ const sceneFrames = () => scene.shots.reduce((n, s) => n + s.length, 0);
 // ---------------------------------------------------------------- values
 function current(id) { return id in preview ? preview[id] : valueAt(project, id, frame); }
 
-function setValue(id, v, { record = true } = {}) {
+function setValue(id, v, { record = true, now = true } = {}) {
   const [lo, hi] = range(id);
   if (!DISCRETE.has(id)) v = snapValue(id, v, LENSES);
   if (!DISCRETE.has(id)) v = Math.max(lo, Math.min(hi, v));
   if (autoKey && record) { keyAt(id, v); delete preview[id]; dirty = true; scheduleTracks(); }
   else preview[id] = v;
-  apply();
+  if (now) apply();
 }
 
 // a key at the playhead in the base or the layer being edited, so the final pose shows v
@@ -1384,7 +1384,8 @@ function mirrorValues(v) {
   }
   return out;
 }
-function putPose(v) { pushUndo(); for (const [id, x] of Object.entries(v)) setValue(id, x); drawTracks(); buildPanel(); }
+// a whole pose: every control keyed first, then one redraw (a redraw per control took seconds)
+function putPose(v) { pushUndo(); for (const [id, x] of Object.entries(v)) setValue(id, x, { now: false }); apply(); drawTracks(); buildPanel(); }
 function blendPose(t) {
   const { A, B } = poseBuf;
   if (!A || !B) return toast('Set pose A and pose B first');
@@ -1465,7 +1466,7 @@ function dollyTo(lens) {
   camSet({ lens, dist: Math.max(0.4, d0 * lens / l0) });
 }
 // camera-presets.js reaches the active shot through this
-const presetCtx = () => ({ view, project: () => project, frame: () => frame, current, setValue, pushUndo, toast, refresh: () => { apply(); drawTracks(); } });
+const presetCtx = () => ({ view, project: () => project, frame: () => frame, current, setValue, pushUndo, toast, refresh: () => { apply(); drawTracks(); }, costarFraming: () => { apply(); return view.costarFraming(); } });
 function frameBunny() { camSet({ tx: 0, ty: 0, tz: 0.52, dist: 3.0 * current('cam.lens') / 50 }); }
 
 // ---------------------------------------------------------------- viewport interaction
@@ -1893,6 +1894,8 @@ function loop() {
   view = new Viewport($('#view'), data);
   BUNNY_IDS = PARTS.flatMap(p => p[2]);
   buildMenu(); buildTabs(); buildRail(); bindViewport(); bindKeys(); bindCameraPresets(presetCtx());
+  // "group": frames the lead and every co-star together
+  window.ds3dCameraPresets.register({ id: 'group', label: 'Everyone', points: () => [...view.bodyPoints(null, 12), ...(view.actors || []).flatMap(a => view.bodyPoints(a, 12))], facing: () => current('turn') });
   $('.topbar h1').after(h('div', { id: 'quickbar', role: 'toolbar', 'aria-label': 'Favourites and recent commands' }));
   bindResizers(wfCtx());
   overlayDraw = bindOverlay(carCtx());
@@ -1921,8 +1924,8 @@ function loop() {
       pushUndo('Set ' + Object.keys(values).map(id => LABEL[id] || id).slice(0, 3).join(', ') + (Object.keys(values).length > 3 ? '…' : ''));
       if (at != null) goto(at);
       const was = autoKey; if (key != null) autoKey = !!key;
-      try { for (const [id, v] of Object.entries(values)) setValue(id, Number(v)); } finally { autoKey = was; }
-      drawTracks(); buildPanel();
+      try { for (const [id, v] of Object.entries(values)) setValue(id, Number(v), { now: false }); } finally { autoKey = was; }
+      apply(); drawTracks(); buildPanel();
       return this.state();
     },
     key(ids, at) { if (at != null) goto(at); keyGroup(ids && ids.length ? ids : BUNNY_IDS.concat(FACE_IDS)); return this.state(); },
@@ -2107,7 +2110,7 @@ function loop() {
             }
             if (best) { r = best.r; clips = []; moved = 3 * best.k; }
           }
-          pushUndo('IK ' + L); for (const [id, v] of Object.entries(r.values)) setValue(id, v); drawTracks();
+          pushUndo('IK ' + L); for (const [id, v] of Object.entries(r.values)) setValue(id, v, { now: false }); apply(); drawTracks();
           const res = { limb: L, values: r.values, missedCm: +(r.error * 100).toFixed(1), end: A2.v3(A2.endPoint(view, valuesNow(), L)) };
           if (moved) res.note = `Moved the target ${moved} cm out from the head so the arm clears it`;
           if (clips.length) res.warning = `The ${clips.join(', ')} still pass${clips.length === 1 ? 'es' : ''} through the head in this pose (rule 1). Pick another target.`;

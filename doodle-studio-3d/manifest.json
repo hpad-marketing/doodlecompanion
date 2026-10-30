@@ -1,8 +1,8 @@
 {
- "version": "20261030-162644",
- "notes": "Stress-test fixes: lip sync from the voice (Animate menu, MCP audio action=lipsync); the export check now reads the English and Hindi caption tracks, the horizon height across shots and the hard-cut count; Claude calls never open a blocking dialog (force: true after the user says yes); MCP new_scene, open_scene, save_as; Blender rule check adds scenery touching or near the character, held props inside the body, prop slivers, frame-edge tangents, see-through pieces and the horizon; IK keeps the arm out of the head; macros record Claude tool calls.",
+ "version": "20261030-163541",
+ "notes": "Mirror pose is about 20x faster (no more hangs); camera presets warn when a framing cuts off a co-star and a new 'group' target frames everyone; the Blender rule check fails a co-star cut off by the frame edge; Library browser shows Outfits and Accessories.",
  "runtime": "44.9.0",
- "published": "2026-10-30T16:26:44.526Z",
+ "published": "2026-10-30T16:35:41.661Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -15,9 +15,9 @@
    "gz": "files/58a651e489c11fcd22e5ecb7c8089c7022a4cd6857db73a2f8da451d00baf44e.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "ef817aa40ef71871624a4c33d76c6089deaf029b9ab9542ad011e3c3331ec299",
-   "size": 37981,
-   "gz": "files/ef817aa40ef71871624a4c33d76c6089deaf029b9ab9542ad011e3c3331ec299.gz"
+   "sha256": "c44e0906d4ab4a72e572c6608e6321977e7733ecea683aa5f37193e5fe61010e",
+   "size": 38070,
+   "gz": "files/c44e0906d4ab4a72e572c6608e6321977e7733ecea683aa5f37193e5fe61010e.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -55,9 +55,9 @@
    "gz": "files/aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "9aaeac1298c49ab942ab2490c86e57e6fd97a626a06fb9712edbf8ede6e60cb5",
-   "size": 14327,
-   "gz": "files/9aaeac1298c49ab942ab2490c86e57e6fd97a626a06fb9712edbf8ede6e60cb5.gz"
+   "sha256": "861acd2bfc04c85ec6e4ea9777b6b2b294c88818ff4f3aa6083118faf8002c67",
+   "size": 14404,
+   "gz": "files/861acd2bfc04c85ec6e4ea9777b6b2b294c88818ff4f3aa6083118faf8002c67.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -160,9 +160,9 @@
    "gz": "files/e0c6a293f6d74c39cc5a2a9fa761d264d7588a64d28ca7d0cc376394da0316a4.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
-   "sha256": "5d9e56ee73fed9ad965b9872a445d4cd65f987e145b28821923b417483acccea",
-   "size": 8061,
-   "gz": "files/5d9e56ee73fed9ad965b9872a445d4cd65f987e145b28821923b417483acccea.gz"
+   "sha256": "bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887",
+   "size": 9539,
+   "gz": "files/bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887.gz"
   },
   "resources/app/blender/lib/skin.py": {
    "sha256": "9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517",
@@ -195,9 +195,9 @@
    "gz": "files/923890fc7d0b6c1d1480cb7eb776f74ebb7a8c5310018c862f3b6a18a5ac23ce.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
-   "sha256": "ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2",
-   "size": 40964,
-   "gz": "files/ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2.gz"
+   "sha256": "0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc",
+   "size": 41401,
+   "gz": "files/0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc.gz"
   },
   "resources/app/ui/src/carousel.js": {
    "sha256": "9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985",
@@ -220,14 +220,14 @@
    "gz": "files/63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef.gz"
   },
   "resources/app/ui/src/library.js": {
-   "sha256": "ea89f002dda1a5a9098a15dddd2ada885e142812a41235073044c6712ac3dbaa",
-   "size": 17026,
-   "gz": "files/ea89f002dda1a5a9098a15dddd2ada885e142812a41235073044c6712ac3dbaa.gz"
+   "sha256": "cd175f22776dcd854d77f4a6d8a063e9e837c2b92ebcc10cd55eead17c54d69d",
+   "size": 17079,
+   "gz": "files/cd175f22776dcd854d77f4a6d8a063e9e837c2b92ebcc10cd55eead17c54d69d.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "87ca8f8fdff6921494ee4d0e47fb0d58d47623298750ebca0d046b9cb7e37657",
-   "size": 182748,
-   "gz": "files/87ca8f8fdff6921494ee4d0e47fb0d58d47623298750ebca0d046b9cb7e37657.gz"
+   "sha256": "7c393945e51bc877ccd929f91157531e3c105abb3525f60e603f58b762cb3566",
+   "size": 183272,
+   "gz": "files/7c393945e51bc877ccd929f91157531e3c105abb3525f60e603f58b762cb3566.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -275,9 +275,9 @@
    "gz": "files/25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "868b64eb9888ba6586aa9980abb0f88c487e51ac9dda7cf05b97cead7033e8e8",
-   "size": 15936,
-   "gz": "files/868b64eb9888ba6586aa9980abb0f88c487e51ac9dda7cf05b97cead7033e8e8.gz"
+   "sha256": "8998d1be697b002260a933969fa9c67ba7c4391c648f5fea14dd6fdd0ee7f4e9",
+   "size": 17103,
+   "gz": "files/8998d1be697b002260a933969fa9c67ba7c4391c648f5fea14dd6fdd0ee7f4e9.gz"
   },
   "resources/app/ui/src/workflow.js": {
    "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",
