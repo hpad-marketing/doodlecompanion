@@ -53,6 +53,20 @@ export function streamFrom(atSeconds) {
   s.buffer = buf; s.connect(dest); s.start(0, Math.max(0, atSeconds));
   return { track: dest.stream.getAudioTracks()[0], stop: () => { try { s.stop(); } catch {} } };
 }
+// part of the scene audio (or a processed copy) as a 16-bit WAV, base64, for Shorts and voices
+export function wavBase64(from = 0, to = buf ? buf.duration : 0, source = buf) {
+  if (!source) return null;
+  const sr = source.sampleRate, ch = Math.min(2, source.numberOfChannels), a = Math.max(0, Math.floor(from * sr)), b = Math.min(source.length, Math.ceil(to * sr)), n = Math.max(0, b - a);
+  const d = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, t) => [...t].forEach((c, i) => d.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); d.setUint32(4, 36 + n * ch * 2, true); w(8, 'WAVEfmt '); d.setUint32(16, 16, true); d.setUint16(20, 1, true); d.setUint16(22, ch, true);
+  d.setUint32(24, sr, true); d.setUint32(28, sr * ch * 2, true); d.setUint16(32, ch * 2, true); d.setUint16(34, 16, true); w(36, 'data'); d.setUint32(40, n * ch * 2, true);
+  const data = [...Array(ch)].map((_, c) => source.getChannelData(c));
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) d.setInt16(44 + (i * ch + c) * 2, Math.max(-1, Math.min(1, data[c][a + i])) * 32767, true);
+  const bytes = new Uint8Array(d.buffer);
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
 export function stop() { try { src?.stop(); } catch {} src = null; }
 
 // waveform strip for one shot of the scene (scene frames from..from+length)

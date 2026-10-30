@@ -1,8 +1,8 @@
 {
- "version": "20261030-134441",
- "notes": "Animator tools part 2: graph editor with spacing charts, IK drag that keys FK, pin a hand or foot, click-to-pick, motion paths with an arc fixer, partial pose library, copy keys across shots and characters, animation layers, clip blending, retargeting, time warp, moving holds, Euler filter, balance marker, reference video, playblast with audio, multi-key moves, per-control reset",
+ "version": "20261030-135446",
+ "notes": "Storytime part 2: cold open, story beat map, mood strip, genre moments, gestures from the voice, eye darts, jump scare, auto foley, freeze-frame name labels, chapter cards, sponsor segue, long video to Shorts, retention overlay from a YouTube Studio CSV",
  "runtime": "44.9.0",
- "published": "2026-10-30T13:44:41.137Z",
+ "published": "2026-10-30T13:54:46.375Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "1303819bc6271b3cc7977b01775859dd8fe3bd0db2542de758af7fc77286a0d3",
-   "size": 22810,
-   "gz": "files/1303819bc6271b3cc7977b01775859dd8fe3bd0db2542de758af7fc77286a0d3.gz"
+   "sha256": "f122695859325cb0f3c472b8d6e4c163aaec970d1f3460b68ffb7a7f6969812b",
+   "size": 22829,
+   "gz": "files/f122695859325cb0f3c472b8d6e4c163aaec970d1f3460b68ffb7a7f6969812b.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "60e8f8781b560e2ae0e280321bbcf041f103f0985ce9ea558fce8fabb9a76da5",
-   "size": 26091,
-   "gz": "files/60e8f8781b560e2ae0e280321bbcf041f103f0985ce9ea558fce8fabb9a76da5.gz"
+   "sha256": "4177e7bee42cc5af3b2698eb66b6c01ddc6ce30edba02fb41db6b2ff9f1875dc",
+   "size": 27820,
+   "gz": "files/4177e7bee42cc5af3b2698eb66b6c01ddc6ce30edba02fb41db6b2ff9f1875dc.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -50,9 +50,9 @@
    "gz": "files/aecc4467e88dbed7cc73c2863898346be2294def23bfae936b6e16ea4f5a2390.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "69bf752b8413b37ad56186677ac0e8eaf460ab082d1466f9faf53d347404552e",
-   "size": 10781,
-   "gz": "files/69bf752b8413b37ad56186677ac0e8eaf460ab082d1466f9faf53d347404552e.gz"
+   "sha256": "eb813f2842b97d21bc062b6db3296accf0ce84be676d8437f5e6721577518af8",
+   "size": 11030,
+   "gz": "files/eb813f2842b97d21bc062b6db3296accf0ce84be676d8437f5e6721577518af8.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "82ebc4420f9cd8813cb56ea79930c97b0f21d44e8e9cc89f78e1810733526e84",
@@ -170,9 +170,9 @@
    "gz": "files/52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "6acda0beb6978c997c529b8f269eec69aabb7206dd899f67c4ff0eb1ca1e4505",
-   "size": 3571,
-   "gz": "files/6acda0beb6978c997c529b8f269eec69aabb7206dd899f67c4ff0eb1ca1e4505.gz"
+   "sha256": "bbe3dff25989238de75650d8aaa8d8bdd8dbc354c4fa2173c56a7997ed23e237",
+   "size": 4833,
+   "gz": "files/bbe3dff25989238de75650d8aaa8d8bdd8dbc354c4fa2173c56a7997ed23e237.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2",
@@ -195,9 +195,9 @@
    "gz": "files/e14b3ada2bf46c5ad59215ecd1385d740426b805068882f417264ed72e3fba41.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "e34e019d452bb1a6b83769241b5970620c08eac463d7e798e7e55653dcc64b3a",
-   "size": 118148,
-   "gz": "files/e34e019d452bb1a6b83769241b5970620c08eac463d7e798e7e55653dcc64b3a.gz"
+   "sha256": "d9dbd28afb32a4eb8ad76acb8da0cbf81702b0d2b696626c7a43ba13cf86af6a",
+   "size": 126023,
+   "gz": "files/d9dbd28afb32a4eb8ad76acb8da0cbf81702b0d2b696626c7a43ba13cf86af6a.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "74b2789a295c30e2009a5508c729ea55f5c1d57ccd8a2582e08bd1a3a2d623bf",
@@ -224,10 +224,15 @@
    "size": 5807,
    "gz": "files/883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521.gz"
   },
+  "resources/app/ui/src/storytime2.js": {
+   "sha256": "6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16",
+   "size": 20818,
+   "gz": "files/6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16.gz"
+  },
   "resources/app/ui/src/ui.css": {
-   "sha256": "f245a8ce37e075278d80691f76dc1729970266503db1cb7d8884a4958c3f2bd9",
-   "size": 13220,
-   "gz": "files/f245a8ce37e075278d80691f76dc1729970266503db1cb7d8884a4958c3f2bd9.gz"
+   "sha256": "1ea3b2ae5ac4025f368f9acc948a528977f524a475c6a9038e25ff8eb107ceff",
+   "size": 13837,
+   "gz": "files/1ea3b2ae5ac4025f368f9acc948a528977f524a475c6a9038e25ff8eb107ceff.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "4e21f5a0cb91b93a23c622932b3c6dbba0be37501fbc6e54f989af3210a1fc0e",

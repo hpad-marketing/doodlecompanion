@@ -6,13 +6,14 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope, streamFrom as audioStreamFrom } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64 } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryPanel, libraryRows, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 import { modal, historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
 import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
 import * as A2 from './animtools2.js';
+import * as S2 from './storytime2.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -252,6 +253,71 @@ function apply() {
 let ruleLights = true, rules = null;
 let onionShown = false;
 
+// ---------------------------------------------------------------- storytime part 2 (storytime2.js)
+const s2Ctx = () => ({ ...anim2Ctx(), faces: () => data.face.faces, gazes: () => data.face.gazes, envelope: envelopeNow, sceneStart, selectShot: i => selectShot(i),
+  changed: lengthToo => { dirty = true; apply(); drawTracks(); if (lengthToo) buildTimelineTools(); updateHud(); } });
+const safeName = n => String(n || 'Untitled').replace(/[\\/:*?"<>|]/g, '_').trim();
+async function storyRun(action, a = {}) {
+  try { const r = await story2({ action, ...a }); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; }
+}
+async function story2(a) {
+  const c = s2Ctx(), F = a.frame ?? frame;
+  const done = (r, message) => ({ ...r, message });
+  switch (a.action) {
+    case 'cold_open': { pushUndo('Cold open'); const r = S2.coldOpen(scene, a.shot != null ? shotIndex(a.shot) : scene.active, { seconds: a.seconds ?? 3, card: a.text || 'Earlier that day...' }); dirty = true; useScene(scene); return done(r, `Cold open: the last ${r.seconds} s of ${r.from} now opens the video, then "${r.card}"`); }
+    case 'beat_map': return S2.beatMap(scene);
+    case 'add_beat': { pushUndo('Beat marker'); const r = S2.addBeat(scene, a.beat); dirty = true; drawTracks(); return r; }
+    case 'mood': { pushUndo('Mood'); const i = a.shot != null ? shotIndex(a.shot) : scene.active; const r = S2.setMood(scene.shots[i], a.mood || null, a.light !== false); dirty = true; useScene(scene); return r; }
+    case 'moods': return scene.shots.map(s => ({ shot: s.code, mood: s.mood || null }));
+    case 'genre': return done(S2.genreMoment(c, a.genre, F), `${S2.GENRES[a.genre]?.name} at frame ${F}`);
+    case 'gestures': { const r = S2.gesturesFromVoice(c, { strength: a.strength ?? 1 }); buildTimelineTools(); return done(r, `${r.gestures} gestures on the "Gestures" layer (head and body only)`); }
+    case 'eye_darts': { const r = S2.eyeDarts(c, { every: a.every ?? 1.4, seed: a.seed ?? 7 }); return done(r, `${r.darts} eye darts`); }
+    case 'jump_scare': return done(S2.jumpScare(c, F), `Jump scare at frame ${F}: quiet second before, sting, fast eased push in`);
+    case 'foley': { const r = S2.autoFoley(c); return done(r, `Auto foley: ${r.sounds.length} sounds (re-run replaces them)`); }
+    case 'freeze_label': return done(S2.freezeLabel(c, F, a.text, a.seconds ?? 1.5), 'Freeze-frame label added');
+    case 'chapter_cards': { pushUndo('Chapter cards'); const r = S2.chapterCards(scene); dirty = true; apply(); return done(r, `${r.cards} chapter card${r.cards === 1 ? '' : 's'} added`); }
+    case 'sponsor': { pushUndo('Sponsor segue'); const r = S2.sponsorSegue(scene, scene.active, a.name, a.seconds ?? 8); scene.active += 1; dirty = true; useScene(scene); return done(r, `Sponsor segue ${r.shot} added`); }
+    case 'shorts_plan': return S2.shortsPlan(scene).map(x => ({ ...x, seconds: +((x.to - x.from) / scene.fps).toFixed(1) }));
+    case 'shorts': {
+      const plan = S2.shortsPlan(scene);
+      if (!plan.length) throw Error('Add markers like "short: The fall" (or Chapter markers) where each Short starts');
+      const root = (await api('settings', {})).rendersRoot, made = [];
+      for (const seg of plan) {
+        const sh = S2.makeShort(scene, seg);
+        if (audioInfo()) {
+          const sec0 = seg.from / scene.fps, sec1 = seg.to / scene.fps;
+          const w = await api('write-file', { path: `${root}/${safeName(sh.name)}/work/${safeName(sh.name)}_voice.wav`, data: wavBase64(sec0, sec1) });
+          sh.audio = { path: w.path };
+        }
+        const r = await api('save', { project: sh, auto: true });
+        made.push({ name: sh.name, shots: sh.shots.length, seconds: +((seg.to - seg.from) / scene.fps).toFixed(1), path: r.path });
+      }
+      return done({ shorts: made }, `${made.length} Short${made.length > 1 ? 's' : ''} saved as 9:16 scenes: ${made.map(m => m.name).join(', ')}`);
+    }
+    case 'retention': {
+      const sec = sceneFrames() / scene.fps, r = S2.parseRetention(a.csv || '', sec);
+      pushUndo('Retention overlay'); scene.retention = r; dirty = true; drawTracks();
+      return done({ points: r.points.length, drops: r.drops }, r.drops.length ? `Biggest drop: ${r.drops[0].lost}% at ${r.drops[0].at} s (marked mustard on the timeline)` : 'Retention curve on the timeline');
+    }
+    case 'retention_clear': { if (scene.retention) { pushUndo('Clear retention'); delete scene.retention; dirty = true; drawTracks(); } return { retention: null }; }
+  }
+  throw Error('action must be cold_open, beat_map, add_beat, mood, moods, genre, gestures, eye_darts, jump_scare, foley, freeze_label, chapter_cards, sponsor, shorts_plan, shorts, retention or retention_clear');
+}
+function retentionImport() {
+  const inp = h('input', { type: 'file', accept: '.csv,text/csv' });
+  inp.addEventListener('change', async () => { const f = inp.files[0]; if (f) storyRun('retention', { csv: await f.text() }); });
+  inp.click();
+}
+function beatMapDialog() {
+  const m = S2.beatMap(scene);
+  modal({ h }, 'Story beat map', close => [
+    h('p', { class: 'hint' }, `Mark a beat with a marker note like "beat: Climax". ${m.seconds} s in all; suggested times follow a classic storytime shape.`),
+    h('div', { class: 'beat-bar' }, ...m.beats.map(b => h('i', { class: b.at != null ? 'on' : '', style: `left:${(100 * (b.at ?? b.suggested) / Math.max(1, m.seconds)).toFixed(1)}%`, title: `${b.name}: ${b.at != null ? b.at + ' s' : 'missing, suggested ' + b.suggested + ' s'}` }))),
+    h('div', { class: 'ds-list' }, ...m.beats.map(b => h('div', { class: 'row' }, h('b', { style: 'min-width:9em' }, b.name), h('span', {}, b.at != null ? `${b.at} s · ${b.where}` : `missing (try ${b.suggested} s)`),
+      b.at == null ? h('button', { onclick: () => { close(); storyRun('add_beat', { beat: b.id }).then(() => beatMapDialog()); } }, 'Add marker') : null))),
+    h('button', { onclick: close }, 'Close')]);
+}
+
 // ---------------------------------------------------------------- animator tools part 2 (animtools2.js)
 let ikOn = false, pathWhat = null, pathPts = null, pathSig = '', pathPops = [], curves = false, editLayer = -1, balanceOn = false, balanceNow = null, multi = [], refLoaded = null;
 const graphSel = {};
@@ -433,7 +499,13 @@ const MENUS = [
     ['Retarget the scene to…', () => pick2('Retarget the scene to', CHARACTERS.map(c => [c[0], c[1]]), c => retargetTo(c).catch(e => toast(e.message, 5000)))], '-',
     ['Reference video…', () => referenceVideo().catch(e => toast(e.message, 5000))], ['Remove reference video', () => clearReference()]]],
   ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
-    ['Export YouTube chapters', () => exportChapters()], ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())]]],
+    ['Export YouTube chapters', () => exportChapters()], ['Chapter cards from the chapter markers', () => storyRun('chapter_cards')], '-',
+    ['Cold open: flash forward to this shot…', () => storyRun('cold_open')], ['Story beat map…', () => beatMapDialog()], ['Mood strip…', () => S2.moodStripDialog(s2Ctx())],
+    ['Genre moment at the playhead…', () => pick2('Genre moment', Object.entries(S2.GENRES).map(([k, g]) => [k, g.name]), g => storyRun('genre', { genre: g }))], '-',
+    ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Jump scare at the playhead', () => storyRun('jump_scare')], ['Auto foley (sound effects)', () => storyRun('foley')],
+    ['Freeze-frame name label…', () => { const t = prompt('Name label at the playhead (the picture freezes for 1.5 s):', `${charName()}: `); if (t) storyRun('freeze_label', { text: t }); }],
+    ['Sponsor segue after this shot…', () => { const n = prompt('Sponsor name:'); if (n) storyRun('sponsor', { name: n }); }], '-',
+    ['Make Shorts from this video', () => storyRun('shorts')], ['Import retention CSV (YouTube Studio)…', () => retentionImport()], ['Clear the retention overlay', () => storyRun('retention_clear')], '-', ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())]]],
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
     ['Overnight batch…', () => batchDialog(prodCtx())], ['Cancel sleep after renders', () => api('sleep-when-done', { on: false }).then(() => toast('The PC will stay awake'))], '-',
     ['Render presets…', () => presetsDialog(prodCtx())], ['Pack project…', () => pack(prodCtx()).catch(e => toast(e.message, 5000))], ['Clean up cache…', () => cacheDialog(prodCtx()).catch(e => toast(e.message, 5000))]]],
@@ -997,7 +1069,7 @@ function buildTimelineTools() {
   box.addEventListener('change', () => goto(Number(box.value)));
   const ease = h('select', { id: 'ease-select', title: 'Easing from the selected key to the next one' }, ...Object.entries(EASES).map(([k, n]) => h('option', { value: k }, n)));
   ease.addEventListener('change', () => { if (!selected) return toast('Select a key first'); pushUndo(); const k = project.tracks[selected.id]?.find(k => k.f === selected.f); if (k) k.ease = ease.value; apply(); });
-  const chips = scene.shots.map((s, i) => h('button', { class: 'shot-chip status-' + statusOf(s), 'aria-pressed': String(i === scene.active), title: `${shotName(s)}: ${(s.length / scene.fps).toFixed(1)} s, ${STATUS.find(x => x[0] === statusOf(s))[1]}. Click to edit, double-click to name, right-click for the next status.`,
+  const chips = scene.shots.map((s, i) => h('button', { class: 'shot-chip status-' + statusOf(s), style: s.mood ? `box-shadow:inset 0 -4px 0 ${S2.moodColour(s.mood)}` : null, 'aria-pressed': String(i === scene.active), title: `${shotName(s)}: ${(s.length / scene.fps).toFixed(1)} s, ${STATUS.find(x => x[0] === statusOf(s))[1]}. Click to edit, double-click to name, right-click for the next status.`,
     onclick: () => selectShot(i), ondblclick: () => labelShot(i), oncontextmenu: e => { e.preventDefault(); shotStatus(nextStatus(s), i); } }, shotName(s), h('small', {}, ` ${(s.length / scene.fps).toFixed(1)}s`), h('i', { class: 'status-tag' }, STATUS.find(x => x[0] === statusOf(s))[1])));
   $('#timeline-tools').replaceChildren(
     g('Scene', ...chips, h('button', { onclick: () => addShot(false), title: 'Add a shot after this one (Ctrl+T)' }, '+ Shot'),
@@ -1047,6 +1119,8 @@ function drawTracks() {
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Audio'), lane([wave])));
+  const ret = S2.retentionLane(h, scene, sceneStart(), project.length, ppf);
+  if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (Story › Import retention CSV). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));
   if (curves) {
     const live = id => project.tracks[id]?.length && !DISCRETE.has(id);
     let ids = (PARTS.find(p => p[0] === part)?.[2] || []).filter(live), what = PARTS.find(p => p[0] === part)?.[1];
@@ -1462,6 +1536,8 @@ function loop() {
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // storytime2.js (MCP tool "story2")
+    async story2(a = {}) { if (a.shot != null && !['cold_open', 'mood'].includes(a.action)) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await story2(a); if (r && typeof r === 'object') delete r.message; return r; },
     // animtools2.js (MCP tool "anim2")
     async anim2(a = {}) {
       const c = anim2Ctx();

@@ -34,6 +34,8 @@ call production '{"action":"preflight"}' 200
 call anim2 '{"action":"ik","limb":"armR","offset":[0,-0.03,0.05]}' 200
 call anim2 '{"action":"balance"}' 200
 call anim2 '{"action":"path","what":"armR"}' 200
+call story2 '{"action":"beat_map"}' 200
+call story2 '{"action":"genre","genre":"comedy","frame":5}' 200
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}},{"jsonrpc":"2.0","id":2,"method":"tools/list"}]' | python3 -c "import json,sys;j=json.load(sys.stdin);print('update safety probe:', bool(j[0]['result']['serverInfo']) and len(j[1]['result']['tools'])>10)"
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":4,"method":"tools/list"}' | python3 -c "import json,sys;print([t['name'] for t in json.load(sys.stdin)['result']['tools']])"
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"save","arguments":{}}}' | head -c 300; echo
