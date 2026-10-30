@@ -38,6 +38,8 @@ def insert(item_id, frame=None, **opts):
         return faces.use_mouth_set(it if it['data'].get('set') else None)
     if cat == 'outfit':
         return outfits.dress(it)
+    if cat == 'accessory':
+        return outfits.wear(it)
     if cat == 'set':
         return sets.switch_set(it['data']['room'])
     ob = assets.insert_object(it, opts.get('location'))
@@ -47,6 +49,8 @@ def insert(item_id, frame=None, **opts):
 
 
 undress = outfits.undress
+take_off = lambda item_id: outfits.take_off(index.get(item_id))
+worn_accessories = outfits.worn_accessories
 save_motion = lambda name, frame_range=None, **kw: motions.save_action(name, frame_range, **kw)
 save_expression = faces.save_expression
 save_objects = assets.save_objects

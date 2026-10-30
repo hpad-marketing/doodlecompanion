@@ -10,6 +10,7 @@ CATEGORIES = [
     ('expression', 'Faces', 'Expressions, gazes, blinks and winks', 'USER'),
     ('mouth_set', 'Mouths', 'Mouth sets for lip sync', 'SPEAKER'),
     ('outfit', 'Outfits', 'Brand-black outfits that replace the hoodie (Bunny, Koala, Frog)', 'MOD_CLOTH'),
+    ('accessory', 'Accessories', 'Glasses and ties for the side cast; wear several at once', 'MOD_CLOTH'),
     ('prop', 'Props', '360° props (3D) and your own', 'OBJECT_DATA'),
     ('scenery', 'Scenery', 'Background pieces rebuilt in 3D', 'MESH_CUBE'),
     ('card', '2D cards', 'Doodle Studio background drawings as flat cards that sit in 3D', 'IMAGE_PLANE'),
@@ -24,7 +25,7 @@ def path():
 
 
 KEEP = {'blender', 'cmu-mocap', 'mesh2motion', 'performance'}  # rows other tools add survive a rebuild
-PART_ORDER = ['motions', 'faces', 'faces_story', 'mouth_sets', 'outfits', 'props', 'packs', 'scenery', 'sets_rooms']
+PART_ORDER = ['motions', 'faces', 'faces_story', 'mouth_sets', 'outfits', 'accessories', 'props', 'packs', 'scenery', 'sets_rooms']
 
 
 def merge_parts(lib, quiet=True):

@@ -68,6 +68,19 @@ class DSL_OT_undress(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class DSL_OT_take_off(bpy.types.Operator):
+    bl_idname = 'dsl.take_off'
+    bl_label = 'Take off'
+    bl_description = 'Take this accessory off (anything else worn stays on)'
+    bl_options = {'REGISTER', 'UNDO'}
+    item_id: StringProperty()
+
+    @_report_errors
+    def execute(self, context):
+        api.take_off(self.item_id)
+        return {'FINISHED'}
+
+
 class _Named:
     name: StringProperty(name='Name', default='')
 
@@ -289,7 +302,7 @@ class DSL_OT_add_text(bpy.types.Operator):
         return {'FINISHED'}
 
 
-CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_OT_refresh, DSL_OT_insert, DSL_OT_undress, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
+CLASSES = (DSL_OT_hold, DSL_OT_release, DSL_OT_check_grip, DSL_OT_add_text, DSL_OT_refresh, DSL_OT_insert, DSL_OT_undress, DSL_OT_take_off, DSL_OT_save_motion, DSL_OT_save_face, DSL_OT_save_selection,
            DSL_OT_set_all, DSL_OT_declutter, DSL_OT_camera, DSL_OT_parallax, DSL_OT_retarget, DSL_OT_inbox,
            DSL_OT_open_folder, DSL_OT_prefs)
 
