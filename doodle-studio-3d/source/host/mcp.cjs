@@ -25,6 +25,8 @@ const TOOLS = [
     { list: { type: 'boolean' }, lookAtCamera: { type: 'boolean' }, target: { type: 'string' }, size: { type: 'string' }, angle: { type: 'string' }, placement: { enum: ['center', 'left', 'right'] }, view: { type: 'string' }, move: { type: 'string' }, seconds: { type: 'number', minimum: 0.1 }, frame: { type: 'integer', minimum: 0 } }],
   ['carousel', 'Snapshot carousel for Instagram: list the slides, snap a frame as a new slide, edit slides and speech bubbles, or export. action=list | snap (shot code/index and frame; default the playhead) | size (size: 4:5, 1:1 or 9:16) | move (slide, to) | remove (slide) | bubble (slide, bubble: {text, assetId: speech|thought|shout|whisper, tail: down-left|down-right|left|right|none, x, y as 0-1 fractions; index to edit an existing one, delete:true to remove it}) | export (renders every slide in Blender and saves numbered PNGs with bubbles to DeepInDoodles\\<scene>\\work\\carousel).',
     { action: { enum: ['list', 'snap', 'size', 'move', 'remove', 'bubble', 'export'] }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, size: { enum: ['4:5', '1:1', '9:16'] }, slide: { type: 'integer', minimum: 0 }, to: { type: 'integer', minimum: 0 }, bubble: { type: 'object' } }, ['action']],
+  ['set_idle', 'Idle life for the active shot (or every shot with allShots=true): blink=true turns Auto blink on, twitch=true turns Auto ear twitch on (the Frog\'s eye bumps pop instead). blinkEvery / twitchEvery are the average seconds between them (each gap is randomised); seed fixes the timing so renders repeat. Keyed blinks and ear moves always win. Returns the settings and the frames where blinks and twitches land.',
+    { blink: { type: 'boolean' }, twitch: { type: 'boolean' }, blinkEvery: { type: 'number', minimum: 1.5, maximum: 12 }, twitchEvery: { type: 'number', minimum: 2, maximum: 30 }, seed: { type: 'integer', minimum: 1, maximum: 9999 }, allShots: { type: 'boolean' } }],
   ['render_status', 'Progress of the current render (frame, frames, minutes left, queue).', {}],
 ];
 
@@ -54,6 +56,7 @@ module.exports = ({ call, api }) => {
       const edit = a.action === 'size' ? { size: a.size } : a.action === 'move' ? { slide: a.slide, to: a.to } : a.action === 'remove' ? { slide: a.slide, remove: true } : { slide: a.slide, bubble: a.bubble || {} };
       return call(`ds3d.carouselEdit(${JSON.stringify(edit)})`);
     },
+    set_idle: a => call(`ds3d.setIdle(${JSON.stringify(a || {})})`),
     render_status: () => api['render-status'](),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));

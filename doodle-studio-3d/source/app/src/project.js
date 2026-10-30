@@ -2,6 +2,8 @@
 // Track ids are Doodle Studio's own (armL, headYaw, ...) plus cam.* for the 3D camera,
 // so a shot exports straight to the Blender bridge.
 
+import { idleLayer, idleOn } from './idle.js';
+
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
 export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52 };
 export const EASES = { ease: 'Ease in and out', linear: 'Linear', in: 'Ease in', out: 'Ease out', hold: 'Hold' };
@@ -103,11 +105,27 @@ export function hasKey(project, id, f) {
   return !!project.tracks[id]?.some(k => k.f === f);
 }
 
+// Idle life (auto blink / ear twitch) for a shot, worked out once per change of the
+// keys it reads or of its settings. The same layer feeds the viewport and Blender.
+const IDLE_READS = ['blink', 'expression', 'turn', 'headYaw', 'earLFold', 'earRFold', 'earLForward', 'earRForward', 'earLScale', 'earRScale', 'earLSquash', 'earRSquash'];
+const idleCache = new WeakMap();
+export function idleFor(project, faceNames = [], character = 'bunny') {
+  if (!idleOn(project)) return null;
+  const sig = JSON.stringify([project.idle, project.uid, project.length, project.fps, character, faceNames.length, IDLE_READS.map(id => project.tracks[id] || 0)]);
+  const hit = idleCache.get(project);
+  if (hit && hit.sig === sig) return hit.layer;
+  const layer = idleLayer(project, project.fps, (id, f) => valueAt(project, id, f), faceNames, character);
+  idleCache.set(project, { sig, layer });
+  return layer;
+}
+
 // Blender bridge shot: one entry per frame, cam block per frame
-export function toBridgeShot(project, allIds) {
+export function toBridgeShot(project, allIds, faceNames, character) {
   const frames = [];
+  const idle = idleFor(project, faceNames, character);
   for (let f = 0; f < project.length; f++) {
     const v = frameValues(project, f, allIds);
+    if (idle?.frames[f]) Object.assign(v, idle.frames[f]);
     const cam = {};
     for (const k of Object.keys(CAM_DEFAULT)) cam[k] = valueAt(project, 'cam.' + k, f);
     for (const k of Object.keys(v)) if (k.startsWith('cam.')) delete v[k];

@@ -3,7 +3,8 @@ import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
-import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -117,6 +118,7 @@ function addShot(duplicate = false) {
   const shot = duplicate ? { ...JSON.parse(JSON.stringify(scene.shots[at])), uid: newShotData(code).uid, code } : newShotData(code, project.length);
   // a new shot starts from where the last one ended, so the cut is clean to set up
   if (!duplicate) for (const [id, ks] of Object.entries(project.tracks)) shot.tracks[id] = [{ f: 0, v: valueAt(project, id, project.length - 1), ease: 'ease' }];
+  if (!duplicate && project.idle) shot.idle = { ...project.idle };   // idle life carries on into the next shot
   scene.shots.splice(at + 1, 0, shot);
   scene.active = at + 1; frame = 0;
   useScene(scene);
@@ -166,6 +168,9 @@ function scheduleTracks() { if (tracksQueued) return; tracksQueued = true; reque
 function apply() {
   const vals = {};
   for (const id of BUNNY_IDS.concat(FACE_IDS)) vals[id] = current(id);
+  // idle life plays in the viewport too, except on a value being tried out unkeyed
+  const idle = idleNow()?.frames[frame];
+  if (idle) for (const [id, v] of Object.entries(idle)) if (!(id in preview)) vals[id] = v;
   view.pose(vals);
   const cam = {};
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
@@ -188,7 +193,7 @@ const carCtx = () => ({
   scene: () => scene, project: () => project, frame: () => frame, tab: () => tab,
   selectShot: i => selectShot(i), selected: () => carouselSel, select: id => { carouselSel = id; },
   rebuild: () => { buildPanel(); overlayDraw?.(); }, refreshOverlay: () => overlayDraw?.(),
-  bridgeShot: s => toBridgeShot(bindShot(scene, s), ALL_IDS()),
+  bridgeShot: s => bridge(bindShot(scene, s)),
   // bubbles show while the playhead sits on the selected slide
   currentSlide: () => { const s = carouselOf(scene).slides.find(x => x.id === carouselSel); return s && s.shot === project.uid && s.frame === frame ? s : null; },
 });
@@ -275,6 +280,7 @@ function buildPanel() {
     const pad = h('div', { class: 'gaze' }, ...GAZE_ORDER.map(i => h('button', { 'aria-pressed': String(Math.round(current('gaze')) === i), title: F.gazes[i], onclick: () => { pushUndo(); setValue('gaze', i); buildPanel(); drawTracks(); } }, F.gazes[i].replace('Center', '•').replace(/Up|Down|Left|Right/g, m => ({ Up: '↑', Down: '↓', Left: '←', Right: '→' })[m]).replace(' ', ''))));
     c.append(h('h3', {}, 'Gaze'), pad);
     c.append(h('p', { class: 'hint' }, 'Faces are Doodle Studio\'s own drawings, wrapped on the head. Eyes and mouth keep a constant size.'));
+    c.append(idlePanel());
   } else if (tab === 'camera') {
     c.append(h('h3', {}, 'Lens'), h('div', { class: 'chips' }, ...LENSES.map(l => h('button', { 'aria-pressed': String(Math.round(current('cam.lens')) === l), onclick: () => camSet({ lens: l }) }, `${l} mm`)),
       h('button', { onclick: () => dollyTo(18), title: 'Dolly zoom: go wide while moving in, so Bunny keeps his size and the room stretches' }, 'Dolly wide'),
@@ -316,6 +322,46 @@ function syncPanel() {
     const dot = row.querySelector('.keydot');
     if (dot) { dot.classList.toggle('has', !!project.tracks[id]); dot.classList.toggle('on', hasKey(project, id, frame)); }
   }
+}
+
+// ---------------------------------------------------------------- idle life (idle.js)
+// Auto blink and auto ear twitch belong to the shot (saved with it, part of its render
+// cache key). The seed makes every render of the shot blink at the same moments.
+function setIdle(patch, all = false) {
+  pushUndo();
+  for (const s of all ? scene.shots : [project]) {
+    const o = { ...idleOf(s), ...patch };
+    for (const [k, [lo, hi]] of Object.entries(IDLE_RANGE)) o[k] = Math.max(lo, Math.min(hi, Number(o[k]) || IDLE_DEFAULT[k]));
+    o.seed = Math.round(o.seed);
+    s.idle = o;
+  }
+  apply(); drawTracks();
+  if (tab === 'face') buildPanel();
+}
+function idlePanel() {
+  const o = idleOf(project), frog = character() === 'frog';
+  const twitchName = frog ? 'Auto eye-bump twitch' : 'Auto ear twitch';
+  const every = (key, tip) => {
+    const [lo, hi] = IDLE_RANGE[key];
+    const i = h('input', { type: 'number', min: lo, max: hi, step: 0.5, value: o[key], style: 'width:58px', 'aria-label': tip });
+    i.addEventListener('change', () => setIdle({ [key]: Number(i.value) }));
+    return h('span', { class: 'row', title: tip }, 'about every', i, 's');
+  };
+  const toggle = (key, label, tip) => h('button', { 'aria-pressed': String(!!o[key]), title: tip, style: 'min-width:10.5em', onclick: () => setIdle({ [key]: !o[key] }) }, label);
+  const seed = h('input', { type: 'number', min: 1, max: 9999, step: 1, value: o.seed, style: 'width:64px', 'aria-label': 'Seed' });
+  seed.addEventListener('change', () => setIdle({ seed: Number(seed.value) }));
+  const n = idleNow()?.events || [];
+  const count = k => n.filter(e => e.kind === k).length;
+  return h('div', {},
+    h('h3', {}, 'Idle life'),
+    h('div', { class: 'row' }, toggle('blink', 'Auto blink', 'Blinks on his own at natural, random moments for the whole shot. Keyed blinks always win.'),
+      every('blinkEvery', 'Average time between blinks. Each gap is randomised around it, with the odd double blink and a blink on big head turns.')),
+    h('div', { class: 'row', style: 'margin-top:4px' }, toggle('twitch', twitchName, frog ? 'The eye bumps pop up and settle now and then. Adds to any keyed bump moves.' : 'An ear flicks outward and springs back now and then, one ear or both. Adds to the keyed ear angles and never pulls the ears together.'),
+      every('twitchEvery', 'Average time between twitches. Each gap is randomised around it.')),
+    h('div', { class: 'row', style: 'margin-top:4px' }, h('span', { title: 'Same seed, same blinks: every render of this shot repeats exactly. Change it to reshuffle the timing.' }, 'Seed'), seed,
+      h('button', { title: 'Reshuffle when the blinks and twitches happen', onclick: () => setIdle({ seed: 1 + Math.floor(Math.random() * 9999) }) }, 'New seed'),
+      h('button', { title: 'Copy these idle settings to every shot of the scene (each shot still gets its own timing)', onclick: () => { setIdle({ ...o }, true); toast(`Idle life set on all ${scene.shots.length} shots`); } }, 'Use on every shot')),
+    h('p', { class: 'hint' }, (o.blink || o.twitch) ? `This shot: ${count('blink')} blink${count('blink') === 1 ? '' : 's'}, ${count('twitch')} twitch${count('twitch') === 1 ? '' : 'es'}. They show on the Idle life row of the timeline and in the viewport, and render exactly the same in Blender. No blinks on faces with closed or special eyes.` : 'Off. Turn one on and it keeps happening through the whole shot.'));
 }
 
 // ---------------------------------------------------------------- camera helpers
@@ -427,6 +473,9 @@ function drawTracks() {
   for (const [gname, ids] of groups) {
     const keyed = ids.filter(id => project.tracks[id]);
     rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname group' }, gname), lane(summaryKeys(keyed, ppf))));
+    const idle = gname === 'Bunny' && idleNow();
+    if (idle) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Auto blinks (top) and twitches (bottom). Click one to go there; settings are on the Face tab.' }, 'Idle life'),
+      lane(idle.events.map(e => h('div', { class: 'idle-mark ' + e.kind, style: `left:${e.f * ppf + 2}px`, title: `${e.kind === 'blink' ? 'Blink' + (e.why === 'turn' ? ' on a head turn' : e.why === 'double' ? ' (double)' : '') : 'Twitch ' + (e.sides === 'LR' ? 'both' : e.sides === 'L' ? 'left' : 'right')} at frame ${e.f}`, onclick: () => goto(e.f) })))));
     for (const id of keyed) {
       const nm = (PARTS.find(p => p[2].includes(id) && p[0] !== 'whole')?.[1] || (id.startsWith('cam.') ? '' : '')) ;
       rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: id }, (nm ? nm + ' · ' : '') + (LABEL[id] || id)),
@@ -523,14 +572,17 @@ async function openShot() {
   } catch (e) { toast('Could not open: ' + e.message, 4000); }
 }
 async function exportBridge() {
-  try { const r = await api('export-bridge', { shot: toBridgeShot(project, ALL_IDS()), name: scene.name, code: project.code }); if (r.path) toast('Wrote ' + r.path); }
+  try { const r = await api('export-bridge', { shot: bridge(project), name: scene.name, code: project.code }); if (r.path) toast('Wrote ' + r.path); }
   catch (e) { toast('Could not export: ' + e.message, 4000); }
 }
 const ALL_IDS = () => BUNNY_IDS.concat(FACE_IDS, CAM_IDS);
+const character = () => scene.character || 'bunny';
+const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character());
+const idleNow = () => idleFor(project, data.face.faces, character());
 async function render(still = false, preview = false, stillFrame = null) {
   scene.name = $('#shot-name').value || scene.name;
   try {
-    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: toBridgeShot(project, ALL_IDS()) });
+    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: bridge(project) });
     toast(r.message || 'Render started');
     pollRender();
     return r;
@@ -539,7 +591,7 @@ async function render(still = false, preview = false, stillFrame = null) {
 async function renderScene(preview = false) {
   scene.name = $('#shot-name').value || scene.name;
   try {
-    const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: toBridgeShot(bindShot(scene, s), ALL_IDS()) }));
+    const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: bridge(bindShot(scene, s)) }));
     const r = await api('render-scene', { name: scene.name, fps: scene.fps, width: scene.width, height: scene.height, audio: scene.audio?.path || null, preview, shots });
     toast(r.message || 'Scene render started');
     pollRender();
@@ -573,6 +625,7 @@ function toggleDark() {
 function showHelp() {
   const d = h('dialog', {}, h('h2', {}, 'Controls'), h('p', { class: 'hint' },
     'Viewport: drag to orbit, Shift+drag to move the aim, wheel to dolly, Alt+wheel for the lens. Space plays. ← → step frames. K keys the pose, Shift+K keys the camera. Delete removes the selected key. Ctrl+Z / Ctrl+Shift+Z undo and redo. Ctrl+S saves. Ctrl+D switches dark mode.'),
+    h('p', { class: 'hint' }, 'Idle life (Face tab): Auto blink and Auto ear twitch keep him alive through the whole shot at natural, random moments. Same seed, same render. Keyed blinks and ear moves always win.'),
     h('button', { onclick: () => d.close() }, 'Close'));
   document.body.append(d); d.showModal();
 }
@@ -636,6 +689,7 @@ function loop() { view.render(); requestAnimationFrame(loop); }
     state: () => ({ scene: scene.name, shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
       frame, length: project.length, fps: scene.fps, width: scene.width, height: scene.height, autoKey, file: filePath, unsaved: dirty,
       values: Object.fromEntries([...BUNNY_IDS, ...FACE_IDS, ...CAM_IDS].map(id => [id, round(current(id))])),
+      idle: { ...idleOf(project), events: idleNow()?.events || [] },
       keyed: Object.fromEntries(Object.entries(project.tracks).map(([id, ks]) => [id, ks.map(k => [k.f, round(k.v), k.ease])])) }),
     setValues(values, at, key) {
       pushUndo();
@@ -656,6 +710,12 @@ function loop() { view.render(); requestAnimationFrame(loop); }
       refreshAll(); return this.state();
     },
     addShot(duplicate) { addShot(!!duplicate); return this.state(); },
+    setIdle(p = {}) {
+      const { allShots, ...patch } = p;
+      for (const k of Object.keys(patch)) if (!(k in IDLE_DEFAULT)) throw Error(`Unknown idle setting ${k}; use ${Object.keys(IDLE_DEFAULT).join(', ')}`);
+      setIdle(patch, !!allShots);
+      return { idle: { ...idleOf(project), events: idleNow()?.events || [] }, shot: project.code };
+    },
     selectShot(ref) { selectShot(ref); return this.state(); },
     moveShot(ref, to) { const i = shotIndex(ref); moveShot(Math.max(0, Math.min(scene.shots.length - 1, to)) - i, i); return this.state(); },
     deleteShot(ref) { const i = shotIndex(ref); if (scene.shots.length === 1) throw Error('A scene needs at least one shot'); pushUndo(); scene.shots.splice(i, 1); scene.active = Math.min(i, scene.shots.length - 1); useScene(scene); return this.state(); },

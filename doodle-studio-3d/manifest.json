@@ -1,8 +1,8 @@
 {
- "version": "20261030-052943",
- "notes": "Smaller round pupils with room inside the eye, on all 88 faces. Ears fold about the edge of their base (no hook where an ear meets the head).",
+ "version": "20261030-061139",
+ "notes": "Idle life: Auto blink and Auto ear twitch toggles on the Face tab. Natural random timing with a seed, so renders repeat. Keyed blinks and ear moves always win.",
  "runtime": "44.9.0",
- "published": "2026-10-30T05:29:43.745Z",
+ "published": "2026-10-30T06:11:50.134Z",
  "files": {
   "resources/app/main.cjs": {
    "sha256": "a6b4f0650186f21747b1af2eafb766d43b82db14e30034775dad8d2ae1b3920b",
@@ -10,9 +10,9 @@
    "gz": "files/a6b4f0650186f21747b1af2eafb766d43b82db14e30034775dad8d2ae1b3920b.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "84194b9e1a315cf6b0190cf3161ff42b65871d760ab468ee5645e3ddccbc06c0",
-   "size": 10116,
-   "gz": "files/84194b9e1a315cf6b0190cf3161ff42b65871d760ab468ee5645e3ddccbc06c0.gz"
+   "sha256": "9c88d63257745196c14500dcc4e8c37b468f003189437a732afa07631bf7a693",
+   "size": 10879,
+   "gz": "files/9c88d63257745196c14500dcc4e8c37b468f003189437a732afa07631bf7a693.gz"
   },
   "resources/app/package.json": {
    "sha256": "532fae709da00930795b2cede63949b010cae0da67d760fe7b8756fbe067c18a",
@@ -139,15 +139,20 @@
    "size": 14232,
    "gz": "files/9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985.gz"
   },
+  "resources/app/ui/src/idle.js": {
+   "sha256": "63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef",
+   "size": 8014,
+   "gz": "files/63cb57dcbe2b26cef20504777a6eb10dde8640fb6e012545360a50f9d94092ef.gz"
+  },
   "resources/app/ui/src/main.js": {
-   "sha256": "16ef670a9c3831335cd9c0c4f7a5b03bc5970e23273c748e9dec59b015a255cb",
-   "size": 46353,
-   "gz": "files/16ef670a9c3831335cd9c0c4f7a5b03bc5970e23273c748e9dec59b015a255cb.gz"
+   "sha256": "af373bbfc2ba22540256b745e19a7bfbf1638e89a70c77a4c5a316812fe39ea6",
+   "size": 51600,
+   "gz": "files/af373bbfc2ba22540256b745e19a7bfbf1638e89a70c77a4c5a316812fe39ea6.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "888d94bf80bee024ed0e57738fbd71a8cd081f1e87ed9bbd146c54155bece66f",
-   "size": 4749,
-   "gz": "files/888d94bf80bee024ed0e57738fbd71a8cd081f1e87ed9bbd146c54155bece66f.gz"
+   "sha256": "208cb94f9f7c50dc7daeea71035b4b458f79dbb5faf34bcb3fa148bd4d0325cf",
+   "size": 5833,
+   "gz": "files/208cb94f9f7c50dc7daeea71035b4b458f79dbb5faf34bcb3fa148bd4d0325cf.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "e2d22b204ffde706c203921ee498680cdbc7a2949eddc8fb6d6fe82a5d821ba8",
@@ -155,9 +160,9 @@
    "gz": "files/e2d22b204ffde706c203921ee498680cdbc7a2949eddc8fb6d6fe82a5d821ba8.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "671c97f1071a9d247487d475173ed76fb9479bc5d9706e9428ef4b085c45ae8b",
-   "size": 8919,
-   "gz": "files/671c97f1071a9d247487d475173ed76fb9479bc5d9706e9428ef4b085c45ae8b.gz"
+   "sha256": "2ebbb4c4da4f0ac07ae5e7427b8f51d4bcb4da232c9c29ef29752d689812ca21",
+   "size": 9148,
+   "gz": "files/2ebbb4c4da4f0ac07ae5e7427b8f51d4bcb4da232c9c29ef29752d689812ca21.gz"
   },
   "resources/app/ui/src/viewport.js": {
    "sha256": "93ffd63bfc361dccc095c0b8a6af4c4f8c32490508ce9d6b20e8fa9997627add",
