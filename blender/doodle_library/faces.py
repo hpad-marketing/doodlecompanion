@@ -30,6 +30,7 @@ def apply_expression(item, frame=None, key=True):
     data = _resolve_story_face(arm, fb, item['data'])
     if data is None:
         return  # this face was made for another character
+    _plan_cache.clear()
     for k in FACE_PROPS:
         if k in data and k in fb.keys():
             fb[k] = int(data[k])
@@ -216,3 +217,78 @@ def _resolve_story_face(arm, fb, data):
     elif 'mouth_set' in fb.keys():
         fb['mouth_set'] = 0
     return out
+
+
+# ---------------------------------------------------------------- lip sync that fits the face
+TALK_MODES = ('own', 'pucker', 'teeth', 'side', 'none')
+_plan_cache = {}
+
+
+def talk_plan(arm, expr):
+    """(talk mode, speech map) for face number `expr` on this rig. Faces without a story-beat
+    row talk with their own mouths."""
+    txt = bpy.data.texts.get('DOODLE_STUDIO_RIG.json')
+    names = json.loads(txt.as_string()).get('faces', []) if txt else []
+    names = [n if isinstance(n, str) else n.get('name') for n in names]
+    if not (0 <= expr < len(names)):
+        return 'own', {}
+    if not _plan_cache:
+        for it in index.items('expression'):
+            d = it.get('data') or {}
+            if d.get('expression_name'):
+                _plan_cache[d['expression_name']] = (d.get('talk', 'own'), d.get('speech_map') or {})
+    return _plan_cache.get(names[expr], ('own', {}))
+
+
+def fit_speech(arm=None, frames=None):
+    """Make every keyed speech mouth fit the face showing on that frame (the face can change
+    mid-clip, so it is read at each key, never once per clip):
+      pucker  visemes go through the face's speech map (the pout talks on Pucker 01-04)
+      teeth   speaks through the active mouth set (the face already switched it)
+      side    normal visemes
+      none    on spoken keys the face drops back to the normal face (0) and comes back after
+    Returns how many keys it changed."""
+    if arm is None:
+        arm, fb = face_bone()
+    else:
+        fb = arm.pose.bones.get('face')
+    from .motions import _fcurves
+    curves = {c.data_path: c for c in _fcurves(arm)}
+    sp = curves.get('pose.bones["face"]["speech_mouth"]')
+    ex = curves.get('pose.bones["face"]["expression"]')
+    if not sp:
+        return 0
+    keys = sorted(sp.keyframe_points, key=lambda k: k.co.x)
+    if frames:
+        keys = [k for k in keys if frames[0] <= k.co.x <= frames[-1]]
+    face_at = lambda f: int(round(ex.evaluate(f))) if ex else int(fb.get('expression', 0))
+    plan = [(k, face_at(k.co.x)) for k in keys]
+    changed, dropped = 0, None
+    for k, face in plan:
+        f = int(k.co.x)
+        talk, smap = talk_plan(arm, face if dropped is None else dropped)
+        vis = int(round(k.co.y))
+        if talk == 'pucker' and smap:
+            new = int(smap.get(str(vis), vis))
+            if new != vis:
+                k.co.y = new
+                changed += 1
+        elif talk == 'none':
+            if vis and dropped is None:        # line starts: back to the normal face
+                dropped = face
+                fb['expression'] = 0
+                fb.keyframe_insert('["expression"]', frame=f, group='face')
+                changed += 1
+            elif not vis and dropped is not None:  # line over: the story face returns
+                fb['expression'] = dropped
+                fb.keyframe_insert('["expression"]', frame=f, group='face')
+                dropped = None
+                changed += 1
+        if dropped is not None and vis == 0 and talk != 'none':
+            dropped = None
+    for c in (sp, ex):
+        if c:
+            for k in c.keyframe_points:
+                k.interpolation = 'CONSTANT'
+            c.update()
+    return changed

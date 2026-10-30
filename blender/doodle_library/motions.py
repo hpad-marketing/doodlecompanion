@@ -188,7 +188,9 @@ def insert_ds(item_id, start=None, include_camera=False, fix_clipping=True, mirr
                 kp.interpolation = 'LINEAR' if linear else 'BEZIER'
                 kp.handle_left_type = kp.handle_right_type = 'AUTO_CLAMPED'
     index.mark_used(item_id)
-    return {'frames': int(frames[-1]), 'keys': len(frames), 'clip_fixes': fixes}
+    from .faces import fit_speech
+    fitted = fit_speech(arm, (start, start + frames[-1]))  # speech mouths that fit the story face
+    return {'frames': int(frames[-1]), 'keys': len(frames), 'clip_fixes': fixes, 'speech_fitted': fitted}
 
 
 MIRROR_PAIRS = [('armL', 'armR'), ('armLForward', 'armRForward'), ('elbowL', 'elbowR'), ('wristL', 'wristR'),

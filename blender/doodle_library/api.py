@@ -29,7 +29,10 @@ def insert(item_id, frame=None, **opts):
                                      fix_clipping=opts.get('fix_clipping', True), mirror=opts.get('mirror', False))
         return motions.insert_action(it, start=frame)
     if cat == 'expression':
-        return faces.apply_expression(it, frame=frame, key=opts.get('key', True))
+        r = faces.apply_expression(it, frame=frame, key=opts.get('key', True))
+        if opts.get('key', True):
+            faces.fit_speech()  # the new face may talk differently (pucker, teeth, no talking)
+        return r
     if cat == 'mouth_set':
         return faces.use_mouth_set(it if it['data'].get('set') else None)
     if cat == 'set':
@@ -55,6 +58,7 @@ lock_bunny = placement.lock_bunny
 resolve_collision = collide.resolve
 bake_collisions = collide.bake
 collision_guard = collide.set_guard
+fit_lip_sync = faces.fit_speech  # re-fit keyed speech mouths to the faces on screen
 use_mouth_set = lambda item_id=None: faces.use_mouth_set(index.get(item_id) if item_id else None)
 sets_list = sets.sets
 switch_set = sets.switch_set
