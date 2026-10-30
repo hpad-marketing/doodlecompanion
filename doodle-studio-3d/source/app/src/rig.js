@@ -249,6 +249,10 @@ export class BunnyRig {
       const wig = Math.max(-1, Math.min(1, Number(values.noseWiggle ?? 0) / 100)), sn = Math.max(0, Math.min(1, Number(values.noseSniff ?? 0) / 100));
       if (wig || sn) post.set('nose', new Matrix4().makeTranslation(0.06 * wig * this.S, 0, 0.05 * sn * this.S).multiply(scaleAbout(nose, 1 + 0.12 * sn, 1 + 0.12 * sn, 1 + 0.12 * sn)));
     }
+    // belly squash and stretch (SQUASH Body, + squashes down and out, volume kept): the head
+    // and arms ride on it without taking its scale (Blender: inherit_scale NONE), so the face,
+    // eyes and mouth never change size
+    const sq = this.bones.has('torso') ? Math.max(-0.3, Math.min(0.3, Number(values.squashBody ?? 0) / 100)) : 0;
     const reach = this.bones.has('MCH-hem_front.L') ? Math.max(0, Math.min(1, Number(values.legReach ?? 0) / 100)) : 0;
     const U = new Map();      // thigh / shin without the reach stretch (their children don't inherit it)
     const stretch = new Set(reach ? ['thigh_fk.L', 'shin_fk.L', 'thigh_fk.R', 'shin_fk.R'] : []);
@@ -296,6 +300,16 @@ export class BunnyRig {
     };
     // DEF-ear follows ear, DEF-ear_tip follows ear_tip (both children of their control)
     for (const name of this.bones.keys()) resolve(name);
+    if (sq) {
+      const A0 = new Map([...A].map(([k, m]) => [k, m.clone()])), w = 1 / Math.sqrt(1 - sq);
+      A.clear();
+      post.set('torso', scaleAbout(this.bones.get('torso'), w, 1 - sq, w));
+      for (const name of this.bones.keys()) resolve(name);
+      const FREE = ['head', 'upper_arm_fk.L', 'upper_arm_fk.R'].filter(n => this.bones.has(n));
+      const rootOf = n => { for (let k = 0; n && k < 64; k++) { if (FREE.includes(n)) return n; n = FOLLOWS[n] || this.bones.get(n)?.parent; } return null; };
+      const shift = Object.fromEntries(FREE.map(n => { const hv = this.bones.get(n).headV, d = hv.clone().applyMatrix4(A.get(n)).sub(hv.clone().applyMatrix4(A0.get(n))); return [n, new Matrix4().makeTranslation(d.x, d.y, d.z)]; }));
+      for (const name of this.bones.keys()) { const r = rootOf(name); if (r) A.set(name, shift[r].clone().multiply(A0.get(name))); }
+    }
     this.writeSkin();
     this.morphWeights = this.sleeveWeights();
     return A;

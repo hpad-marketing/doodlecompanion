@@ -110,9 +110,22 @@ def camera_3d(c, t):
         cam.data.dof.focus_distance = focus
         cam.data.dof.aperture_fstop = float(c.get('fstop', 2.8) or 2.8)
 
+# previz grey: a fast blocking pass in plain grey clay, no cloth, no springs, no ink pass
+previz = bool(shot.get('previz'))
+if previz:
+    opts += ['--no-cloth', '--no-springs']
+    sc.render.engine = 'BLENDER_WORKBENCH'
+    sc.display.shading.light = 'STUDIO'
+    sc.display.shading.color_type = 'SINGLE'
+    sc.display.shading.single_color = (0.27, 0.27, 0.26)
+    sc.display.shading.show_object_outline = True
+    sc.display.shading.object_outline_color = (0.012, 0.012, 0.011)
+
 # the room set, light, outfit and accessories come first: outfits re-bind to the rig
 stage_items = stage.setup(shot, lambda m: print(m, flush=True))
 
+if any(float(f.get('squashBody', 0) or 0) for f in frames):
+    ds_map.squash_setup(arm)
 pose_bones = [b for b in arm.pose.bones if not b.name.startswith(('MCH-', 'DEF-'))]
 objs = collision.objects()
 ear_sets = collision.ear_vertex_sets(objs['head'])
@@ -206,6 +219,8 @@ if flag('--check'):
 if save:
     bpy.ops.wm.save_as_mainfile(filepath=save, copy=True)
 
+if previz:
+    sc.render.engine = 'BLENDER_WORKBENCH'   # the stage may have switched engines
 rng = opts[opts.index('--range') + 1:opts.index('--range') + 3] if '--range' in opts else None
 if '--scale' in opts:
     sc.render.resolution_percentage = int(opts[opts.index('--scale') + 1])
