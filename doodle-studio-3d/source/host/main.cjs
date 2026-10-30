@@ -17,7 +17,7 @@ const settings = {
   get() {
     let s = {};
     try { s = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); } catch {}
-    return { rendersRoot: path.join(docs, 'DeepInDoodles'), blender: '', ...s };
+    return { rendersRoot: path.join(docs, 'DeepInDoodles'), blender: '', libraryDir: path.join(docs, 'Talking Character App', 'blender-library'), ...s };
   },
   set(patch) { fs.writeFileSync(settingsFile, JSON.stringify({ ...settings.get(), ...patch }, null, 2)); },
 };
@@ -32,6 +32,7 @@ function atomicWrite(file, text) {
   fs.renameSync(tmp, file);
 }
 
+const library = require('./library.cjs')({ settings });
 const renders = require('./render.cjs')({
   appDir, settings,
   notify(j) {
@@ -100,6 +101,16 @@ const api = {
   async 'blender-versions'() { return { versions: renders.findBlenders(), inUse: renders.blender() || null }; },
   async 'try-blender'({ path: exe }) { const t = await renders.tryBlender(exe, dataDir); return { blender: renders.blender() || null, test: t, versions: renders.findBlenders() }; },
   async reveal({ file }) { if (file && fs.existsSync(file)) shell.showItemInFolder(file); return {}; },
+  // the Doodle Library on this PC (motions, faces, props, sets, outfits): read-only here
+  async library() { return library.items(); },
+  async 'library-motion'({ id }) { return library.motion(id); },
+  async 'pick-library'() {
+    const r = await dialog.showOpenDialog(main, { title: 'Find the Doodle Library folder (it holds library.json)', defaultPath: settings.get().libraryDir, properties: ['openDirectory'] });
+    if (r.canceled || !r.filePaths[0]) return library.items();
+    if (!fs.existsSync(path.join(r.filePaths[0], 'library.json'))) throw Error('That folder has no library.json');
+    settings.set({ libraryDir: r.filePaths[0] });
+    return library.items();
+  },
 };
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -113,7 +124,7 @@ else {
       main.webContents.executeJavaScript(`Promise.resolve(${js})`).then(ok, fail);
     });
     const mcp = require('./mcp.cjs')({ call, api });
-    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp });
+    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir } });
     let saved = {};
     try { saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'window.json'), 'utf8')); } catch {}
     const valid = saved.bounds && screen.getAllDisplays().some(d => saved.bounds.x < d.workArea.x + d.workArea.width && saved.bounds.x + saved.bounds.width > d.workArea.x);

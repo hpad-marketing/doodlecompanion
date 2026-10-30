@@ -118,3 +118,11 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 .slide button.icon{padding:0;min-width:30px}
 .bubble-row{margin-top:4px}
 .bubble-row select{flex:0 0 auto;max-width:96px}
+/* Library tab */
+.library input[type=search]{width:100%;margin:6px 0}
+.library .row .ctl{flex:1;min-width:0}
+.lib-list{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:340px;overflow:auto;margin-top:4px}
+.lib-item{display:flex;align-items:center;gap:6px;text-align:left;white-space:normal;padding:4px 6px;min-height:40px;font-weight:700}
+.lib-item img{width:36px;height:36px;object-fit:contain;flex:none}
+.lib-item small{display:block;font-weight:500;font-size:11px;opacity:.85}
+.lib-placed{font-size:12px;align-items:center;gap:4px;margin:2px 0}

@@ -16,6 +16,7 @@ module.exports = ({ appDir, settings, notify }) => {
   let job = null;
   const queue = [];
   const blender = () => [settings.get().blender, ...BLENDER_GUESSES].find(p => p && fs.existsSync(p));
+  const libraryDir = () => settings.get().libraryDir;
   const safe = n => String(n || 'Untitled scene').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'Untitled scene';
   const base = name => safe(name).replace(/\s+/g, '_');
 
@@ -36,7 +37,14 @@ module.exports = ({ appDir, settings, notify }) => {
   // shots whose content is unchanged since their last render are reused
   const cacheFile = f => path.join(f.renders, '.shot-cache.json');
   const readCache = f => { try { return JSON.parse(fs.readFileSync(cacheFile(f), 'utf8')); } catch { return {}; } };
-  const shotHash = (s, preview) => crypto.createHash('sha256').update(JSON.stringify([s.shot, s.audio || null, !!preview, fs.statSync(path.join(appDir, 'blender', 'Bunny3D_v2.blend')).mtimeMs])).digest('hex').slice(0, 16);
+  // Bunny, the Koala or the Frog: same rig, same bridge, their own .blend
+  const blendFor = shot => {
+    const c = String(shot?.character || 'bunny').replace(/[^a-z0-9_-]/gi, '');
+    const f = c === 'bunny' ? path.join(appDir, 'blender', 'Bunny3D_v2.blend') : path.join(appDir, 'blender', 'chars', c + '.blend');
+    if (!fs.existsSync(f)) throw Error(`No 3D character "${c}" in this build`);
+    return f;
+  };
+  const shotHash = (s, preview) => crypto.createHash('sha256').update(JSON.stringify([s.shot, s.audio || null, !!preview, fs.statSync(blendFor(s.shot)).mtimeMs, settings.get().libraryDir || ''])).digest('hex').slice(0, 16);
 
   // one Blender run; resolves with the step's result
   function runBlender(j, args, logFile) {
@@ -44,7 +52,8 @@ module.exports = ({ appDir, settings, notify }) => {
       const exe = blender();
       if (!exe) return resolve({ code: -1, error: 'Blender was not found. Set its path in Render › Blender location.' });
       const log = fs.createWriteStream(logFile);
-      const p = spawn(exe, args, { windowsHide: true });
+      // the Doodle Library (sets, props, outfits) is read from its folder on this PC
+      const p = spawn(exe, args, { windowsHide: true, env: { ...process.env, DSL_LIBRARY: libraryDir(), DSL_BUNNY: path.join(appDir, 'blender') } });
       j.proc = p;
       let rules = null;
       const onData = d => {
@@ -67,7 +76,7 @@ module.exports = ({ appDir, settings, notify }) => {
     fs.mkdirSync(check, { recursive: true });
     const shotFile = path.join(check, 'shot.json');
     fs.writeFileSync(shotFile, JSON.stringify(s.shot));
-    const args = ['-b', path.join(appDir, 'blender', 'Bunny3D_v2.blend'), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check'];
+    const args = ['-b', blendFor(s.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check'];
     let out = null;
     if (opts.still) args.push('--still', String(opts.still));
     else { out = path.join(f.renders, tag + '.mp4'); args.push('--video', out); }
@@ -154,7 +163,7 @@ module.exports = ({ appDir, settings, notify }) => {
       fs.writeFileSync(shotFile, JSON.stringify({ ...g.shot, width: j.req.width, height: j.req.height }));
       const frames = [...new Set(g.items.map(x => x.frame + 1))];
       j.step = `${code}: ${frames.length} slide${frames.length > 1 ? 's' : ''}`;
-      const args = ['-b', path.join(appDir, 'blender', 'Bunny3D_v2.blend'), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check', '--frames', frames.join(',')];
+      const args = ['-b', blendFor(g.shot), '--python', path.join(appDir, 'blender', 'ds_bridge.py'), '--', shotFile, check, '--check', '--frames', frames.join(',')];
       const r = await runBlender(j, args, path.join(check, 'blender.log'));
       if (r.code !== 0 && !(r.rules || '').startsWith('FAIL')) { j.state = 'failed'; j.detail = `${code}: see blender.log`; j.out = check; return; }
       if (r.rules && r.rules !== 'PASS') j.rules = r.rules;

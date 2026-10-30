@@ -28,6 +28,14 @@ const TOOLS = [
   ['set_idle', 'Idle life for the active shot (or every shot with allShots=true): blink=true turns Auto blink on, twitch=true turns Auto ear twitch on (the Frog\'s eye bumps pop instead). blinkEvery / twitchEvery are the average seconds between them (each gap is randomised); seed fixes the timing so renders repeat. Keyed blinks and ear moves always win. Returns the settings and the frames where blinks and twitches land.',
     { blink: { type: 'boolean' }, twitch: { type: 'boolean' }, blinkEvery: { type: 'number', minimum: 1.5, maximum: 12 }, twitchEvery: { type: 'number', minimum: 2, maximum: 30 }, seed: { type: 'integer', minimum: 1, maximum: 9999 }, allShots: { type: 'boolean' } }],
   ['render_status', 'Progress of the current render (frame, frames, minutes left, queue).', {}],
+  ['set_character', 'Put Bunny, the Koala or the Frog on stage for the whole scene. They share one rig, so every key, motion and camera move carries over; the Koala adds nose controls, and the Frog\'s ears are rigid eye bumps.', { character: { enum: ['bunny', 'koala', 'frog'] } }, ['character']],
+  ['library_list', 'Search the Doodle Library on this PC and the built-in Blender pieces. category: motion (757 incl. mocap and performance), expression (faces and story beats), prop, scenery, set, outfit, accessory, effect, reaction, story, sound. Returns ids for library_use, plus mouthSets for set_stage. Without a query it lists the first matches of the category.',
+    { category: { type: 'string' }, query: { type: 'string' }, limit: { type: 'integer', minimum: 1, maximum: 500 } }],
+  ['library_use', 'Use a library item in the active shot (or shot=code) at frame (default the playhead). A motion becomes editable keys from that frame (mirror=true swaps left and right; the shot grows to fit). A face keys the expression, gaze and ears. A prop, scenery piece, effect (fx:rain), reaction (react:heart), storytime piece (story:time_skip with text, story:journey with text "Home, School") or sound (sound:pop) is placed in the shot and built in Blender at render time; hold="L" or "R" puts a prop in that hand. A set, outfit or accessory changes the stage (shotOnly=true for this shot only).',
+    { id: { type: 'string' }, frame: { type: 'integer', minimum: 0 }, shot: { type: ['string', 'integer'] }, mirror: { type: 'boolean' }, hold: { enum: ['L', 'R', ''] }, text: { type: 'string' }, at: { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3 }, shotOnly: { type: 'boolean' } }, ['id']],
+  ['set_stage', 'Set the stage the scene renders on: set (room id, e.g. "bedroom"), setProps ({"rug": false} to hide pieces of the set), time (day, golden, night), sky (day, sunset, stars, storm), shadows (cel shadows, off unless true), outfit (track, ziphoodie, raincoat; brand black), accessories (["bowtie", "squareglasses", "necktie"]), mouthSet (an id from library_list mouthSets). null clears a key. shotOnly=true sets it for the active shot only, on top of the scene. Returns the merged stage.',
+    { stage: { type: 'object' }, shotOnly: { type: 'boolean' } }, ['stage']],
+  ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
 module.exports = ({ call, api }) => {
@@ -58,6 +66,17 @@ module.exports = ({ call, api }) => {
     },
     set_idle: a => call(`ds3d.setIdle(${JSON.stringify(a || {})})`),
     render_status: () => api['render-status'](),
+    set_character: a => call(`ds3d.setCharacter(${JSON.stringify(a.character)})`),
+    library_list: async a => {
+      const r = await api.library();
+      const extra = await call('ds3dLibraryExtra()');
+      const words = String(a.query || '').toLowerCase().split(/\s+/).filter(Boolean);
+      const rows = [...r.items, ...extra].filter(x => (!a.category || x.category === a.category) && words.every(w => (x.name + ' ' + (x.sub || '') + ' ' + (x.tags || []).join(' ') + ' ' + x.id).toLowerCase().includes(w)));
+      return { found: r.found, dir: r.dir, total: rows.length, items: rows.slice(0, a.limit || 50).map(x => ({ id: x.id, name: x.name, category: x.category, sub: x.sub, frames: x.frames, loop: x.loop, description: x.description, ...(x.category === 'set' ? { room: x.data?.room, pieces: (x.data?.props || []).map(p => p.id) } : {}) })), mouthSets: r.mouthSets };
+    },
+    library_use: a => { const { id, ...opts } = a; return call(`ds3d.libraryUse(${JSON.stringify(id)}, ${JSON.stringify(opts)})`); },
+    set_stage: a => call(`ds3d.setStage(${JSON.stringify(a.stage || {})}, ${!!a.shotOnly})`),
+    remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
 

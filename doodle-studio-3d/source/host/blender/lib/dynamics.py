@@ -22,7 +22,16 @@ DEFAULT_CHAINS = [
 
 
 def bake_springs(arm, frame_start, frame_end, fps=30, chains=None, amount=1.0, substeps=6):
-    chains = chains or DEFAULT_CHAINS
+    if chains is None:
+        chains = list(DEFAULT_CHAINS)
+        over = arm.get('spring_overrides')  # species variants (JSON list of [bone, stiffness, damping, max_deg])
+        if over:
+            import json
+            over = {c[0]: tuple(c) for c in json.loads(over)}
+            chains = [over.get(c[0], c) for c in chains]
+        chains = [c for c in chains if c[3] > 0]  # max angle 0 = no spring (Frog eye bumps)
+        if 'DEF-tail' in arm.pose.bones and not bpy.data.objects.get('BUNNY_tail'):
+            chains = [c for c in chains if c[0] != 'DEF-tail']
     sc = bpy.context.scene
     pb = arm.pose.bones
     mw = arm.matrix_world

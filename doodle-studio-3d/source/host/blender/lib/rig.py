@@ -466,3 +466,44 @@ def style_controls(ob, wgt_coll, S):
     cols['Mechanism'].is_visible = False
     cols['Deform'].is_visible = False
     cols['IK'].is_visible = False
+
+
+REACH_MAX = 1.0  # leg_reach 1 = thigh and shin twice their length
+
+
+def setup_leg_reach(ob):
+    """Sitting leg reach. 'leg_reach' (0-1) lengthens the hidden thigh and shin so a sitting
+    character's legs come out from under the hoodie; the stub feet keep their size and shape.
+    The front of the hem follows the thighs less as the legs reach, so they show (back panel
+    keeps following). leg_reach 0 is exactly the standing rig."""
+    add_prop(ob, 'leg_reach', 0.0, 0.0, 1.0, 'Sitting: 0 = normal legs, 1 = thigh and shin twice as long, hem front stays up (FK legs)')
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = ob.data.edit_bones
+    for side in 'LR':
+        src = eb[f'DEF-thigh.{side}']
+        for part in ('front', 'back'):
+            b = eb.new(f'MCH-hem_{part}.{side}')
+            b.head, b.tail, b.roll = src.head.copy(), src.tail.copy(), src.roll
+            b.parent = eb['body']
+            b.use_deform = True
+    bpy.ops.object.mode_set(mode='OBJECT')
+    pb = ob.pose.bones
+    for side in 'LR':
+        # the length lives on the FK controls; the feet stop inheriting it but keep the character's scale
+        for bn in (f'thigh_fk.{side}', f'shin_fk.{side}'):
+            fc = pb[bn].driver_add('scale', 1)
+            d = fc.driver
+            d.type = 'SCRIPTED'
+            v = d.variables.new(); v.name = 'r'; v.type = 'SINGLE_PROP'
+            v.targets[0].id = ob; v.targets[0].data_path = '["leg_reach"]'
+            d.expression = f'1 + {REACH_MAX} * r'
+        for bn in (f'shin_fk.{side}', f'foot_fk.{side}', f'DEF-foot.{side}'):
+            ob.data.bones[bn].inherit_scale = 'NONE'
+            c = _con(pb[bn], 'COPY_SCALE', 'Character scale', target=ob, subtarget='root',
+                     owner_space='WORLD', target_space='WORLD', use_offset=True)
+            pb[bn].constraints.move(len(pb[bn].constraints) - 1, 0)  # before the FK/IK copies
+        for part in ('front', 'back'):
+            c = _con(pb[f'MCH-hem_{part}.{side}'], 'COPY_ROTATION', 'Thigh', target=ob, subtarget=f'DEF-thigh.{side}')
+            if part == 'front':
+                _drive_infl(c, ob, 'leg_reach', expr='1 - v')

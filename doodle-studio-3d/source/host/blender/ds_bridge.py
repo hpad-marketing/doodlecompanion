@@ -39,7 +39,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, 'lib'))
+sys.path.insert(0, HERE)
 import ds_map, dynamics, rules3d, collision, compat  # noqa: E402
+import stage  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -102,6 +104,9 @@ def camera_3d(c, t):
     cam.data.type = 'PERSP'
     cam.data.lens = c['lens']
 
+# the room set, light, outfit and accessories come first: outfits re-bind to the rig
+stage_items = stage.setup(shot, lambda m: print(m, flush=True))
+
 pose_bones = [b for b in arm.pose.bones if not b.name.startswith(('MCH-', 'DEF-'))]
 objs = collision.objects()
 ear_sets = collision.ear_vertex_sets(objs['head'])
@@ -138,10 +143,15 @@ for i, vals in enumerate(frames):
     fb = arm.pose.bones['face']
     for k in ('expression', 'gaze', 'speech_mouth', 'blink'):
         fb.keyframe_insert(f'["{k}"]', frame=f, group='face')
+    if 'leg_reach' in arm:
+        arm.keyframe_insert('["leg_reach"]', frame=f)
     settings.keyframe_insert('["boil"]', frame=f)
     cam.keyframe_insert('location', frame=f)
     cam.keyframe_insert('rotation_euler', frame=f)
     cam.data.keyframe_insert('ortho_scale' if cam.data.type == 'ORTHO' else 'lens', frame=f)
+
+# props in hand, scenery, effects and storytime pieces, keyed at their frames
+stage.place(stage_items, lambda m: print(m, flush=True))
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}
