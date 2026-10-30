@@ -33,8 +33,64 @@ function atomicWrite(file, text) {
 }
 
 const library = require('./library.cjs')({ settings });
+// overnight batch: when the last queued render finishes, the PC sleeps two minutes later (cancellable)
+let sleepWhenDone = false, sleepTimer = null;
+function idle() {
+  if (!sleepWhenDone) return;
+  sleepWhenDone = false;
+  try { new Notification({ title: 'All renders are done', body: 'The PC goes to sleep in 2 minutes. Tools › Cancel sleep after renders keeps it awake.', icon }).show(); } catch {}
+  clearTimeout(sleepTimer);
+  sleepTimer = setTimeout(() => {
+    sleepTimer = null;
+    if (renders.busy() || process.platform !== 'win32') return;
+    try { require('node:child_process').spawn('rundll32.exe', ['powrprof.dll,SetSuspendState', '0', '1', '0'], { detached: true, windowsHide: true }).unref(); } catch {}
+  }, 120000);
+}
+const dirBytes = d => { let n = 0; try { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const f = path.join(d, e.name); n += e.isDirectory() ? dirBytes(f) : fs.statSync(f).size; } } catch {} return n; };
+const gb = n => +(n / 1e9).toFixed(2);
+// render check folders (logs, shot data, frame checks) in every scene's work\checks, oldest first
+function oldChecks(days) {
+  const root = settings.get().rendersRoot, cut = Date.now() - days * 864e5, out = [];
+  let scenes = [];
+  try { scenes = fs.readdirSync(root, { withFileTypes: true }).filter(e => e.isDirectory()); } catch {}
+  for (const e of scenes) {
+    const dir = path.join(root, e.name, 'work', 'checks');
+    let kids = [];
+    try { kids = fs.readdirSync(dir, { withFileTypes: true }).filter(k => k.isDirectory()); } catch { continue; }
+    for (const k of kids) { const f = path.join(dir, k.name); try { if (fs.statSync(f).mtimeMs < cut) out.push(f); } catch {} }
+  }
+  return out;
+}
+// nightly backup: every scene file in DeepInDoodles\<Scene>\work, one folder per day, kept 7 days
+function nightlyBackup() {
+  try {
+    const dir = path.join(dataDir, 'backups'), day = new Date().toISOString().slice(0, 10), today = path.join(dir, day);
+    fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(today)) {
+      const root = settings.get().rendersRoot;
+      let n = 0;
+      for (const e of fs.readdirSync(root, { withFileTypes: true }).filter(e => e.isDirectory())) {
+        const work = path.join(root, e.name, 'work');
+        let files = [];
+        try { files = fs.readdirSync(work).filter(f => f.endsWith('.ds3d')); } catch { continue; }
+        for (const f of files) { fs.mkdirSync(path.join(today, e.name), { recursive: true }); fs.copyFileSync(path.join(work, f), path.join(today, e.name, f)); n++; }
+      }
+      fs.writeFileSync(path.join(today, 'backup.json'), JSON.stringify({ at: new Date().toISOString(), scenes: n }));
+    }
+    const cut = Date.now() - 7 * 864e5;
+    for (const d of fs.readdirSync(dir)) if (/^\d{4}-\d{2}-\d{2}$/.test(d) && Date.parse(d) < cut) fs.rmSync(path.join(dir, d), { recursive: true, force: true });
+  } catch {}
+}
+// a packed scene keeps its audio next to it: paths are relative to the .ds3d file
+function unpack(project, file) {
+  if (!project.packed || !file) return project;
+  const abs = p => (p && !path.isAbsolute(p) ? path.join(path.dirname(file), p) : p);
+  if (project.audio?.path) project.audio.path = abs(project.audio.path);
+  for (const s of project.shots || []) if (s.audio?.path) s.audio.path = abs(s.audio.path);
+  return project;
+}
 const renders = require('./render.cjs')({
-  appDir, settings,
+  appDir, settings, onIdle: () => idle(),
   notify(j) {
     const ok = j.state === 'done';
     const reused = (j.shots || []).filter(s => s.reused).length;
@@ -74,7 +130,7 @@ const api = {
     if (r.canceled || !r.filePaths[0]) return {};
     const project = JSON.parse(fs.readFileSync(r.filePaths[0], 'utf8'));
     if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
-    return { project, path: r.filePaths[0] };
+    return { project: unpack(project, r.filePaths[0]), path: r.filePaths[0] };
   },
   // never lose work: rolling autosaves, a recovery file for crashes, named versions
   async autosave({ project, file, frame, keep = 5 }) {
@@ -109,7 +165,7 @@ const api = {
   async 'open-file'({ file }) {
     const project = JSON.parse(fs.readFileSync(insideRenders(file), 'utf8'));
     if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
-    return { project, path: file };
+    return { project: unpack(project, file), path: file };
   },
   // free space where renders go: warn before a render can fill the disk
   async disk() {
@@ -145,6 +201,61 @@ const api = {
     return { data: fs.readFileSync(p).toString('base64') };
   },
   async 'render-status'() { return renders.status(); },
+  async 'render-estimate'() { return renders.rate(); },
+  async 'sleep-when-done'({ on }) { sleepWhenDone = !!on; if (!on) { clearTimeout(sleepTimer); sleepTimer = null; } return { on: sleepWhenDone }; },
+  async 'pick-scenes'() {
+    const r = await dialog.showOpenDialog(main, { title: 'Add scenes to the batch', defaultPath: settings.get().rendersRoot, filters: [{ name: 'Doodle Studio 3D scene', extensions: ['ds3d'] }], properties: ['openFile', 'multiSelections'] });
+    if (r.canceled) return { scenes: [] };
+    const scenes = [];
+    for (const f of r.filePaths) { try { const p = JSON.parse(fs.readFileSync(f, 'utf8')); if (p.app === 'doodle-studio-3d') scenes.push({ path: f, project: unpack(p, f) }); } catch {} }
+    return { scenes };
+  },
+  // health check: everything the app needs on this PC
+  async health({ audio = [] } = {}) {
+    const root = settings.get().rendersRoot;
+    let writable = false;
+    try { fs.mkdirSync(root, { recursive: true }); const t = path.join(root, '.ds3d-write-test'); fs.writeFileSync(t, 'ok'); fs.unlinkSync(t); writable = true; } catch {}
+    let freeGB = 0;
+    try { const st = fs.statfsSync(root); freeGB = +(st.bavail * st.bsize / 1e9).toFixed(1); } catch {}
+    const lib = settings.get().libraryDir;
+    return { blender: renders.blender() || null, library: { dir: lib, found: fs.existsSync(path.join(lib, 'library.json')) }, renders: { root, writable }, disk: { freeGB },
+      mcp: { ok: true, port: PORT }, audioMissing: audio.filter(a => !fs.existsSync(a)).map(a => path.basename(a)),
+      cacheGB: gb(oldChecks(0).reduce((n, f) => n + dirBytes(f), 0) + dirBytes(path.join(dataDir, 'blender-check'))) };
+  },
+  async 'cache-info'({ days = 14 }) {
+    const old = oldChecks(days);
+    return { old: { count: old.length, gb: gb(old.reduce((n, f) => n + dirBytes(f), 0)) }, tests: { gb: gb(dirBytes(path.join(dataDir, 'blender-check'))) } };
+  },
+  // only app-made check folders older than `days` and Blender test frames; never renders, finals, versions or scenes
+  async 'cache-clean'({ days = 14 }) {
+    let n = 0;
+    for (const f of oldChecks(Math.max(7, Number(days) || 14))) { n += dirBytes(f); fs.rmSync(f, { recursive: true, force: true }); }
+    const t = path.join(dataDir, 'blender-check'); n += dirBytes(t); fs.rmSync(t, { recursive: true, force: true });
+    return { gb: gb(n) };
+  },
+  // pack project: the scene plus its audio in one folder (work\pack\<Scene>_pack_<stamp>) that opens anywhere
+  async 'pack-project'({ project }) {
+    const { work } = renders.folders(project.name);
+    const clean = String(project.name || 'Untitled scene').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'Untitled scene';
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 13);
+    const dir = path.join(work, 'pack', `${clean.replace(/\s+/g, '_')}_pack_${stamp}`);
+    fs.mkdirSync(path.join(dir, 'audio'), { recursive: true });
+    const p = JSON.parse(JSON.stringify(project)), files = [], missing = [];
+    const take = a => {
+      if (!a?.path) return;
+      if (!fs.existsSync(a.path)) { missing.push(a.path); return; }
+      const name = path.basename(a.path), dst = path.join(dir, 'audio', name);
+      if (!fs.existsSync(dst)) { fs.copyFileSync(a.path, dst); files.push(dst); }
+      a.path = 'audio/' + name;
+    };
+    take(p.audio);
+    for (const s of p.shots || []) take(s.audio);
+    p.packed = true;
+    const file = path.join(dir, clean + '.ds3d');
+    atomicWrite(file, JSON.stringify(p, null, 1));
+    files.unshift(file);
+    return { dir, files, missing };
+  },
   async 'render-cancel'() { return renders.cancel(); },
   async settings(patch) { if (patch && Object.keys(patch).length) settings.set(patch); return { ...settings.get(), blenderFound: renders.blender() || null }; },
   // a new Blender is only switched to after it renders a test frame that passes the rule check
@@ -202,6 +313,13 @@ else {
     if (saved.maximized !== false) main.maximize();
     main.show();
     try { updates = require('./updater.cjs')({ app, dialog, net, window: () => main, logDir: dataDir }); } catch {}
+    // update safety check: the MCP must answer initialize and list its tools
+    updates?.verify(async () => {
+      const r = await net.fetch(`http://127.0.0.1:${PORT}/mcp`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }, { jsonrpc: '2.0', id: 2, method: 'tools/list' }]) });
+      const j = await r.json();
+      return Array.isArray(j) && j[0]?.result?.serverInfo && (j[1]?.result?.tools || []).length > 10;
+    }).catch(() => {});
+    nightlyBackup(); setInterval(nightlyBackup, 60 * 60000);
   }).catch(e => { dialog.showErrorBox('Doodle Studio 3D could not open', String(e && e.stack || e)); app.exit(1); });
   app.on('window-all-closed', () => app.quit());
 }

@@ -12,7 +12,7 @@ const BLENDER_GUESSES = [
   'C:\\Program Files\\Blender Foundation\\Blender 5.0\\blender.exe',
 ];
 
-module.exports = ({ appDir, settings, notify }) => {
+module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
   let job = null;
   const queue = [];
   const blender = () => [settings.get().blender, ...BLENDER_GUESSES].find(p => p && fs.existsSync(p));
@@ -182,6 +182,23 @@ module.exports = ({ appDir, settings, notify }) => {
     if (j.state === 'failed') j.detail = 'Some slides did not render: see work\\checks';
   }
 
+  function next() {
+    while (queue.length) { const [r, s] = queue.shift(); try { start(r, s); return; } catch {} }
+    onIdle();
+  }
+  // seconds per frame on this PC, full quality and quick preview, so the app can estimate render times
+  function learn(j) {
+    if (j.state !== 'done' || j.req.still) return;
+    const rendered = (j.shots || []).filter(s => !s.reused).length;
+    if (!rendered) return;
+    const frames = j.req.shots.filter((s, i) => !j.shots[i]?.reused).reduce((n, s) => n + s.shot.frames.length, 0);
+    if (!frames) return;
+    const spf = (j.ended - j.started) / 1000 / frames, key = j.req.preview ? 'preview' : 'full';
+    const r = settings.get().renderRate || {};
+    r[key] = r[key] ? r[key] * 0.6 + spf * 0.4 : spf;
+    settings.set({ renderRate: r });
+  }
+
   function start(req, scene) {
     if (!blender()) throw Error('Blender was not found. Set its path in Render › Blender location.');
     if (scene === 'carousel') {
@@ -189,7 +206,7 @@ module.exports = ({ appDir, settings, notify }) => {
       job = j;
       runCarousel(j).catch(e => { j.state = 'failed'; j.detail = String(e && e.message || e); }).finally(() => {
         j.ended = Date.now(); notify(j); job = null;
-        if (queue.length) { const [r, s] = queue.shift(); try { start(r, s); } catch {} }
+        next();
       });
       return j;
     }
@@ -199,9 +216,10 @@ module.exports = ({ appDir, settings, notify }) => {
     job = j;
     runJob(j).catch(e => { j.state = 'failed'; j.detail = String(e && e.message || e); }).finally(() => {
       j.ended = Date.now();
+      learn(j);
       notify(j);
       job = null;
-      if (queue.length) { const [r, s] = queue.shift(); try { start(r, s); } catch {} }
+      next();
     });
     return j;
   }
@@ -286,6 +304,8 @@ module.exports = ({ appDir, settings, notify }) => {
       if (!req.shots || !req.shots.length) throw Error('This scene has no shots');
       return enqueue(req, true);
     },
+    rate: () => settings.get().renderRate || {},
+    busy: () => !!job || queue.length > 0,
     status() {
       if (!job) return { state: 'idle', queued: queue.length };
       const el = (Date.now() - job.started) / 1000;

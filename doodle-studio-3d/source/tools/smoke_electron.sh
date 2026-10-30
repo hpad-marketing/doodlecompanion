@@ -26,6 +26,10 @@ call library_use '{"id":"prop-letter_envelope","hold":"R"}' 200
 call set_stage '{"stage":{"set":"bedroom","outfit":"raincoat"}}' 300
 curl -s -o /dev/null -w "library preview: %{http_code}\n" "http://127.0.0.1:54190/lib/previews/outfit/outfit-raincoat.png"
 curl -s -o /dev/null -w "library json blocked: %{http_code}\n" "http://127.0.0.1:54190/lib/library.json"
+call production '{"action":"change_log"}' 300
+call production '{"action":"health"}' 300
+call production '{"action":"preflight"}' 200
+curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}},{"jsonrpc":"2.0","id":2,"method":"tools/list"}]' | python3 -c "import json,sys;j=json.load(sys.stdin);print('update safety probe:', bool(j[0]['result']['serverInfo']) and len(j[1]['result']['tools'])>10)"
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":4,"method":"tools/list"}' | python3 -c "import json,sys;print([t['name'] for t in json.load(sys.stdin)['result']['tools']])"
 curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"save","arguments":{}}}' | head -c 300; echo
 curl -s -o /dev/null -w "evil origin: %{http_code}\n" -X POST http://127.0.0.1:54190/mcp -H 'origin: https://evil.example' -H 'content-type: application/json' -d '{}'
