@@ -76,9 +76,11 @@ export function defaults(id) {
 }
 
 // base keys plus every animation layer that is on (layers add an offset, times their weight)
-export function valueAt(project, id, f) {
+export function valueAt(project, id, f, depth = 0) {
   let v = trackValue(project, id, f);
   if (project.layers && !DISCRETE.has(id)) for (const L of project.layers) if (L.on !== false && L.tracks?.[id]?.length) v += (L.weight ?? 1) * trackValue(L, id, f);
+  // linked controls: another control drives this one (a loop is refused when linking; depth guards old files)
+  if (project.links && depth < 6 && !DISCRETE.has(id)) for (const L of project.links) if (L.to === id && L.on !== false) v += (L.factor ?? 1) * (valueAt(project, L.from, f, depth + 1) - defaults(L.from)) + (L.offset || 0);
   return v;
 }
 export const layerValue = (L, id, f) => (L.tracks?.[id]?.length ? trackValue(L, id, f) : 0);
@@ -164,6 +166,7 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;
   if (project.items?.length) out.items = project.items;
+  if (project.powers && Object.keys(project.powers).length) out.powers = project.powers;   // Blender powers (powers.py)
   if (project.camCuts?.length) out.cuts = project.camCuts.map(f => +(f / project.fps).toFixed(4));   // multi-cam: no blur across a cut
   return out;
 }

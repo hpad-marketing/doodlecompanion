@@ -279,6 +279,13 @@ export class Viewport {
   }
 
   // the middle of the posed head in world space (caption checks, rule lights)
+  // a point on the frame (0..1, y down) dropped onto the upright plane y = depth (Blender axes)
+  unproject(nx, ny, depth = 0) {
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(nx * 2 - 1, 1 - ny * 2), this.camera);
+    const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -depth), new THREE.Vector3());
+    return hit ? [+hit.x.toFixed(4), +hit.y.toFixed(4), +hit.z.toFixed(4)] : null;
+  }
   headPoint() {
     const b = this.rig.bones.get('head');
     if (!b) return new THREE.Vector3(0, 0, 0.55);

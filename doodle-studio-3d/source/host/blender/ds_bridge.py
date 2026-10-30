@@ -42,6 +42,7 @@ sys.path.insert(0, os.path.join(HERE, 'lib'))
 sys.path.insert(0, HERE)
 import ds_map, dynamics, rules3d, collision, compat  # noqa: E402
 import stage  # noqa: E402
+import powers  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -175,6 +176,9 @@ for i, vals in enumerate(frames):
 
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
+
+# Blender powers: doodles in 3D, auto-ink, scatter, crowds, toon liquids, fisheye, 360 video
+powers.apply(shot, cam, lambda m: print(m, flush=True))
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}

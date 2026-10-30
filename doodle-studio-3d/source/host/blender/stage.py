@@ -160,6 +160,9 @@ def place(items, log):
                 hold = it.get('hold')
                 ob = dl.insert(it['id'], frame=f, hold=bool(hold), side=hold if hold in ('L', 'R') else None,
                                location=it.get('at'))
+                if it.get('jelly') and ob is not None:
+                    import powers
+                    powers.jelly(ob, f)
                 if it.get('text') and hasattr(dl, 'set_label'):
                     try:
                         dl.set_label(ob, it['text'])

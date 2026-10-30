@@ -40,6 +40,9 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
   // Bunny, the Koala or the Frog: same rig, same bridge, their own .blend
   const blendFor = shot => {
     const c = String(shot?.character || 'bunny').replace(/[^a-z0-9_-]/gi, '');
+    // a master Bunny file (Blender › Master Bunny file) stands in for the built-in Bunny
+    const master = settings.get().masterBlend;
+    if (c === 'bunny' && master && fs.existsSync(master)) return master;
     const f = c === 'bunny' ? path.join(appDir, 'blender', 'Bunny3D_v2.blend') : path.join(appDir, 'blender', 'chars', c + '.blend');
     if (!fs.existsSync(f)) throw Error(`No 3D character "${c}" in this build`);
     return f;
@@ -130,7 +133,12 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     }
     j.rules = done.every(d => !d.rules || d.rules === 'PASS') ? 'PASS' : done.map(d => d.rules).find(r => r && r !== 'PASS');
     // a single shot is joined too when it carries storytime post (looks, cut-ins, captions)
-    if (!j.scene && (j.req.still || !j.req.post)) { j.state = 'done'; j.video = done[0]?.out; j.id = path.basename(done[0]?.out || j.id); return; }
+    const pano = shots.some(s => s.shot.powers?.pano360);
+    if (!j.scene && (j.req.still || !j.req.post)) {
+      j.state = 'done'; j.video = done[0]?.out; j.id = path.basename(done[0]?.out || j.id);
+      if (pano && !j.req.still && j.video) tagPano(j, j.video);
+      return;
+    }
     // join the shots in order
     const tag = nextVersion(f.renders, base(j.name));
     const out = path.join(f.renders, tag + '.mp4');
@@ -157,7 +165,13 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     j.out = check;
     if (r.code !== 0) { j.state = 'failed'; j.detail = 'Joining the shots failed: see blender.log'; return; }
     j.video = out;
+    if (pano) tagPano(j, out);
     j.state = 'done';
+  }
+  // 360 shots: the video is tagged as a sphere so YouTube and VR players wrap it around the viewer
+  function tagPano(j, file) {
+    if (!/\.mp4$/i.test(file) || !fs.existsSync(file)) return;
+    try { j.pano360 = require('./spherical.cjs').tag360(file); } catch (e) { j.pano360 = { error: e.message }; }
   }
 
   // carousel: full-quality stills, one Blender run per shot (physics still run over the

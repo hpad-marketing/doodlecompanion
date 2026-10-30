@@ -16,6 +16,7 @@ import * as A2 from './animtools2.js';
 import * as S2 from './storytime2.js';
 import * as P from './post.js';
 import * as F2 from './features2.js';
+import * as PW from './powers.js';
 
 const $ = s => document.querySelector(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -357,7 +358,8 @@ async function buildPost(indices, full) {
   const shots = indices.map(i => scene.shots[i]), caps = scene.captions ? scene.captions.tracks[scene.captions.active] || [] : [];
   const markers = full ? (() => { const st = shotStarts(); return scene.shots.flatMap((s, i) => (s.markers || []).map(m => ({ F: st[i] + m.f, note: String(m.note || '') }))).sort((a, b) => a.F - b.F); })() : [];
   const spans = P.markerSpans(markers, scene.fps);
-  const any = shots.some(s => s.look || s.cuts?.length || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length));
+  const trans = full ? PW.transitionsOf(scene.shots) : [];
+  const any = shots.some(s => s.look || s.cuts?.length || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
   if (!any) return null;
   await P.loadFont();
   const W = scene.width, H = scene.height, safe = safeName(scene.name), dir = `${(await api('settings', {})).rendersRoot}/${safe}/work/post`;
@@ -390,6 +392,8 @@ async function buildPost(indices, full) {
     at += s.length;
   }
   if (full) {
+    if (scene.paper) post.paper = { path: await write(g => PW.drawPaper(g, W, H, scene.paper), 'paper'), alpha: +Math.min(1, 0.35 + scene.paper * 0.65).toFixed(2) };
+    if (trans.length) post.transitions = trans.map(t => ({ ...t, color: t.kind === 'flash' ? P.MUSTARD : P.INK }));
     post.bleeps = spans.bleeps;
     if (spans.voices.length && audioInfo()) {
       const buf = processVoice(spans.voices.map(v => ({ from: v.from, to: v.to, factor: P.VOICES[v.preset] })), scene.fps);
@@ -536,6 +540,129 @@ async function scriptToBlocking(text, { captions = false } = {}) {
   }
   dirty = true; useScene(scene);
   return { shots: made, missed, message: `${made.length} shot${made.length > 1 ? 's' : ''} blocked from the script${missed.length ? `; no library match for: ${missed.slice(0, 4).join(', ')}` : ''}` };
+}
+// ---------------------------------------------------------------- Blender powers (powers.js; rendered by powers.py)
+const macroRec = PW.recorder();
+async function pwRun(a) { try { const r = await pw(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
+async function pw(a) {
+  const F = a.frame ?? frame, done = (r, message) => ({ ...r, message });
+  const changed = (label) => { dirty = true; apply(); drawTracks(); updateHud(); return label; };
+  const unproject = (x, y, d) => view.unproject(x, y, d);
+  switch (a.action) {
+    case 'info': return { powers: project.powers || {}, paper: scene.paper || 0, transition: project.transition || null, links: project.links || [], macros: Object.keys(PW.macros.all()), master: (await api('settings', {})).masterBlend || null };
+    case 'doodle': { pushUndo('3D doodle'); const r = PW.addDoodles(project, a.strokes, unproject, { frame: F, draw: a.draw ?? 12, depth: a.depth ?? 0 }); changed(); return done(r, `${r.added} ink doodle${r.added > 1 ? 's' : ''} drawn on from frame ${F}`); }
+    case 'clear_doodles': { pushUndo('Clear doodles'); changed(PW.setPower(project, 'doodles', null)); return done({}, '3D doodles cleared'); }
+    case 'scatter': { pushUndo('Scatter'); const r = PW.addScatter(project, a.kind || 'grass', a); changed(); return done(r, `${PW.SCATTER[a.kind || 'grass']} scattered (Blender render)`); }
+    case 'clear_scatter': { pushUndo('Clear scatter'); PW.setPower(project, 'scatter', null); changed(); return done({}, 'Scatter cleared'); }
+    case 'crowd': { pushUndo('Crowd'); const r = PW.setCrowd(project, a.off ? null : a); changed(); return done(r, r.crowd ? `A crowd of ${r.crowd.count} behind ${charName()}, never touching` : 'Crowd removed'); }
+    case 'liquid': { pushUndo('Liquid'); const r = PW.addLiquid(project, a.kind || 'splash', F, a.at); changed(); return done(r, `${PW.LIQUIDS[a.kind || 'splash']} at frame ${F}`); }
+    case 'clear_liquids': { pushUndo('Clear liquids'); PW.setPower(project, 'liquids', null); changed(); return done({}, 'Liquids cleared'); }
+    case 'fisheye': { pushUndo('Fisheye'); const v = Math.max(0, Math.min(1, +(a.amount ?? 0.5))); const r = PW.setPower(project, 'fisheye', v || null); changed(); return done(r, v ? `Fisheye lens ${Math.round(v * 100)}%` : 'Fisheye off'); }
+    case 'pano360': { pushUndo('360 video'); const w = a.on === false ? null : Math.max(960, Math.min(7680, Math.round((a.width ?? 3840) / 2) * 2)); const r = PW.setPower(project, 'pano360', w); changed(); return done(r, w ? `360 video: ${w}×${w / 2} equirectangular, tagged for YouTube and VR players` : '360 video off'); }
+    case 'autoink': { pushUndo('Auto-ink'); const on = a.on ?? !project.powers?.autoink; const r = PW.setPower(project, 'autoink', on || null); changed(); return done(r, on ? 'Auto-ink: every model without an outline gets Bunny\'s ink' : 'Auto-ink off'); }
+    case 'jelly': {
+      const it = (project.items || [])[a.item ?? (project.items || []).length - 1];
+      if (!it) throw Error('Add a prop from the Library first');
+      pushUndo('Jelly prop'); it.jelly = a.on ?? !it.jelly; if (!it.jelly) delete it.jelly; changed();
+      return done({ item: it.id, jelly: !!it.jelly }, it.jelly ? `${it.id.replace(/^prop-/, '')} wobbles like jelly from its frame` : 'Jelly off');
+    }
+    case 'paper': { pushUndo('Paper finish'); const v = Math.max(0, Math.min(1, +(a.amount ?? 0.5))); scene.paper = v || undefined; if (!v) delete scene.paper; dirty = true; return done({ paper: v }, v ? `Paper finish ${Math.round(v * 100)}% on the joined scene` : 'Paper finish off'); }
+    case 'transition': {
+      if (a.kind && !PW.TRANSITIONS[a.kind]) throw Error('kind must be ' + Object.keys(PW.TRANSITIONS).join(' or ') + ', or null');
+      if (a.kind && scene.active === 0) throw Error('The first shot has nothing to transition from');
+      pushUndo('Transition'); project.transition = a.kind ? { kind: a.kind, frames: Math.max(2, Math.min(60, Math.round(a.frames ?? 12))) } : null; if (!a.kind) delete project.transition; dirty = true; drawTracks();
+      return done({ transition: project.transition || null }, a.kind ? `${PW.TRANSITIONS[a.kind]} into ${shotName(project)}` : 'Hard cut');
+    }
+    case 'link': { if (!(a.from in LABEL || a.from?.startsWith('cam.')) || !(a.to in LABEL || a.to?.startsWith('cam.'))) throw Error('from and to must be control ids (armL, headTurn, cam.yaw...)'); pushUndo('Link controls'); const r = PW.addLink(project, a.from, a.to, a.factor ?? 1, a.offset ?? 0); changed(); return done(r, `${LABEL[a.to] || a.to} now follows ${LABEL[a.from] || a.from} ×${a.factor ?? 1}`); }
+    case 'unlink': { pushUndo('Unlink'); const r = PW.removeLink(project, a.index ?? 0); changed(); return done(r, 'Link removed'); }
+    case 'links': return { links: project.links || [] };
+    case 'master': { const r = await api(a.path === null ? 'settings' : 'pick-master', a.path === null ? { masterBlend: '' } : { path: a.path }); return done({ master: r.masterBlend || r.master || null }, (r.masterBlend || r.master) ? `Renders use the master Bunny file ${(r.masterBlend || r.master).split(/[\\/]/).pop()}` : 'Renders use the built-in Bunny'); }
+    case 'open_master': { const r = await api('open-master', {}); return done(r, r.opened ? `Opened ${r.opened.split(/[\\/]/).pop()} in Blender` : 'No Blender found'); }
+    case 'macro_start': { macroRec.start(frame); updateHud(); return done({ recording: true }, 'Recording a macro: use the menus, then Blender › Macros › Stop and save'); }
+    case 'macro_stop': { const steps = macroRec.stop(); updateHud(); if (!steps.length) return done({ steps: 0 }, 'Nothing recorded'); const name = a.name || `Macro ${Object.keys(PW.macros.all()).length + 1}`; PW.macros.save(name, steps); return done({ name, steps: steps.length }, `Saved "${name}" (${steps.length} steps)`); }
+    case 'macros': return { macros: PW.macros.all() };
+    case 'macro_play': {
+      const steps = PW.macros.all()[a.name];
+      if (!steps) throw Error(`No macro "${a.name}"`);
+      const start = F, all = menus().flatMap(([g, items]) => items.filter(it => Array.isArray(it)).map(([label, fn]) => ({ g, label, fn })));
+      let ran = 0;
+      for (const s of steps) {
+        const c = all.find(x => x.g === s.group && x.label === s.label);
+        if (!c) continue;
+        goto(Math.max(0, Math.min(project.length - 1, start + s.offset)));
+        await c.fn(); ran++;
+      }
+      return done({ name: a.name, ran }, `Played "${a.name}": ${ran} of ${steps.length} steps`);
+    }
+    case 'macro_delete': { PW.macros.remove(a.name); return { macros: Object.keys(PW.macros.all()) }; }
+    default: throw Error('action must be info, doodle, clear_doodles, scatter, clear_scatter, crowd, liquid, clear_liquids, fisheye, pano360, autoink, jelly, paper, transition, link, unlink, links, master, open_master, macro_start, macro_stop, macros, macro_play or macro_delete');
+  }
+}
+function doodleMode() {
+  const fr = $('#frame');
+  document.getElementById('stick-layer')?.remove(); document.querySelector('.stick-bar')?.remove();
+  const cv = h('canvas', { id: 'stick-layer' }), strokes = [];
+  fr.append(cv);
+  const size = () => { cv.width = fr.clientWidth; cv.height = fr.clientHeight; redraw(); };
+  const redraw = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.strokeStyle = '#1F1F1D'; g.lineWidth = 4; g.lineCap = g.lineJoin = 'round'; for (const s of strokes) { g.beginPath(); s.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); } };
+  let cur = null;
+  const xy = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); cur = [xy(e)]; strokes.push(cur); });
+  cv.addEventListener('pointermove', e => { if (cur) { cur.push(xy(e)); redraw(); } });
+  cv.addEventListener('pointerup', () => { cur = null; });
+  const depth = h('select', { 'aria-label': 'Where the doodle sits' }, h('option', { value: '0' }, 'Beside the character'), h('option', { value: '1' }, 'Behind (1 m)'), h('option', { value: '-0.5' }, 'In front (0.5 m)'));
+  const draw = h('input', { type: 'number', min: 1, max: 120, value: 12, style: 'width:52px', title: 'Frames it takes to draw on', 'aria-label': 'Draw-on frames' });
+  const close = () => { cv.remove(); bar.remove(); };
+  const bar = h('div', { class: 'stick-bar' }, h('span', {}, 'Draw ink lines: they stand in 3D space and draw on from the playhead'), depth, h('label', {}, 'draw on ', draw, ' frames'),
+    h('button', { class: 'primary', onclick: () => { const W = cv.width, H = cv.height; pwRun({ action: 'doodle', strokes: strokes.map(s => s.map(([x, y]) => [x / W, y / H])), depth: Number(depth.value), draw: Number(draw.value) }); close(); } }, 'Place in 3D'),
+    h('button', { onclick: () => { strokes.length = 0; redraw(); } }, 'Clear'), h('button', { onclick: close }, 'Cancel'));
+  fr.append(bar);
+  size();
+}
+function powersDialog() {
+  const pw0 = project.powers || {};
+  modal({ h }, 'Blender powers on this shot', close => {
+    const num = (v, min, max, step, w = 56, label) => h('input', { type: 'number', min, max, step, value: v, style: `width:${w}px`, 'aria-label': label });
+    const kind = h('select', { 'aria-label': 'Scatter kind' }, ...Object.entries(PW.SCATTER).map(([k, n]) => h('option', { value: k }, n))), count = num(30, 1, 400, 1, 60, 'How many'), radius = num(1.2, 0.2, 6, 0.1, 56, 'Radius in metres');
+    const crowdN = num(pw0.crowd?.count ?? 14, 1, 80, 1, 56, 'Crowd size'), fish = num(Math.round((pw0.fisheye || 0) * 100), 0, 100, 5, 56, 'Fisheye percent');
+    const liq = h('select', { 'aria-label': 'Liquid' }, ...Object.entries(PW.LIQUIDS).map(([k, n]) => h('option', { value: k }, n)));
+    const act = (a) => () => { close(); pwRun(a()); };
+    return [
+      h('p', { class: 'hint' }, 'These render in Blender. Everything uses ink and mustard at Bunny\'s line weight, and nothing touches the character.'),
+      h('div', { class: 'row' }, h('b', { style: 'min-width:6em' }, 'Doodles'), h('button', { onclick: () => { close(); doodleMode(); } }, 'Draw in 3D…'), h('span', { class: 'hint' }, `${(pw0.doodles || []).length} on this shot`), (pw0.doodles || []).length ? h('button', { onclick: act(() => ({ action: 'clear_doodles' })) }, 'Clear') : null),
+      h('div', { class: 'row' }, h('b', { style: 'min-width:6em' }, 'Scatter'), kind, count, radius, h('span', { class: 'hint' }, 'm'), h('button', { onclick: act(() => ({ action: 'scatter', kind: kind.value, count: Number(count.value), radius: Number(radius.value) })) }, 'Scatter'), (pw0.scatter || []).length ? h('button', { onclick: act(() => ({ action: 'clear_scatter' })) }, `Clear ${(pw0.scatter || []).length}`) : null),
+      h('div', { class: 'row' }, h('b', { style: 'min-width:6em' }, 'Crowd'), crowdN, h('button', { onclick: act(() => ({ action: 'crowd', count: Number(crowdN.value) })) }, pw0.crowd ? 'Update' : 'Add a cheering crowd'), pw0.crowd ? h('button', { onclick: act(() => ({ action: 'crowd', off: true })) }, 'Remove') : null),
+      h('div', { class: 'row' }, h('b', { style: 'min-width:6em' }, 'Liquids'), liq, h('button', { onclick: act(() => ({ action: 'liquid', kind: liq.value })) }, 'At the playhead'), (pw0.liquids || []).length ? h('button', { onclick: act(() => ({ action: 'clear_liquids' })) }, `Clear ${(pw0.liquids || []).length}`) : null),
+      h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('b', { style: 'min-width:6em' }, 'Lens'), fish, h('span', { class: 'hint' }, '% fisheye'), h('button', { onclick: act(() => ({ action: 'fisheye', amount: Number(fish.value) / 100 })) }, 'Set'),
+        h('button', { onclick: act(() => ({ action: 'pano360', on: !pw0.pano360 })) }, pw0.pano360 ? '360 video: on (turn off)' : '360 video'), h('button', { onclick: act(() => ({ action: 'autoink' })) }, pw0.autoink ? 'Auto-ink: on (turn off)' : 'Auto-ink imported models')),
+      h('div', { class: 'row' }, h('b', { style: 'min-width:6em' }, 'Props'), h('button', { onclick: act(() => ({ action: 'jelly' })) }, 'Jelly wobble on the last prop'), h('button', { onclick: close }, 'Close')),
+    ];
+  });
+}
+function transitionDialog() {
+  pick2(`Transition into ${shotName(project)}`, [...Object.entries(PW.TRANSITIONS), ['', 'Hard cut']], k => pwRun({ action: 'transition', kind: k || null }));
+}
+function linkDialog() {
+  const ids = BUNNY_IDS.concat(FACE_IDS, CAM_IDS).filter(id => !DISCRETE.has(id));
+  modal({ h }, 'Linked controls', close => {
+    const sel = lab => h('select', { 'aria-label': lab }, ...ids.map(id => h('option', { value: id }, LABEL[id] || id)));
+    const from = sel('Driver'), to = sel('Follows'), factor = h('input', { type: 'number', step: 0.1, value: 1, style: 'width:56px', 'aria-label': 'Factor' });
+    to.selectedIndex = 1;
+    return [h('p', { class: 'hint' }, 'One control drives another: the follower moves by the driver\'s change times the factor, on top of its own keys.'),
+      h('div', { class: 'ds-list' }, ...(project.links || []).map((l, i) => h('div', { class: 'row' }, h('span', {}, `${LABEL[l.to] || l.to} follows ${LABEL[l.from] || l.from} ×${l.factor}${l.offset ? ` + ${l.offset}` : ''}`), h('button', { onclick: () => { close(); pwRun({ action: 'unlink', index: i }).then(linkDialog); } }, 'Remove')))),
+      h('div', { class: 'row', style: 'flex-wrap:wrap' }, to, h('span', {}, 'follows'), from, h('span', {}, '×'), factor, h('button', { class: 'primary', onclick: () => { close(); pwRun({ action: 'link', from: from.value, to: to.value, factor: Number(factor.value) }).then(linkDialog); } }, 'Link'), h('button', { onclick: close }, 'Close'))];
+  });
+}
+function macroDialog() {
+  const all = PW.macros.all();
+  modal({ h }, 'Macros', close => [h('p', { class: 'hint' }, 'A macro replays menu commands at the same playhead offsets, starting from wherever the playhead is now.'),
+    h('div', { class: 'ds-list' }, ...Object.entries(all).map(([n, st]) => h('div', { class: 'row' }, h('b', { style: 'min-width:8em' }, n), h('span', { class: 'hint' }, `${st.length} steps`), h('button', { onclick: () => { close(); pwRun({ action: 'macro_play', name: n }); } }, 'Play here'), h('button', { onclick: () => { close(); pwRun({ action: 'macro_delete', name: n }).then(macroDialog); } }, 'Delete')))),
+    h('div', { class: 'row' }, macroRec.on ? h('button', { class: 'primary', onclick: () => { close(); const n = prompt('Name this macro:', `Macro ${Object.keys(all).length + 1}`); pwRun({ action: 'macro_stop', name: n || undefined }); } }, 'Stop and save') : h('button', { class: 'primary', onclick: () => { close(); pwRun({ action: 'macro_start' }); } }, 'Start recording'), h('button', { onclick: close }, 'Close'))]);
+}
+async function masterDialog() {
+  const cur = (await api('settings', {})).masterBlend || '';
+  modal({ h }, 'Master Bunny file', close => [h('p', { class: 'hint' }, cur ? `Renders use ${cur}` : 'Renders use the built-in Bunny. A master file is your own copy of Bunny3D_v2.blend with your tweaks; every Bunny render uses it.'),
+    h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('button', { class: 'primary', onclick: () => { close(); pwRun({ action: 'master' }); } }, cur ? 'Pick another…' : 'Pick the master .blend…'), h('button', { onclick: () => { close(); pwRun({ action: 'open_master' }); } }, 'Open master in Blender'), cur ? h('button', { onclick: () => { close(); pwRun({ action: 'master', path: null }); } }, 'Use the built-in Bunny') : null, h('button', { onclick: close }, 'Close'))]);
 }
 function stickMode() {
   const fr = $('#frame');
@@ -780,6 +907,9 @@ const MENUS = [
     ['Make Shorts from this video', () => storyRun('shorts')], ['Import retention CSV (YouTube Studio)…', () => retentionImport()], ['Clear the retention overlay', () => storyRun('retention_clear')], '-', ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())], '-',
     ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()],
     ['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Script to blocking…', () => scriptDialog()]]],
+  ['Blender', [['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
+    ['Transition into this shot…', () => transitionDialog()], ['Paper finish…', () => { const v = prompt('Paper finish on the joined scene, 0 to 100 (0 is off):', String(Math.round((scene.paper || 0) * 100))); if (v != null) pwRun({ action: 'paper', amount: Number(v) / 100 }); }], '-',
+    ['Linked controls…', () => linkDialog()], ['Macros…', () => macroDialog()], ['Master Bunny file…', () => masterDialog()]]],
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
     ['Overnight batch…', () => batchDialog(prodCtx())], ['Cancel sleep after renders', () => api('sleep-when-done', { on: false }).then(() => toast('The PC will stay awake'))], '-',
     ['Render presets…', () => presetsDialog(prodCtx())], ['Pack project…', () => pack(prodCtx()).catch(e => toast(e.message, 5000))], ['Clean up cache…', () => cacheDialog(prodCtx()).catch(e => toast(e.message, 5000))]]],
@@ -807,6 +937,7 @@ function buildMenu() {
 // every command run from a menu, the bar, Ctrl+K or a custom key goes through here
 function runCommand(c) {
   if (!c) return;
+  macroRec.note(c.group, c.label, frame);
   nextLabel = c.label.replace(/…$/, '');
   try { const r = c.run(); if (r?.catch) r.catch(e => toast(e.message, 5000)); } catch (e) { toast(e.message, 5000); } finally { nextLabel = null; }
   noteRun(cmdId(c)); refreshQuickbar();
@@ -1323,7 +1454,7 @@ function updateHud() {
   const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
   $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
     h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
-    h('span', {}, `F${frame}`), ...(fpsText() ? [h('span', {}, fpsText() + (parseInt(fpsText()) < 30 && heavy() ? ' · heavy: ' + heavy() : ''))] : []),
+    h('span', {}, `F${frame}`), ...(macroRec.on ? [h('span', { class: 'rule bad', title: 'Menu commands are being recorded' }, '● Recording macro')] : []), ...(fpsText() ? [h('span', {}, fpsText() + (parseInt(fpsText()) < 30 && heavy() ? ' · heavy: ' + heavy() : ''))] : []),
     ...(ruleLights && rules ? [
       h('span', { class: 'rule ' + (rules.clips.length ? 'bad' : 'ok'), title: rules.clips.length ? 'Inside the head: ' + rules.clips.join(', ') : 'Hands and arms clear of the head' }, rules.clips.length ? '✗ Arm in head' : '✓ No clip'),
       h('span', { class: 'rule ' + (rules.belowFloor || rules.inAir ? 'bad' : 'ok'), title: `Lowest foot ${Math.round(rules.feet * 100)} cm from the floor` }, rules.belowFloor ? '✗ Feet in floor' : rules.inAir ? '✗ In the air' : '✓ Grounded'),
@@ -1542,12 +1673,14 @@ const ALL_IDS = () => BUNNY_IDS.concat(FACE_IDS, CAM_IDS);
 const character = () => scene.character || 'bunny';
 const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s));
 const idleNow = () => idleFor(project, data.face.faces, character());
+// a 360 shot renders equirectangular (2:1), so the joined video takes its size
+const frameSize = shots => { const w = shots.map(s => s.powers?.pano360).find(Boolean); return w ? { width: w, height: w / 2, pano360: true } : { width: scene.width, height: scene.height }; };
 async function render(still = false, preview = false, stillFrame = null, previz = false) {
   if (!still && !preview && !(await diskOk(polCtx()))) return null;
   scene.name = $('#shot-name').value || scene.name;
   try {
     const post = still ? null : await buildPost([scene.active], false);
-    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: previz ? { ...bridge(project), previz: true } : bridge(project), fps: scene.fps, width: scene.width, height: scene.height, post });
+    const r = await api('render', { name: scene.name, code: project.code, still: still ? (stillFrame ?? frame) + 1 : null, preview, audio: project.audio?.path || null, shot: previz ? { ...bridge(project), previz: true } : bridge(project), fps: scene.fps, ...frameSize([project]), post });
     toast(r.message || 'Render started');
     pollRender();
     return r;
@@ -1560,7 +1693,7 @@ async function renderScene(preview = false, checked = false, previz = false) {
   try {
     const shots = scene.shots.map(s => ({ code: s.code, audio: s.audio?.path || null, shot: previz ? { ...bridge(bindShot(scene, s)), previz: true } : bridge(bindShot(scene, s)) }));
     const post = await buildPost(scene.shots.map((_, i) => i), true);
-    const r = await api('render-scene', { name: scene.name, fps: scene.fps, width: scene.width, height: scene.height, audio: scene.audio?.path || null, preview, shots, post });
+    const r = await api('render-scene', { name: scene.name, fps: scene.fps, ...frameSize(scene.shots), audio: scene.audio?.path || null, preview, shots, post });
     toast(r.message || 'Scene render started');
     pollRender();
     return r;
@@ -1685,6 +1818,7 @@ function loop() {
       return { id, label: LABEL[id] || id, min, max, group: id.startsWith('cam.') ? 'camera' : FACE_IDS.includes(id) ? 'face' : PARTS.find(p => p[2].includes(id))?.[1] };
     }),
     names: () => ({ expressions: data.face.faces, gazes: data.face.gazes, mouths: data.face.speech }),
+    bridgeShot: () => bridge(project),   // the active shot as Blender receives it
     state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], markers: project.markers || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
       frame, length: project.length, fps: scene.fps, width: scene.width, height: scene.height, autoKey, file: filePath, unsaved: dirty,
       values: Object.fromEntries([...BUNNY_IDS, ...FACE_IDS, ...CAM_IDS].map(id => [id, round(current(id))])),
@@ -1812,6 +1946,8 @@ function loop() {
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
     undo, redo,
+    // powers.js (MCP tool "powers")
+    async powers(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await pw(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // features2.js (MCP tool "features")
     async features(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await feat(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // post.js (MCP tool "post")
