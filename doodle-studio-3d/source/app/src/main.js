@@ -1,4 +1,5 @@
 // Doodle Studio 3D: editor shell. Same look as Doodle Studio; 3D-specific workflow.
+import * as THREE from 'three';
 import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
@@ -6,7 +7,7 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryPanel, libraryRows, loadLibrary, useItem, setStage, removeItem, CHARACTERS, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
@@ -575,13 +576,13 @@ async function pw(a) {
       pushUndo('Transition'); project.transition = a.kind ? { kind: a.kind, frames: Math.max(2, Math.min(60, Math.round(a.frames ?? 12))) } : null; if (!a.kind) delete project.transition; dirty = true; drawTracks();
       return done({ transition: project.transition || null }, a.kind ? `${PW.TRANSITIONS[a.kind]} into ${shotName(project)}` : 'Hard cut');
     }
-    case 'link': { if (!(a.from in LABEL || a.from?.startsWith('cam.')) || !(a.to in LABEL || a.to?.startsWith('cam.'))) throw Error('from and to must be control ids (armL, headTurn, cam.yaw...)'); pushUndo('Link controls'); const r = PW.addLink(project, a.from, a.to, a.factor ?? 1, a.offset ?? 0); changed(); return done(r, `${LABEL[a.to] || a.to} now follows ${LABEL[a.from] || a.from} ×${a.factor ?? 1}`); }
+    case 'link': { if (!(a.from in LABEL || a.from?.startsWith('cam.')) || !(a.to in LABEL || a.to?.startsWith('cam.'))) throw Error(`from and to must be control ids, e.g. armL, headYaw, cam.yaw (${!(a.from in LABEL || a.from?.startsWith('cam.')) ? a.from : a.to} is not one; list_controls gives them all)`); pushUndo('Link controls'); const r = PW.addLink(project, a.from, a.to, a.factor ?? 1, a.offset ?? 0); changed(); return done(r, `${LABEL[a.to] || a.to} now follows ${LABEL[a.from] || a.from} ×${a.factor ?? 1}`); }
     case 'unlink': { pushUndo('Unlink'); const r = PW.removeLink(project, a.index ?? 0); changed(); return done(r, 'Link removed'); }
     case 'links': return { links: project.links || [] };
     case 'master': { const r = await api(a.path === null ? 'settings' : 'pick-master', a.path === null ? { masterBlend: '' } : { path: a.path }); return done({ master: r.masterBlend || r.master || null }, (r.masterBlend || r.master) ? `Renders use the master Bunny file ${(r.masterBlend || r.master).split(/[\\/]/).pop()}` : 'Renders use the built-in Bunny'); }
     case 'open_master': { const r = await api('open-master', {}); return done(r, r.opened ? `Opened ${r.opened.split(/[\\/]/).pop()} in Blender` : 'No Blender found'); }
-    case 'macro_start': { macroRec.start(frame); updateHud(); return done({ recording: true }, 'Recording a macro: use the menus, then Blender › Macros › Stop and save'); }
-    case 'macro_stop': { const steps = macroRec.stop(); updateHud(); if (!steps.length) return done({ steps: 0 }, 'Nothing recorded'); const name = a.name || `Macro ${Object.keys(PW.macros.all()).length + 1}`; PW.macros.save(name, steps); return done({ name, steps: steps.length }, `Saved "${name}" (${steps.length} steps)`); }
+    case 'macro_start': { macroRec.start(frame); updateHud(); return done({ recording: true }, 'Recording a macro: menu commands and Claude tool calls, then Blender › Macros › Stop and save'); }
+    case 'macro_stop': { const steps = macroRec.stop(); updateHud(); if (!steps.length) throw Error('Nothing was recorded, so no macro was saved. Run menu commands or tool calls between macro_start and macro_stop.'); const name = a.name || `Macro ${Object.keys(PW.macros.all()).length + 1}`; PW.macros.save(name, steps); return done({ name, steps: steps.length }, `Saved "${name}" (${steps.length} steps)`); }
     case 'macros': return { macros: PW.macros.all() };
     case 'macro_play': {
       const steps = PW.macros.all()[a.name];
@@ -589,9 +590,10 @@ async function pw(a) {
       const start = F, all = menus().flatMap(([g, items]) => items.filter(it => Array.isArray(it)).map(([label, fn]) => ({ g, label, fn })));
       let ran = 0;
       for (const s of steps) {
+        goto(Math.max(0, Math.min(project.length - 1, start + s.offset)));
+        if (s.tool) { await api('mcp-replay', { name: s.tool, args: s.args }); ran++; continue; }
         const c = all.find(x => x.g === s.group && x.label === s.label);
         if (!c) continue;
-        goto(Math.max(0, Math.min(project.length - 1, start + s.offset)));
         await c.fn(); ran++;
       }
       return done({ name: a.name, ran }, `Played "${a.name}": ${ran} of ${steps.length} steps`);
@@ -960,6 +962,7 @@ const MENUS = [
     ['Simplify keys', () => toast(`Removed ${simplify(animCtx()).removed} keys the curves did not need`, 4000)],
     ['Loop check', () => { const r = loopCheck(animCtx()); toast(r.seamless ? 'Seamless: the last frame matches the first' : `Not seamless: ${r.mismatched.map(m => LABEL[m.id] || m.id).slice(0, 4).join(', ')}${r.mismatched.length > 4 ? '…' : ''}`, 5000); }],
     ['Make seamless loop', () => { makeLoop(animCtx()); toast('Last frame keyed to match the first'); }],
+    ['Lip sync from the voice (this shot)', () => lipsyncFromAudio()], ['Lip sync from the voice (every shot)', () => lipsyncFromAudio({ all: true })],
     ['Audio drives a control…', () => audioDriveDialog()], ['Mark beats from the audio', () => markBeats()],
     ['Retime shot…', () => { const x = prompt('Speed: below 1 is slower, above 1 is faster (e.g. 0.8 or 1.25). Keys after the playhead move.', '1'); if (x) retime(animCtx(), 1 / Number(x), frame); }], '-',
     ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))], '-',
@@ -1260,7 +1263,14 @@ async function runPreflight(thenRender) {
   preflightDialog(prodCtx(), r, () => renderScene(false, true));
   return r;
 }
-window.ds3dClaude = { begin: (tool, n) => claude.begin(prodCtx(), tool, n), end: (n, failed) => { claude.end(prodCtx(), n, failed); updateHud(); } };
+window.ds3dClaude = { begin: (tool, n, force, args) => { mcpCall = { force: !!force }; macroRec.tool(tool, args, frame); claude.begin(prodCtx(), tool, n); }, end: (n, failed) => { mcpCall = null; claude.end(prodCtx(), n, failed); updateHud(); } };
+// during a Claude (MCP) call nothing may open a blocking dialog: a yes/no needs force: true
+// in the call, a typed answer has to come in the call's arguments, and alerts become toasts
+let mcpCall = null;
+const nativeConfirm = window.confirm.bind(window), nativePrompt = window.prompt.bind(window), nativeAlert = window.alert.bind(window);
+window.confirm = msg => { if (!mcpCall) return nativeConfirm(msg); if (mcpCall.force) return true; throw Error(`Needs a yes first: "${msg}" Ask the user, then repeat the call with force: true.`); };
+window.prompt = (msg, def) => { if (!mcpCall) return nativePrompt(msg, def); throw Error(`This step asks for typed input ("${msg}"). Pass the value in the tool's arguments instead.`); };
+window.alert = msg => { if (!mcpCall) return nativeAlert(msg); toast(String(msg), 5000); };
 
 // ---------------------------------------------------------------- polish.js: autosave, versions, command search, markers
 const polCtx = () => ({
@@ -1312,6 +1322,17 @@ function audioDriveDialog() {
   if (!r) return;
   const [a, b] = r.split(',').map(Number);
   return driveFromAudio(id, a, b);
+}
+// lip sync from the scene voice: mouth keys on one shot, or on every shot (all)
+function lipsyncFromAudio({ shot = null, all = false, gate, hold } = {}) {
+  if (!audioInfo()) throw Error('Import the voice for the scene first (File › Import audio…)');
+  pushUndo('Lip sync from the voice');
+  const opts = { ...(gate != null ? { gate: Number(gate) } : {}), ...(hold != null ? { hold: Number(hold) } : {}) };
+  const st = shotStarts(), which = all ? scene.shots.map((_, i) => i) : [shot ?? scene.active];
+  const out = which.map(i => { const s = scene.shots[i]; if (!s) throw Error('No shot ' + i); return { shot: i, code: s.code, keys: audioLipsync(s, st[i], setKey, opts) }; });
+  dirty = true; apply(); drawTracks();
+  toast(`Lip sync: ${out.reduce((n, o) => n + o.keys, 0)} mouth keys on ${out.length} shot${out.length > 1 ? 's' : ''}`);
+  return { shots: out };
 }
 function driveFromAudio(id, a, b, opts) {
   if (!ALL_IDS().includes(id)) throw Error('No control ' + id);
@@ -1980,6 +2001,7 @@ function loop() {
     storyboard: () => storyboard(),
     importAudio: p => importAudio(p ?? null),
     audioDrive: (id, a, b, opts) => driveFromAudio(id, a, b, opts),
+    lipsync: (o = {}) => lipsyncFromAudio(o),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
     story(a = {}) {
       const out = { retention: () => retentionCheck(), chapters: () => exportChapters(), loop_back: () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); return r; },
@@ -2017,6 +2039,36 @@ function loop() {
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),
+    // scene files (MCP tools new_scene, open_scene, save_as)
+    newScene(a = {}) {
+      if (dirty && !confirm('Start a new blank scene? Unsaved changes are lost (the autosave keeps a copy).')) return null;
+      const sc = newScene(String(a.name || 'Untitled scene'));
+      if (a.character) sc.character = String(a.character);
+      if (a.width && a.height) { sc.width = Number(a.width); sc.height = Number(a.height); }
+      if (a.fps) sc.fps = Number(a.fps);
+      filePath = null; undoStack = []; redoStack = []; dirty = false; frame = 0;
+      useScene(sc);
+      return this.state();
+    },
+    async openScene(file) {
+      if (!file) throw Error('Give the path of a .ds3d scene inside the renders folder');
+      if (dirty && !confirm('Open another scene? Unsaved changes are lost (the autosave keeps a copy).')) return null;
+      const r = await api('open-file', { file });
+      filePath = r.path; undoStack = []; redoStack = []; dirty = false; frame = 0;
+      useScene(migrate(r.project));
+      return { path: filePath, ...this.state() };
+    },
+    async saveAs(a = {}) {
+      if (!a.name && !a.path) throw Error('Give a new scene name (saves to DeepInDoodles\\<name>\\work\\) or a .ds3d path inside the renders folder');
+      if (a.name) { scene.name = String(a.name); $('#shot-name').value = scene.name; }
+      if (a.path) {
+        const r = await api('save-at', { project: scene, path: a.path });
+        filePath = r.path; dirty = false; updateHud();
+        return r;
+      }
+      filePath = null;
+      return saveShot(false, true);
+    },
     undo, redo,
     // cast.js (MCP tool "cast")
     async cast(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await castAct(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
@@ -2038,9 +2090,28 @@ function loop() {
         pick: () => { const r = view.renderer.domElement.getBoundingClientRect(); return clickPick(r.left + (a.x ?? 0.5) * r.width, r.top + (a.y ?? 0.5) * r.height); },
         ik_mode: () => toggleIk(a.on ?? !ikOn),
         ik: () => {
-          const L = limb(), r = A2.ikMove(view, valuesNow(), L, { target: a.target, offset: a.offset }, range);
+          const L = limb(), base = valuesNow(), side = L.endsWith('L') ? '.L' : '.R';
+          const want = a.target ? new THREE.Vector3(...a.target) : A2.endPoint(view, base, L).add(new THREE.Vector3(...(a.offset || [0, 0, 0])));
+          // solve against the head: if the arm would pass through it, the target moves out
+          // from the head 3 cm at a time (up to 30 cm) until the arm clears it
+          const clipsAt = vals => { view.pose(vals); view.group.updateMatrixWorld(); return (view.ruleCheck()?.clips || []).filter(n => n.endsWith(side)); };
+          let r = A2.ikMove(view, base, L, { target: want.toArray() }, range), moved = 0, clips = L.startsWith('arm') ? clipsAt({ ...base, ...r.values }) : [];
+          if (clips.length && !a.allowClip) {
+            // away from the head, out to his side, towards the camera, or up: the nearest clear spot wins
+            const hp = view.headPoint(), sx = Math.sign(A2.endPoint(view, base, L).x - hp.x) || 1, away = want.clone().sub(hp);
+            const dirs = [...(away.length() > 0.02 ? [away.normalize()] : []), [sx, 0, 0], [sx, -1, 0], [0, -1, 0], [sx, 0, 1], [sx, -1, 1]].map(d => (d.isVector3 ? d : new THREE.Vector3(...d)).normalize());
+            let best = null;
+            for (let k = 1; k <= 10 && !best; k++) for (const d of dirs) {
+              const t = want.clone().addScaledVector(d, 0.03 * k), r2 = A2.ikMove(view, base, L, { target: t.toArray() }, range), c2 = clipsAt({ ...base, ...r2.values });
+              if (!c2.length) { best = { r: r2, k }; break; }
+            }
+            if (best) { r = best.r; clips = []; moved = 3 * best.k; }
+          }
           pushUndo('IK ' + L); for (const [id, v] of Object.entries(r.values)) setValue(id, v); drawTracks();
-          return { limb: L, values: r.values, missedCm: +(r.error * 100).toFixed(1), end: A2.v3(A2.endPoint(view, valuesNow(), L)) };
+          const res = { limb: L, values: r.values, missedCm: +(r.error * 100).toFixed(1), end: A2.v3(A2.endPoint(view, valuesNow(), L)) };
+          if (moved) res.note = `Moved the target ${moved} cm out from the head so the arm clears it`;
+          if (clips.length) res.warning = `The ${clips.join(', ')} still pass${clips.length === 1 ? 'es' : ''} through the head in this pose (rule 1). Pick another target.`;
+          return res;
         },
         end_point: () => { const L = limb(), p = A2.endPoint(view, valuesNow(), L); apply(); const q = p.clone().project(view.camera); return { limb: L, frame, at: A2.v3(p), screen: [+((q.x + 1) / 2).toFixed(4), +((1 - q.y) / 2).toFixed(4)] }; },
         pin: () => A2.pin(c, limb(), a.from ?? frame, a.to ?? project.length - 1, a.step ?? 2),

@@ -3,6 +3,7 @@
 const { spawn } = require('child_process'), path = require('path'), fs = require('fs');
 const { chromium } = require('playwright');
 const port = 54299, out = path.join(__dirname, '..', 'devout'), wav = path.join(out, 'beat.wav'), voice = path.join(out, 'voice.wav');
+if (!fs.existsSync(wav)) { fs.mkdirSync(out, { recursive: true }); fs.copyFileSync(path.join(__dirname, 'fixtures', 'beat.wav'), wav); }   // fresh clone
 // a "voice": three phrases of tone with 0.5 s pauses (0-1.2, 1.7-2.6, 3.1-4.0 s)
 {
   const sr = 16000, n = sr * 4.2, d = Buffer.alloc(44 + n * 2);

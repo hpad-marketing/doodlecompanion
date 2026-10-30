@@ -16,6 +16,9 @@ const TOOLS = [
   ['select_shot', 'Make a shot active for editing, by code (e.g. "sh020") or 0-based index.', { shot: { type: ['string', 'integer'] } }, ['shot']],
   ['move_shot', 'Reorder: move a shot (code or index) to a new 0-based position in the scene.', { shot: { type: ['string', 'integer'] }, to: { type: 'integer', minimum: 0 } }, ['shot', 'to']],
   ['delete_shot', 'Delete a shot (code or index). Undo brings it back.', { shot: { type: ['string', 'integer'] } }, ['shot']],
+  ['new_scene', 'Start a new blank scene with one shot (name, character: bunny, koala, frog; width/height, fps). Unsaved changes need force: true.', { name: { type: 'string' }, character: { type: 'string' }, width: { type: 'integer' }, height: { type: 'integer' }, fps: { type: 'integer' }, force: { type: 'boolean' } }],
+  ['open_scene', 'Open a .ds3d scene file from inside the renders folder (DeepInDoodles). Unsaved changes need force: true.', { path: { type: 'string' }, force: { type: 'boolean' } }, ['path']],
+  ['save_as', 'Save the scene under a new name (to DeepInDoodles\\<name>\\work\\<name>.ds3d) or to a .ds3d path inside the renders folder. The open scene then uses that file.', { name: { type: 'string' }, path: { type: 'string' } }],
   ['undo', 'Undo the last change.', {}],
   ['redo', 'Redo.', {}],
   ['save', 'Save the shot (to its file, or to DeepInDoodles\\<name>\\work\\ if it has none yet).', {}],
@@ -78,8 +81,8 @@ const TOOLS = [
   ['set_autosave', 'Autosave interval in minutes (0 = off) and how many copies to keep per scene. Returns the settings.', { minutes: { type: 'number', minimum: 0, maximum: 60 }, keep: { type: 'integer', minimum: 1, maximum: 50 } }],
   ['anim_tool', 'Animator tools on the active shot. action: breakdown (amount 0-100 favours previous..next key, -25..125 overshoots; keys at frame), overlap (part: body, head, ears, armL, armR, legL, legR; amount = frames of lag per control down the chain), simplify (amount = tolerance in degrees, default 0.75; removes keys the curves do not need), loop_check, make_loop (keys the last frame to match the first), retime (amount = speed, 0.8 slower / 1.25 faster, keys after frame move), stepped (on: blocking, keys hold), onion (on: ghost poses of the previous and next key), silhouette (on: figure in solid ink to check readability), mirror_view (on: flips the viewport only), playblast (viewport video with a frame counter to work\\playblast), turntable (the camera circles once over the shot).',
     { action: { enum: ['breakdown', 'overlap', 'simplify', 'loop_check', 'make_loop', 'retime', 'stepped', 'onion', 'silhouette', 'mirror_view', 'playblast', 'turntable'] }, amount: { type: 'number' }, part: { type: 'string' }, frame: { type: 'integer', minimum: 0 }, on: { type: 'boolean' } }, ['action']],
-  ['audio', 'Scene audio. action=import with path (a wav/mp3/m4a/aac/ogg/flac on this PC) sets the voice or music for the whole scene: it plays with the timeline, shows as a waveform and goes into scene renders; action=remove clears it; action=drive keys a control from the loudness over the active shot (id, min = value when quiet, max = value when loud, step frames between keys, default 2). Returns the audio info or the keys made.',
-    { action: { enum: ['import', 'remove', 'drive'] }, path: { type: 'string' }, id: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' }, step: { type: 'integer', minimum: 1, maximum: 12 } }, ['action']],
+  ['audio', 'Scene audio. action=import with path (a wav/mp3/m4a/aac/ogg/flac on this PC) sets the voice or music for the whole scene: it plays with the timeline, shows as a waveform and goes into scene renders; action=remove clears it; action=drive keys a control from the loudness over the active shot (id, min = value when quiet, max = value when loud, step frames between keys, default 2); action=lipsync keys the mouth from the voice (real speech mouths: lips close before words, open and round vowels, teeth on s/f sounds, rest in silence; shot index or all: true for every shot; gate 0-1 silence level, default 0.1; hold min frames per mouth, default 2). Returns the audio info or the keys made.',
+    { action: { enum: ['import', 'remove', 'drive', 'lipsync'] }, path: { type: 'string' }, id: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' }, step: { type: 'integer', minimum: 1, maximum: 12 }, shot: { type: 'integer', minimum: 0 }, all: { type: 'boolean' }, gate: { type: 'number', minimum: 0, maximum: 1 }, hold: { type: 'integer', minimum: 1, maximum: 6 } }, ['action']],
   ['story', 'Storytime helpers for the whole scene. action=retention: hook strength of the first 2 s and every 4+ s stretch with no visual change; chapters: writes YouTube chapters (0:00 Title lines) from markers whose note starts with "Chapter:" to work\\<scene>_chapters.txt; loop_back: keys the last frame of the last shot to the opening pose so a Reel replays seamlessly; gags: running gags from markers noted "gag: ..."; bible: read the story bible, or update it with bible {premise, characters, rules}.',
     { action: { enum: ['retention', 'chapters', 'loop_back', 'gags', 'bible'] }, bible: { type: 'object' } }, ['action']],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
@@ -98,6 +101,9 @@ module.exports = ({ call, api }) => {
     undo: () => call('(ds3d.undo(), ds3d.state())'),
     redo: () => call('(ds3d.redo(), ds3d.state())'),
     save: () => call('ds3d.save()'),
+    new_scene: a => call(`ds3d.newScene(${JSON.stringify(a || {})})`),
+    open_scene: a => call(`ds3d.openScene(${JSON.stringify(a.path || '')})`),
+    save_as: a => call(`ds3d.saveAs(${JSON.stringify(a || {})})`),
     render: a => call(`ds3d.render(${JSON.stringify(a || {})})`),
     render_scene: a => call(`ds3d.renderScene(${JSON.stringify(a || {})})`),
     add_shot: a => call(`ds3d.addShot(${!!a.duplicate})`),
@@ -131,7 +137,8 @@ module.exports = ({ call, api }) => {
     save_version: a => call(`ds3d.saveVersion(${JSON.stringify(a.label)})`),
     set_autosave: a => call(`ds3d.autosave(${JSON.stringify(a || {})})`),
     anim_tool: a => call(`ds3d.animTool(${JSON.stringify(a || {})})`),
-    audio: a => a.action === 'drive' ? call(`ds3d.audioDrive(${JSON.stringify(a.id)}, ${Number(a.min ?? 0)}, ${Number(a.max ?? 10)}, ${JSON.stringify({ step: a.step || 2 })})`)
+    audio: a => a.action === 'lipsync' ? call(`ds3d.lipsync(${JSON.stringify({ shot: a.shot ?? null, all: !!a.all, gate: a.gate ?? null, hold: a.hold ?? null })})`)
+      : a.action === 'drive' ? call(`ds3d.audioDrive(${JSON.stringify(a.id)}, ${Number(a.min ?? 0)}, ${Number(a.max ?? 10)}, ${JSON.stringify({ step: a.step || 2 })})`)
       : call(`ds3d.importAudio(${a.action === 'remove' ? 'null' : JSON.stringify(a.path || '')})`),
     story: a => call(`ds3d.story(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
@@ -144,14 +151,16 @@ module.exports = ({ call, api }) => {
     powers: a => call(`ds3d.powers(${JSON.stringify(a || {})})`),
     cast: a => call(`ds3d.cast(${JSON.stringify(a || {})})`),
   };
-  const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
+  // every tool takes force: true, the user's yes to a step that would otherwise ask (unsaved changes, low disk)
+  const FORCE = { type: 'boolean', description: 'Only after the user said yes: goes ahead where the app would ask first.' };
+  const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: { ...props, force: props.force || FORCE }, ...(required ? { required } : {}) } }));
 
   async function rpc(msg) {
     const { id, method, params } = msg;
     const ok = result => ({ jsonrpc: '2.0', id, result });
     try {
       if (method === 'initialize') return ok({ protocolVersion: params?.protocolVersion || VERSION, capabilities: { tools: {} }, serverInfo: { name: 'doodle-studio-3d', version: '1.0.0' },
-        instructions: 'Doodle Studio 3D: pose Bunny in 3D, move a real camera, key it on a timeline and render in Blender. Track ids match the 2D Doodle Studio (armL, headYaw, ...); camera ids start with cam. Every final animation still needs the moderator gate before export.' });
+        instructions: 'Doodle Studio 3D: pose Bunny in 3D, move a real camera, key it on a timeline and render in Blender. Track ids match the 2D Doodle Studio (armL, headYaw, ...); camera ids start with cam. Every final animation still needs the moderator gate before export. A call that would need a yes from the user (unsaved changes, low disk) fails with "Needs a yes first": ask the user, then repeat it with force: true.' });
       if (method === 'ping') return ok({});
       if (method === 'tools/list') return ok({ tools });
       if (method === 'tools/call') {
@@ -159,7 +168,7 @@ module.exports = ({ call, api }) => {
         if (!fn) return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Unknown tool ' + params?.name } };
         try {
           // the app logs each call (Claude change log, per-change undo, token meter)
-          await call(`window.ds3dClaude && ds3dClaude.begin(${JSON.stringify(params.name)}, ${JSON.stringify(params.arguments || {}).length})`).catch(() => {});
+          await call(`window.ds3dClaude && ds3dClaude.begin(${JSON.stringify(params.name)}, ${JSON.stringify(params.arguments || {}).length}, ${!!params.arguments?.force}, ${JSON.stringify(params.arguments || {})})`).catch(() => {});
           const out = await fn(params.arguments || {});
           const text = JSON.stringify(out ?? { ok: true });
           await call(`window.ds3dClaude && ds3dClaude.end(${text.length}, false)`).catch(() => {});
@@ -174,7 +183,9 @@ module.exports = ({ call, api }) => {
     } catch (e) { return { jsonrpc: '2.0', id, error: { code: -32603, message: String(e && e.message || e) } }; }
   }
 
-  return async function handle(req, res, body) {
+  // macro playback replays recorded tool calls through the same handlers
+  const replay = async (name, args) => { const fn = handlers[name]; if (!fn) throw Error('Unknown tool ' + name); return fn(args || {}); };
+  const handle = async function handle(req, res, body) {
     if (req.method === 'GET') { res.writeHead(405, { allow: 'POST' }); return res.end(); }
     if (req.method === 'DELETE') { res.writeHead(200); return res.end(); }
     // only local callers; refuse browser pages from other origins
@@ -187,4 +198,6 @@ module.exports = ({ call, api }) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(out));
   };
+  handle.replay = replay;
+  return handle;
 };
