@@ -36,21 +36,32 @@ const renders = require('./render.cjs')({
   appDir, settings,
   notify(j) {
     const ok = j.state === 'done';
-    const body = j.state === 'done' ? `Rule check: ${j.rules || 'PASS'}. Saved in ${path.basename(path.dirname(path.dirname(j.out)))}\\work\\renders.`
-      : j.state === 'rules failed' ? `The rule check failed: ${j.rules}. See rules.json in the render folder.` : `Render ${j.state}. See blender.log in the render folder.`;
+    const reused = (j.shots || []).filter(s => s.reused).length;
+    const body = j.scene === 'carousel' && j.state === 'done' ? `${(j.slides || []).length} slides saved in work\\carousel\\${j.id}. Rule check: ${j.rules || 'PASS'}.`
+      : j.state === 'done' ? `Rule check: ${j.rules || 'PASS'}.${reused ? ` ${reused} unchanged shot${reused > 1 ? 's' : ''} reused.` : ''} Saved in ${path.basename(j.video || '')}, in work\\renders.`
+      : j.state === 'cancelled' ? 'Render cancelled.'
+      : j.state === 'rules failed' ? `The rule check failed (${j.detail || j.rules}). See rules.json in work\\checks.` : `Render ${j.state}: ${j.detail || 'see blender.log in work\\checks'}.`;
     try { new Notification({ title: ok ? `${j.id} is ready` : `${j.id}: ${j.state}`, body, icon }).show(); } catch {}
     shell.beep();
-    if (main && !main.isDestroyed()) main.webContents.executeJavaScript(`window.ds3dRenderDone && window.ds3dRenderDone(${JSON.stringify({ id: j.id, state: j.state, rules: j.rules, video: j.video, out: j.out })})`).catch(() => {});
+    if (main && !main.isDestroyed()) main.webContents.executeJavaScript(`window.ds3dRenderDone && window.ds3dRenderDone(${JSON.stringify({ id: j.id, kind: j.scene === 'carousel' ? 'carousel' : j.scene ? 'scene' : 'shot', state: j.state, rules: j.rules, detail: j.detail || null, video: j.video, out: j.out, shots: j.shots, slides: j.slides || null })})`).catch(() => {});
   },
 });
 
+function insideRenders(p) {
+  const root = path.resolve(settings.get().rendersRoot), f = path.resolve(String(p || ''));
+  if (!f.startsWith(root + path.sep) || path.extname(f).toLowerCase() !== '.png') throw Error('Only PNGs inside DeepInDoodles');
+  return f;
+}
+
 const api = {
+  // the scene file lives at DeepInDoodles\<Scene>\work\<Scene>.ds3d
   async save({ project, path: p, auto }) {
     let file = p;
-    if (!file && auto) file = path.join(renders.folders(project.name).work, (project.name || 'shot') + '.ds3d.json');
+    const fname = String(project.name || 'Untitled scene').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() + '.ds3d';
+    if (!file && auto) file = path.join(renders.folders(project.name).work, fname);
     if (!file) {
       const { work } = renders.folders(project.name);
-      const r = await dialog.showSaveDialog(main, { title: 'Save shot', defaultPath: path.join(work, (project.name || 'shot') + '.ds3d.json'), filters: [{ name: 'Doodle Studio 3D shot', extensions: ['json'] }] });
+      const r = await dialog.showSaveDialog(main, { title: 'Save scene', defaultPath: path.join(work, fname), filters: [{ name: 'Doodle Studio 3D scene', extensions: ['ds3d'] }] });
       if (r.canceled || !r.filePath) return {};
       file = r.filePath;
     }
@@ -58,27 +69,36 @@ const api = {
     return { path: file };
   },
   async open() {
-    const r = await dialog.showOpenDialog(main, { title: 'Open shot', defaultPath: settings.get().rendersRoot, filters: [{ name: 'Doodle Studio 3D shot', extensions: ['json'] }], properties: ['openFile'] });
+    const r = await dialog.showOpenDialog(main, { title: 'Open scene', defaultPath: settings.get().rendersRoot, filters: [{ name: 'Doodle Studio 3D scene', extensions: ['ds3d', 'json'] }], properties: ['openFile'] });
     if (r.canceled || !r.filePaths[0]) return {};
     const project = JSON.parse(fs.readFileSync(r.filePaths[0], 'utf8'));
-    if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D shot');
+    if (project.app !== 'doodle-studio-3d') throw Error('That file is not a Doodle Studio 3D scene');
     return { project, path: r.filePaths[0] };
   },
-  async 'export-bridge'({ shot, name }) {
-    const { work } = renders.folders(name);
-    const file = path.join(work, (name || 'shot') + '.shot.json');
+  async 'export-bridge'({ shot, name, code }) {
+    const { checks } = renders.folders(name);
+    const file = path.join(checks, `${String(name || 'scene').replace(/\s+/g, '_')}${code ? '_' + code : ''}.shot.json`);
     atomicWrite(file, JSON.stringify(shot));
     return { path: file };
   },
   async render(req) { return renders.render(req); },
+  async 'render-scene'(req) { return renders.renderScene(req); },
+  async 'render-carousel'(req) { return renders.renderCarousel(req); },
+  // carousel bubbles are drawn in the window, so it reads and writes the slide PNGs, inside DeepInDoodles only
+  async 'read-png'({ path: p }) { return { data: fs.readFileSync(insideRenders(p)).toString('base64') }; },
+  async 'write-png'({ path: p, data }) { fs.writeFileSync(insideRenders(p), Buffer.from(String(data), 'base64')); return {}; },
   async 'render-status'() { return renders.status(); },
   async 'render-cancel'() { return renders.cancel(); },
   async settings(patch) { if (patch && Object.keys(patch).length) settings.set(patch); return { ...settings.get(), blenderFound: renders.blender() || null }; },
+  // a new Blender is only switched to after it renders a test frame that passes the rule check
   async 'pick-blender'() {
     const r = await dialog.showOpenDialog(main, { title: 'Find blender.exe', defaultPath: 'C:\\Program Files\\Blender Foundation', filters: [{ name: 'Blender', extensions: ['exe'] }], properties: ['openFile'] });
-    if (!r.canceled && r.filePaths[0]) settings.set({ blender: r.filePaths[0] });
-    return { blender: renders.blender() || null };
+    if (r.canceled || !r.filePaths[0]) return { blender: renders.blender() || null };
+    const t = await renders.tryBlender(r.filePaths[0], dataDir);
+    return { blender: renders.blender() || null, test: t };
   },
+  async 'blender-versions'() { return { versions: renders.findBlenders(), inUse: renders.blender() || null }; },
+  async 'try-blender'({ path: exe }) { const t = await renders.tryBlender(exe, dataDir); return { blender: renders.blender() || null, test: t, versions: renders.findBlenders() }; },
   async reveal({ file }) { if (file && fs.existsSync(file)) shell.showItemInFolder(file); return {}; },
 };
 

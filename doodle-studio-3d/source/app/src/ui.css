@@ -67,7 +67,7 @@ body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
 .ctl{display:grid;grid-template-columns:minmax(96px,8.5em) minmax(60px,1fr) 64px;align-items:center;gap:8px;min-height:32px}
 .ctl input[type=number]{width:64px;height:28px;min-height:28px;padding:0 4px}
 .ctl .name{display:flex;align-items:center;gap:4px}
-.ctl .keydot{width:10px;height:10px;transform:rotate(45deg);border:2px solid var(--fg);flex:none}
+.ctl .keydot{width:10px;height:10px;margin:0 4px 0 3px;transform:rotate(45deg);border:2px solid var(--fg);flex:none}
 .ctl .keydot.has{background:var(--fg)}
 .ctl .keydot.on{background:var(--fg);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
 .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -84,6 +84,7 @@ body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
 .ux-group button.icon{width:30px;padding:0;display:inline-grid;place-items:center}
 .ux-group button.icon svg{width:16px;height:16px}
 #frame-box{width:60px}
+.shot-chip small{font-weight:600;opacity:.75;margin-left:2px}
 .clock{font:800 12px system-ui;min-width:96px;text-align:right}
 #tracks{position:relative;overflow:auto;min-height:0}
 #tracks .ruler,#tracks .trow{display:grid;grid-template-columns:170px minmax(0,1fr)}
@@ -102,3 +103,15 @@ body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
 dialog{border:var(--line);background:var(--bg);color:var(--fg);padding:16px;max-width:560px}
 dialog::backdrop{background:rgba(31,31,29,.45)}
 .toast{position:fixed;left:50%;bottom:250px;transform:translateX(-50%);background:#1F1F1D;color:#E0A64B;padding:8px 14px;border-radius:2px;font-weight:700;z-index:99;box-shadow:0 0 0 2px #E0A64B}
+
+/* carousel */
+#bubble-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;cursor:move}
+.slides{display:flex;flex-direction:column;gap:4px}
+.slide{display:grid;grid-template-columns:52px minmax(0,1fr) 30px 30px 30px;gap:4px;align-items:center;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent);padding:3px;border-radius:2px}
+.slide.on{border:var(--line)}
+.slide .thumb{width:52px;height:52px;padding:0;overflow:hidden;display:grid;place-items:center}
+.slide .thumb img{width:100%;height:100%;object-fit:cover}
+.slide .meta{display:flex;flex-direction:column;font-size:12px;min-width:0}
+.slide button.icon{padding:0;min-width:30px}
+.bubble-row{margin-top:4px}
+.bubble-row select{flex:0 0 auto;max-width:96px}

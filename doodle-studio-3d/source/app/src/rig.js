@@ -47,7 +47,80 @@ export function decodeMesh(m) {
     index: b64(m.index, Uint32Array), material: b64(m.material, Uint8Array),
     stencilOffset: b64(m.stencilOffset, Uint32Array), stencilIndex: b64(m.stencilIndex, Uint32Array), stencilWeight: b64(m.stencilWeight, Float32Array),
     morphs: Object.fromEntries(Object.entries(m.morphs || {}).map(([k, v]) => [k, b64(v, Float32Array)])),
+    smooth: m.smooth && prepareSmooth(m.smooth, b64(m.cage, Float32Array), m.cageCount),
   };
+}
+
+// Blender's Corrective Smooth (length weighted, restore rest detail in each
+// vertex's tangent frame), limited to the weighted vertices. The ear roots use it
+// so wide folds relax instead of pinching into a notch.
+function prepareSmooth(s, rest, n) {
+  const w = b64(s.weights, Float32Array), E = b64(s.edges, Uint32Array), T = b64(s.tris, Uint32Array);
+  const nb = Array.from({ length: n }, () => []);
+  for (let i = 0; i < E.length; i += 2) { nb[E[i]].push(E[i + 1]); nb[E[i + 1]].push(E[i]); }
+  const vt = Array.from({ length: n }, () => []);
+  for (let i = 0; i < T.length; i += 3) for (let k = 0; k < 3; k++) vt[T[i + k]].push(i);
+  const active = [];
+  for (let v = 0; v < n; v++) if (w[v] > 0) active.push(v);
+  const sm = { factor: s.factor, iterations: s.iterations, w, nb, vt, T, active };
+  const rs = smoothCoords(sm, rest);
+  sm.delta = new Float32Array(active.length * 3);
+  active.forEach((v, a) => {
+    const F = frameAt(sm, rs, v), dx = rest[3 * v] - rs[3 * v], dy = rest[3 * v + 1] - rs[3 * v + 1], dz = rest[3 * v + 2] - rs[3 * v + 2];
+    for (let k = 0; k < 3; k++) sm.delta[3 * a + k] = F[3 * k] * dx + F[3 * k + 1] * dy + F[3 * k + 2] * dz;
+  });
+  return sm;
+}
+
+function smoothCoords(sm, P) {
+  // Blender's length-weighted pass: lambda doubled, sum of length-weighted edge
+  // vectors divided by (total edge length x edge count), Jacobi update
+  let cur = Float32Array.from(P), nxt = Float32Array.from(P);
+  for (let it = 0; it < sm.iterations; it++) {
+    for (const v of sm.active) {
+      let ax = 0, ay = 0, az = 0, tl = 0;
+      const px = cur[3 * v], py = cur[3 * v + 1], pz = cur[3 * v + 2];
+      for (const j of sm.nb[v]) {
+        const dx = cur[3 * j] - px, dy = cur[3 * j + 1] - py, dz = cur[3 * j + 2] - pz;
+        const len = Math.hypot(dx, dy, dz);
+        ax += dx * len; ay += dy * len; az += dz * len; tl += len;
+      }
+      const div = tl * sm.nb[v].length;
+      if (div <= 1e-6) continue;
+      const f = 2 * sm.factor * sm.w[v] / div;
+      nxt[3 * v] = px + f * ax; nxt[3 * v + 1] = py + f * ay; nxt[3 * v + 2] = pz + f * az;
+    }
+    [cur, nxt] = [nxt, cur];
+    nxt.set(cur);
+  }
+  return cur;
+}
+
+// rows: tangent, bitangent, normal
+function frameAt(sm, P, v) {
+  let nx = 0, ny = 0, nz = 0;
+  for (const t of sm.vt[v]) {
+    const a = 3 * sm.T[t], b = 3 * sm.T[t + 1], c = 3 * sm.T[t + 2];
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const wx = P[c] - P[a], wy = P[c + 1] - P[a + 1], wz = P[c + 2] - P[a + 2];
+    nx += uy * wz - uz * wy; ny += uz * wx - ux * wz; nz += ux * wy - uy * wx;
+  }
+  let l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+  const j = sm.nb[v][0];
+  let tx = P[3 * j] - P[3 * v], ty = P[3 * j + 1] - P[3 * v + 1], tz = P[3 * j + 2] - P[3 * v + 2];
+  const d = tx * nx + ty * ny + tz * nz; tx -= d * nx; ty -= d * ny; tz -= d * nz;
+  l = Math.hypot(tx, ty, tz) || 1; tx /= l; ty /= l; tz /= l;
+  const bx = ny * tz - nz * ty, by = nz * tx - nx * tz, bz = nx * ty - ny * tx;
+  return [tx, ty, tz, bx, by, bz, nx, ny, nz];
+}
+
+function applySmooth(sm, P) {
+  const S = smoothCoords(sm, P);
+  sm.active.forEach((v, a) => {
+    const F = frameAt(sm, S, v), d0 = sm.delta[3 * a], d1 = sm.delta[3 * a + 1], d2 = sm.delta[3 * a + 2];
+    for (let k = 0; k < 3; k++) P[3 * v + k] = S[3 * v + k] + F[k] * d0 + F[3 + k] * d1 + F[6 + k] * d2;
+  });
+  return P;
 }
 
 // Blender's subdivision as a fixed linear map from cage to surface
@@ -62,6 +135,23 @@ export function subdivide(mesh, cage, out = new Float32Array(mesh.count * 3)) {
     out[3 * i] = x; out[3 * i + 1] = y; out[3 * i + 2] = z;
   }
   return out;
+}
+
+// Side views: two ears tipped the same way sit exactly behind each other and draw a
+// doubled line, so one eases EAR_GAP degrees less far (same rule as the Blender
+// bridge's collision.ear_spread, which the render applies).
+const EAR_GAP = 15;
+const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+export function earSpread(values) {
+  const turn = ((((Number(values.turn) || 0) + 180) % 360) + 360) % 360 - 180, a = Math.abs(turn);
+  const w = sstep(40, 65, a) * (1 - sstep(115, 140, a));
+  const fl = Number(values.earLForward) || 0, fr = Number(values.earRForward) || 0, avg = (fl + fr) / 2;
+  if (w <= 0 || Math.abs(avg) < 5) return values;
+  const gap = EAR_GAP * w * Math.min(1, Math.abs(avg) / 15), sign = avg > 0 ? 1 : -1;
+  const easeL = (avg > 0) === (turn > 0);
+  const k = easeL ? 'earLForward' : 'earRForward', other = easeL ? fr : fl, mine = easeL ? fl : fr;
+  if (sign * (other - mine) >= gap) return values;
+  return { ...values, [k]: other - sign * gap };
 }
 
 export class BunnyRig {
@@ -102,6 +192,7 @@ export class BunnyRig {
   }
 
   pose(values = {}) {
+    values = earSpread(values);
     const A = this.A;
     A.clear();
     const local = new Map();
@@ -156,7 +247,7 @@ export class BunnyRig {
     const b = this.bones.get(name);
     const n = b.segments;
     const isTip = name.includes('ear_tip');
-    const prev = isTip ? name.replace('DEF-ear_tip', 'DEF-ear') : null;
+    const prev = isTip ? name.replace('DEF-ear_tip', 'DEF-ear') : 'head';   // the root leaves the skull along the skull
     const next = isTip ? null : name.replace('DEF-ear', 'DEF-ear_tip');
     const curve = posed => {
       const A = k => posed ? (this.A.get(k) || new Matrix4()) : new Matrix4();
@@ -256,6 +347,7 @@ export class BunnyRig {
       }
       out[3 * v] = ox; out[3 * v + 1] = oy; out[3 * v + 2] = oz;
     }
+    if (mesh.smooth) applySmooth(mesh.smooth, out);
     return out;
   }
 

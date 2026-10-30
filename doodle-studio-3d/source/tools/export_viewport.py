@@ -137,7 +137,7 @@ for ob in bpy.data.objects:
     sub_mod = None
     for m in ob.modifiers:
         saved[m.name] = m.show_viewport
-        if m.type in ('ARMATURE', 'CLOTH', 'NODES', 'COLLISION', 'SUBSURF'):
+        if m.type in ('ARMATURE', 'CLOTH', 'NODES', 'COLLISION', 'SUBSURF', 'CORRECTIVE_SMOOTH'):
             m.show_viewport = False
         if m.type == 'SUBSURF':
             sub_mod = m
@@ -186,6 +186,15 @@ for ob in bpy.data.objects:
             morphs[k.name] = b64('f', d)
         bpy.data.meshes.remove(m2)
         k.value = 0.0
+    smooth = None
+    cs = next((m for m in ob.modifiers if m.type == 'CORRECTIVE_SMOOTH'), None)
+    if cs is not None:
+        gi = ob.vertex_groups[cs.vertex_group].index if cs.vertex_group else None
+        cw = [next((g.weight for g in v.groups if g.group == gi), 0.0) if gi is not None else 1.0 for v in cage.vertices]
+        cage.calc_loop_triangles()
+        smooth = {'factor': cs.factor, 'iterations': cs.iterations, 'weights': b64('f', cw),
+                  'edges': b64('I', [i for e in cage.edges for i in e.vertices]),
+                  'tris': b64('I', [i for t in cage.loop_triangles for i in t.vertices])}
     if sub_mod is not None:
         sub_count, faces, sub_mat, offs, idx, wts = subdivision_stencils(cage, sub_mod, mw)
     else:
@@ -206,6 +215,7 @@ for ob in bpy.data.objects:
         'cageCount': n_cage, 'cage': b64('f', pos), 'skinIndex': b64('H', si), 'skinWeight': b64('f', sw), 'morphs': morphs,
         'count': sub_count, 'index': b64('I', faces), 'material': b64('B', sub_mat),
         'stencilOffset': b64('I', offs), 'stencilIndex': b64('I', idx), 'stencilWeight': b64('f', wts),
+        'smooth': smooth,
     })
     print('mesh', ob.name, n_cage, '->', sub_count, 'stencil nnz', len(idx), list(morphs), flush=True)
 

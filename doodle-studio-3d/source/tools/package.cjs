@@ -5,7 +5,7 @@ fs.rmSync(out, { recursive: true, force: true });
 const copy = (from, to) => fs.cpSync(path.join(here, from), path.join(out, to), { recursive: true });
 for (const f of ['package.json', 'main.cjs', 'preload.cjs', 'updater.cjs', 'server.cjs', 'mcp.cjs', 'render.cjs']) copy('host/' + f, f);
 copy('host/blender/Bunny3D_v2.blend', 'blender/Bunny3D_v2.blend');
-copy('host/blender/ds_bridge.py', 'blender/ds_bridge.py');
+for (const f of ['ds_bridge.py', 'ds_concat.py']) copy('host/blender/' + f, 'blender/' + f);
 for (const f of fs.readdirSync(path.join(here, 'host/blender/lib')).filter(f => f.endsWith('.py'))) copy('host/blender/lib/' + f, 'blender/lib/' + f);
 copy('app/index.html', 'ui/index.html');
 copy('app/src', 'ui/src');

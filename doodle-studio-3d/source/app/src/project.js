@@ -14,9 +14,48 @@ const easeFn = {
   hold: () => 0,
 };
 
-export function newProject(name = 'Untitled shot') {
-  return { app: 'doodle-studio-3d', version: 1, name, fps: 30, length: 120, width: 1080, height: 1920, tracks: {}, audio: null, markers: [] };
+// A scene holds its shots in play order, like the 2D Doodle Studio. Shots are
+// coded sh010, sh020, ... so renders name themselves (Bambi_sh020_v003).
+// fps and frame size belong to the scene; each shot has its own timeline.
+export function newScene(name = 'Untitled scene') {
+  return { app: 'doodle-studio-3d', version: 2, name, fps: 30, width: 1080, height: 1920, audio: null, active: 0, shots: [newShotData('sh010')] };
 }
+
+export function newShotData(code, length = 120) {
+  return { uid: Math.random().toString(36).slice(2, 10), code, label: '', length, tracks: {}, audio: null, markers: [] };
+}
+
+// older single-shot files open as a one-shot scene
+export function migrate(p) {
+  if (p && Array.isArray(p.shots)) {
+    p.active = Math.max(0, Math.min(p.shots.length - 1, p.active | 0));
+    return p;
+  }
+  const scene = newScene(p?.name || 'Untitled scene');
+  for (const k of ['fps', 'width', 'height']) if (p?.[k]) scene[k] = p[k];
+  scene.shots[0] = { ...newShotData('sh010', p?.length || 120), tracks: p?.tracks || {}, audio: p?.audio || null, markers: p?.markers || [] };
+  return scene;
+}
+
+export function nextCode(scene, after = scene.shots.length - 1) {
+  const num = s => Number(String(s.code).replace(/\D/g, '')) || 0;
+  const used = new Set(scene.shots.map(num));
+  const a = scene.shots[after] ? num(scene.shots[after]) : 0;
+  const b = scene.shots[after + 1] ? num(scene.shots[after + 1]) : null;
+  // the next free multiple of 10, or a number between two shots when inserting
+  let n = b == null ? Math.ceil((a + 1) / 10) * 10 : Math.floor((a + b) / 2);
+  if (b != null && (n <= a || used.has(n))) n = Math.max(...used) + 10;
+  while (used.has(n)) n += 10;
+  return 'sh' + String(n).padStart(3, '0');
+}
+
+// the editor works on one shot at a time; fps and size read through to the scene
+export function bindShot(scene, shot) {
+  for (const k of ['fps', 'width', 'height']) Object.defineProperty(shot, k, { get: () => scene[k], set: v => { scene[k] = v; }, enumerable: false, configurable: true });
+  return shot;
+}
+
+export const shotSeconds = (scene, shot) => shot.length / scene.fps;
 
 export function defaults(id) {
   if (id.startsWith('cam.')) return CAM_DEFAULT[id.slice(4)] ?? 0;
