@@ -7,7 +7,9 @@ weights (bendy ear bones expanded into their segments), sleeve shape keys,
 the bone hierarchy with rest matrices, Doodle Studio controls and the face
 library. The viewport's JS rig reproduces Blender's FK from this data.
 """
-import bpy, sys, json, base64, array, os, math
+import bpy
+import sys, json, base64, array, os, math
+from mathutils import Vector
 
 argv = sys.argv[sys.argv.index('--') + 1:]
 if argv[0].endswith('.blend'):
@@ -40,6 +42,11 @@ for b in arm.data.bones:
         'segments': b.bbone_segments, 'ease_in': b.bbone_easein, 'ease_out': b.bbone_easeout,
         'length': b.length,
     })
+    pb = arm.pose.bones[b.name]
+    if 'hinge_r' in pb:  # ears fold about the edge of their base (see build_bunny.py)
+        R3 = arm.matrix_world.to_3x3()
+        bones[-1]['hinge'] = {'r': list(pb['hinge_r']), 'e1': list(R3 @ Vector(pb['hinge_e1'])),
+                              'e2': list(R3 @ Vector(pb['hinge_e2']))}
 bmap = {b['name']: b for b in bones}
 
 # bendy bones become N virtual segment bones '<name>#k'

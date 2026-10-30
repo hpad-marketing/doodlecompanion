@@ -1,8 +1,8 @@
 {
- "version": "20261030-030354",
- "notes": "Scenes and shots (shot strip, Shot menu, Render scene joins shots into one video and reuses unchanged shots), snapshot carousels with speech bubbles and numbered PNG export, camera presets and Look at camera, ear fixes (no notch at the base, ears spread in side views), eyes no longer smear on turns, no ochre sliver between the eye outline and the pupil, Blender 5.0 support and a test frame before switching Blender versions. Files: work\\<Scene>.ds3d, work\\renders, work\\checks, work\\carousel.",
+ "version": "20261030-052429",
+ "notes": "Ears fold about the edge of their base, so no hook or notch where an ear meets the head when it bends out. 88 faces with full round pupils. Expressions up to 87.",
  "runtime": "44.9.0",
- "published": "2026-10-30T03:03:55.361Z",
+ "published": "2026-10-30T05:24:30.555Z",
  "files": {
   "resources/app/main.cjs": {
    "sha256": "a6b4f0650186f21747b1af2eafb766d43b82db14e30034775dad8d2ae1b3920b",
@@ -40,9 +40,9 @@
    "gz": "files/6c156cb0b0108a2714e425b28892c6371006a1b24712df2469663f1d052198fd.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
-   "sha256": "10ce9d331efc9ed015e4c7770e0c709c448fa9e18cbde1b18f7a7968613d9d59",
-   "size": 2148668,
-   "gz": "files/10ce9d331efc9ed015e4c7770e0c709c448fa9e18cbde1b18f7a7968613d9d59.gz"
+   "sha256": "9a6f5eb15a7dd09ca8f27da4113c944a829c6d295d8e4af090a5b48de2cea19e",
+   "size": 3882056,
+   "gz": "files/9a6f5eb15a7dd09ca8f27da4113c944a829c6d295d8e4af090a5b48de2cea19e.gz"
   },
   "resources/app/blender/ds_bridge.py": {
    "sha256": "6d0d3e5bea7d83ff85baa8371e6e362b44e0364f91bbbf9aa8f795e2afe73932",
@@ -55,9 +55,9 @@
    "gz": "files/82ebc4420f9cd8813cb56ea79930c97b0f21d44e8e9cc89f78e1810733526e84.gz"
   },
   "resources/app/ui/bunny3d.json": {
-   "sha256": "cfef4525d0b025ac564b2e782bbbc84e999639f4d0304e13d0cab0083f3dcab0",
-   "size": 3989031,
-   "gz": "files/cfef4525d0b025ac564b2e782bbbc84e999639f4d0304e13d0cab0083f3dcab0.gz"
+   "sha256": "b66489a887c6b1f68ffbc46550204216e0cf12ff76546ff4311c81f53ef570dc",
+   "size": 7141653,
+   "gz": "files/b66489a887c6b1f68ffbc46550204216e0cf12ff76546ff4311c81f53ef570dc.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -80,9 +80,9 @@
    "gz": "files/e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9.gz"
   },
   "resources/app/blender/lib/ds_map.py": {
-   "sha256": "992993f27b80ed5072a1264378fa45ac6b2654bc3dee1999a46342e15c0e1a40",
-   "size": 5962,
-   "gz": "files/992993f27b80ed5072a1264378fa45ac6b2654bc3dee1999a46342e15c0e1a40.gz"
+   "sha256": "dad13a2f53904284eaf02fe07a1d40ed73d361a9d0a1e9851014916528197a79",
+   "size": 7060,
+   "gz": "files/dad13a2f53904284eaf02fe07a1d40ed73d361a9d0a1e9851014916528197a79.gz"
   },
   "resources/app/blender/lib/dynamics.py": {
    "sha256": "63ba0623304fcd61249fb3e20e21543768f1dbfaf79c57c818651b984f88724d",
@@ -90,9 +90,9 @@
    "gz": "files/63ba0623304fcd61249fb3e20e21543768f1dbfaf79c57c818651b984f88724d.gz"
   },
   "resources/app/blender/lib/face.py": {
-   "sha256": "b6dd812d82f423c3471efbe3ba181c7fe78c9972de8211aa523130e21c7264e2",
-   "size": 15679,
-   "gz": "files/b6dd812d82f423c3471efbe3ba181c7fe78c9972de8211aa523130e21c7264e2.gz"
+   "sha256": "bc6b887de9efd57c7cb189468320435f5c1ef86782188ec9162500e8f0dbcccb",
+   "size": 15680,
+   "gz": "files/bc6b887de9efd57c7cb189468320435f5c1ef86782188ec9162500e8f0dbcccb.gz"
   },
   "resources/app/blender/lib/garment.py": {
    "sha256": "9ef16d851ceaffc9089fa5ec75da8b3b3ac4fe056f9247f184dca717d0d9db46",
@@ -125,9 +125,9 @@
    "gz": "files/9a37c1b4f1039dc25b78f0b03bcb6e1e2f88ac7febd1b98651020607dd3a4767.gz"
   },
   "resources/app/blender/lib/skin.py": {
-   "sha256": "cc36f98f7d111fbeba66252a67f1539a87068f0197f58f6420d9ca76e5598efa",
-   "size": 4728,
-   "gz": "files/cc36f98f7d111fbeba66252a67f1539a87068f0197f58f6420d9ca76e5598efa.gz"
+   "sha256": "554e58f8a75d196e2bdb69d43700544650d71e31371070f8f6626473cd9b8bd1",
+   "size": 4781,
+   "gz": "files/554e58f8a75d196e2bdb69d43700544650d71e31371070f8f6626473cd9b8bd1.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "ccfc8ccba98a3c42499ee37db7e46ed88d672048156d6850b0c64151614578a2",
@@ -150,9 +150,9 @@
    "gz": "files/888d94bf80bee024ed0e57738fbd71a8cd081f1e87ed9bbd146c54155bece66f.gz"
   },
   "resources/app/ui/src/rig.js": {
-   "sha256": "e1c2b0bc3976d3ba2aa072c654354b85029e968d8932e56026f4d09cdd5a9304",
-   "size": 17769,
-   "gz": "files/e1c2b0bc3976d3ba2aa072c654354b85029e968d8932e56026f4d09cdd5a9304.gz"
+   "sha256": "e2d22b204ffde706c203921ee498680cdbc7a2949eddc8fb6d6fe82a5d821ba8",
+   "size": 18802,
+   "gz": "files/e2d22b204ffde706c203921ee498680cdbc7a2949eddc8fb6d6fe82a5d821ba8.gz"
   },
   "resources/app/ui/src/ui.css": {
    "sha256": "671c97f1071a9d247487d475173ed76fb9479bc5d9706e9428ef4b085c45ae8b",

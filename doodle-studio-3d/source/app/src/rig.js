@@ -187,6 +187,23 @@ export class BunnyRig {
     return M;
   }
 
+  // ears fold about the edge of their base on the side they bend toward (build_bunny.py
+  // stores how far the base reaches in 16 directions); folding about the centre pinches
+  // the near edge into the skull and leaves an inked slit at the corner
+  hingePivot(b, R) {
+    const h = b.hinge;
+    const a = b.tailV.clone().sub(b.headV).normalize();
+    const tip = a.clone().applyMatrix4(new Matrix4().extractRotation(R));
+    const bend = tip.sub(a.clone().multiplyScalar(tip.dot(a)));
+    const e1 = new Vector3(...h.e1), e2 = new Vector3(...h.e2);
+    const x = bend.dot(e1), y = bend.dot(e2);
+    if (x * x + y * y < 1e-12) return b.headV;
+    const ang = ((Math.atan2(y, x) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const n = h.r.length, f = ang / (2 * Math.PI) * n, i = Math.floor(f) % n;
+    const r = h.r[i] + (h.r[(i + 1) % n] - h.r[i]) * (f - Math.floor(f));
+    return b.headV.clone().add(e1.multiplyScalar(Math.cos(ang) * r)).add(e2.multiplyScalar(Math.sin(ang) * r));
+  }
+
   about(p, R) {
     return new Matrix4().makeTranslation(p.x, p.y, p.z).multiply(R).multiply(new Matrix4().makeTranslation(-p.x, -p.y, -p.z));
   }
@@ -226,7 +243,7 @@ export class BunnyRig {
         else {
           if (name === 'torso') M.multiply(new Matrix4().makeTranslation(torsoT.x, torsoT.y, torsoT.z));
           const R = local.get(name);
-          if (R) M.multiply(this.about(b.headV, R));
+          if (R) M.multiply(this.about(b.hinge ? this.hingePivot(b, R) : b.headV, R));
         }
         const ex = this.extra.get(name);
         if (ex) M.multiply(this.about(b.headV, ex));

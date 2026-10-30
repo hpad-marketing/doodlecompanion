@@ -44,9 +44,9 @@ def head_and_ears(ob, ear_info, ear_mid, S):
             w_ear = smoothstep(EAR_ROOT[0] * S, EAR_ROOT[1] * S, t)
             tm = (ear_mid[s] - ei['root']).dot(a)
             w_tip = smoothstep(tm - 0.12 * S, tm + 0.12 * S, t)  # bendy bones smooth the joint
-            best = (s, w_ear, w_tip)
+            best = (s, w_ear, w_tip, t)
         if best:
-            s, w_ear, w_tip = best
+            s, w_ear, w_tip, t = best  # t of the chosen ear, not the last one tried
             w_head = 1.0 - w_ear
             ge, gt = groups[s]
             # the band where skull turns into ear, reaching down into the saddle between the ears
