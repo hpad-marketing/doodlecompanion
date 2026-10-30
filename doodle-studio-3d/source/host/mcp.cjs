@@ -41,6 +41,11 @@ const TOOLS = [
     { action: { enum: ['cold_open', 'beat_map', 'add_beat', 'mood', 'moods', 'genre', 'gestures', 'eye_darts', 'jump_scare', 'foley', 'freeze_label', 'chapter_cards', 'sponsor', 'shorts_plan', 'shorts', 'retention', 'retention_clear'] },
       shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, seconds: { type: 'number', minimum: 0.2 }, text: { type: 'string' }, beat: { type: 'string' }, mood: { type: ['string', 'null'] }, light: { type: 'boolean' },
       genre: { type: 'string' }, strength: { type: 'number' }, every: { type: 'number', minimum: 0.4 }, seed: { type: 'integer' }, name: { type: 'string' }, csv: { type: 'string' } }, ['action']],
+  ['post', 'Storytime part 3: what the scene render lays over and under the shots. action=look (shot, look: flashback, vhs or null) | photo (path: png/jpg/webp, frame, seconds, x, y, size, tilt: a real photo cut-in with an ink outline) | pip (path: a video, or clip_shot: a shot of this scene; corner tl/tr/bl/br, size: narrator picture-in-picture) | bubble (path or clip_shot, x, y, size: imagination bubble) | cuts | remove_cut (index) | music (path, volume 0-1, duck 0-1: a music bed that dips under the voice; path null removes it) | caption (text, frame, seconds, lang en/hi) | captions (lang) | caption_lang (lang) | highlight (on: word-by-word highlight) | clear_captions (lang) | srt_import (srt, lang) | srt_export (lang) | build (all: false for the active shot; returns the post plan and writes its PNGs to <Scene>\\work\\post). Markers drive the sound side: "bleep: 0.6", "voice: chipmunk" (high, low, giant, robot) up to "voice: normal", and "quiet" before a "scare" hushes the music. shot and frame select where it acts.',
+    { action: { enum: ['look', 'photo', 'pip', 'bubble', 'cuts', 'remove_cut', 'music', 'caption', 'captions', 'caption_lang', 'highlight', 'clear_captions', 'srt_import', 'srt_export', 'build'] },
+      shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, seconds: { type: 'number', minimum: 0.1 }, look: { type: ['string', 'null'] }, path: { type: ['string', 'null'] }, clip_shot: { type: ['string', 'integer'] },
+      x: { type: 'number' }, y: { type: 'number' }, size: { type: 'number', minimum: 0.05, maximum: 1 }, tilt: { type: 'number' }, corner: { enum: ['tl', 'tr', 'bl', 'br'] }, index: { type: 'integer', minimum: 0 },
+      volume: { type: 'number', minimum: 0, maximum: 1 }, duck: { type: 'number', minimum: 0, maximum: 1 }, text: { type: 'string' }, lang: { enum: ['en', 'hi'] }, on: { type: 'boolean' }, srt: { type: 'string' }, all: { type: 'boolean' } }, ['action']],
   ['render_status', 'Progress of the current render (frame, frames, minutes left, queue).', {}],
   ['set_character', 'Put Bunny, the Koala or the Frog on stage for the whole scene. They share one rig, so every key, motion and camera move carries over; the Koala adds nose controls, and the Frog\'s ears are rigid eye bumps.', { character: { enum: ['bunny', 'koala', 'frog'] } }, ['character']],
   ['library_list', 'Search the Doodle Library on this PC and the built-in Blender pieces. category: motion (757 incl. mocap and performance), expression (faces and story beats), prop, scenery, set, outfit, accessory, effect, reaction, story, sound. Returns ids for library_use, plus mouthSets for set_stage. Without a query it lists the first matches of the category.',
@@ -119,6 +124,7 @@ module.exports = ({ call, api }) => {
     workflow: a => call(`ds3d.workflow(${JSON.stringify(a || {})})`),
     anim2: a => call(`ds3d.anim2(${JSON.stringify(a || {})})`),
     story2: a => call(`ds3d.story2(${JSON.stringify(a || {})})`),
+    post: a => call(`ds3d.post(${JSON.stringify(a || {})})`),
   };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: props, ...(required ? { required } : {}) } }));
 

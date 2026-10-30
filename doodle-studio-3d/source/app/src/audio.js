@@ -67,6 +67,34 @@ export function wavBase64(from = 0, to = buf ? buf.duration : 0, source = buf) {
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(s);
 }
+// opt-in character voices: a copy of the scene audio with some spans pitch-shifted
+// (a two-tap delay-line shifter, crossfaded) or ring-modulated for a robot
+export function processVoice(spans, fps) {
+  if (!buf || !spans.length) return null;
+  const sr = buf.sampleRate, out = new AudioBuffer({ length: buf.length, numberOfChannels: buf.numberOfChannels, sampleRate: sr });
+  const W = Math.round(sr * 0.045);
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const x = buf.getChannelData(c), y = out.getChannelData(c);
+    y.set(x);
+    const at = t => { const i = Math.floor(t), k = t - i; return i < 0 ? 0 : (x[i] || 0) * (1 - k) + (x[i + 1] || 0) * k; };
+    for (const sp of spans) {
+      const a = Math.max(0, Math.floor(sp.from / fps * sr)), b = Math.min(x.length, isFinite(sp.to) ? Math.floor(sp.to / fps * sr) : x.length);
+      const fade = Math.min(Math.round(sr * 0.01), Math.floor((b - a) / 2));
+      for (let i = a; i < b; i++) {
+        let v;
+        if (sp.factor === 'robot') v = x[i] * (0.6 + 0.4 * Math.sin(2 * Math.PI * 55 * i / sr)) * Math.sin(2 * Math.PI * 30 * i / sr) * 1.6;
+        else {
+          const ph = ((((i - a) * (1 - sp.factor)) / W) % 1 + 1) % 1, ph2 = (ph + 0.5) % 1;
+          const g1 = 1 - Math.abs(2 * ph - 1);
+          v = at(i - ph * W) * g1 + at(i - ph2 * W) * (1 - g1);
+        }
+        const e = Math.min(1, (i - a) / Math.max(1, fade), (b - 1 - i) / Math.max(1, fade));   // no clicks at the edges
+        y[i] = x[i] * (1 - e) + v * e;
+      }
+    }
+  }
+  return out;
+}
 export function stop() { try { src?.stop(); } catch {} src = null; }
 
 // waveform strip for one shot of the scene (scene frames from..from+length)
