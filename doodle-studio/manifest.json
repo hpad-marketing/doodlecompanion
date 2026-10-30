@@ -1,13 +1,13 @@
 {
- "version": "20261029-231907",
- "notes": "Hands and arms no longer cut into Bunny's head. They move freely but stop at the head outline (ears included); an arm may cross the face only when the whole arm is drawn in front. Applies to every motion, saved motion, pose, key, playback and export. get_scene_state now reports the head check.",
+ "version": "20261030-053004",
+ "notes": "Hide the Assistant for screen recordings: View › Hide Assistant tab, Ctrl+Shift+H, or the Hide Assistant button on its tab. Every trace of it goes (tab, page, menu item, Script shortcut) while the MCP connection keeps working. Bring it back with Ctrl+Shift+H or View › Show hidden tab.",
  "runtime": "44.9.0",
- "published": "2026-10-29T18:01:28.882Z",
+ "published": "2026-10-30T00:02:25.780Z",
  "files": {
   "Doodle Studio.exe": {
-   "sha256": "a14e65f0cb29838468a33bfb612a6932d36e4be035f5ea83e77f0f3978565a6b",
-   "size": 96343040,
-   "gz": "files/a14e65f0cb29838468a33bfb612a6932d36e4be035f5ea83e77f0f3978565a6b.gz"
+   "sha256": "d098f54379c141c66dc48a3bcaf034ce839d4ea09f4559694bd8284db530de99",
+   "size": 96346624,
+   "gz": "files/d098f54379c141c66dc48a3bcaf034ce839d4ea09f4559694bd8284db530de99.gz"
   },
   "desktop/resources/app/Doodle Studio.ico": {
    "sha256": "552ab825b923bb8ed1e71363d6b24523e1d4f2edbd16996692329a46f611a233",
