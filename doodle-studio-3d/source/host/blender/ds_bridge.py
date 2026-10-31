@@ -209,6 +209,29 @@ if cast:
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
 
+# the set keeps a clear zone round the characters and drops pieces the camera cuts to slivers
+if stage_items is not None and shot.get('stage', {}).get('set') and not (shot.get('stage') or {}).get('keepLayout'):
+    try:
+        rules_scene.tidy_set(arm, cast, objs.values(), cam, n, lambda m: print(m, flush=True), str(shot['stage']['set']))
+    except Exception as e:
+        print('set tidy skipped:', e, flush=True)
+
+# held props: each frame turns the prop clear of his head and body inside its grip, since the
+# shot's own pose can move the hand after the grip was found (B14)
+held_props = [o for o in bpy.data.objects if o.get('dsl_held_side') and o.get('dsl_grip_kind') not in ('wear', 'two')]
+if held_props and not flag('--no-collide'):
+    try:
+        from doodle_library import collide as held_collide
+        for i in range(n):
+            sc.frame_set(i + 1)
+            for ob in held_props:
+                left = held_collide.resolve(ob, key=True, frame=i + 1)
+                if left > 2:
+                    print(f'held {ob.name} frame {i + 1}: {left:.0f} mm still inside him', flush=True)
+        sc.frame_set(1)
+    except Exception as e:
+        print('held props: could not keep them clear:', e, flush=True)
+
 # Blender powers: doodles in 3D, auto-ink, scatter, crowds, toon liquids, fisheye, 360 video
 powers.apply(shot, cam, lambda m: print(m, flush=True))
 

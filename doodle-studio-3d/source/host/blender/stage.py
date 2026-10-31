@@ -69,11 +69,18 @@ def setup(shot, log):
     dl.set_shadows(bool(st.get('shadows') or st.get('halftone')))
     if st.get('halftone'):
         done.append('halftone %d materials' % halftone(int(st.get('halftone_cells') or 90)))
+    # an id that isn't in this library (a typo, or a piece only on another PC) is skipped, never fatal (B10)
     if st.get('outfit'):
-        dl.insert('outfit-' + st['outfit'])
-        done.append('outfit ' + st['outfit'])
+        try:
+            dl.insert('outfit-' + st['outfit'])
+            done.append('outfit ' + st['outfit'])
+        except KeyError:
+            log(f'stage: no outfit "{st["outfit"]}" in the library, skipped (library_list category outfit)')
     for acc in st.get('accessories') or []:
-        dl.insert('accessory-' + acc)
+        try:
+            dl.insert('accessory-' + acc)
+        except KeyError:
+            log(f'stage: no accessory "{acc}" in the library, skipped')
     if st.get('mouthSet'):
         # a set from mouths/mouth_sets.json by its id (mouths-bouncy, ...)
         from doodle_library import faces
@@ -151,6 +158,39 @@ def halftone(cells=90):
     return n
 
 
+def _world_size(ob):
+    """Longest side in metres, in the object's own axes (a turned box's world bounds would read up to 1.7x)."""
+    if ob.type == 'EMPTY':
+        return 0.0
+    k = ob.matrix_world.to_scale()
+    return max(abs(ob.dimensions[i] / (ob.scale[i] or 1) * k[i]) for i in range(3))
+
+
+def fit_to_hand(ob, side, log):
+    """Small one-hand props (mugs, phones, apples) are modelled at their own size; held by
+    Bunny's short arms they come in no bigger than his hand allows, so they never reach into
+    his head or shirt (B14). Long props (fist grips) and two-hand props keep their size."""
+    try:
+        from doodle_library import grips
+        if grips.spec(ob).get('kind') not in ('hook', 'pinch', 'palm'):
+            return
+        hand = bpy.data.objects.get('BUNNY_hand.' + side)
+        if hand is None:
+            return
+        bpy.context.view_layer.update()
+        # world sizes: the grip empty the prop hangs from (and the rig) carry scale of their own
+        h = _world_size(hand)
+        big = _world_size(ob)
+        cap = 1.0 * h
+        if big > cap > 0:
+            k = cap / big
+            ob.scale = ob.scale * k
+            bpy.context.view_layer.update()
+            log(f'{ob.name}: {big * 100:.0f} cm scaled to {cap * 100:.0f} cm to fit his hand')
+    except Exception as e:
+        log(f'{ob.name}: hand fit skipped: {e}')
+
+
 def place(items, log):
     """Library items, keyed at their frame (1-based in Blender)."""
     if not items:
@@ -179,8 +219,12 @@ def place(items, log):
                 ob = dl.add_text(it.get('text') or 'Text', location=it.get('at') or (0.0, 0.8, 1.25))
             else:
                 hold = it.get('hold')
-                ob = dl.insert(it['id'], frame=f, hold=bool(hold), side=hold if hold in ('L', 'R') else None,
-                               location=it.get('at'))
+                side = hold if hold in ('L', 'R') else None
+                ob = dl.insert(it['id'], frame=f, hold=False, location=it.get('at'))
+                if hold and ob is not None:
+                    fit_to_hand(ob, side or 'R', log)
+                    from doodle_library import grips
+                    grips.attach(ob, side=side, frame=f)
                 # turn and size set in the editor's 3D view (degrees, XYZ)
                 if ob is not None and not hold:
                     import math

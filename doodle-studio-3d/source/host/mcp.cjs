@@ -3,6 +3,7 @@
 const VERSION = '2025-06-18';
 
 const TOOLS = [
+  ['get_guide', 'Read the Doodle Studio 3D guide: what every feature does, recipes and known limits. Pass section (words from a heading, e.g. "camera" or "recipes") to get only matching sections.', { section: { type: 'string' } }],
   ['get_state', 'Read the open scene and its active shot: scene name, the ordered shot list, frame, length, fps, size, every current value and every key of the active shot.', {}],
   ['list_controls', 'List every controllable value (Bunny pose, face, camera) with its id, label, group and min/max. Expression, gaze and mouth names are included.', {}],
   ['set_values', 'Set Bunny pose, face and camera values, e.g. {"armL":90,"headYaw":20,"cam.lens":24}. With frame, jumps there first. key=true sets keys at that frame (default follows the app\'s Auto keys switch). Values are clamped to Bunny\'s joint limits.',
@@ -49,7 +50,7 @@ const TOOLS = [
       shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, seconds: { type: 'number', minimum: 0.1 }, look: { type: ['string', 'null'] }, path: { type: ['string', 'null'] }, clip_shot: { type: ['string', 'integer'] },
       x: { type: 'number' }, y: { type: 'number' }, size: { type: 'number', minimum: 0.05, maximum: 1 }, tilt: { type: 'number' }, corner: { enum: ['tl', 'tr', 'bl', 'br'] }, index: { type: 'integer', minimum: 0 },
       volume: { type: 'number', minimum: 0, maximum: 1 }, duck: { type: 'number', minimum: 0, maximum: 1 }, text: { type: 'string' }, lang: { enum: ['en', 'hi'] }, on: { type: 'boolean' }, srt: { type: 'string' }, all: { type: 'boolean' } }, ['action']],
-  ['cast', 'Co-stars: more characters in the shot (up to 3; same rig, look and rules as the lead; renders push them apart so bodies never touch). action=list | add (character: bunny, koala or frog; x, y metres, turn degrees; default: beside the lead, turned in) | remove (index) | place (index, x, y, turn, character) | key (index, values: {control: value}, frame) | copy (index, mirror: copy the lead\'s keys) | motion (index, id: library motion id, mirror, blend, frame) | clear_keys (index).',
+  ['cast', 'Co-stars: more characters in the shot (up to 5; same rig, look and rules as the lead; renders push them apart so bodies never touch). action=list | add (character: bunny, koala or frog; x, y metres, turn degrees; default: beside the lead, turned in) | remove (index) | place (index, x, y, turn, character) | key (index, values: {control: value}, frame) | copy (index, mirror: copy the lead\'s keys) | motion (index, id: library motion id, mirror, blend, frame) | clear_keys (index).',
     { action: { enum: ['list', 'add', 'remove', 'place', 'key', 'copy', 'motion', 'clear_keys'] }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 },
       index: { type: 'integer', minimum: 0 }, character: { enum: ['bunny', 'koala', 'frog'] }, x: { type: 'number' }, y: { type: 'number' }, turn: { type: 'number' },
       values: { type: 'object' }, mirror: { type: 'boolean' }, id: { type: 'string' }, blend: { type: 'integer', minimum: 0 } }, ['action']],
@@ -90,6 +91,13 @@ const TOOLS = [
 
 module.exports = ({ call, api }) => {
   const handlers = {
+    get_guide: async a => {
+      const md = await call("fetch('guide.md').then(r => r.text())");
+      if (!a.section) return { guide: md };
+      const q = String(a.section).toLowerCase(), parts = md.split(/\n(?=#{2,3} )/);
+      const hits = parts.filter(p => p.split('\n')[0].toLowerCase().includes(q));
+      return hits.length ? { guide: hits.join('\n\n') } : { guide: '', headings: parts.map(p => p.split('\n')[0]).filter(t => t.startsWith('#')) };
+    },
     get_state: () => call('ds3d.state()'),
     list_controls: async () => ({ controls: await call('ds3d.controls()'), ...(await call('ds3d.names()')) }),
     set_values: a => call(`ds3d.setValues(${JSON.stringify(a.values || {})}, ${a.frame ?? 'null'}, ${a.key ?? 'null'})`),

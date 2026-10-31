@@ -1,8 +1,8 @@
 {
- "version": "20261030-175852",
- "notes": "The 2D Doodle Studio's layout comes to 3D: Canvas, Tools and Timeline docks you can swap, resize, detach to another screen or hide (Ctrl+Shift+H); tabs with section chips and button shelves instead of long menus; the 2D timeline with box select, Ctrl+A/C/V on keys, Clear all, row remove and restore, fold and zoom. The 3D view now shows the set, props, scenery, effects, reactions and storytime pieces in the Doodle look: click any of them (or Bunny) and drag the gizmo to move, turn or scale it (Q W E R), and the render puts it in the same place. Library cards have big previews; pointing at a motion or face plays it on Bunny. New props stand beside Bunny, clear of him.",
+ "version": "20261031-022843",
+ "notes": "Look at camera now aims the head on every frame: a motion clip's head keys are set aside while it is on (and come back when it is off), and a hard camera cut no longer gets a one-frame head blend.",
  "runtime": "44.9.0",
- "published": "2026-10-30T17:58:52.884Z",
+ "published": "2026-10-31T02:28:43.486Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -10,14 +10,14 @@
    "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "b6748007b08dea683ce0a3258a2a4e6736283e9395dddde02f02bafaa9b7c353",
-   "size": 26841,
-   "gz": "files/b6748007b08dea683ce0a3258a2a4e6736283e9395dddde02f02bafaa9b7c353.gz"
+   "sha256": "32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487",
+   "size": 27122,
+   "gz": "files/32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3",
-   "size": 37821,
-   "gz": "files/3e5edf46db28266210452bfed298413409fd78915aba41f1b7f356c283e2b9a3.gz"
+   "sha256": "62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c",
+   "size": 38516,
+   "gz": "files/62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "83447e61d8ef68b6b6f3386f78a77efb56bdc7bafdc4dba22e026f52802c821c",
@@ -35,9 +35,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa",
-   "size": 20179,
-   "gz": "files/d989a45ce9967a6b19f2c3d0c3d40c2b67896b771dc8baa600f6c06f2bdd19fa.gz"
+   "sha256": "648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103",
+   "size": 20408,
+   "gz": "files/648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "841400db7129961c481dcac6cafb508731483a76262471832c122a590891a5d8",
@@ -55,14 +55,14 @@
    "gz": "files/08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
-   "sha256": "225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d",
-   "size": 3201595,
-   "gz": "files/225cda4fdaed3a67329f4532392d213ac436f315ce3a6e9a5b07e829e975412d.gz"
+   "sha256": "60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8",
+   "size": 3031493,
+   "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2",
-   "size": 15352,
-   "gz": "files/4e1c6a410af80ab0034e62fdd1a37ef9e3e944d09861baa5928bd55314c64bb2.gz"
+   "sha256": "0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425",
+   "size": 16583,
+   "gz": "files/0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -75,14 +75,19 @@
    "gz": "files/c6502f061afb5ce5c5c70d4f394ae107f7ea439ab9f86206ee6468b1b620b11e.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "c7ae2e56b889d0edfb1dd01f5bdc448bfade805c0ea96de435abe4b3c3366255",
-   "size": 9576,
-   "gz": "files/c7ae2e56b889d0edfb1dd01f5bdc448bfade805c0ea96de435abe4b3c3366255.gz"
+   "sha256": "aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e",
+   "size": 11518,
+   "gz": "files/aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e.gz"
   },
   "resources/app/ui/bunny3d.json": {
-   "sha256": "4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b",
-   "size": 5100444,
-   "gz": "files/4e04687b5e0f369fa3a399013e003df1f144dacd67e4eb1304654acf5162513b.gz"
+   "sha256": "2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746",
+   "size": 4933989,
+   "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
+  },
+  "resources/app/ui/guide.md": {
+   "sha256": "f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5",
+   "size": 40236,
+   "gz": "files/f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -95,19 +100,19 @@
    "gz": "files/c5e09307a2cdf4a77ff22829d5ae20b74a8c6ce1ea1c89420b60d2db2282b2ab.gz"
   },
   "resources/app/blender/chars/frog.blend": {
-   "sha256": "d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae",
-   "size": 3172314,
-   "gz": "files/d8a5e2f18bec60946d8ed9542daeeb80ecab4f976a07902d6554a3044e34ceae.gz"
+   "sha256": "9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f",
+   "size": 2927936,
+   "gz": "files/9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f.gz"
   },
   "resources/app/blender/chars/koala.blend": {
-   "sha256": "3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33",
-   "size": 3481894,
-   "gz": "files/3d0dbf7ddcd7bd8a7fe341626559312918ecc8ddede3e36b999656f6df3cbc33.gz"
+   "sha256": "41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606",
+   "size": 3132248,
+   "gz": "files/41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606.gz"
   },
   "resources/app/blender/lib/cast.py": {
-   "sha256": "5d7829dbdbdc5ddb67697948acd5e3dda85baebd6e7eb28146d18025d03d2da4",
-   "size": 8490,
-   "gz": "files/5d7829dbdbdc5ddb67697948acd5e3dda85baebd6e7eb28146d18025d03d2da4.gz"
+   "sha256": "6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e",
+   "size": 8979,
+   "gz": "files/6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e.gz"
   },
   "resources/app/blender/lib/collision.py": {
    "sha256": "a546871be85792d29e0548a700ec443fc488a03e4b01c95e3002a24dc127d0f8",
@@ -170,9 +175,9 @@
    "gz": "files/e0c6a293f6d74c39cc5a2a9fa761d264d7588a64d28ca7d0cc376394da0316a4.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
-   "sha256": "bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887",
-   "size": 9539,
-   "gz": "files/bc5b268a74cba55244d0579ba0e4338a24c4c4c38511a3a1eefe58a203e84887.gz"
+   "sha256": "cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8",
+   "size": 13273,
+   "gz": "files/cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8.gz"
   },
   "resources/app/blender/lib/skin.py": {
    "sha256": "9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517",
@@ -180,14 +185,14 @@
    "gz": "files/9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517.gz"
   },
   "resources/app/ui/chars/frog.json": {
-   "sha256": "f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9",
-   "size": 5692519,
-   "gz": "files/f85d790bdd4a8b22df108c5ef121178565eb7680a54b184df1a86b9eda42e9d9.gz"
+   "sha256": "046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3",
+   "size": 5169286,
+   "gz": "files/046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3.gz"
   },
   "resources/app/ui/chars/koala.json": {
-   "sha256": "38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775",
-   "size": 6067752,
-   "gz": "files/38d55d46c59c21629a85eb263b66aad293f0441a99307e9ff0548121d23a6775.gz"
+   "sha256": "d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402",
+   "size": 5569967,
+   "gz": "files/d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402.gz"
   },
   "resources/app/ui/src/animtools.js": {
    "sha256": "cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf",
@@ -205,9 +210,9 @@
    "gz": "files/923890fc7d0b6c1d1480cb7eb776f74ebb7a8c5310018c862f3b6a18a5ac23ce.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
-   "sha256": "0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc",
-   "size": 41401,
-   "gz": "files/0b2996583e39b19c93cdb99670e7da49e3d3776a54ae861545bfac579f9dedcc.gz"
+   "sha256": "8ddf6f87945fc930f68c375670598daf18fd3a2585d7ae32fe73b4521571921f",
+   "size": 42607,
+   "gz": "files/8ddf6f87945fc930f68c375670598daf18fd3a2585d7ae32fe73b4521571921f.gz"
   },
   "resources/app/ui/src/carousel.js": {
    "sha256": "9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985",
@@ -215,9 +220,9 @@
    "gz": "files/9808486de785f9d7f463772fa6522e309f588d5a60e7c1564d2f77c65ebd9985.gz"
   },
   "resources/app/ui/src/cast.js": {
-   "sha256": "64459a04978cb02a47f11cdf04669a8487bce98d76e6aef19f32c2cb899cb3c1",
-   "size": 3465,
-   "gz": "files/64459a04978cb02a47f11cdf04669a8487bce98d76e6aef19f32c2cb899cb3c1.gz"
+   "sha256": "b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4",
+   "size": 3464,
+   "gz": "files/b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4.gz"
   },
   "resources/app/ui/src/features2.js": {
    "sha256": "1772ca3b12f9c52342b432652531a1c40b57bb8ed3783c172abb0bd0128bdef2",
@@ -240,9 +245,9 @@
    "gz": "files/ffb2235262a28ce1f8dda90799e228cf54124f98720af658913af59a42b3e972.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "d7b9742cfa15d21849ce2ad7d60eecb7998c706f7aaa9c2189c24dbb35e5c586",
-   "size": 231258,
-   "gz": "files/d7b9742cfa15d21849ce2ad7d60eecb7998c706f7aaa9c2189c24dbb35e5c586.gz"
+   "sha256": "6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9",
+   "size": 233321,
+   "gz": "files/6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
