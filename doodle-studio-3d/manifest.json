@@ -1,8 +1,8 @@
 {
- "version": "20261031-100718",
- "notes": "Foot strokes no longer cut off by the floor in high shots (the outline's push away from the camera stops at the floor). Raised set floors facing inward (park) are now found, so Bunny stands on them.",
+ "version": "20261031-122631",
+ "notes": "Floor fix: the floor you see in each scene is the base. A set's own ink outline, benches, props and tables are never taken for the floor (the park outline floating 6-9 cm up had lifted Bunny and flagged him as sunk). A raised set floor or stage up to 25 cm counts.",
  "runtime": "44.9.0",
- "published": "2026-10-31T10:07:18.312Z",
+ "published": "2026-10-31T12:26:31.864Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "de0462dfd92f508154f350761f62371f357a4510a90efe267c76515397ff5580",
-   "size": 41619,
-   "gz": "files/de0462dfd92f508154f350761f62371f357a4510a90efe267c76515397ff5580.gz"
+   "sha256": "08b375f87a6b7b0033b46f7c3446decf44772a2a2be43507d0fb3fef35e1afc8",
+   "size": 41933,
+   "gz": "files/08b375f87a6b7b0033b46f7c3446decf44772a2a2be43507d0fb3fef35e1afc8.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -115,9 +115,9 @@
    "gz": "files/35c0889248c270d60706a5236bdd3810cb553d73a9cad3d58352295b4944f4c6.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "ead0e3e7513090dad04495018ff6e5210c1a7d042c8d16e94295b1a36b31fef6",
-   "size": 21446,
-   "gz": "files/ead0e3e7513090dad04495018ff6e5210c1a7d042c8d16e94295b1a36b31fef6.gz"
+   "sha256": "b0d7cb2ecdbb2ceab057430bc02fd6545105aede658cac8d03a1820c847293c0",
+   "size": 23705,
+   "gz": "files/b0d7cb2ecdbb2ceab057430bc02fd6545105aede658cac8d03a1820c847293c0.gz"
   },
   "resources/app/blender/lib/compat.py": {
    "sha256": "e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9",
