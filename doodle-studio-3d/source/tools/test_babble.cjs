@@ -66,9 +66,9 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
     await p.goto(`http://127.0.0.1:${port}/`);
     await p.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 60000 });
     const ev = (fn, ...x) => p.evaluate(fn, ...x);
-    const btn = p.locator('button', { hasText: /^\s*Babble$/ });
-    ok(await btn.count() === 1, 'Babble button in the timeline Voice group');
+    const btn = { click: async () => { await p.click('#menubar .menu > button:text-is("File")'); await p.click('#menubar .menu-list button:has-text("Babble voice (type a line)")'); } };
     await btn.click();
+    ok(await p.locator('.ds-modal[aria-label="Babble voice"]').count() === 1, 'File › Babble voice opens the dialog');
     await p.waitForSelector('input[aria-label="Line"]');
     await p.fill('input[aria-label="Line"]', 'Hi there! Did you see my new doodle?');
     await p.click('button:has-text("Hear it")');
@@ -104,7 +104,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
     // reopen the dialog for a screenshot with a line in it
     await ev(() => ds3d.babble({ action: 'add', text: 'Hello friend, nice day!', frame: 5, mood: 'happy' }));
     await p.keyboard.press('Escape').catch(() => {});
-    await p.locator('button', { hasText: /^\s*Babble$/ }).click();
+    await btn.click();
     await p.waitForTimeout(300);
     await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'babble-dialog.png') });
     ok(!errs.filter(e => !/favicon|404|WebGL|GPU/i.test(e)).length, 'no page errors ' + errs.join(' | '));
