@@ -18,6 +18,8 @@ import * as S2 from './storytime2.js';
 import * as P from './post.js';
 import * as F2 from './features2.js';
 import * as PW from './powers.js';
+import * as DR from './drawings.js';
+import { DrawingStage } from './drawings3d.js';
 import * as CS from './cast.js';
 import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
@@ -393,6 +395,7 @@ function apply() {
   drawPlayhead();
   updateHud();
   overlayDraw?.();
+  drawDrawings();
   drawPost();
   if (view3.onion || onionShown) { const t = performance.now(); drawOnion(animCtx()); onionShown = view3.onion; perf('onion skin', performance.now() - t); }
   showNotes(project, frame);
@@ -482,6 +485,123 @@ const cutsAt = (s, f) => (s.cuts || []).filter(c => f >= c.frame && f < c.frame 
 function captionWord(l, f) { const n = P.captionLines(l.text).flat().length; return Math.min(n - 1, Math.floor((f - l.f) / Math.max(1, l.to - l.f) * n)); }
 // the head's screen height (0 top, 1 bottom) in the live view, for caption placement
 function liveHeadY() { try { view.camera.updateMatrixWorld(); return (1 - view.headPoint().project(view.camera).y) / 2; } catch { return null; } }
+// ---------------------------------------------------------------- drawings (drawings.js): SVGs and hand lines on their own layer
+let drawStage = null, drawSel = 0;
+function drawDrawings() {
+  drawStage?.sync(project.drawings || [], frame);
+  const fr = $('#frame');
+  let c = document.getElementById('drawing-layer');
+  if (!project.drawings?.some(d => d.layer === 'screen')) { c?.remove(); return; }
+  if (!c) { c = h('canvas', { id: 'drawing-layer' }); fr.insertBefore(c, $('#post-layer') || $('#hud')); }
+  const pr = Math.min(2, window.devicePixelRatio || 1), W = c.width = Math.round(fr.clientWidth * pr), H = c.height = Math.round(fr.clientHeight * pr);
+  // the same line the render lays on: Bunny's ink for this frame size, never under 3 px on screen
+  DR.drawScreen(c.getContext('2d'), W, H, project, frame, Math.max(3 * pr, DR.INK_PX_1920 * Math.max(W, H) / 1920 * (project.ink ?? 100) / 100));
+}
+async function drRun(a) { try { const r = await dr(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
+async function dr(a = {}) {
+  const done = (r, message) => ({ ...r, message });
+  const changed = () => { dirty = true; apply(); updateHud(); if (tab === 'stage' && sub.stage === 'drawings') buildPanel(); };
+  const list = () => DR.drawingsOf(project).map((d, i) => ({ index: i, id: d.id, name: d.name, layer: d.layer, x: d.x, y: d.y, size: d.size, rot: d.rot, depth: d.depth, frame: d.frame, build: d.build, until: d.until, noise: d.noise, boil: d.boil, colour: d.colour, strokes: d.strokes.length, placed: d.layer === 'scene' ? !!d.world : undefined }));
+  const fit = (art, size) => Math.min(size ?? 0.35, 0.85 * (scene.width / scene.height) / Math.max(0.1, art.aspect || 1));
+  switch (a.action || 'list') {
+    case 'list': return { drawings: list() };
+    case 'import': {
+      let text = a.svg;
+      if (!text && a.path) text = (await api('read-svg', { path: a.path })).text;
+      if (!text) throw Error('Give svg (the SVG text) or path (an .svg file on this PC)');
+      const art = DR.parseSvg(text);
+      pushUndo('Import SVG drawing');
+      const d = DR.add(project, art, { ...a, name: a.name || (a.path ? a.path.split(/[\\/]/).pop().replace(/\.svg$/i, '') : 'Drawing'), frame: a.frame ?? frame, size: fit(art, a.size) });
+      if (d.layer === 'scene') DR.place(d, view);
+      drawSel = DR.drawingsOf(project).length - 1; changed();
+      return done({ index: drawSel, strokes: d.strokes.length, layer: d.layer }, `"${d.name}" drawn on ${d.layer === 'scene' ? 'in the 3D scene' : 'over the screen'} from frame ${d.frame} (${d.strokes.length} lines)`);
+    }
+    case 'draw': {
+      // strokes: [[[x, y], ...], ...] frame fractions, y down: hand lines become one drawing where they were drawn
+      const raw = (a.strokes || []).map(s => s.map(([x, y]) => [x * scene.width / scene.height, y])).filter(s => s.length > 1);
+      if (!raw.length) throw Error('Draw at least one line');
+      let x0 = 9, y0 = 9, x1 = -9, y1 = -9;
+      for (const s of raw) for (const [x, y] of s) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+      const art = DR.normalise(raw);
+      pushUndo('Draw on the screen');
+      const d = DR.add(project, art, { ...a, name: a.name || 'Hand drawing', frame: a.frame ?? frame, x: (x0 + x1) / 2 / (scene.width / scene.height), y: (y0 + y1) / 2, size: Math.max(0.02, y1 - y0) });
+      if (d.layer === 'scene') DR.place(d, view);
+      drawSel = DR.drawingsOf(project).length - 1; changed();
+      return done({ index: drawSel, strokes: d.strokes.length }, `Hand drawing draws on from frame ${d.frame}`);
+    }
+    case 'set': {
+      const i = a.index ?? drawSel;
+      pushUndo('Change drawing');
+      const was = DR.drawingsOf(project)[i]?.layer;
+      const d = DR.set(project, i, a);
+      // a scene drawing moves when its spot changes: placed again from this camera
+      if (d.layer === 'scene' && (was !== 'scene' || ['x', 'y', 'size', 'depth', 'place'].some(k => a[k] != null) || !d.world)) DR.place(d, view);
+      changed(); return done({ drawing: list()[i] }, null);
+    }
+    case 'place': { const d = DR.drawingsOf(project)[a.index ?? drawSel]; if (!d) throw Error('No such drawing'); pushUndo('Place drawing'); if (d.layer !== 'scene') DR.set(project, a.index ?? drawSel, { layer: 'scene' }); DR.place(d, view); changed(); return done({ world: d.world }, `"${d.name}" stands where this camera sees it`); }
+    case 'remove': { pushUndo('Remove drawing'); DR.remove(project, a.index ?? drawSel); drawSel = Math.max(0, Math.min(drawSel, DR.drawingsOf(project).length - 1)); changed(); return done({ drawings: list() }, 'Drawing removed'); }
+    case 'clear': { pushUndo('Clear drawings'); delete project.drawings; changed(); return done({}, 'Drawings cleared'); }
+    default: throw Error('action must be list, import, draw, set, place, remove or clear');
+  }
+}
+function importSvg(layer = 'screen') {
+  const inp = h('input', { type: 'file', accept: '.svg,image/svg+xml' });
+  inp.addEventListener('change', async () => { const f = inp.files[0]; if (!f) return; await drRun({ action: 'import', svg: await f.text(), name: f.name.replace(/\.svg$/i, ''), layer }); setTab('stage', 'drawings'); });
+  inp.click();
+}
+// draw by hand on the frame: the lines become a drawing that draws on from the playhead
+function drawOnScreen() {
+  const fr = $('#frame');
+  document.getElementById('stick-layer')?.remove(); document.querySelector('.stick-bar')?.remove();
+  const cv = h('canvas', { id: 'stick-layer' }), strokes = [];
+  fr.append(cv);
+  const redraw = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.strokeStyle = DR.COLOURS.ink; g.lineWidth = Math.max(3, DR.INK_PX_1920 * Math.max(cv.width, cv.height) / 1920); g.lineCap = g.lineJoin = 'round'; for (const s of strokes) { g.beginPath(); s.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); } };
+  let cur = null;
+  const xy = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); cur = [xy(e)]; strokes.push(cur); });
+  cv.addEventListener('pointermove', e => { if (cur) { cur.push(xy(e)); redraw(); } });
+  cv.addEventListener('pointerup', () => { cur = null; });
+  const layer = h('select', { 'aria-label': 'Which layer' }, h('option', { value: 'screen' }, 'On the screen (over everything)'), h('option', { value: 'scene' }, 'In the 3D scene (1 m behind)'));
+  const close = () => { cv.remove(); bar.remove(); };
+  const bar = h('div', { class: 'stick-bar' }, h('span', {}, 'Draw: the lines draw on from the playhead and boil like the 2D cutaways'), layer,
+    h('button', { class: 'primary', onclick: async () => { const W = cv.width, H = cv.height; close(); await drRun({ action: 'draw', layer: layer.value, depth: 1, strokes: strokes.map(s => s.map(([x, y]) => [x / W, y / H])) }); setTab('stage', 'drawings'); } }, 'Make it a drawing'),
+    h('button', { onclick: () => { strokes.length = 0; redraw(); } }, 'Clear'), h('button', { onclick: close }, 'Cancel'));
+  fr.append(bar);
+  cv.width = fr.clientWidth; cv.height = fr.clientHeight; redraw();
+}
+// Stage › Drawings: a picture of each drawing, and its settings in rows
+function drawingsPanel() {
+  const all = DR.drawingsOf(project);
+  drawSel = Math.max(0, Math.min(drawSel, all.length - 1));
+  const head = h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' },
+    h('button', { class: 'primary', title: 'Import an SVG: every line and shape outline becomes an ink line that draws on from the playhead', onclick: () => importSvg('screen') }, 'Import SVG…'),
+    h('button', { title: 'Draw lines by hand on the frame', onclick: () => drawOnScreen() }, 'Draw on the screen…'),
+    all.length ? h('button', { onclick: () => drRun({ action: 'clear' }) }, 'Clear all') : null,
+    h('span', { class: 'hint' }, 'Drawings sit on their own layer, apart from the characters, like the 2D studio. One line weight (Bunny\'s), ink or mustard only.'));
+  if (!all.length) return h('div', {}, head, h('p', { class: 'hint' }, 'No drawings on this shot yet.'));
+  const cards = h('div', { class: 'char-cards', role: 'list' }, ...all.map((d, i) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String(i === drawSel), title: `${d.name}: ${d.layer === 'scene' ? 'in the 3D scene' : 'on the screen'}, from frame ${d.frame}`, onclick: () => { drawSel = i; goto(d.frame + Math.max(0, d.build)); buildPanel(); } },
+    h('img', { src: DR.thumb(d, 64), alt: '', width: 64, height: 64 }), h('span', {}, d.name))));
+  const d = all[drawSel], i = drawSel;
+  const setv = (k, v) => drRun({ action: 'set', index: i, [k]: v });
+  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(3), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'ctl', title: tip }, label + ' ', inp); };
+  const sel = (label, k, opts, tip) => { const s = h('select', { 'aria-label': label, title: tip }, ...opts.map(([v, n]) => h('option', { value: v, selected: d[k] === v }, n))); s.addEventListener('change', () => setv(k, s.value)); return h('label', { class: 'ctl', title: tip }, label + ' ', s); };
+  return h('div', {}, head, cards,
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px;margin-top:8px' },
+      sel('Layer', 'layer', [['screen', 'On the screen'], ['scene', 'In the 3D scene']], 'On the screen: over everything, like a 2D cutaway. In the 3D scene: stands in the world, so characters can pass in front of it.'),
+      sel('Colour', 'colour', [['ink', 'Ink'], ['mustard', 'Mustard']], 'Brand colours only'),
+      num('Across %', 'x', d.x, -50, 150, 1, 'Centre, left to right across the frame', 100), num('Down %', 'y', d.y, -50, 150, 1, 'Centre, top to bottom', 100),
+      num('Size %', 'size', d.size, 2, 300, 1, 'Height as a percent of the frame height', 100), num('Turn °', 'rot', d.rot, -180, 180, 1, 'Turn it'),
+      d.layer === 'scene' ? num('Depth m', 'depth', d.depth ?? 1, -3, 20, 0.1, 'Metres behind the character (minus is in front)') : null),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' },
+      num('Starts at frame', 'frame', d.frame, 0, 100000, 1, 'Frame it starts drawing on'), num('Draws on over', 'build', d.build, 0, 600, 1, 'Frames to draw every line, one after another (0 = appears at once)'),
+      num('Gone at frame', 'until', d.until, 0, 100000, 1, 'Frame it disappears (empty = stays to the end of the shot)'),
+      num('Noise %', 'noise', d.noise, 0, 100, 5, 'Line boil: how much the hand-drawn line wobbles (0 = still)', 100), num('Boil every', 'boil', d.boil, 1, 12, 1, 'A new wobble every this many frames (2 = on twos)')),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' },
+      h('button', { title: 'Start drawing on at the playhead', onclick: () => setv('frame', frame) }, 'Start at the playhead'),
+      h('button', { title: 'Disappear at the playhead', onclick: () => setv('until', Math.max(d.frame + 1, frame)) }, 'Gone at the playhead'),
+      d.layer === 'scene' ? h('button', { title: 'Stand it where this camera sees it now', onclick: () => drRun({ action: 'place', index: i }) }, 'Place from this camera') : null,
+      h('button', { onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
+}
 function drawPost() {
   const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame);
   let c = document.getElementById('post-layer');
@@ -505,15 +625,23 @@ async function buildPost(indices, full) {
   const markers = full ? (() => { const st = shotStarts(); return scene.shots.flatMap((s, i) => (s.markers || []).map(m => ({ F: st[i] + m.f, note: String(m.note || '') }))).sort((a, b) => a.F - b.F); })() : [];
   const spans = P.markerSpans(markers, scene.fps);
   const trans = full ? PW.transitionsOf(scene.shots) : [];
-  const any = shots.some(s => s.look || s.cuts?.length || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
+  const any = shots.some(s => s.look || s.cuts?.length || s.drawings?.some(d => d.layer === 'screen') || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
   if (!any) return null;
   await P.loadFont();
   const W = scene.width, H = scene.height, safe = safeName(scene.name), dir = `${(await api('settings', {})).rendersRoot}/${safe}/work/post`;
   let n = 0;
   const write = async (draw, name = 'layer') => (await api('write-file', { path: `${dir}/${String(++n).padStart(3, '0')}_${name}.png`, data: pngOf(W, H, draw) })).path;
-  const post = { looks: [], overlays: [], movies: [] };
+  const post = { looks: [], overlays: [], movies: [], drawings: [] };
   let at = 0;
   for (const [k, s] of shots.entries()) {
+    // screen drawings: one PNG per distinct look of the layer, held for as long as it lasts
+    if (s.drawings?.some(d => d.layer === 'screen')) {
+      const made = new Map(), ink = DR.INK_PX_1920 * Math.max(W, H) / 1920 * (s.ink ?? 100) / 100;
+      for (const run of DR.screenRuns(s, s.length)) {
+        if (!made.has(run.sig)) made.set(run.sig, await write(g => DR.drawScreen(g, W, H, s, run.t, ink), 'drawing'));
+        post.drawings.push({ path: made.get(run.sig), start: at + run.start, length: run.length });
+      }
+    }
     if (s.look && P.LOOK_STRIP[s.look]) {
       const ov = [{ path: await write(g => P.drawLook(g, W, H, s.look), s.look), blend: 'ALPHA_OVER', alpha: 1 }];
       if (s.look === 'flashback') ov.unshift({ path: await write(g => { g.fillStyle = P.MUSTARD; g.fillRect(0, 0, W, H); }, 'warm'), blend: 'MULTIPLY', alpha: 0.45 });
@@ -1105,7 +1233,7 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => babbleDialog()], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => babbleDialog()], ['Import SVG drawing…', () => importSvg()], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()], ['Co-stars (more characters)…', () => castDialog()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
@@ -1136,6 +1264,7 @@ const MENUS = [
     ['Squash and stretch at the playhead…', () => pick2('Squash and stretch', Object.entries(F2.SQUASH_MOVES), k => featRun({ action: 'squash', kind: k }))], ['Hand contact (hip, belly, chest)…', () => contactDialog()], ['Pose from a stick figure (draw it)', () => stickMode()]]],
   // Story tab and its storytime workflow removed (user, 2026-10-31). The voice and finishing tools it held stay, in Post.
   ['Post', [['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()], '-',
+    ['Import SVG drawing…', () => importSvg()], ['Draw on the screen…', () => drawOnScreen()], ['Drawings on this shot…', () => setTab('stage', 'drawings')], '-',
     ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Auto foley (sound effects)', () => storyRun('foley')], ['Split the voice into sentences…', () => sentenceDialog()]]],
   ['Blender', [['Open in Blender (live)', () => openInBlender(), 'Ctrl+B'], ['Stop the live Blender link', () => MR.close()], '-', ['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
     ['Transition into this shot…', () => transitionDialog()], ['Paper finish…', () => { const v = prompt('Paper finish on the joined scene, 0 to 100 (0 is off):', String(Math.round((scene.paper || 0) * 100))); if (v != null) pwRun({ action: 'paper', amount: Number(v) / 100 }); }], '-',
@@ -1197,7 +1326,7 @@ const SUBS = {
   face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life'], ['voice', 'Voice & lip sync']],
   animate: () => [['motions', 'Motion library'], ['keys', 'Keys & timing'], ['body', 'IK, paths & contact'], ['layers', 'Layers & copy'], ['loops', 'Loops & beats'], ['reference', 'Reference']],
   camera: () => [['lens', 'Lens & angle'], ['presets', 'Shot presets'], ['moves', 'Camera moves'], ['view', 'View & checks']],
-  stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['cast', 'Co-stars']],
+  stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['drawings', 'Drawings'], ['cast', 'Co-stars']],
   library: () => CATEGORIES.filter(c => !['motion', 'outfit', 'accessory'].includes(c[0])),
   carousel: () => [],
   render: () => [['output', 'Shot & output'], ['post', 'Captions, music & look'], ['blender', 'Blender, autosave & cache']],
@@ -1212,7 +1341,7 @@ const SHELVES = {
   'animate:reference': [['Reference video', 'Animate', ['Reference video…', 'Remove reference video']]],
   'camera:moves': [['Dolly', 'Camera', ['Dolly zoom: wide, keep size', 'Dolly zoom: long, keep size']], ['Moves', 'Camera', ['Multi-cam angles…', 'Beat-synced camera…', 'Floor-plan camera path…']], ['Previz', 'Camera', ['Previz grey on / off', 'Render a previz of this shot']]],
   'camera:view': [['View', 'View', ['Floor grid', 'Frame Bunny', 'Mirror view', 'Silhouette check', 'Onion skin', 'Snapping on / off', 'Show fps', 'Dark mode']], ['Checks', 'View', ['Rule lights on / off', 'Balance marker on / off']], ['Second screen', 'View', ['Pop out the viewport (second screen)']]],
-  'render:post': [['Words and music', 'Post', ['Captions…', 'Music bed…', 'Split the voice into sentences…']], ['Look', 'Post', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
+  'render:post': [['Words and music', 'Post', ['Captions…', 'Music bed…', 'Split the voice into sentences…']], ['Look', 'Post', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Drawings', 'Post', ['Import SVG drawing…', 'Draw on the screen…', 'Drawings on this shot…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
   'render:blender': [['Production', 'Tools', ['Check before export (preflight)', 'Health check…', 'Overnight batch…', 'Cancel sleep after renders', 'Render presets…', 'Pack project…', 'Clean up cache…', 'Claude change log…']], ['Files', 'File', ['Save version…', 'Versions…', 'Export Blender shot file…']]],
 };
 function shelf(group, menu, labels) {
@@ -1317,6 +1446,7 @@ function buildPanel() {
     if (s === 'set') c.append(setPanel(libCtx()));
     else if (s === 'wardrobe') c.append(wardrobePanel(libCtx()));
     else if (s === 'items') c.append(itemsPanel(libCtx()));
+    else if (s === 'drawings') c.append(drawingsPanel());
     else c.append(cols('two', [h('h3', {}, 'Co-stars'), h('p', { class: 'hint' }, 'More characters in this shot, each on the same rig with its own keys. They collide with the lead in the render.'), h('div', { class: 'row' }, h('button', { onclick: () => castDialog() }, 'Co-stars…'))],
       [h('h3', {}, 'Lead character'), h('div', { class: 'char-cards', role: 'list' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String(character() === id), title: `Make the ${n} the lead character`, onclick: () => setCharacter(id).catch(e => toast(e.message, 5000)) }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, n))))]));
   } else if (tab === 'library') {
@@ -2619,6 +2749,7 @@ function loop() {
   view = new Viewport($('#view'), data);
   BUNNY_IDS = PARTS.flatMap(p => p[2]);
   stage = new ST.Stage(view, stageCtx());
+  drawStage = new DrawingStage(view);
   buildMenu(); buildTabs(); buildRail(); buildCanvasTop(); bindViewport(); bindKeys(); bindTimelineWheel(); bindCameraPresets(presetCtx());
   DOCK.init({ resized: () => { layout(); drawTracks(); }, toast, busy: () => playing || !!stage?.busy(), popOut: () => popOut(wfCtx()), pointerdownIn });
   // "group": frames the lead and every co-star together
@@ -2816,6 +2947,8 @@ function loop() {
     undo, redo,
     // cast.js (MCP tool "cast")
     async cast(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await castAct(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
+    // drawings.js (MCP tool "drawings")
+    async drawings(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.at_frame != null) goto(a.at_frame); return dr(a); },
     // powers.js (MCP tool "powers")
     async powers(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await pw(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // features2.js (MCP tool "features")

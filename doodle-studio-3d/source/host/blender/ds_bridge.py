@@ -47,6 +47,7 @@ sys.path.insert(0, HERE)
 import ds_map, dynamics, rules3d, collision, compat  # noqa: E402
 import stage  # noqa: E402
 import powers  # noqa: E402
+import drawings  # noqa: E402
 import cast as costars  # noqa: E402
 import rules_scene  # noqa: E402
 import constraints  # noqa: E402
@@ -302,6 +303,8 @@ if held_props and not flag('--no-collide'):
 
 # Blender powers: doodles in 3D, auto-ink, scatter, crowds, toon liquids, fisheye, 360 video
 powers.apply(shot, cam, lambda m: print(m, flush=True))
+# scene drawings: imported SVGs standing in the 3D world, drawn on and boiling (drawings.py)
+drawings.apply(shot, cam, lambda m: print(m, flush=True))
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}

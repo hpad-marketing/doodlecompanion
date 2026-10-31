@@ -230,6 +230,12 @@ const api = {
     if (fs.statSync(p).size > 30e6) throw Error('Image over 30 MB');
     return { data: fs.readFileSync(p).toString('base64'), type: /png$/i.test(p) ? 'image/png' : /webp$/i.test(p) ? 'image/webp' : 'image/jpeg' };
   },
+  // an SVG drawing for the drawings layer: read as text, never run
+  async 'read-svg'({ path: p }) {
+    if (!/[.]svg$/i.test(String(p))) throw Error('Not an .svg file');
+    if (fs.statSync(p).size > 8e6) throw Error('SVG over 8 MB');
+    return { text: fs.readFileSync(p, 'utf8') };
+  },
   async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
   async 'read-audio'({ path: p }) {
     if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');
