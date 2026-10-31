@@ -9,7 +9,7 @@ while the shot is built, the way the floor lift keeps strokes off the floor:
   faceClear     a set piece or placed prop never blocks the face from the camera: it slides
                 sideways just far enough (set pieces that can't move hide on those frames)
   propsOnFloor  props and set pieces that stand on the floor rest their ink stroke a hair above
-                it, the same lift the characters get (lift only: a prop on a table, in the air
+                the ground plane (the one floor base for every set, character and prop), the same lift the characters get (lift only: a prop on a table, in the air
                 or deliberately sunk deep stays where it was put)
   eyeSize       eyes keep one size: the Frog's eye bumps ignore EAR Scale / EAR Squash
 
@@ -275,28 +275,6 @@ def _animated_location(ob):
     return bool(ad and ad.action and any(getattr(fc, 'data_path', '') == 'location' for fc in __import__('compat').fcurves(ob)))
 
 
-def _floor_under(ob_set, x, y, base):
-    """The floor right under (x, y): the rig's ground or a set floor a few cm above it."""
-    sc = bpy.context.scene
-    dg = bpy.context.evaluated_depsgraph_get()
-    o = Vector((x, y, base + 0.3))
-    best = base
-    for _ in range(16):
-        hit, loc, nrm, _i, hob, _m = sc.ray_cast(dg, o, Vector((0, 0, -1)), distance=0.5)
-        if not hit:
-            break
-        if hob in ob_set or (hob is not None and (hob.hide_render or collision._is_character(hob))):
-            o = loc - Vector((0, 0, 1e-4))
-            continue
-        if base - 0.05 <= loc.z <= base + collision.GROUND_RISE and abs(nrm.z) > 0.5:
-            best = max(best, loc.z)
-            break
-        if loc.z < base - 0.05:
-            break
-        o = loc - Vector((0, 0, 1e-4))
-    return best
-
-
 SINK = 0.15   # a prop whose stroke goes deeper than this into the floor was sunk on purpose
 
 
@@ -322,11 +300,9 @@ def props_on_floor(pieces, ground, log=None):
         lo = collision.drawn_zmin(obs)
         if lo is None:
             continue
-        # the floor under the piece's lowest point
-        pts = _points(obs, every=7)
-        low = min(pts, key=lambda p: p.z) if pts else top.matrix_world.translation
-        floor = _floor_under(set(obs), low.x, low.y, ground)
-        target = floor + collision.FLOOR_AIR
+        # one floor base for everything (user, 2026-10-31): the real ground plane, never a set
+        # piece's outline or a raised set mesh
+        target = ground + collision.FLOOR_AIR
         d = target - lo
         if d <= 2e-4 or d > SINK:
             continue
