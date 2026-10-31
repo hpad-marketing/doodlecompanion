@@ -337,7 +337,9 @@ else {
   app.whenReady().then(async () => {
     const call = js => new Promise((ok, fail) => {
       if (!main || main.isDestroyed()) return fail(Error('The Doodle Studio 3D window is closed'));
-      main.webContents.executeJavaScript(`Promise.resolve(${js})`).then(ok, fail);
+      // the renderer's own error message comes back (Electron otherwise reports only 'Script failed to execute')
+      main.webContents.executeJavaScript(`Promise.resolve().then(() => (${js})).then(v => ({ ok: v }), e => ({ err: String((e && e.message) || e) }))`)
+        .then(r => (r && 'err' in r ? fail(Error(r.err)) : ok(r && r.ok)), fail);
     });
     const mcp = require('./mcp.cjs')({ call, api });
     api['mcp-replay'] = ({ name, args }) => mcp.replay(name, args);

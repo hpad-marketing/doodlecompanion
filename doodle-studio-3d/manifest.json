@@ -1,8 +1,8 @@
 {
- "version": "20261031-081610",
- "notes": "Fixes both 065836 regressions: lip sync back to the v8 timing (vocal separation off), floor collision lift-only again with raised set floors detected and the overhead float fix kept.",
+ "version": "20261031-090215",
+ "notes": "Syllable lip sync: one mouth per syllable, lips move at every syllable edge, teeth on hiss, rest in silence, no one-frame flicker; optional vocal stem for the cleanest read over music. Lipsync over MCP waits for the scene audio to decode, and every MCP call reports the real error.",
  "runtime": "44.9.0",
- "published": "2026-10-31T08:16:10.756Z",
+ "published": "2026-10-31T09:02:15.994Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -10,14 +10,14 @@
    "gz": "files/527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487",
-   "size": 27122,
-   "gz": "files/32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487.gz"
+   "sha256": "bd546a1d7eeac7c07ca8d7f08d2cdc095fd37c18ee02c5dfbc775ac868fa2462",
+   "size": 27387,
+   "gz": "files/bd546a1d7eeac7c07ca8d7f08d2cdc095fd37c18ee02c5dfbc775ac868fa2462.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c",
-   "size": 38516,
-   "gz": "files/62aa17bedb1102a67bea6bf44830abee58c2462d9e7e7ecd7edc80d8102ad40c.gz"
+   "sha256": "d102d8ef1137c041e74d522470c05dcdf66c5441c0e64b8bf2e299bf279754c3",
+   "size": 38845,
+   "gz": "files/d102d8ef1137c041e74d522470c05dcdf66c5441c0e64b8bf2e299bf279754c3.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "83447e61d8ef68b6b6f3386f78a77efb56bdc7bafdc4dba22e026f52802c821c",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "b682e98e9cc42d248796237abee547fda53b6444b5ba52473ffd9309a11d7108",
-   "size": 40920,
-   "gz": "files/b682e98e9cc42d248796237abee547fda53b6444b5ba52473ffd9309a11d7108.gz"
+   "sha256": "dbca9d4583a9cf63a52f1929fa48787fa62f1845c457117809ce8b6e6ae5122e",
+   "size": 41351,
+   "gz": "files/dbca9d4583a9cf63a52f1929fa48787fa62f1845c457117809ce8b6e6ae5122e.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -220,9 +220,9 @@
    "gz": "files/52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "857297b1df4ed4ade236556c3dc1e1716fd0adac5717ab18d2776b55dfe29718",
-   "size": 8068,
-   "gz": "files/857297b1df4ed4ade236556c3dc1e1716fd0adac5717ab18d2776b55dfe29718.gz"
+   "sha256": "cbe862fc2b5afefd8f8b82189089edcf3b5937672e5a4fda0672c0e4ad80d982",
+   "size": 8871,
+   "gz": "files/cbe862fc2b5afefd8f8b82189089edcf3b5937672e5a4fda0672c0e4ad80d982.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "8ddf6f87945fc930f68c375670598daf18fd3a2585d7ae32fe73b4521571921f",
@@ -260,9 +260,9 @@
    "gz": "files/3e763eb7126b48bd05fe79cadfd28c1c4a9718fead88fd4528f3a19dafaa2be1.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "373a4d46499e7e3676a1c0091e6442e56db7cb5952e0f2b2a8aff9eaa7b44f12",
-   "size": 233929,
-   "gz": "files/373a4d46499e7e3676a1c0091e6442e56db7cb5952e0f2b2a8aff9eaa7b44f12.gz"
+   "sha256": "b58d70b854b9fe9f0f4ddc7daab4edd22b520cb72ec9e747b3a95a570c33c49f",
+   "size": 234521,
+   "gz": "files/b58d70b854b9fe9f0f4ddc7daab4edd22b520cb72ec9e747b3a95a570c33c49f.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -330,9 +330,9 @@
    "gz": "files/eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9.gz"
   },
   "resources/app/ui/src/vocals.js": {
-   "sha256": "45ecdc25b32f0a46b00c9b14f272c3e59003c0b181109036d0a3e73cb09cb1b9",
-   "size": 13824,
-   "gz": "files/45ecdc25b32f0a46b00c9b14f272c3e59003c0b181109036d0a3e73cb09cb1b9.gz"
+   "sha256": "998889b0dd22a07512e0e19cfeb00e8e347dc44297b380e88f186e7b201ba209",
+   "size": 24293,
+   "gz": "files/998889b0dd22a07512e0e19cfeb00e8e347dc44297b380e88f186e7b201ba209.gz"
   },
   "resources/app/ui/src/workflow.js": {
    "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",

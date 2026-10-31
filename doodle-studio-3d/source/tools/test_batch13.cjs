@@ -51,8 +51,8 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok([4, 5, 6].includes(at(0.5)), `rounded mouth on the dark vowel (${at(0.5)})`);
   ok([2, 3, 9].includes(at(0.9)) && [2, 3].includes(at(1.55)), `open or wide mouth on the bright and open vowels (${at(0.9)}, ${at(1.55)})`);
   ok(m.slice(5, 12).includes(7) && m.slice(64, 72).includes(7), 'lips close (MBP) just before a word starts');
-  let runs = [], k0 = 0; for (let f = 1; f <= m.length; f++) if (f === m.length || m[f] !== m[k0]) { runs.push(f - k0); k0 = f; }
-  ok(runs.slice(1, -1).filter(x => x < 2).length <= 2, 'no one-frame mouth flicker (MBP may be one frame)');
+  let runs = [], k0 = 0; for (let f = 1; f <= m.length; f++) if (f === m.length || m[f] !== m[k0]) { runs.push([m[k0], f - k0]); k0 = f; }
+  ok(runs.slice(1, -1).filter(([v, x]) => x < 2 && v !== 7).length === 0, 'no one-frame mouth flicker (MBP may be one frame)');
   r = await ev(() => ds3d.production({ action: 'preflight' }));
   ok(r.checks.find(c => c.id === 'lipsync').ok, 'preflight lip sync check passes: ' + r.checks.find(c => c.id === 'lipsync').detail);
 

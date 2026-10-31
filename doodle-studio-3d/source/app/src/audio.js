@@ -133,20 +133,36 @@ export function audioDrive(project, from, id, min, max, { step = 2, smooth = 2, 
 
 // ---------------------------------------------------------------- lip sync
 // Speech mouths from the voice, per video frame (indices into face.speech:
-// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). Reads loudness, how bright
-// the sound is (band energies) and the zero-crossing rate, so vowels open wide or round,
-// hiss and buzz get teeth, and the lips close for a beat before a word starts. No network.
-// (vocals.js also has an experimental vocal separation; it stays off, because on a real rap
-// track it left the mouth hanging open.)
-let lips = null, lipsKey = '';
-export function visemes(fps, { gate = 0.1, hold = 2, vocals = false } = {}) {
+// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). One mouth per syllable, picked
+// from where the vowel's formants sit; the lips move at every syllable edge and rest in silence
+// (vocals.js syllableMouths). Over music the voice is estimated from the mix; a separated vocal
+// (stem) gives the cleanest read. engine 'classic' is the older loudness reader. No network.
+let lips = null, lipsKey = '', stemBuf = null, stemPath = null;
+export async function loadStem(api, path) {
+  if (!path) { stemBuf = null; stemPath = null; return null; }
+  if (stemPath === path && stemBuf) return stemBuf;
+  const { data } = await api('read-audio', { path });
+  const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+  stemBuf = await ac().decodeAudioData(bytes.buffer);
+  stemPath = path;
+  return stemBuf;
+}
+export function visemes(fps, { gate = 0.1, hold = 2, vocals = 'auto', engine = 'syllables', useStem = true } = {}) {
   if (!buf) return null;
-  const key = bufPath + '|' + fps + '|' + gate + '|' + hold + '|' + vocals;
+  const st = useStem && stemBuf ? stemBuf : null;
+  const key = [bufPath, fps, gate, hold, vocals, engine, st ? stemPath : ''].join('|');
   if (lips && lipsKey === key) return lips;
   const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
-  lips = mouthsFor(L, R, buf.sampleRate, fps, { gate, hold, vocals });
+  const stem = st ? { x: mono(st), sr: st.sampleRate } : null;
+  lips = mouthsFor(L, R, buf.sampleRate, fps, { gate, hold, vocals, engine, stem });
   lipsKey = key;
   return lips;
+}
+function mono(b) {
+  if (b.numberOfChannels < 2) return b.getChannelData(0);
+  const l = b.getChannelData(0), r = b.getChannelData(1), o = new Float32Array(l.length);
+  for (let i = 0; i < o.length; i++) o[i] = (l[i] + r[i]) / 2;
+  return o;
 }
 // keys the mouth over one shot (scene frames from..from+project.length); returns the keys made
 export function lipsync(project, from, setKey, opts = {}) {

@@ -55,7 +55,7 @@ function median(S, T, B, w, alongTime) {
 }
 
 // left/right channels (Float32Array; right may be null) at sample rate sr -> vocal estimate
-export function vocalStem(L, R, sr) {
+export function vocalStem(L, R, sr, { mask = true } = {}) {
   const d = Math.max(1, Math.round(sr / TARGET_SR)), fs = sr / d;
   const l = down(L, d), r = R ? down(R, d) : l;
   const T = Math.max(1, Math.ceil((l.length - N) / HOP) + 1), B = N / 2 + 1;
@@ -73,20 +73,26 @@ export function vocalStem(L, R, sr) {
       C[j] = Math.max(0, Math.min(1, (2 * pm / ((pl + pr) / 2 + 1e-12) - 1)));
     }
   }
-  const H = median(S, T, B, 17, true), P = median(S, T, B, 17, false);
+  // a clean vocal (a separated stem, a dry take) needs no masking: read it as it is
+  const H = mask ? median(S, T, B, 17, true) : S, P = mask ? median(S, T, B, 17, false) : new Float32Array(T * B);
   const hz = k => k * fs / N;
   const out = new Float32Array(l.length), norm = new Float32Array(l.length);
   const flux = new Float32Array(T), prev = new Float32Array(B), form = new Float32Array(T);
+  // vowel colour per hop: where the first two formants sit, and how much hiss is up top
+  const f1 = new Float32Array(T), f2 = new Float32Array(T), sib = new Float32Array(T), noise = new Float32Array(T);
   for (let t = 0; t < T; t++) {
-    let lg = 0, nb = 0;
+    let lg = 0, nb = 0, w1 = 0, c1 = 0, w2 = 0, c2 = 0, hiP = 0, allP = 1e-14;
     for (let k = 0; k < B; k++) {
       const j = t * B + k, f = hz(k), h2 = H[j] * H[j], p2 = P[j] * P[j], harm = h2 / (h2 + p2 + 1e-12);
       const band = f < 120 ? 0 : f < 250 ? (f - 120) / 130 : f <= 4000 ? 1 : 0.6;
       // sibilance is percussive by nature: up top the centre decides more than the split
-      const m = band * (f <= 4000 ? harm * (0.4 + 0.6 * C[j]) : (0.5 + 0.5 * harm) * C[j]);
+      const m = !mask ? band : band * (f <= 4000 ? harm * (0.4 + 0.6 * C[j]) : (0.5 + 0.5 * harm) * C[j]);
       ar[k] = mre[j] * m; ai[k] = mim[j] * m;
+      const pm2 = S[j] * S[j] * m * m;
+      if (f >= 250) { allP += pm2; if (f >= 4000) hiP += pm2; }
+      if (f >= 250 && f < 1000) { w1 += pm2; c1 += pm2 * f; } else if (f >= 1000 && f < 3000) { w2 += pm2; c2 += pm2 * f; }
       // formant band: where vowels live and kicks, bass and snare bodies don't
-      if (f >= 400 && f <= 4000) {
+      if (f >= (mask ? 400 : 250) && f <= 4000) {
         const pw = S[j] * S[j] * m * m + 1e-14;
         form[t] += pw; lg += Math.log(pw); nb++;
       }
@@ -98,7 +104,11 @@ export function vocalStem(L, R, sr) {
     // voiced or noise? a vowel's partials stand out of the band (low flatness); a snare, hat or
     // breath fills it evenly. Only voiced sound counts as the voice's loudness.
     const flat = nb ? Math.exp(lg / nb) / (form[t] / nb) : 1;
-    form[t] *= Math.max(0, Math.min(1, (0.55 - flat) / 0.3));
+    f1[t] = w1 > 1e-14 ? c1 / w1 : 0; f2[t] = w2 > 1e-14 ? c2 / w2 : 0; sib[t] = hiP / allP;
+    const vf = Math.max(0, Math.min(1, (0.55 - flat) / 0.3));
+    // the unvoiced part (s, sh, f, t, breath): no vowel, but the mouth shows teeth for it
+    noise[t] = (allP - 1e-14) * (1 - vf);
+    form[t] *= vf;
     // inverse: conjugate symmetric spectrum, then overlap-add with the same window
     for (let k = 1; k < N / 2; k++) { ar[N - k] = ar[k]; ai[N - k] = -ai[k]; }
     for (let k = 0; k < N; k++) ai[k] = -ai[k];
@@ -110,7 +120,7 @@ export function vocalStem(L, R, sr) {
     }
   }
   for (let i = 0; i < out.length; i++) if (norm[i] > 1e-6) out[i] /= norm[i];
-  return { x: out, sr: fs, flux, form, hopSec: HOP / fs };
+  return { x: out, sr: fs, flux, form, f1, f2, sib, noise, hopSec: HOP / fs };
 }
 
 // the loud end of a curve, ignoring a few spikes (a stray hit must not set the scale)
@@ -244,10 +254,23 @@ export function bedLevel(L, R, sr, fps) {
   return sorted[Math.floor(sorted.length * 0.2)] / top;
 }
 
-// the whole pipeline: channels in, mouths per frame out. vocals: false (default) reads the plain
-// signal, as every build up to 20261031-044106 did; true or 'auto' separate the vocal first. The
-// separation is opt-in only: on a real rap track (Bambi v9) it left the mouth hanging open.
-export function mouthsFor(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = false } = {}) {
+// the whole pipeline: channels in, mouths per frame out.
+// engine 'syllables' (default): one mouth per syllable, the lips moving at every syllable edge
+// (closed on deep dips, a consonant shape on shallow ones), rest in silence. Over music it reads
+// the separated estimate; a clean vocal (stem: a separated vocal or a dry take) is read as it is.
+// engine 'classic': the loudness-band reader every build up to 20261031-081610 used.
+export function mouthsFor(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = 'auto', engine = 'syllables', stem = null } = {}) {
+  const n = Math.ceil(L.length / sr * fps);
+  if (engine === 'classic') return classicMouths(L, R, sr, fps, { gate, hold, vocals: vocals === 'auto' ? false : vocals });
+  const out = new Uint8Array(n).fill(VISEME.rest);
+  if (stem) { out.set(syllableMouths(vocalStem(stem.x, null, stem.sr, { mask: false }), fps, n).out.subarray(0, n)); return out; }
+  const music = vocals === 'auto' ? bedLevel(L, R, sr, fps) > 0.06 : !!vocals;
+  out.set(syllableMouths(vocalStem(L, R, sr, { mask: music }), fps, n).out.subarray(0, n));
+  return out;
+}
+
+// the classic reader (vocals: false reads the plain signal; true separates first, as 065836 did)
+function classicMouths(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = false } = {}) {
   const n = Math.ceil(L.length / sr * fps);
   if (vocals === 'auto') vocals = bedLevel(L, R, sr, fps) > 0.06;
   if (!vocals) return finishMouths(visemesFrom(L, sr, fps, { gate, hold }).slice(0, n), { hold });
@@ -275,4 +298,140 @@ export function mouthsFor(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = false 
   }
   alignToOnsets(out, onsetsPerFrame(stem, fps, n), level, { gate, min: 0.6 });
   return finishMouths(out, { hold });
+}
+
+// stem -> per-frame mouths, one shape per syllable, lips moving at every syllable boundary
+export function syllableMouths(stem, fps, n, o = {}) {
+  const { gate = 0.12, hissGate = 0.35, dip = 0.85, faint = 0.96, deep = 0.45, win = 0.09, minGap = 0.075 } = o;
+  const T = stem.form.length, hop = stem.hopSec;
+  const raw = Array.from(stem.form, Math.sqrt);
+  const sm = raw.map((_, t) => ((raw[t - 1] ?? raw[t]) + 2 * raw[t] + (raw[t + 1] ?? raw[t])) / 4);
+  const srt = sm.filter(v => v > 0).sort((a, b) => a - b), top = srt[Math.floor(srt.length * 0.97)] || 1;
+  const env = sm.map(v => Math.min(1.2, v / top));
+  const W = Math.max(2, Math.round(win / hop)), G = Math.max(2, Math.round(minGap / hop));
+  const peakSide = (t, d) => { let m = 0; for (let k = 1; k <= W; k++) m = Math.max(m, env[t + d * k] ?? 0); return m; };
+  // syllable boundaries: local minima well below the voice on both sides
+  const bounds = [];
+  for (let t = 1; t < T - 1; t++) {
+    if (!(env[t] <= env[t - 1] && env[t] <= env[t + 1])) continue;
+    const side = Math.min(peakSide(t, -1), peakSide(t, 1));
+    if (side < gate * 1.3 || env[t] > dip * side) continue;
+    const r = env[t] / side;
+    if (bounds.length && t - bounds[bounds.length - 1].t < G) { const b = bounds[bounds.length - 1]; if (r < b.r) { b.t = t; b.r = r; } continue; }
+    bounds.push({ t, r });
+  }
+  const frameOfHop = t => Math.floor((t * hop + 0.035) * fps);   // a hop reports on the late part of its window
+  const vowel = (a, b) => {
+    // the nucleus: loudest stretch of the syllable, its formants decide the shape
+    let p = a; for (let t = a; t < b; t++) if (env[t] > env[p]) p = t;
+    let w = 0, F1 = 0, F2 = 0, S = 0;
+    for (let t = Math.max(a, p - 2); t <= Math.min(b - 1, p + 2); t++) { const e = env[t]; w += e; F1 += e * stem.f1[t]; F2 += e * stem.f2[t]; S += e * stem.sib[t]; }
+    F1 /= w || 1; F2 /= w || 1; S /= w || 1;
+    return { p, F1, F2, S, peak: env[p] };
+  };
+  const out = new Uint8Array(n).fill(VISEME.rest), kind = new Uint8Array(n); // kind 1 vowel, 2 closure
+  // voiced runs first (silence always splits), then the dips inside each run
+  const runs = [];
+  for (let t = 0; t < T;) {
+    if (env[t] < gate) { t++; continue; }
+    let e = t; while (e < T && (env[e] >= gate || (env[e + 1] ?? 0) >= gate)) e++;
+    runs.push([t, e]); t = e + 1;
+  }
+  const syl = [];
+  for (const [ra, rb] of runs) {
+    const inner = bounds.filter(b => b.t > ra + 2 && b.t < rb - 2);
+    // rap rarely holds one vowel this long: where no clear dip split a stretch, take the faint ones
+    // (the music fills the consonants in), spaced at least a fast syllable apart
+    const LONG = Math.round(0.3 / hop), STEP = Math.round(0.12 / hop);
+    for (let i = 0, e = [ra, ...inner.map(b => b.t), rb]; i + 1 < e.length; i++) {
+      if (e[i + 1] - e[i] <= LONG) continue;
+      const cand = [];
+      for (let t = e[i] + STEP; t < e[i + 1] - STEP; t++) {
+        if (!(env[t] <= env[t - 1] && env[t] <= env[t + 1] && env[t] <= (env[t - 2] ?? 9) && env[t] <= (env[t + 2] ?? 9))) continue;
+        const side = Math.min(peakSide(t, -1), peakSide(t, 1));
+        if (env[t] <= faint * side) cand.push({ t, r: env[t] / side, faint: true });
+      }
+      cand.sort((a, b) => a.r - b.r);
+      const took = [];
+      for (const c of cand) if ([e[i], e[i + 1], ...took.map(x => x.t)].every(t => Math.abs(t - c.t) >= STEP)) took.push(c);
+      inner.push(...took);
+    }
+    inner.sort((a, b) => a.t - b.t);
+    const edges = [ra, ...inner.map(b => b.t), rb];
+    for (let i = 0; i + 1 < edges.length; i++) {
+      const a = edges[i], b = edges[i + 1];
+      if (b - a < 2) continue;
+      const v = vowel(a, b);
+      if (v.peak < gate * 1.5) continue;
+      syl.push({ a, b, ...v, rb: i + 1 < edges.length - 1 ? inner[i].r : 0 });
+    }
+  }
+  // vowel from where the formants sit: F1 says how open, F2 how far forward (ee, eh) or back
+  // (oo, oh). Fixed edges from speech, nudged toward this voice's own spread when there is enough of it
+  const q = (arr, x) => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length * x)] || 0; };
+  const many = syl.length >= 12, mix = (fixed, own) => many ? 0.25 * fixed + 0.75 * own : fixed;
+  const F1s = syl.map(s => s.F1), F2s = syl.map(s => s.F2);
+  const f1lo = mix(420, q(F1s, 0.3)), f1hi = mix(650, q(F1s, 0.7)), f2lo = mix(1250, q(F2s, 0.3)), f2hi = mix(1550, q(F2s, 0.7));
+  const sibHi = many ? q(syl.map(s => s.S), 0.85) : 0.35, sibMid = many ? q(syl.map(s => s.S), 0.6) : 0.2;
+  const shape = s => {
+    if (s.S >= sibHi && s.S > 0.12) return VISEME.etc;
+    const open = s.F1 >= f1hi ? 2 : s.F1 <= f1lo ? 0 : 1, front = s.F2 >= f2hi ? 2 : s.F2 <= f2lo ? 0 : 1;
+    if (open === 2) return front === 0 ? VISEME.O : VISEME.AI;
+    if (open === 1) return front === 2 ? VISEME.E : front === 0 ? VISEME.O : (s.peak > 0.6 ? VISEME.AI : VISEME.E);
+    return front === 2 ? VISEME.E : front === 0 ? VISEME.U : VISEME.WQ;
+  };
+  let last = 0;
+  for (const s of syl) {
+    const fa = Math.max(0, frameOfHop(s.a)), fb = Math.min(n, frameOfHop(s.b) + 1), fp = frameOfHop(s.p);
+    let v = shape(s);
+    for (let f = fa; f < fb; f++) { out[f] = v; kind[f] = 1; }
+    s.fa = fa; s.fb = fb; s.v = v; s.fp = fp;
+    last = fb;
+  }
+  const frameEnv = new Float32Array(n + 1), fcount = new Float32Array(n + 1);
+  for (let t = 0; t < T; t++) { const f = frameOfHop(t); if (f >= 0 && f <= n) { frameEnv[f] += env[t]; fcount[f]++; } }
+  for (let f = 0; f <= n; f++) frameEnv[f] /= fcount[f] || 1;
+  // at each boundary between two voiced syllables the lips move: deep dips close (MBP), shallow
+  // ones narrow (a consonant shape), so even two of the same vowel read as two syllables
+  for (let i = 0; i + 1 < syl.length; i++) {
+    const A = syl[i], B = syl[i + 1];
+    const gapF = B.fa - A.fb;
+    if (gapF >= 3) continue;  // a real gap: rest is already there
+    const bf = Math.max(A.fp + 1, Math.min(B.fp - 1, frameOfHop(A.b)));
+    if (bf <= A.fp || bf >= B.fp) continue;
+    const sibB = stem.sib[Math.min(T - 1, B.a + 1)] || 0;
+    const hiss = sibB > sibHi ? VISEME.etc : sibB > sibMid ? VISEME.FV : 0;
+    const c = A.rb <= deep ? (hiss || VISEME.MBP) : (A.v === B.v || B.v === VISEME.AI ? (hiss || VISEME.L) : null);
+    if (c) { out[bf] = c; kind[bf] = 2; }
+    // a gap the music bridged: frames well under both syllables close (lips meet, then rest)
+    const lim = deep * Math.min(A.peak, B.peak), shut = [];
+    for (let f = A.fp + 1; f < B.fp; f++) if (frameEnv[f] < lim) shut.push(f);
+    if (shut.length >= 2) { for (const f of shut) { out[f] = VISEME.rest; kind[f] = 2; } out[shut[shut.length - 1]] = VISEME.MBP; }
+  }
+  // hiss with no vowel (s, sh, f): teeth, where it is loud enough to be the voice and not a hat
+  if (stem.noise) {
+    const nz = new Float32Array(n), cnt = new Float32Array(n), sb = new Float32Array(n);
+    for (let t = 0; t < T; t++) { const f = frameOfHop(t); if (f >= 0 && f < n) { nz[f] += Math.sqrt(stem.noise[t]); sb[f] += stem.sib[t]; cnt[f]++; } }
+    for (let f = 0; f < n; f++) if (cnt[f]) { nz[f] /= cnt[f] * top; sb[f] /= cnt[f]; }
+    for (let f = 0; f < n; f++) if (out[f] === VISEME.rest && nz[f] >= hissGate) out[f] = sb[f] > 0.35 ? VISEME.etc : VISEME.FV;
+  }
+  // breath-length gaps inside a phrase close the lips; long ones rest
+  for (let f = 1; f < n - 1; f++) if (out[f] === VISEME.rest && out[f - 1] !== VISEME.rest && out[f + 1] !== VISEME.rest) out[f] = VISEME.MBP;
+  // lips meet before a word starts
+  for (let f = 1; f < n; f++) if (out[f] !== VISEME.rest && out[f - 1] === VISEME.rest && out[f] !== VISEME.etc && out[f] !== VISEME.FV) out[f - 1] = VISEME.MBP;
+  // single-frame vowels that are not syllables of their own merge into a neighbour
+  for (let f = 1; f < n - 1; f++) if (kind[f] === 1 && out[f] !== out[f - 1] && out[f] !== out[f + 1] && kind[f - 1] === 1 && kind[f + 1] === 1) out[f] = out[f - 1];
+  // no one-frame flicker: only closed lips (MBP) may last a single frame. A one-frame consonant
+  // takes a frame from the longer side; with no room either side it closes the lips instead
+  const mr = [];
+  for (let f = 0; f < n;) { let g = f + 1; while (g < n && out[g] === out[f]) g++; mr.push([f, g]); f = g; }
+  for (let i = 1; i + 1 < mr.length; i++) {
+    const [a, b] = mr[i];
+    if (b - a !== 1 || out[a] === VISEME.MBP) continue;
+    const L = mr[i - 1][1] - mr[i - 1][0], R = mr[i + 1][1] - mr[i + 1][0];
+    if (R >= 3 && R >= L) { out[b] = out[a]; mr[i + 1][0]++; mr[i][1]++; }
+    else if (L >= 3) { out[a - 1] = out[a]; mr[i - 1][1]--; mr[i][0]--; }
+    else out[a] = VISEME.MBP;
+  }
+  return { out, syl, bounds };
 }
