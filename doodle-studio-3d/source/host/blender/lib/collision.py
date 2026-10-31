@@ -232,6 +232,15 @@ def drawn_zmin(obs):
             ob.update_tag()
 
 
+def rendered_zmin(obs):
+    """Lowest point of what renders: the stroke with its real width, and the outline with its
+    push away from the camera (stopped at the floor, see clamp_shell_group).
+    Lifting the character by this keeps every outline whole above the floor."""
+    a = drawn_zmin(obs)
+    b = _zmin_eval(obs)
+    return b if a is None else a if b is None else min(a, b)
+
+
 def _zmin_eval(obs):
     dg = bpy.context.evaluated_depsgraph_get()
     dg.update()
@@ -377,8 +386,9 @@ def floor_lift(arm, objs):
 
 def floor_settle(arm, objs, frames, log=None):
     """After everything is keyed and baked: step through the frames once more, measure the
-    stroke where it really ended up, and fix the root key by whatever is left (a millimetre or
-    two of perspective, or a first frame whose ink settled late). Returns the biggest fix (m)."""
+    stroke and the outline where they really render, and lift the whole character by whatever
+    still dips under the floor (perspective, a first frame whose ink settled late, the outline's
+    leftover push in a high shot). Nothing is ever cut. Returns the biggest lift (m)."""
     from mathutils import Vector
     sc = bpy.context.scene
     obs = [objs[k] for k in FLOOR_PARTS if k in objs and not objs[k].hide_render]
@@ -386,31 +396,31 @@ def floor_settle(arm, objs, frames, log=None):
     worst = 0.0
     if not obs:
         return worst
-    restore = hold_depth_bias()
-    try:
-        for f in frames:
-            sc.frame_set(f)
-            lo = drawn_zmin(obs)
+    for f in frames:
+        sc.frame_set(f)
+        moved = 0.0
+        for _ in range(3):   # perspective ink shifts a little as he rises: measure again
+            lo = rendered_zmin(obs)
             d = floor_target(arm, obs) - lo if lo is not None else 0.0
-            if d > 5e-4:
-                to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
-                root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
-                root.keyframe_insert('location', frame=f, group=root.name)
-                worst = max(worst, abs(d))
-    finally:
-        restore()
+            if d <= 5e-4:
+                break
+            to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
+            root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
+            root.keyframe_insert('location', frame=f, group=root.name)
+            moved += d
+        worst = max(worst, moved)
     return worst
 
 
 # ---------------------------------------------------------------- the ink shell stays above the floor
 # The outline shell is pushed a few ink widths away from the camera (Depth Bias) so creases don't
 # draw. From a high camera "away" points down, so under the feet the shell went through the floor
-# and the floor hid the bottom of the foot strokes. The shell's push is now clamped at the floor:
-# a shell point that started above the floor never ends below it (one that started below, a foot
-# really dug in, is left alone for the floor lift to fix). The floor height comes from the rig
+# and the floor hid the bottom of the foot strokes. A clamp straight up at the floor cut the outline
+# flat (v10). Now the push is shortened along the camera ray to stop on the floor: same shape on
+# screen, nothing under the floor. A stroke really dug in lifts the whole character (floor_settle,
+# rendered_zmin). The floor height comes from the rig
 # (world z on the rig's floor holder, keyed per frame by the bridge).
 FLOOR_OFF = -1000.0
-SHELL_FADE = 0.06   # the push away from the camera fades in over this height above the floor
 
 
 def _ink_groups():
@@ -419,7 +429,9 @@ def _ink_groups():
 
 
 def clamp_shell_group(ng):
-    """Add the floor clamp to an ink node group (old saved files included). Idempotent."""
+    """Add the floor stop to an ink node group (old saved files included): the outline's push
+    away from the camera stops at the floor, along the camera ray, so the outline keeps its
+    full shape on screen and nothing of it sinks out of sight. Idempotent."""
     if any(getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z' for it in ng.interface.items_tree):
         return False
     flip = next((n for n in ng.nodes if n.bl_idname == 'GeometryNodeFlipFaces'), None)
@@ -445,26 +457,31 @@ def clamp_shell_group(ng):
         L(a, n.inputs[0]) if not isinstance(a, (int, float)) else setattr(n.inputs[0], 'default_value', a)
         L(b, n.inputs[1]) if not isinstance(b, (int, float)) else setattr(n.inputs[1], 'default_value', b)
         return n.outputs[0]
-    # near the floor the push away from the camera fades out (gone at the floor, full 6 cm up):
-    # behind a foot the ground can rise (a slope, a sweep, a bump), and a pushed outline would
-    # sink into it. Down there the outline is just the stroke around the form.
+    # the push away from the camera runs along the camera's own ray, so shortening it never
+    # changes the outline's shape on screen. Where it would carry a point under the floor it is
+    # shortened to stop on the floor: the outline keeps its full shape (a clamp straight up cut
+    # the bottom of the feet flat in v10), and the floor no longer hides any of it.
     add = off_link.from_node
     if add.bl_idname == 'ShaderNodeVectorMath' and add.operation == 'ADD' and add.inputs[0].links and add.inputs[1].links:
-        fade = m('MINIMUM', m('MAXIMUM', m('DIVIDE', m('SUBTRACT', sz(pw), gi.outputs['Floor Z']), SHELL_FADE), 0.0), 1.0)
+        nb = add.inputs[0].links[0].from_socket          # outward by the stroke width
+        aw = add.inputs[1].links[0].from_socket          # away from the camera
+        base = N('ShaderNodeVectorMath'); base.operation = 'ADD'; L(pos, base.inputs[0]); L(nb, base.inputs[1])
+        bz = sz(tw(base.outputs[0]))
+        td = N('FunctionNodeTransformDirection'); L(M, td.inputs['Transform']); L(aw, td.inputs['Direction'])
+        az = sz(td.outputs[0])
+        reach = m('MINIMUM', m('MAXIMUM', m('DIVIDE', m('SUBTRACT', bz, gi.outputs['Floor Z']), m('MAXIMUM', m('MULTIPLY', az, -1.0), 1e-6)), 0.0), 1.0)
+        up = m('GREATER_THAN', az, -1e-6)                # pushed level or up: never shortened
+        k = m('MAXIMUM', reach, up)
         sc_away = N('ShaderNodeVectorMath'); sc_away.operation = 'SCALE'
-        L(add.inputs[1].links[0].from_socket, sc_away.inputs[0]); L(fade, sc_away.inputs['Scale'])
+        L(aw, sc_away.inputs[0]); L(k, sc_away.inputs['Scale'])
         off2 = N('ShaderNodeVectorMath'); off2.operation = 'ADD'
-        L(add.inputs[0].links[0].from_socket, off2.inputs[0]); L(sc_away.outputs[0], off2.inputs[1])
+        L(nb, off2.inputs[0]); L(sc_away.outputs[0], off2.inputs[1])
         off = off2.outputs[0]
-    tgt = N('ShaderNodeVectorMath'); tgt.operation = 'ADD'; L(pos, tgt.inputs[0]); L(off, tgt.inputs[1])
-    qw = tw(tgt.outputs[0])
-    lift = m('MAXIMUM', m('SUBTRACT', m('MINIMUM', sz(pw), gi.outputs['Floor Z']), sz(qw)), 0.0)
-    cz = N('ShaderNodeCombineXYZ'); L(lift, cz.inputs['Z'])
-    inv = N('FunctionNodeInvertMatrix'); L(M, inv.inputs[0])
-    td = N('FunctionNodeTransformDirection'); L(inv.outputs[0], td.inputs['Transform']); L(cz.outputs[0], td.inputs['Direction'])
-    tot = N('ShaderNodeVectorMath'); tot.operation = 'ADD'; L(off, tot.inputs[0]); L(td.outputs[0], tot.inputs[1])
-    ng.links.remove(off_link)
-    L(tot.outputs[0], sp.inputs['Offset'])
+    # a point whose stroke is itself under the floor (a foot really dug in) is left to the
+    # floor lift, which raises the whole character (floor_settle measures what renders).
+    if off is not off_link.from_socket:
+        ng.links.remove(off_link)
+        L(off, sp.inputs['Offset'])
     return True
 
 

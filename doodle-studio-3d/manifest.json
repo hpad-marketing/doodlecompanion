@@ -1,8 +1,8 @@
 {
- "version": "20261031-142911",
- "notes": "Faster renders: the built-in arm rule stays out of steep overhead and low shots (hands under the head look natural there) and caps its search, so an overhead shot that took 200 s now takes 10 s. Props are checked against the face with a quick screen test first.",
+ "version": "20261031-144730",
+ "notes": "Feet keep their full outline: the outline's push away from the camera now stops at the floor along the camera ray, so the shape on screen never changes and nothing is cut flat (v10 shuffle) or hidden by the floor. Floor settle measures the outline as it renders.",
  "runtime": "44.9.0",
- "published": "2026-10-31T14:29:11.503Z",
+ "published": "2026-10-31T14:47:30.513Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -115,9 +115,9 @@
    "gz": "files/9acb9e4e7870638058142a23f348904c132ebca9aeb52e655755113bdcf33668.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "b0d7cb2ecdbb2ceab057430bc02fd6545105aede658cac8d03a1820c847293c0",
-   "size": 23705,
-   "gz": "files/b0d7cb2ecdbb2ceab057430bc02fd6545105aede658cac8d03a1820c847293c0.gz"
+   "sha256": "61e585649892a3a339afd017fcf24aabbcab4cc570156e79fbd674e37a43ac5f",
+   "size": 24646,
+   "gz": "files/61e585649892a3a339afd017fcf24aabbcab4cc570156e79fbd674e37a43ac5f.gz"
   },
   "resources/app/blender/lib/compat.py": {
    "sha256": "e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9",
