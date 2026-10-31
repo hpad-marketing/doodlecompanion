@@ -4,6 +4,7 @@
 
 import { idleLayer, idleOn } from './idle.js';
 import { costarsForBridge } from './cast.js';
+import { forBridge as drawingsForBridge } from './drawings.js';
 
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
 export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52, focus: 0, fstop: 2.8 };   // focus 0 = everything sharp
@@ -168,6 +169,9 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (Object.keys(stage).length) out.stage = stage;
   if (project.items?.length) out.items = project.items;
   if (project.powers && Object.keys(project.powers).length) out.powers = project.powers;   // Blender powers (powers.py)
+  // scene drawings stand in the 3D world (drawings.py); screen drawings are laid on top as PNGs
+  const dr = drawingsForBridge(project);
+  if (dr) out.drawings = dr;
   if (project.costars?.length) out.costars = costarsForBridge(project, allIds);   // co-stars (cast.py)   // Blender powers (powers.py)
   // the built-in rule defaults (arm in front, face clear, props on the floor, eye size) are on
   // unless this shot turns one off; only the switches that are off travel, so caches hold

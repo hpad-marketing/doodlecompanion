@@ -24,6 +24,7 @@ start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models:
   'open-file': ({ file }) => ({ project: JSON.parse(fs.readFileSync(file, 'utf8')), path: file }), disk: () => ({ root: out, freeGB: 3, totalGB: 100 }),
   'write-file': ({ path: p, data }) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(data, 'base64')); return { path: p }; },
   'pick-image': () => ({ path: process.env.DS3D_IMAGE || null }), 'read-image': ({ path: p }) => ({ data: fs.readFileSync(p).toString('base64'), type: /png$/i.test(p) ? 'image/png' : 'image/jpeg' }),
+  'read-svg': ({ path: p }) => ({ text: fs.readFileSync(p, 'utf8') }),
   'pick-video': () => ({ path: process.env.DS3D_VIDEO || null }), 'ref-video': ({ path: p }) => start.registerRef(p),
   'pick-audio': () => ({ path: process.env.DS3D_AUDIO || null }), 'read-audio': ({ path: p }) => ({ data: fs.readFileSync(p).toString('base64') }),
   'render-estimate': () => ({ full: 2.5, preview: 0.6 }), 'sleep-when-done': ({ on }) => { fs.writeFileSync(path.join(out, 'sleep.json'), JSON.stringify({ on })); return { on }; },

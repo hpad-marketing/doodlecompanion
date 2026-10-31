@@ -360,6 +360,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 
 ### 3.10 Drawing in 3D
 
+- **Drawings layer (Stage › Drawings, File › Import SVG drawing…, Post › Draw on the screen…):** import an SVG or draw by hand, and the lines sit on their own layer, apart from the characters, like the 2D studio's cutaways. Every line and shape outline becomes one ink line at Bunny's weight (fills, text and images are left out; convert text to outlines first). It draws on stroke by stroke over *Draws on over* frames from *Starts at frame*, boils like a hand-drawn line (*Noise*, a new wobble every *Boil every* frames), and can leave at *Gone at frame*. **On the screen** lays it over everything in the render; **In the 3D scene** stands it in the world at *Depth* metres behind the character, facing the camera, so the character can be in front of it. Ink or mustard only. `drawings action=import {svg | path, layer, x, y, size, frame, build, noise, colour}`, `draw {strokes}`, `set`, `place`, `remove`, `list`.
 - **Ink doodles in 3D space:** strokes in frame fractions at a depth, drawn on over N frames. `powers action=doodle {strokes, depth, draw}`.
 - **Auto-ink:** Line Art at Bunny's stroke weight on imported models. `powers action=autoink`.
 - **Headlines as 3D lettering**, and **story pieces:** time skip, journey map, chat, label and arrow, end screen. `library_use {id: story:…, text}`.
@@ -564,7 +565,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
+`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 

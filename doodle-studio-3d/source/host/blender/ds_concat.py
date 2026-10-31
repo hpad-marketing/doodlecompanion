@@ -7,6 +7,7 @@ track (a song) under the whole scene from the first frame.
 
 --post POST.json (storytime, made by the editor) lays more on top and underneath:
   looks    [{shot, saturation, overlays: [{path, blend, alpha}]}]   flashback / VHS
+  drawings [{path, start, length}]   the screen drawings layer (full-frame PNGs), under the overlays
   overlays [{path, start, length}]   full-frame PNGs: photos, outlines, captions, bubbles
   movies   [{path, start, length, rect: {cx, cy, w}}]   picture-in-picture clips
   music    {path, keys: [[frame, volume]]}   a music bed that ducks under the voice
@@ -125,6 +126,9 @@ for m in post.get('movies', []):
     st.transform.offset_x = (float(r['cx']) - 0.5) * W
     st.transform.offset_y = (0.5 - float(r['cy'])) * H
     st.blend_type = 'ALPHA_OVER'
+# screen drawings first, so captions and cut-ins stay on top of them
+for ov in post.get('drawings', []):
+    image(ov['path'], 1 + int(ov['start']), int(ov['length']), 19)
 for ov in post.get('overlays', []):
     image(ov['path'], 1 + int(ov['start']), int(ov['length']), 20)
 for t in post.get('transitions', []):
