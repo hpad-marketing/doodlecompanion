@@ -85,6 +85,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
     ok(st.audio?.babble && /_babble_\w+\.wav$/.test(st.audio.path) && fs.existsSync(st.audio.path), 'voice file written: ' + (st.audio?.path || '').split(/[\\/]/).pop());
     const mouth = await ev(() => (ds3d.project.tracks.mouth || []).map(k => k.f));
     ok(mouth.filter(f => f >= 12).length >= 6, `mouth keyed on the line (${mouth.length} keys)`);
+    await p.waitForFunction(() => __toasts.some(t => /Babble:/.test(t)), null, { timeout: 5000 }).catch(() => {});  // the toast comes after the voice is saved
     const sl = await ev(() => __toasts.join(' / '));
     ok(/Babble: 1 line/.test(sl), 'toast reports the build: ' + sl);
     const r2 = await ev(() => ds3d.babble({ action: 'voice', character: 'bunny', pitch: 380, style: 'letters' }));
