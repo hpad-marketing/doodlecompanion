@@ -583,24 +583,27 @@ function drawingsPanel() {
     h('img', { src: DR.thumb(d, 64), alt: '', width: 64, height: 64 }), h('span', {}, d.name))));
   const d = all[drawSel], i = drawSel;
   const setv = (k, v) => drRun({ action: 'set', index: i, [k]: v });
-  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(3), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'ctl', title: tip }, label + ' ', inp); };
-  const sel = (label, k, opts, tip) => { const s = h('select', { 'aria-label': label, title: tip }, ...opts.map(([v, n]) => h('option', { value: v, selected: d[k] === v }, n))); s.addEventListener('change', () => setv(k, s.value)); return h('label', { class: 'ctl', title: tip }, label + ' ', s); };
+  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(3), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'dr-f', title: tip }, label, inp); };
+  const sel = (label, k, opts, tip) => { const s = h('select', { 'aria-label': label, title: tip }, ...opts.map(([v, n]) => h('option', { value: v, selected: d[k] === v }, n))); s.addEventListener('change', () => setv(k, s.value)); return h('label', { class: 'dr-f', title: tip }, label, s); };
+  const grp = (name, ...kids) => h('div', { class: 'row dr-row' }, h('b', { class: 'dr-grp' }, name), ...kids.filter(Boolean));
   return h('div', {}, head, cards,
-    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px;margin-top:8px' },
+    grp('Where',
       sel('Layer', 'layer', [['screen', 'On the screen'], ['scene', 'In the 3D scene']], 'On the screen: over everything, like a 2D cutaway. In the 3D scene: stands in the world, so characters can pass in front of it.'),
       sel('Colour', 'colour', [['ink', 'Ink'], ['mustard', 'Mustard']], 'Brand colours only'),
       num('Across %', 'x', d.x, -50, 150, 1, 'Centre, left to right across the frame', 100), num('Down %', 'y', d.y, -50, 150, 1, 'Centre, top to bottom', 100),
       num('Size %', 'size', d.size, 2, 300, 1, 'Height as a percent of the frame height', 100), num('Turn °', 'rot', d.rot, -180, 180, 1, 'Turn it'),
-      d.layer === 'scene' ? num('Depth m', 'depth', d.depth ?? 1, -3, 20, 0.1, 'Metres behind the character (minus is in front)') : null),
-    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' },
-      num('Starts at frame', 'frame', d.frame, 0, 100000, 1, 'Frame it starts drawing on'), num('Draws on over', 'build', d.build, 0, 600, 1, 'Frames to draw every line, one after another (0 = appears at once)'),
+      d.layer === 'scene' ? num('Depth m', 'depth', d.depth ?? 1, -3, 20, 0.1, 'Metres behind the character (minus is in front)') : null,
+      d.layer === 'scene' ? h('button', { title: 'Stand it where this camera sees it now', onclick: () => drRun({ action: 'place', index: i }) }, 'Place from this camera') : null),
+    grp('When',
+      num('Starts at frame', 'frame', d.frame, 0, 100000, 1, 'Frame it starts drawing on'),
+      h('button', { title: 'Start drawing on at the playhead', onclick: () => setv('frame', frame) }, 'Start at playhead'),
+      num('Draws on over', 'build', d.build, 0, 600, 1, 'Frames to draw every line, one after another (0 = appears at once)'),
       num('Gone at frame', 'until', d.until, 0, 100000, 1, 'Frame it disappears (empty = stays to the end of the shot)'),
-      num('Noise %', 'noise', d.noise, 0, 100, 5, 'Line boil: how much the hand-drawn line wobbles (0 = still)', 100), num('Boil every', 'boil', d.boil, 1, 12, 1, 'A new wobble every this many frames (2 = on twos)')),
-    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' },
-      h('button', { title: 'Start drawing on at the playhead', onclick: () => setv('frame', frame) }, 'Start at the playhead'),
-      h('button', { title: 'Disappear at the playhead', onclick: () => setv('until', Math.max(d.frame + 1, frame)) }, 'Gone at the playhead'),
-      d.layer === 'scene' ? h('button', { title: 'Stand it where this camera sees it now', onclick: () => drRun({ action: 'place', index: i }) }, 'Place from this camera') : null,
-      h('button', { onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
+      h('button', { title: 'Disappear at the playhead', onclick: () => setv('until', Math.max(d.frame + 1, frame)) }, 'Gone at playhead')),
+    grp('Line',
+      num('Noise %', 'noise', d.noise, 0, 100, 5, 'Line boil: how much the hand-drawn line wobbles (0 = still)', 100), num('Boil every', 'boil', d.boil, 1, 12, 1, 'A new wobble every this many frames (2 = on twos)'),
+      h('span', { style: 'flex:1' }),
+      h('button', { title: `Remove ${d.name} (Ctrl+Z brings it back)`, onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
 }
 function drawPost() {
   const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame);
