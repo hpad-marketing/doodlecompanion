@@ -446,6 +446,15 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 - **Linked controls (drivers):** one control drives another. `powers action=link {from, to, factor, offset}`.
 - **Master Bunny file:** your own Bunny .blend used by every render. `powers action=master`.
 
+### 3.17 Babble voice (typed lines, cute gibberish)
+
+Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
+- How: the **Babble** button in the timeline's Voice group (or File › Babble voice). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
+- Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
+- Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
+- Watch out: a line longer than the rest of its shot keeps playing into the next shot, but the mouth keys stop at the shot's end (the toast says so). Importing or removing the recorded voice rebuilds the babble on top of it.
+
 ---
 
 ## 4. Cross-uses: made for one thing, great for another
@@ -564,7 +573,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
+`babble`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 

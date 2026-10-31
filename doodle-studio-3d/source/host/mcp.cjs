@@ -86,6 +86,8 @@ const TOOLS = [
     { action: { enum: ['import', 'remove', 'drive', 'lipsync'] }, path: { type: 'string' }, id: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' }, step: { type: 'integer', minimum: 1, maximum: 12 }, shot: { type: 'integer', minimum: 0 }, all: { type: 'boolean' }, gate: { type: 'number', minimum: 0, maximum: 1 }, hold: { type: 'integer', minimum: 1, maximum: 6 }, stem: { type: 'string' }, engine: { enum: ['syllables', 'classic'] } }, ['action']],
   ['story', 'Storytime helpers for the whole scene. action=retention: hook strength of the first 2 s and every 4+ s stretch with no visual change; chapters: writes YouTube chapters (0:00 Title lines) from markers whose note starts with "Chapter:" to work\\<scene>_chapters.txt; loop_back: keys the last frame of the last shot to the opening pose so a Reel replays seamlessly; gags: running gags from markers noted "gag: ..."; bible: read the story bible, or update it with bible {premise, characters, rules}.',
     { action: { enum: ['retention', 'chapters', 'loop_back', 'gags', 'bible'] }, bible: { type: 'object' } }, ['action']],
+  ['babble', 'Babble voice: typed dialogue spoken as cute gibberish, synthesised in the app (no recorded or sampled audio). Each line is placed at a frame of a shot; the scene voice is rebuilt as one file (mixed over the recorded voice if any), the speaker\'s mouth is keyed on every syllable and the line becomes timed captions. action=add (text, shot code/index default active, frame default playhead, who "lead" or a co-star index, mood neutral|happy|sad|angry|sleepy|shocked, style override); list; remove (id); clear; voice (character bunny|koala|frog, style syllables|letters|tones, pitch Hz 80-900, speed 0.4-2, range semitones 0-12, breath 0-0.5, croak 0-1, reset true) changes that character\'s voice for every line; preview (text, who, mood) plays it once; rebuild.',
+    { action: { enum: ['add', 'list', 'remove', 'clear', 'voice', 'preview', 'rebuild'] }, text: { type: 'string' }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, who: { type: ['string', 'integer'] }, mood: { enum: ['neutral', 'happy', 'sad', 'angry', 'sleepy', 'shocked'] }, style: { enum: ['syllables', 'letters', 'tones'] }, id: { type: 'string' }, character: { enum: ['bunny', 'koala', 'frog'] }, pitch: { type: 'number' }, speed: { type: 'number' }, range: { type: 'number' }, breath: { type: 'number' }, croak: { type: 'number' }, reset: { type: 'boolean' } }, ['action']],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
@@ -149,6 +151,7 @@ module.exports = ({ call, api }) => {
       : a.action === 'drive' ? call(`ds3d.audioDrive(${JSON.stringify(a.id)}, ${Number(a.min ?? 0)}, ${Number(a.max ?? 10)}, ${JSON.stringify({ step: a.step || 2 })})`)
       : call(`ds3d.importAudio(${a.action === 'remove' ? 'null' : JSON.stringify(a.path || '')})`),
     story: a => call(`ds3d.story(${JSON.stringify(a || {})})`),
+    babble: a => call(`ds3d.babble(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
     production: a => call(`ds3d.production(${JSON.stringify(a || {})})`),
     workflow: a => call(`ds3d.workflow(${JSON.stringify(a || {})})`),

@@ -177,3 +177,22 @@ export function lipsync(project, from, setKey, opts = {}) {
   }
   return n;
 }
+
+// ---- babble voice helpers (babblescene.js)
+// decode any audio file to its channels without replacing the scene audio
+export async function decodeChannels(api, path) {
+  const { data } = await api('read-audio', { path });
+  const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+  const b = await ac().decodeAudioData(bytes.buffer);
+  return { sr: b.sampleRate, channels: [...Array(Math.min(2, b.numberOfChannels))].map((_, c) => b.getChannelData(c)) };
+}
+export const outputRate = () => ac().sampleRate;
+// play raw samples once (the Babble preview); a new call stops the last one
+let prev = null;
+export function playSamples(samples, sr) {
+  try { prev?.stop(); } catch {}
+  const c = ac(); c.resume?.();
+  const b = c.createBuffer(1, samples.length, sr); b.copyToChannel(samples, 0);
+  prev = c.createBufferSource(); prev.buffer = b; prev.connect(c.destination); prev.start();
+  return samples.length / sr;
+}
