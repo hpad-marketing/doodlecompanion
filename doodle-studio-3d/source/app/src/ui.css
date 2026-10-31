@@ -196,3 +196,17 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 #stick-layer{position:absolute;inset:0;width:100%;height:100%;z-index:6;cursor:crosshair;touch-action:none}
 .stick-bar{position:absolute;left:8px;right:8px;bottom:8px;z-index:7;display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:var(--bg,#E0A64B);border:var(--line);border-radius:8px;padding:6px;color:var(--fg)}
 .plan-canvas{width:360px;max-width:100%;border:2px solid #1F1F1D;border-radius:8px}
+/* Materials tab (materials.js): looks as picture cards, palettes as swatch strips, rows of controls */
+.mat h3{margin:12px 0 6px}
+.mat-row{align-items:center;gap:6px;flex-wrap:wrap}
+.mat-row .mat-now{font-weight:500;opacity:.75}
+.mat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.mat-card[disabled]{opacity:.45}
+.mat-card[aria-pressed=true]{outline:3px solid var(--fg);outline-offset:1px}
+.mat-pals{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.mat-pal{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:5px;text-align:left;white-space:normal;font-weight:750;font-size:12px}
+.mat-pal small{font-weight:500;opacity:.8;font-size:10.5px}
+.mat-pal[aria-pressed=true]{outline:3px solid var(--fg);outline-offset:1px}
+.mat-swatch{display:flex;height:18px;border:1px solid var(--fg)}
+.mat-swatch i{flex:1}
+.mat-ctls{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:4px 16px;align-items:center}

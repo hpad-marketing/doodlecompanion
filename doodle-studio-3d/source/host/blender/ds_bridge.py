@@ -51,6 +51,7 @@ import drawings  # noqa: E402
 import cast as costars  # noqa: E402
 import rules_scene  # noqa: E402
 import constraints  # noqa: E402
+import materials  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -305,6 +306,11 @@ if held_props and not flag('--no-collide'):
 powers.apply(shot, cam, lambda m: print(m, flush=True))
 # scene drawings: imported SVGs standing in the 3D world, drawn on and boiling (drawings.py)
 drawings.apply(shot, cam, lambda m: print(m, flush=True))
+# Materials tab: a look (clay, cel, felt... or an add-on's) on the scene, characters, set or props
+try:
+    materials.apply(shot, cam, lambda m: print(m, flush=True), out_dir)
+except Exception as e:   # a material never stops a render: the shot stays Ink & Mustard
+    print('materials: skipped:', e, flush=True)
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}

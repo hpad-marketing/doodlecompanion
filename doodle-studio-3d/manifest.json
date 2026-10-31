@@ -1,28 +1,33 @@
 {
- "version": "20261031-201244",
- "notes": "Updater fix: a restart question left open no longer blocks later updates. Includes the live Blender link, babble voice and SVG drawings layer.",
+ "version": "20261031-205914",
+ "notes": "Materials tab: put clay, cel toon, soft vinyl, felt, paper or ceramic looks (or a look add-on such as ClayDoh) on the whole scene, the characters, the set, all props or one prop, in 8 colour palettes; light controls for lit looks; look add-ons are found in the library looks folder or Blender's add-ons and tested with one frame before use; MCP tool materials.",
  "runtime": "44.9.0",
- "published": "2026-10-31T20:12:45.298Z",
+ "published": "2026-10-31T20:59:14.422Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
    "size": 2843,
    "gz": "files/527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29.gz"
   },
+  "resources/app/looks.cjs": {
+   "sha256": "936c943fa4a9a9707c85c30ea68d1848db135f20b7724a414a1996fa75cd2806",
+   "size": 8345,
+   "gz": "files/936c943fa4a9a9707c85c30ea68d1848db135f20b7724a414a1996fa75cd2806.gz"
+  },
   "resources/app/main.cjs": {
-   "sha256": "fbd677be5258713a6722a7f642a12741cbc335b699658f1ba25bad943d8329ae",
-   "size": 28216,
-   "gz": "files/fbd677be5258713a6722a7f642a12741cbc335b699658f1ba25bad943d8329ae.gz"
+   "sha256": "179a62e4d9c5a5bf0a81f6ad7639bbba19f8ab540ff9036149400639d793c11f",
+   "size": 28421,
+   "gz": "files/179a62e4d9c5a5bf0a81f6ad7639bbba19f8ab540ff9036149400639d793c11f.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "7f37aaa4fbc873460e2a7fdc0f932ac6e2e7e05bb4c47ae4ecce6ad274f1fa18",
-   "size": 43825,
-   "gz": "files/7f37aaa4fbc873460e2a7fdc0f932ac6e2e7e05bb4c47ae4ecce6ad274f1fa18.gz"
+   "sha256": "ec3e25ffa999aa0bc8d7d514b52c1696c1e12db248f2f562c6f010e401fb48a4",
+   "size": 45694,
+   "gz": "files/ec3e25ffa999aa0bc8d7d514b52c1696c1e12db248f2f562c6f010e401fb48a4.gz"
   },
   "resources/app/mirror.cjs": {
-   "sha256": "9d2afae4530af257e78b36666abfbf31c028456624871da018c5980901f65127",
-   "size": 7003,
-   "gz": "files/9d2afae4530af257e78b36666abfbf31c028456624871da018c5980901f65127.gz"
+   "sha256": "491a8f2deb4f0806f9f62c8191af825f43277ce6fb33d09778d52ebec2c5cfd7",
+   "size": 7055,
+   "gz": "files/491a8f2deb4f0806f9f62c8191af825f43277ce6fb33d09778d52ebec2c5cfd7.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "83447e61d8ef68b6b6f3386f78a77efb56bdc7bafdc4dba22e026f52802c821c",
@@ -40,9 +45,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "141533d72503687bbe5db019400ff2d249aaa4604a21f99ce7b27477004c6c96",
-   "size": 20612,
-   "gz": "files/141533d72503687bbe5db019400ff2d249aaa4604a21f99ce7b27477004c6c96.gz"
+   "sha256": "28e452255bb0e2707d1de471c4e4c4aa8ba9d491983c12e59b8c65bf0ddc13da",
+   "size": 21048,
+   "gz": "files/28e452255bb0e2707d1de471c4e4c4aa8ba9d491983c12e59b8c65bf0ddc13da.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "841400db7129961c481dcac6cafb508731483a76262471832c122a590891a5d8",
@@ -65,9 +70,9 @@
    "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "6199d3702de6ea6d47c8e5f6d44e008ab9ed0f1595ae1df2c731dbe260448430",
-   "size": 22025,
-   "gz": "files/6199d3702de6ea6d47c8e5f6d44e008ab9ed0f1595ae1df2c731dbe260448430.gz"
+   "sha256": "7e8c76fe3993b55eb5def9452d2f7c1b45a0dee2276cbc7fd54fa7b977201269",
+   "size": 22369,
+   "gz": "files/7e8c76fe3993b55eb5def9452d2f7c1b45a0dee2276cbc7fd54fa7b977201269.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "077be628a809916a780a89820b3b3796eeb68720f1bb93ba6fdb5c4ccb42c9fa",
@@ -95,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "dc239f83f8bb85aef879c46749afe1e168b8535ae6a79612c100f3d3441e64c9",
-   "size": 47651,
-   "gz": "files/dc239f83f8bb85aef879c46749afe1e168b8535ae6a79612c100f3d3441e64c9.gz"
+   "sha256": "88cc4cedeacbb5d5808c2b31e4e0b7828d5889c6289d1b59caa8e50b309b89eb",
+   "size": 50119,
+   "gz": "files/88cc4cedeacbb5d5808c2b31e4e0b7828d5889c6289d1b59caa8e50b309b89eb.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -173,6 +178,16 @@
    "sha256": "c41cf43204e2635f0338ba8f9c5537bc2184f51b8d910d769586c99da97f2ddb",
    "size": 12832,
    "gz": "files/c41cf43204e2635f0338ba8f9c5537bc2184f51b8d910d769586c99da97f2ddb.gz"
+  },
+  "resources/app/blender/lib/materials.py": {
+   "sha256": "b452569f4ec623e2b2f9ad099a9f58025cd77fad6762a706dc28a6cbe948371a",
+   "size": 16857,
+   "gz": "files/b452569f4ec623e2b2f9ad099a9f58025cd77fad6762a706dc28a6cbe948371a.gz"
+  },
+  "resources/app/blender/lib/palettes.json": {
+   "sha256": "bd1867b2621ff93db83ee1ecad64bd655f0c93fbbcaa832f0d750530059d0891",
+   "size": 2927,
+   "gz": "files/bd1867b2621ff93db83ee1ecad64bd655f0c93fbbcaa832f0d750530059d0891.gz"
   },
   "resources/app/blender/lib/physics.py": {
    "sha256": "140ba2ab19d18e75234c47b8ddab8fb4a598349c899ef83b9587f245ab2e6272",
@@ -300,14 +315,19 @@
    "gz": "files/a534013e32c4997fac5841acd5d3fd8ecd4b0c1bb4d13aaa5648a6cd20b44ea5.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "385c4038aff9f63fa2ccaaddda1edeba188bd0b2469310c87298853e8a8f5a3c",
-   "size": 263099,
-   "gz": "files/385c4038aff9f63fa2ccaaddda1edeba188bd0b2469310c87298853e8a8f5a3c.gz"
+   "sha256": "14cb8f523044af6245f91405f01fac4a5309b0dafd32dee248e8cfb85fb49ddd",
+   "size": 263955,
+   "gz": "files/14cb8f523044af6245f91405f01fac4a5309b0dafd32dee248e8cfb85fb49ddd.gz"
+  },
+  "resources/app/ui/src/materials.js": {
+   "sha256": "545c13e24637729615301236dbfeb592949336a5122883fbb5c32190cf511051",
+   "size": 17474,
+   "gz": "files/545c13e24637729615301236dbfeb592949336a5122883fbb5c32190cf511051.gz"
   },
   "resources/app/ui/src/mirror.js": {
-   "sha256": "a5ff40b16713669bb4b374a0fd773c8903c65cf433fb494e06ac2f70f7519fa6",
-   "size": 6086,
-   "gz": "files/a5ff40b16713669bb4b374a0fd773c8903c65cf433fb494e06ac2f70f7519fa6.gz"
+   "sha256": "af066be4a65593a51273e49a427e8ac8c43eeadd625cb80cd7efc0a0984fa994",
+   "size": 6128,
+   "gz": "files/af066be4a65593a51273e49a427e8ac8c43eeadd625cb80cd7efc0a0984fa994.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -330,9 +350,9 @@
    "gz": "files/64a23aa38697e327018da7845f40f37ccb60e7f44fd08afbc946a23824c80572.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "4fb6c3decc0b9eab02b9a32ee3336dcc9c1700727ada99afe2717d4aeff7af5c",
-   "size": 9519,
-   "gz": "files/4fb6c3decc0b9eab02b9a32ee3336dcc9c1700727ada99afe2717d4aeff7af5c.gz"
+   "sha256": "86434107e6b9a232ce1223774d84e367d3be9165a29f17a1836d4c91d6e74512",
+   "size": 10427,
+   "gz": "files/86434107e6b9a232ce1223774d84e367d3be9165a29f17a1836d4c91d6e74512.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "8db8385060ab57543ae451032eb9f265b6ea099a1fd62e2554010ce6100c7313",
@@ -355,9 +375,9 @@
    "gz": "files/6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "acca1face7846eba54333220137c6fd73dc6b0382d2e2105d5ba90a7365c4a47",
-   "size": 14420,
-   "gz": "files/acca1face7846eba54333220137c6fd73dc6b0382d2e2105d5ba90a7365c4a47.gz"
+   "sha256": "fb2d508aa3c06b9f4c8fb96cbc60c4027d1687e925ea783cf2c2d8b3056ba615",
+   "size": 15428,
+   "gz": "files/fb2d508aa3c06b9f4c8fb96cbc60c4027d1687e925ea783cf2c2d8b3056ba615.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "f4bc36ff73794efc7568aa6e56b40c5845044df54f019c718d0a0c6cf74c84cd",
@@ -508,6 +528,56 @@
    "sha256": "291d5451e15d2a5ab3d7b75f47332f9f544f46eb0f7945f103c1d97d850bfba5",
    "size": 18968,
    "gz": "files/291d5451e15d2a5ab3d7b75f47332f9f544f46eb0f7945f103c1d97d850bfba5.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/CONTRACT.md": {
+   "sha256": "632c2b950234c015ddb6f0855ad6de60ec4f9947d153bdd0ef7def3c651843c9",
+   "size": 4435,
+   "gz": "files/632c2b950234c015ddb6f0855ad6de60ec4f9947d153bdd0ef7def3c651843c9.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/__init__.py": {
+   "sha256": "27b87d7fa8af431ea9aa27488708b53fd2e4ca4230adb17cd079553dc87d013d",
+   "size": 10240,
+   "gz": "files/27b87d7fa8af431ea9aa27488708b53fd2e4ca4230adb17cd079553dc87d013d.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/doodle_look.json": {
+   "sha256": "a8081dc4e93c38ea4d6ed0301c25cc3fd2a77b425789c6c822b9e19246afed18",
+   "size": 5210,
+   "gz": "files/a8081dc4e93c38ea4d6ed0301c25cc3fd2a77b425789c6c822b9e19246afed18.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/cel.png": {
+   "sha256": "abc702217e875397c2d8aede28a1c6710f63987e5dbef3aacf0d09d00dc96d18",
+   "size": 35329,
+   "gz": "files/abc702217e875397c2d8aede28a1c6710f63987e5dbef3aacf0d09d00dc96d18.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/ceramic.png": {
+   "sha256": "86185e80b5a21d774697c193a1634215e3206b694a475b3164259958141d165e",
+   "size": 51212,
+   "gz": "files/86185e80b5a21d774697c193a1634215e3206b694a475b3164259958141d165e.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/clay.png": {
+   "sha256": "28f01d67e231fe052daf894362b073d211719fb8734d0c09a47784caad90ca11",
+   "size": 44123,
+   "gz": "files/28f01d67e231fe052daf894362b073d211719fb8734d0c09a47784caad90ca11.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/felt.png": {
+   "sha256": "a0d8b432f54997925ac7beca4146c4bd78f5f125ae4c427d05a9d82264d7890d",
+   "size": 50944,
+   "gz": "files/a0d8b432f54997925ac7beca4146c4bd78f5f125ae4c427d05a9d82264d7890d.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/ink-mustard.png": {
+   "sha256": "3042633a85a89007b4e20380d5425c5064ec17e4571ce00abc35035e2019cd1b",
+   "size": 30820,
+   "gz": "files/3042633a85a89007b4e20380d5425c5064ec17e4571ce00abc35035e2019cd1b.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/paper.png": {
+   "sha256": "c6bdffa81cefda53adfd6bf38dcaeb95318e27c9eeacffaa552d03e77b37e71a",
+   "size": 42477,
+   "gz": "files/c6bdffa81cefda53adfd6bf38dcaeb95318e27c9eeacffaa552d03e77b37e71a.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/vinyl.png": {
+   "sha256": "28e8bc6ae3c72ed9f9fbbb5c9306f10788ffdaa059e3ca8d80eb62d21cf31f63",
+   "size": 46750,
+   "gz": "files/28e8bc6ae3c72ed9f9fbbb5c9306f10788ffdaa059e3ca8d80eb62d21cf31f63.gz"
   },
   "resources/app/ui/vendor/addons/controls/TransformControls.js": {
    "sha256": "9848ad589dfcf5f3769d0836472cb37cc46e6e0b36eb42ebcf7c898d0072e8ec",

@@ -18,7 +18,7 @@ const changed = () => { for (const fn of listeners) try { fn(state()); } catch {
 function shotMsg() { return { t: 'shot', shot: C.bridge(), code: C.code(), f: C.frame() }; }
 function signature() {
   const p = C.project(), s = C.scene();
-  return JSON.stringify([s.active, p.code, p.tracks, p.layers || null, p.items || null, C.stage(), p.length, p.fps, p.width, p.height, p.costars || null, p.powers || null, p.idle || null, p.rules || null, p.horizonLock || false, p.ink || 100, C.character()]);
+  return JSON.stringify([s.active, p.code, p.tracks, p.layers || null, p.items || null, C.stage(), p.length, p.fps, p.width, p.height, p.costars || null, p.powers || null, p.idle || null, p.rules || null, p.horizonLock || false, p.ink || 100, C.character(), s.materials || null, p.materials || null]);
 }
 
 export async function open() {

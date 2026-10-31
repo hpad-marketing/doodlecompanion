@@ -1,0 +1,232 @@
+{
+  "contract": 1,
+  "name": "Doodle Looks",
+  "module": "doodle_looks",
+  "material": "material",
+  "looks": [
+    {
+      "id": "ink-mustard",
+      "name": "Ink & Mustard",
+      "flat": true,
+      "about": "The Doodle Studio look: flat brand fills and the ink line.",
+      "params": [],
+      "preview": "previews/ink-mustard.png"
+    },
+    {
+      "id": "clay",
+      "name": "Clay",
+      "about": "Soft modelling clay with thumb dents and a little colour wobble.",
+      "params": [
+        {
+          "id": "roughness",
+          "label": "Roughness",
+          "type": "float",
+          "min": 0.3,
+          "max": 1,
+          "default": 0.72
+        },
+        {
+          "id": "dents",
+          "label": "Thumb dents",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.45
+        },
+        {
+          "id": "dentSize",
+          "label": "Dent size",
+          "type": "float",
+          "min": 0.2,
+          "max": 3,
+          "default": 1
+        },
+        {
+          "id": "wobble",
+          "label": "Colour wobble",
+          "type": "float",
+          "min": 0,
+          "max": 0.3,
+          "default": 0.08
+        },
+        {
+          "id": "glow",
+          "label": "Soft glow (subsurface)",
+          "type": "float",
+          "min": 0,
+          "max": 0.5,
+          "default": 0.12
+        }
+      ],
+      "preview": "previews/clay.png"
+    },
+    {
+      "id": "cel",
+      "name": "Cel toon",
+      "about": "Hard-edged toon shading in two or three bands, like a cartoon cel.",
+      "params": [
+        {
+          "id": "bands",
+          "label": "Bands",
+          "type": "int",
+          "min": 2,
+          "max": 4,
+          "default": 2
+        },
+        {
+          "id": "shadow",
+          "label": "Shadow depth",
+          "type": "float",
+          "min": 0.1,
+          "max": 0.7,
+          "default": 0.32
+        },
+        {
+          "id": "shadowHue",
+          "label": "Shadow hue shift",
+          "type": "float",
+          "min": -0.1,
+          "max": 0.1,
+          "default": -0.025
+        },
+        {
+          "id": "edge",
+          "label": "Band edge softness",
+          "type": "float",
+          "min": 0,
+          "max": 0.2,
+          "default": 0.02
+        }
+      ],
+      "preview": "previews/cel.png"
+    },
+    {
+      "id": "vinyl",
+      "name": "Soft vinyl toy",
+      "about": "A designer-toy finish: smooth plastic with a soft clear coat.",
+      "params": [
+        {
+          "id": "roughness",
+          "label": "Roughness",
+          "type": "float",
+          "min": 0.05,
+          "max": 0.8,
+          "default": 0.38
+        },
+        {
+          "id": "coat",
+          "label": "Clear coat",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.55
+        },
+        {
+          "id": "coatGloss",
+          "label": "Coat gloss",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.8
+        }
+      ],
+      "preview": "previews/vinyl.png"
+    },
+    {
+      "id": "felt",
+      "name": "Felt",
+      "about": "Fuzzy craft felt with a soft sheen at the edges.",
+      "params": [
+        {
+          "id": "fuzz",
+          "label": "Fuzz",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.6
+        },
+        {
+          "id": "fibres",
+          "label": "Fibre size",
+          "type": "float",
+          "min": 0.3,
+          "max": 3,
+          "default": 1
+        },
+        {
+          "id": "sheen",
+          "label": "Edge sheen",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.8
+        }
+      ],
+      "preview": "previews/felt.png"
+    },
+    {
+      "id": "paper",
+      "name": "Paper cut-out",
+      "about": "Matte card stock with paper grain and soft two-tone light.",
+      "params": [
+        {
+          "id": "grain",
+          "label": "Paper grain",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.5
+        },
+        {
+          "id": "fibres",
+          "label": "Fibres",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.35
+        },
+        {
+          "id": "shade",
+          "label": "Light and shade",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.55
+        }
+      ],
+      "preview": "previews/paper.png"
+    },
+    {
+      "id": "ceramic",
+      "name": "Glazed ceramic",
+      "about": "Glossy glaze over clay, with fine crackle.",
+      "params": [
+        {
+          "id": "gloss",
+          "label": "Gloss",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.85
+        },
+        {
+          "id": "crackle",
+          "label": "Crackle",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.25
+        },
+        {
+          "id": "pool",
+          "label": "Glaze pooling",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.4
+        }
+      ],
+      "preview": "previews/ceramic.png"
+    }
+  ]
+}
