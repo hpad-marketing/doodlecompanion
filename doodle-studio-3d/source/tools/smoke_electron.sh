@@ -1,6 +1,10 @@
 #!/bin/bash
+# usage: ELECTRON=<electron binary> bash tools/smoke_electron.sh [build/app]
+APP=$(realpath "${1:-$(dirname "$0")/../build/app}")
+ELECTRON=${ELECTRON:-/home/claude/work/etest/node_modules/electron/dist/electron}
+mkdir -p /tmp/etest-home
 export HOME=/tmp/etest-home
-xvfb-run -a /tmp/claude-0/-home-claude-doodlecompanion/2564a2b0-0bec-5719-a8ed-d567cad8c3dc/scratchpad/etest/node_modules/electron/dist/electron --no-sandbox /tmp/claude-0/-home-claude-doodlecompanion/2564a2b0-0bec-5719-a8ed-d567cad8c3dc/scratchpad/ds3d/build/app > /tmp/etest-home/electron.log 2>&1 &
+xvfb-run -a "$ELECTRON" --no-sandbox "$APP" > /tmp/etest-home/electron.log 2>&1 &
 EPID=$!
 for i in $(seq 1 40); do sleep 1; curl -s -m 2 -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_state","arguments":{}}}' > /tmp/etest-home/state.json && grep -q values /tmp/etest-home/state.json && break; done
 head -c 400 /tmp/etest-home/state.json; echo
@@ -51,6 +55,6 @@ call save_as '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy
 call open_scene '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy.ds3d","force":true}' 300
 call open_scene '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy.txt","force":true}' 300
 curl -s -o /dev/null -w "evil origin: %{http_code}\n" -X POST http://127.0.0.1:54190/mcp -H 'origin: https://evil.example' -H 'content-type: application/json' -d '{}'
-kill $EPID; sleep 1; python3 /tmp/claude-0/-home-claude-doodlecompanion/2564a2b0-0bec-5719-a8ed-d567cad8c3dc/scratchpad/killmatch.py "electron --no-sandbox"
+kill $EPID; sleep 1; pkill -x electron 2>/dev/null; true
 grep -iv "dbus\|gpu\|libva\|viz\|vaapi\|ozone\|ERROR:bus" /tmp/etest-home/electron.log | head -20
 find /tmp/etest-home/Documents -type f | head
