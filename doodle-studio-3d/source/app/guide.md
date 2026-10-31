@@ -449,7 +449,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.17 Babble voice (typed lines, cute gibberish)
 
 Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
-- How: the **Babble** button in the timeline's Voice group (or File › Babble voice). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- How: File › Babble voice (also in the Face tab's Voice section). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
 - What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
 - Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
 - Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
