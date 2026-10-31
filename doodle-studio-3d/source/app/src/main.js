@@ -36,6 +36,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 const ICON = {
+  sync: 'M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4',
   start: 'M5 4v16M19 4 8 12l11 8z', play: 'M7 4v16l13-8z', pause: 'M7 4h4v16H7zM13 4h4v16h-4z', end: 'M19 4v16M5 4l11 8-11 8z',
   prev: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7', key: 'M12 3l9 9-9 9-9-9z', trash: 'M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13',
   orbit: 'M12 5a9 4 0 1 0 0.1 0M4 9l-1 3 3 0', pan: 'M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3',
@@ -1839,10 +1840,11 @@ function buildCanvasTop() {
   const L = Math.round(current('cam.lens')); if (!LENSES.includes(L)) lens.append(h('option', { value: L }, L + ' mm')); lens.value = String(L);
   lens.addEventListener('change', () => camSet({ lens: Number(lens.value) }));
   const st = stage?.status() || { loading: 0, missing: 0 };
+  // row 1: format, lens, Open in Blender (right); row 2: camera angles (wraps under in the narrow canvas dock)
   $('#canvas-top').replaceChildren(...[fmt, lens,
-    h('div', { class: 'seg', role: 'group', 'aria-label': 'Camera angle' }, ...VIEWS.map(([n, c]) => h('button', { title: `Camera: ${n}`, onclick: () => { camSet(c); buildCanvasTop(); } }, n))),
     h('span', { style: 'flex:1' }),
     mirrorButton(),
+    h('div', { class: 'seg', role: 'group', 'aria-label': 'Camera angle' }, ...VIEWS.map(([n, c]) => h('button', { title: `Camera: ${n}`, onclick: () => { camSet(c); buildCanvasTop(); } }, n))),
     st.loading ? h('span', { class: 'of', title: 'Blender is turning the library pieces in this shot into 3D view models (once per piece)' }, `Making ${st.loading} 3D model${st.loading > 1 ? 's' : ''}…`) : null,
     stage?.selected ? h('button', { title: 'Clear the selection (Esc)', onclick: () => clearSelection() }, 'Deselect') : null].filter(Boolean));
 }
@@ -1850,9 +1852,9 @@ function buildCanvasTop() {
 // Open in Blender: one button, its state in its label (Live / connecting), click again to stop
 function mirrorButton() {
   const m = MR.state();
-  if (!m.on) return h('button', { id: 'blender-live', title: 'Open this shot in a full Blender window. Moves, turns, poses, camera and frame changes on either side show up on the other (Ctrl+B).', onclick: () => openInBlender() }, 'Open in Blender');
+  if (!m.on) return h('button', { id: 'blender-live', title: 'Open this shot in a full Blender window. Moves, turns, poses, camera and frame changes on either side show up on the other (Ctrl+B).', onclick: () => openInBlender() }, icon('sync'), 'Open in Blender');
   return h('button', { id: 'blender-live', 'aria-pressed': 'true', class: m.connected ? 'live' : '', title: m.connected ? `Live with Blender ${m.blender || ''}. Click to stop the link (the Blender window stays open).` : 'Blender is opening the shot…', onclick: () => MR.close() },
-    m.connected ? '● Blender live' : 'Blender opening…');
+    icon('sync'), m.connected ? '● Blender live' : 'Blender opening…');
 }
 
 function layout() {

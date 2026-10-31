@@ -34,7 +34,8 @@ body.dock-dragging *{cursor:grabbing!important}
 .canvas-top select{height:30px}
 .canvas-top .seg{display:flex;gap:2px}
 .canvas-top .seg button{min-height:26px;height:26px;padding:0 7px;font-size:12px}
-.canvas-top #blender-live{height:30px}
+.canvas-top #blender-live{height:30px;display:inline-flex;align-items:center;gap:6px}
+.canvas-top #blender-live svg{width:16px;height:16px}
 .canvas-top #blender-live.live{background:var(--fg);color:var(--bg)}
 .canvas-body{display:grid;grid-template-columns:minmax(0,1fr) 66px;min-height:0}
 body.ux2d #canvas-wrap{grid-area:auto;position:relative}
