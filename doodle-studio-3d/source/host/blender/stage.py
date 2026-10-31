@@ -39,7 +39,7 @@ def _library():
 
 def needed(shot):
     st = shot.get('stage') or {}
-    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet')))
+    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'sun', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet')))
 
 
 def setup(shot, log):
@@ -67,6 +67,14 @@ def setup(shot, log):
     if st.get('sky'):
         dl.sky(st['sky'])
     dl.set_shadows(bool(st.get('shadows') or st.get('halftone')))
+    sun = bpy.data.objects.get('DSL_Sun')
+    if st.get('sun') and sun is not None:
+        # the sun as turned in Blender over the live link: {rot: [x, y, z] degrees, energy}
+        import math
+        if st['sun'].get('rot'):
+            sun.rotation_euler = [math.radians(float(a)) for a in st['sun']['rot']]
+        if st['sun'].get('energy') is not None and sun.data:
+            sun.data.energy = float(st['sun']['energy'])
     if st.get('halftone'):
         done.append('halftone %d materials' % halftone(int(st.get('halftone_cells') or 90)))
     # an id that isn't in this library (a typo, or a piece only on another PC) is skipped, never fatal (B10)
@@ -196,7 +204,7 @@ def place(items, log):
     if not items:
         return
     dl = _library()
-    for it in items:
+    for idx, it in enumerate(items):
         f = int(it.get('frame', 0)) + 1
         kind, _, name = it['id'].partition(':')
         try:
@@ -217,6 +225,8 @@ def place(items, log):
             elif kind == 'text':
                 # a 3D headline in chunky doodle lettering, above and behind the character unless placed
                 ob = dl.add_text(it.get('text') or 'Text', location=it.get('at') or (0.0, 0.8, 1.25))
+                if ob is not None:
+                    ob['ds_item'] = idx
             else:
                 hold = it.get('hold')
                 side = hold if hold in ('L', 'R') else None
@@ -225,6 +235,8 @@ def place(items, log):
                     fit_to_hand(ob, side or 'R', log)
                     from doodle_library import grips
                     grips.attach(ob, side=side, frame=f)
+                if ob is not None:
+                    ob['ds_item'] = idx   # the editor's item index (the live Blender link maps moves back by it)
                 # turn and size set in the editor's 3D view (degrees, XYZ)
                 if ob is not None and not hold:
                     import math

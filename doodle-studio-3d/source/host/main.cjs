@@ -104,6 +104,10 @@ const renders = require('./render.cjs')({
   },
 });
 
+// Open in Blender: the active shot in a full Blender window, live-linked both ways (mirror.cjs)
+const mirror = require('./mirror.cjs')({ appDir, port: PORT, blender: () => renders.blender(), blendFor: s => renders.blendFor(s), withMaster: s => renders.withMaster(s),
+  folders: n => renders.folders(n), env: () => renders.env() });
+
 // 3D view models of library sets, props and scenery (models.cjs): Blender converts each once
 const stageModels = require('./models.cjs')({ libraryDir: () => settings.get().libraryDir, cacheDir: () => path.join(dataDir, 'models'),
   command: (ids, dir) => { const exe = renders.blender(); return exe ? [exe, ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'preview_export.py'), '--', settings.get().libraryDir, dir, ...ids]] : null; } });
@@ -117,6 +121,7 @@ function insideRenders(p, exts = ['.png']) {
 }
 
 const api = {
+  ...mirror.api,
   'stage-models': req => stageModels.models(req),
   'models-info': () => stageModels.info(),
   // the scene file lives at DeepInDoodles\<Scene>\work\<Scene>.ds3d
@@ -391,4 +396,6 @@ else {
     nightlyBackup(); setInterval(nightlyBackup, 60 * 60000);
   }).catch(e => { dialog.showErrorBox('Doodle Studio 3D could not open', String(e && e.stack || e)); app.exit(1); });
   app.on('window-all-closed', () => app.quit());
+  // an open Blender window is told the link has ended (it stays open with its own copy)
+  app.on('before-quit', () => { try { mirror.api['mirror-close']({ quiet: true }); } catch {} });
 }

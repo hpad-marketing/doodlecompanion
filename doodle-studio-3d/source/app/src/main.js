@@ -21,6 +21,7 @@ import * as PW from './powers.js';
 import * as CS from './cast.js';
 import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
+import * as MR from './mirror.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
@@ -247,6 +248,19 @@ function editPiece(id, xf) {
   if (Object.keys(p).length) target.pieces = p; else delete target.pieces;
   dirty = true; apply();
 }
+// the sun as turned in Blender over the live link (stage.sun, applied by stage.py at render)
+function setSun(sun) {
+  const target = libUi.shotOnly || project.stage?.sun || project.stage?.pieces ? (project.stage ||= {}) : (scene.stage ||= {});
+  target.sun = { rot: sun.rot, energy: sun.energy };
+  dirty = true;
+}
+// Open in Blender (mirror.js): what the live link may read and change
+const mirrorCtx = () => ({ api, toast, bridge: () => bridge(project), code: () => project.code, frame: () => frame, project: () => project, scene: () => scene,
+  stage: () => stageOf(scene, project), character: () => character(), playing: () => playing, goto, pushUndo,
+  setValue: (id, v) => setValue(id, v, { now: false }), editPiece: (id, xf) => editPiece(id, xf), setSun, markDirty: () => { dirty = true; },
+  reapply: () => apply(), refresh: () => { drawTracks(); if (tab === 'stage' || tab === 'pose' || tab === 'camera') buildPanel(); } });
+function openInBlender() { if (playing) togglePlay(); return MR.open(); }
+
 // library hover preview: the motion plays (or the face shows) on the character, keyed nowhere
 let libPrev = null;
 async function libPreviewStart(row) {
@@ -366,6 +380,7 @@ function apply() {
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
   if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
+  MR.onApply(frame, vals, cam);
   if (stage) { const t = performance.now(); stage.sync({ stage: stageOf(scene, project), items: project.items || [], frame, length: project.length, rows: libRowMap(), playing }); perf('stage', performance.now() - t); }
   // live checks first, so the HUD below shows this frame's lights
   if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
@@ -1118,7 +1133,7 @@ const MENUS = [
   // Story tab and its storytime workflow removed (user, 2026-10-31). The voice and finishing tools it held stay, in Post.
   ['Post', [['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()], '-',
     ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Auto foley (sound effects)', () => storyRun('foley')], ['Split the voice into sentences…', () => sentenceDialog()]]],
-  ['Blender', [['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
+  ['Blender', [['Open in Blender (live)', () => openInBlender(), 'Ctrl+B'], ['Stop the live Blender link', () => MR.close()], '-', ['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
     ['Transition into this shot…', () => transitionDialog()], ['Paper finish…', () => { const v = prompt('Paper finish on the joined scene, 0 to 100 (0 is off):', String(Math.round((scene.paper || 0) * 100))); if (v != null) pwRun({ action: 'paper', amount: Number(v) / 100 }); }], '-',
     ['Linked controls…', () => linkDialog()], ['Macros…', () => macroDialog()], ['Master Bunny file…', () => masterDialog()]]],
   ['Tools', [['Check before export (preflight)', () => runPreflight(false)], ['Health check…', () => healthDialog(prodCtx())], ['Claude change log…', () => changeLogDialog(prodCtx())], '-',
@@ -1827,8 +1842,17 @@ function buildCanvasTop() {
   $('#canvas-top').replaceChildren(...[fmt, lens,
     h('div', { class: 'seg', role: 'group', 'aria-label': 'Camera angle' }, ...VIEWS.map(([n, c]) => h('button', { title: `Camera: ${n}`, onclick: () => { camSet(c); buildCanvasTop(); } }, n))),
     h('span', { style: 'flex:1' }),
+    mirrorButton(),
     st.loading ? h('span', { class: 'of', title: 'Blender is turning the library pieces in this shot into 3D view models (once per piece)' }, `Making ${st.loading} 3D model${st.loading > 1 ? 's' : ''}…`) : null,
     stage?.selected ? h('button', { title: 'Clear the selection (Esc)', onclick: () => clearSelection() }, 'Deselect') : null].filter(Boolean));
+}
+
+// Open in Blender: one button, its state in its label (Live / connecting), click again to stop
+function mirrorButton() {
+  const m = MR.state();
+  if (!m.on) return h('button', { id: 'blender-live', title: 'Open this shot in a full Blender window. Moves, turns, poses, camera and frame changes on either side show up on the other (Ctrl+B).', onclick: () => openInBlender() }, 'Open in Blender');
+  return h('button', { id: 'blender-live', 'aria-pressed': 'true', class: m.connected ? 'live' : '', title: m.connected ? `Live with Blender ${m.blender || ''}. Click to stop the link (the Blender window stays open).` : 'Blender is opening the shot…', onclick: () => MR.close() },
+    m.connected ? '● Blender live' : 'Blender opening…');
 }
 
 function layout() {
@@ -2402,6 +2426,7 @@ function keyHandler(e) {
     const lk = k.toLowerCase(), inTl = lastZone === 'timeline';
     // the 2D app's keys: Ctrl+Shift+H hides the side panel, Ctrl+A / C / V on timeline keys, ; ' and ↑ ↓ step keys, , . step frames, \ fits
     if (c && e.shiftKey && lk === 'h') { e.preventDefault(); DOCK.toggleHidden('tools') ? toast('Tools panel hidden: Ctrl+Shift+H brings it back') : toast('Tools panel shown'); return; }
+    if (c && !e.shiftKey && lk === 'b') { e.preventDefault(); MR.state().on ? toast('Blender is already live: Blender › Stop the live Blender link ends it') : openInBlender(); return; }
     if (c && !e.shiftKey && lk === 'a') { e.preventDefault(); selectAllKeys(); return; }
     if (c && !e.shiftKey && lk === 'c' && (multi.length || (inTl && selected))) { e.preventDefault(); copySelectedKeys(); return; }
     if (c && !e.shiftKey && lk === 'v' && lastCopy === 'keys' && keyClip?.length) { e.preventDefault(); pasteSelectedKeys(); return; }
@@ -2482,6 +2507,8 @@ function loop() {
   // "group": frames the lead and every co-star together
   window.ds3dCameraPresets.register({ id: 'group', label: 'Everyone', points: () => [...view.bodyPoints(null, 12), ...(view.actors || []).flatMap(a => view.bodyPoints(a, 12))], facing: () => current('turn') });
   overlayDraw = bindOverlay(carCtx());
+  MR.init(mirrorCtx());
+  MR.onChange(() => { buildCanvasTop(); updateHud(); });
   $('#auto-key').addEventListener('click', e => { autoKey = !autoKey; e.currentTarget.setAttribute('aria-pressed', String(autoKey)); e.currentTarget.textContent = autoKey ? 'Keys: Auto' : 'Keys: Manual'; toast(autoKey ? 'Auto key: every change sets a key at the playhead' : 'Manual: changes are a preview until you press Key (K)'); });
   $('#render-btn').addEventListener('click', () => renderScene());
   $('#save-btn').addEventListener('click', () => saveShot(false));
@@ -2504,6 +2531,7 @@ function loop() {
     }),
     names: () => ({ expressions: data.face.faces, gazes: data.face.gazes, mouths: data.face.speech }),
     bridgeShot: () => bridge(project),   // the active shot as Blender receives it
+    async blenderLive(action) { if (action === 'open') await openInBlender(); else if (action === 'close') await MR.close(); return MR.state(); },
     state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], markers: project.markers || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
       frame, length: project.length, fps: scene.fps, width: scene.width, height: scene.height, autoKey, file: filePath, unsaved: dirty,
       values: Object.fromEntries([...BUNNY_IDS, ...FACE_IDS, ...CAM_IDS].map(id => [id, round(current(id))])),

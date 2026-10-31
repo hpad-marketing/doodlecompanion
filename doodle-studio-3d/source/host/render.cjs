@@ -361,5 +361,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       return { message: 'Render cancelled' };
     },
     blender,
+    // Open in Blender (mirror.cjs) builds the shot from the same character file and library
+    blendFor, withMaster, env: () => ({ DSL_LIBRARY: libraryDir(), DSL_BUNNY: path.join(appDir, 'blender') }),
   };
 };

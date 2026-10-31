@@ -137,6 +137,16 @@ The tools and their descriptions are the same whichever assistant connects. This
 
 Each entry covers: **what it does · how (UI / MCP) · where it fits · also try · watch out.** MCP calls are written as `tool action=… {args}`.
 
+### 3.0 Open in Blender (live)
+
+**The shot in a full Blender window, mirrored both ways.** Press **Open in Blender** above the canvas (or Ctrl+B, or Blender › Open in Blender). Blender opens the active shot with its set, props, outfit and camera. While the button reads **● Blender live**, a change on either side shows up on the other within about a tenth of a second.
+- What syncs: Bunny's pose (turn the FK control bones: head, torso, arms, legs, ears, the root for placement and turn, or move the whole rig in Object Mode), the face (expression, gaze, mouth, blink on the face bone), the camera (move or turn it, change its lens), the playhead, props and scenery (move, turn, scale), set pieces (move, turn about Z, scale; anything standing on a piece follows it), and the sun's angle and strength.
+- Keys: a change made in Blender keys at the playhead when Keys is on Auto, the same as a change made in the app. Each burst of Blender edits is one undo step, named "Blender: …".
+- A new prop, another set, another character or another shot rebuilds the Blender scene. This takes a few seconds, and the header reads "rebuilding the shot".
+- Blender works on its own copy, saved in `work\blender-live\<Scene>_<shot>\`. Ctrl+S in Blender saves there and never touches the app's files.
+- Stop: click **● Blender live**, or use Blender › Stop the live Blender link. The Blender window stays open. MCP: `blender_live action=open|status|close`.
+- Watch out: Blender shows the raw pose, without the render's rule nudges (arm in front, props on the floor, face clear), cloth or ear springs. Renders still apply all of them. Values stay inside Bunny's joint limits, so a bone turned past a limit snaps back to it, and a twist the rig has no control for is dropped. IK targets in Blender are not read: pose with the FK bones. Co-stars come across when the shot is rebuilt but are not posed live.
+
 ### 3.1 Characters
 
 **Bunny, the Koala and the Frog.** All three share one rig, so every key, motion, face and camera move carries over. The Koala adds nose controls (`noseWiggle`, `noseSniff`). The Frog's "ears" are rigid eye bumps: ear controls do nothing, and an ear twitch makes the bumps pop.
@@ -556,6 +566,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 - **Lip sync keys the shot as it is.** Retime or split a shot, then run `audio lipsync` again. Sample a few frames by eye: the engine reads the sound, not the words.
 - **A missing library item is skipped.** If a stage names an outfit or accessory that isn't in the library, the render leaves it out and says so in `work\checks\<render>\blender.log`. `library_list` shows the real ids.
 - **"Blender was not found":** set it under Render › Blender location, or run `production action=fix {fix: pick-blender}`.
+- **Open in Blender: the button stays on "Blender opening…"** Blender is still building the shot (long shots take longer). If it never goes live, read `work\blender-live\<Scene>_<shot>\blender.log`.
 - **"Needs a yes first":** the call would replace unsaved work. Ask the user, then repeat it with `force: true`.
 
 ---

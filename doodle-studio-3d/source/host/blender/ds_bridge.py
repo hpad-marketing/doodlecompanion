@@ -26,6 +26,10 @@ Options
   --scale P        render at P percent of the shot size (previews)
   --video FILE     write an H.264 MP4 instead of PNG frames
   --audio FILE     mux this sound file into the video (starts at frame 1)
+  --live URL TOKEN [--frame N] [--save-live FILE]
+                   open the shot for hand work in a Blender window, live-linked to Doodle
+                   Studio 3D (mirror.py): no render, no physics bakes and no rule nudges, so
+                   what Blender shows is exactly what the app has; renders still do all of it
 
 A frame may carry a 'cam' block for a real 3D camera instead of Doodle Studio's
 flat camera: {yaw, pitch, dist, lens, roll, tz, props, shake} (degrees, metres,
@@ -54,11 +58,17 @@ if argv and argv[0].endswith('.blend'):
 shot_path, out_dir = argv[0], argv[1]
 opts = argv[2:]
 flag = lambda f: f in opts
+LIVE = flag('--live')
+SOURCE_BLEND = bpy.data.filepath
+if LIVE:
+    opts += ['--no-collide', '--no-springs', '--no-cloth']
 still = int(opts[opts.index('--still') + 1]) if '--still' in opts else None
 save = opts[opts.index('--save') + 1] if '--save' in opts else None
 os.makedirs(out_dir, exist_ok=True)
 
 shot = json.load(open(shot_path))
+if LIVE:
+    shot['floorCollision'] = False   # the live view keeps every value as the app has it
 sc = bpy.context.scene
 arm = bpy.data.objects['BUNNY_rig']
 cam = sc.camera
@@ -249,7 +259,7 @@ if cast:
 stage.place(stage_items, lambda m: print(m, flush=True))
 
 # props and set pieces standing on the floor rest their stroke just above it, like the characters
-if stage_items is not None:
+if stage_items is not None and not LIVE:
     try:
         sc.frame_set(1)
         _scenery, _ = rules_scene.classify(arm, cast, objs.values())
@@ -258,14 +268,14 @@ if stage_items is not None:
         print('rules: props on floor skipped:', e, flush=True)
 
 # the set keeps a clear zone round the characters and drops pieces the camera cuts to slivers
-if stage_items is not None and shot.get('stage', {}).get('set') and not (shot.get('stage') or {}).get('keepLayout'):
+if stage_items is not None and not LIVE and shot.get('stage', {}).get('set') and not (shot.get('stage') or {}).get('keepLayout'):
     try:
         rules_scene.tidy_set(arm, cast, objs.values(), cam, n, lambda m: print(m, flush=True), str(shot['stage']['set']))
     except Exception as e:
         print('set tidy skipped:', e, flush=True)
 
 # nothing stands between the camera and a face (set pieces and placed props slide aside)
-if stage_items is not None:
+if stage_items is not None and not LIVE:
     try:
         sc.frame_set(1)
         _scenery, _ = rules_scene.classify(arm, cast, objs.values())
@@ -394,7 +404,23 @@ if '--frames' in opts:
         bpy.ops.render.render(write_still=True)
     print('done', out_dir)
     sys.exit(0)
-if still:
+if LIVE:
+    import mirror
+    live_blend = opts[opts.index('--save-live') + 1] if '--save-live' in opts else None
+    if live_blend:
+        # Blender's own Save goes to this copy in the scene's work folder, never the app's file
+        try:
+            bpy.ops.wm.save_as_mainfile(filepath=live_blend)
+        except Exception as e:
+            print('live: could not save the working copy:', e, flush=True)
+    i = opts.index('--live')
+    mirror.start({'url': opts[i + 1], 'token': opts[i + 2], 'shot': shot, 'shot_path': shot_path, 'out_dir': out_dir,
+                  'argv_rest': [o for o in argv[2:]], 'bridge_path': os.path.abspath(__file__), 'source_blend': SOURCE_BLEND,
+                  'frame': int(opts[opts.index('--frame') + 1]) if '--frame' in opts else None,
+                  'arm': arm, 'cam': cam, 'settings': settings, 'meta': meta, 'S': S, 'pose_bones': pose_bones,
+                  'apply': lambda v: apply(constraints.prepare(v, arm)), 'camera_3d': camera_3d,
+                  'ink_follow': INK_FOLLOW, 'ink_base': INK_BASE, 'pivot_z': PIVOT_Z, 'base_ortho': BASE_ORTHO})
+elif still:
     sc.frame_set(still)
     sc.render.filepath = os.path.join(out_dir, 'still.png')
     bpy.ops.render.render(write_still=True)

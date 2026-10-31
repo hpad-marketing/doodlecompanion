@@ -86,6 +86,7 @@ const TOOLS = [
     { action: { enum: ['import', 'remove', 'drive', 'lipsync'] }, path: { type: 'string' }, id: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' }, step: { type: 'integer', minimum: 1, maximum: 12 }, shot: { type: 'integer', minimum: 0 }, all: { type: 'boolean' }, gate: { type: 'number', minimum: 0, maximum: 1 }, hold: { type: 'integer', minimum: 1, maximum: 6 }, stem: { type: 'string' }, engine: { enum: ['syllables', 'classic'] } }, ['action']],
   ['story', 'Storytime helpers for the whole scene. action=retention: hook strength of the first 2 s and every 4+ s stretch with no visual change; chapters: writes YouTube chapters (0:00 Title lines) from markers whose note starts with "Chapter:" to work\\<scene>_chapters.txt; loop_back: keys the last frame of the last shot to the opening pose so a Reel replays seamlessly; gags: running gags from markers noted "gag: ..."; bible: read the story bible, or update it with bible {premise, characters, rules}.',
     { action: { enum: ['retention', 'chapters', 'loop_back', 'gags', 'bible'] }, bible: { type: 'object' } }, ['action']],
+  ['blender_live', 'Open in Blender, live: action=open opens the active shot in a full Blender window that stays in step with the app both ways (pose control bones, camera, playhead, props, set pieces, the sun; a new prop, set or shot rebuilds it there). action=status says whether Blender is live; action=close ends the link (the Blender window stays open with its own copy in work\\blender-live).', { action: { enum: ['open', 'status', 'close'] } }, ['action']],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
@@ -150,6 +151,7 @@ module.exports = ({ call, api }) => {
       : call(`ds3d.importAudio(${a.action === 'remove' ? 'null' : JSON.stringify(a.path || '')})`),
     story: a => call(`ds3d.story(${JSON.stringify(a || {})})`),
     remove_item: a => call(`ds3d.removeItem(${Number(a.index)})`),
+    blender_live: a => call(`ds3d.blenderLive(${JSON.stringify(a.action || 'status')})`),
     production: a => call(`ds3d.production(${JSON.stringify(a || {})})`),
     workflow: a => call(`ds3d.workflow(${JSON.stringify(a || {})})`),
     anim2: a => call(`ds3d.anim2(${JSON.stringify(a || {})})`),
