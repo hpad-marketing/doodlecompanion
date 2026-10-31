@@ -152,3 +152,15 @@ body.ux2d #timeline-tools{gap:6px 12px;padding:5px 8px}
 #tracks .trow>.tname,#tracks .ruler>.tname{position:sticky;left:0;z-index:3;background:var(--bg)}
 #tracks .trow.rsel>.tname{background:var(--fg)}
 #tracks .lane{padding-left:0}
+/* animated motion previews (sprite sheets) and the motion family / category chip rows */
+.libx-card .pic .anim,.libx-side .big .anim,.char-card .anim{display:block;height:100%;background-repeat:no-repeat;animation:dsl-anim 1.4s steps(var(--n),jump-none) infinite}
+@keyframes dsl-anim{from{background-position-x:0%}to{background-position-x:100%}}
+.libx-cats{display:flex;flex-direction:column;gap:4px;margin:0 0 6px}
+.libx-cats .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+.libx-cats .chips button{flex:none;white-space:nowrap}
+.libx-cats small.n{opacity:.65;font-weight:500}
+@media (prefers-reduced-motion:reduce){.libx-card .pic .anim{animation:none}}
+.char-cards{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto}
+.char-cards .libx-card{width:104px;flex:none}
+.char-cards .libx-card .pic img{object-fit:cover}
+.mouth-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
