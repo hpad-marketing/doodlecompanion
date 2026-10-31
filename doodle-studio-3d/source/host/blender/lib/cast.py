@@ -98,6 +98,7 @@ def pose_frame(c, i, f, lead_settings, collide=True, floor=True):
     rig = c['rig']
     if floor:
         up = collision.floor_lift(rig, c['objs'])
+        rig.keyframe_insert('["ds_floor_up"]', frame=f)
         if up:
             c.setdefault('lifts', []).append({'frame': f, 'cm': round(up * 100, 2)})
     for b in c['pose_bones']:

@@ -28,6 +28,8 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   // rule lights: rest pose is clean, a hand pushed into the head is caught
   let r = await wf({ action: 'rules', frame: 0 });
   ok(!r.clips.length && !r.belowFloor && !r.inAir, 'rest pose: no clip, grounded ' + JSON.stringify(r));
+  ok(r.lifted < 0 && r.feet > 0.005 && r.feet < 0.03, 'standing: set down so the stroke rests on the floor (feet ' + r.feet + ')');
+  const restFeet = r.feet;
   ok(await p.locator('#hud .rule.ok').count() === 3, 'three green rule lights in the HUD');
   await ev(() => ds3d.setValues({ armR: 170, elbowR: 150 }, 0, true));
   r = await wf({ action: 'rules' });
@@ -44,6 +46,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   r = await wf({ action: 'rules' });
   ok(!r.belowFloor && r.feet >= 0, 'pushing him down stops at the floor (floor collision): feet ' + r.feet);
   ok(await ev(() => ds3d.view.lift > 0.05), 'the viewport lifted him back onto the floor');
+  ok(Math.abs(r.feet - restFeet) < 0.002, 'and he stands at the same height as when standing normally');
   await ev(() => { ds3d.undo(); ds3d.undo(); ds3d.undo(); });
 
   // snapping

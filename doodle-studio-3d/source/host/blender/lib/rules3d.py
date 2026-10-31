@@ -51,6 +51,12 @@ def check_frame(objs, arm, ear_sets=None, tol=0.0015):
     lo = collision.drawn_zmin(obs)
     out['floor_low'] = round(lo - arm.matrix_world.translation.z, 4) if lo is not None else None
     out['stroke_in_floor'] = lo is not None and out['floor_low'] < -tol
+    # and never floating: the stroke rests on the floor unless the pose itself is off the ground
+    if lo is not None:
+        gap = lo - (collision.floor_keyed_target(arm) if 'ds_floor_up' in arm else collision.floor_target(arm, obs)) + collision.FLOOR_AIR
+        out['floor_gap'] = round(gap, 4)
+        # in the air (a jump) there is no floor contact to keep
+        out['floating'] = gap > 0.004 and float(arm.get('ds_floor_up', 0.0)) < 0.01
     if arm.get('ear_width_lock'):
         # Frog: the 'ears' are rigid eye bumps that sit ~1 mm apart by design and never move apart or fold
         out['ears_touch'] = False
