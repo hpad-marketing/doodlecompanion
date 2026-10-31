@@ -1,8 +1,8 @@
 {
- "version": "20261031-125139",
- "notes": "Animation rules built in as defaults, nothing checked or blocked: a hand that would hide behind the head comes forward in front of the face; set pieces and props slide clear of the face; props and set pieces rest their stroke just above the floor you see in the scene; the Frog's eyes keep one size; captions snap into the safe zone below the face. Each one can be switched off per shot (Render > Built-in rules, or set_shot_look).",
+ "version": "20261031-142911",
+ "notes": "Faster renders: the built-in arm rule stays out of steep overhead and low shots (hands under the head look natural there) and caps its search, so an overhead shot that took 200 s now takes 10 s. Props are checked against the face with a quick screen test first.",
  "runtime": "44.9.0",
- "published": "2026-10-31T12:51:39.840Z",
+ "published": "2026-10-31T14:29:11.503Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -125,9 +125,9 @@
    "gz": "files/e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9.gz"
   },
   "resources/app/blender/lib/constraints.py": {
-   "sha256": "a8dfa1241fa1570cce1cc9810b7295be997722fc3737407a5946606bab140d17",
-   "size": 18527,
-   "gz": "files/a8dfa1241fa1570cce1cc9810b7295be997722fc3737407a5946606bab140d17.gz"
+   "sha256": "0ebf3b0ffb0291b37937bff85e2def11f41c5324cf7ba19684efafb6431a4e56",
+   "size": 19978,
+   "gz": "files/0ebf3b0ffb0291b37937bff85e2def11f41c5324cf7ba19684efafb6431a4e56.gz"
   },
   "resources/app/blender/lib/ds_map.py": {
    "sha256": "39df59a73ea7a3d69a1c715a4347e12cebc7a6ca6d2b293948df78e3a42e4a8a",
