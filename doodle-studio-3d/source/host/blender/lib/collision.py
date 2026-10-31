@@ -178,3 +178,47 @@ def solve_frame(apply, values, objs, ear_sets=None, scan=140, step=5, hint=None)
         apply(vals)
         bpy.context.view_layer.update()
     return vals, report
+
+
+# floor collision: the parts that can reach the floor, measured with their ink outline on
+FLOOR_PARTS = ('leg.L', 'leg.R', 'pelvis', 'shirt', 'hand.L', 'hand.R', 'cuff.L', 'cuff.R')
+FLOOR_AIR = 0.001   # a millimetre of air under the stroke (covers line boil)
+
+
+def drawn_zmin(obs):
+    """Lowest world z of the drawn surfaces, ink outline shell included (every modifier on)."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    z = None
+    for ob in obs:
+        ev = ob.evaluated_get(dg)
+        me = ev.to_mesh()
+        mw = ob.matrix_world
+        lo = min(((mw @ v.co).z for v in me.vertices), default=None)
+        ev.to_mesh_clear()
+        if lo is not None and (z is None or lo < z):
+            z = lo
+    return z
+
+
+def floor_lift(arm, objs):
+    """Floor collision: when a leg (or a hand or the hoodie) would dip into the floor, its ink
+    stroke included, raise the whole character on its root bone just enough to stand on it.
+    The floor is the rig's own ground (z of the armature object: the set floors sit there).
+    Returns the lift in metres (0 when nothing reached the floor)."""
+    from mathutils import Vector
+    obs = [objs[k] for k in FLOOR_PARTS if k in objs and not objs[k].hide_render]
+    if not obs:
+        return 0.0
+    floor = arm.matrix_world.translation.z
+    root = arm.pose.bones['root']
+    to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
+    total = 0.0
+    for _ in range(3):   # a rigid lift moves everything equally; the repeats only mop up perspective ink
+        lo = drawn_zmin(obs)
+        d = floor + FLOOR_AIR - lo if lo is not None else 0.0
+        if d <= 1e-4:
+            break
+        root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
+        total += d
+    return total

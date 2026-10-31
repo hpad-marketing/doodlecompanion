@@ -42,7 +42,8 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(r.inAir && !r.belowFloor, 'lifting the body shows "in the air": feet ' + r.feet);
   await ev(() => ds3d.setValues({ bodyY: 30 }, 0, true));
   r = await wf({ action: 'rules' });
-  ok(r.belowFloor, 'pushing him down shows "feet in floor": feet ' + r.feet);
+  ok(!r.belowFloor && r.feet >= 0, 'pushing him down stops at the floor (floor collision): feet ' + r.feet);
+  ok(await ev(() => ds3d.view.lift > 0.05), 'the viewport lifted him back onto the floor');
   await ev(() => { ds3d.undo(); ds3d.undo(); ds3d.undo(); });
 
   // snapping

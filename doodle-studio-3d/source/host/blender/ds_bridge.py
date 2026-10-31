@@ -149,6 +149,8 @@ apply = lambda v: ds_map.apply_pose(arm, meta['controls'], v, S, settings)
 # co-stars come in after the lead's collision objects are taken, so those stay the lead's own
 cast = costars.setup(shot, cam, HERE, lambda m: print(m, flush=True))
 fixes = []
+lifts = []
+FLOOR = shot.get('floorCollision', True) is not False
 rep = None
 for i, vals in enumerate(frames):
     f = i + 1
@@ -176,6 +178,11 @@ for i, vals in enumerate(frames):
         dist = (BASE_ORTHO / float(vals.get('camZoom', 1) or 1) / 2) / math.tan(math.radians(fov) / 2)
         view = math.radians(float(vals.get('view', 0)))
         cam.location = (0, -math.cos(view) * dist, PIVOT_Z + math.sin(view) * dist)
+    if FLOOR:
+        # floor collision, measured after the camera so the ink width is this frame's
+        up = collision.floor_lift(arm, objs)
+        if up:
+            lifts.append({'frame': f, 'cm': round(up * 100, 2)})
     for b in pose_bones:
         b.keyframe_insert(ds_map.rotation_path(b), frame=f, group=b.name)
         b.keyframe_insert('location', frame=f, group=b.name)
@@ -186,7 +193,7 @@ for i, vals in enumerate(frames):
     if 'leg_reach' in arm:
         arm.keyframe_insert('["leg_reach"]', frame=f)
     for c in cast:
-        costars.pose_frame(c, i, f, settings, collide=not flag('--no-collide'))
+        costars.pose_frame(c, i, f, settings, collide=not flag('--no-collide'), floor=FLOOR)
     if cast:
         costars.keep_apart(objs, arm, cast, f, lambda m: print(m, flush=True))
     settings.keyframe_insert('["boil"]', frame=f)
@@ -200,6 +207,8 @@ for i, vals in enumerate(frames):
         cam.data.dof.keyframe_insert('focus_distance', frame=f)
         cam.data.dof.keyframe_insert('aperture_fstop', frame=f)
 
+if lifts:
+    print(f"floor: lifted clear of the floor on {len(lifts)} frames (up to {max(x['cm'] for x in lifts)} cm)", flush=True)
 if cast:
     costars.finish(cast, n)
     for c in cast:
@@ -264,6 +273,8 @@ if not flag('--no-cloth') and cloth_mods and n > 1:
         with bpy.context.temp_override(scene=sc, active_object=ob, point_cache=m.point_cache):
             bpy.ops.ptcache.bake(bake=True)
 
+json.dump({'lead': lifts, 'costars': [{'character': c['name'], 'lifts': c.get('lifts', [])} for c in cast]},
+          open(os.path.join(out_dir, 'floor.json'), 'w'), indent=1)
 json.dump(fixes if not cast else {'lead': fixes, 'costars': [{'character': c['name'], 'pushes': c['pushes']} for c in cast]},
           open(os.path.join(out_dir, 'collision.json'), 'w'), indent=1)
 report = []
@@ -289,6 +300,8 @@ if flag('--check'):
             rc = rules3d.check_frame(c['objs'], c['rig'], c['ears'])
             r['arm_head_clip'] = r['arm_head_clip'] + [f"{c['name']}{k + 1}:{x}" for x in rc['arm_head_clip']]
             r['below_floor'] = r['below_floor'] or rc['below_floor']
+            r['stroke_in_floor'] = r['stroke_in_floor'] or rc['stroke_in_floor']
+            r.setdefault('costar_floor_low', []).append(rc['floor_low'])
             r['ears_touch'] = r['ears_touch'] or rc['ears_touch']
             if rc['below_floor']:
                 r.setdefault('costar_below_floor', []).append(c['name'])
