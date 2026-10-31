@@ -52,6 +52,12 @@ def check_frame(objs, arm, ear_sets=None, tol=0.0015):
     floor = collision.ground_z(arm, obs)   # the rig's ground, or a set floor just above it under the feet
     out['floor_low'] = round(lo - floor, 4) if lo is not None else None
     out['stroke_in_floor'] = lo is not None and out['floor_low'] < -tol
+    # the outline shell as it renders (pushed away from the camera): it must not sink through
+    # the floor either, or the floor cuts the bottom of the strokes off in a high shot
+    sh = collision._zmin_eval(obs) if obs else None
+    out['shell_low'] = round(sh - floor, 4) if sh is not None else None
+    out['shell_in_floor'] = sh is not None and out['shell_low'] < -tol and out['floor_low'] >= -tol
+    out['stroke_in_floor'] = out['stroke_in_floor'] or out['shell_in_floor']
     # how far the lowest stroke is above the floor (for reports; the rig's standing height stays)
     if lo is not None:
         gap = lo - floor

@@ -289,7 +289,7 @@ def ground_z(arm, obs):
         ev = ob.evaluated_get(dg)
         me = ev.to_mesh()
         mw = ob.matrix_world
-        pts = sorted(((mw @ v.co) for v in me.vertices), key=lambda p: p.z)[:1]
+        pts = sorted(((mw @ v.co) for v in me.vertices), key=lambda p: p.z)[:24:6]   # a few of the lowest, toe to heel
         ev.to_mesh_clear()
         for p in pts:
             o = Vector((p.x, p.y, base + 0.3))
@@ -300,9 +300,13 @@ def ground_z(arm, obs):
                 if hob is not None and (hob.hide_render or _is_character(hob)):
                     o = loc - Vector((0, 0, 1e-4))
                     continue
-                if base - 0.05 <= loc.z <= base + GROUND_RISE and nrm.z > 0.5:
+                if base - 0.05 <= loc.z <= base + GROUND_RISE and abs(nrm.z) > 0.5:   # set shells face inward (down)
                     best = max(best, loc.z)
-                break
+                    break
+                if loc.z < base - 0.05:
+                    break
+                # grass, a flower, a kerb edge or a table top above the feet: look on below it
+                o = loc - Vector((0, 0, 1e-4))
     return best
 
 
@@ -337,6 +341,7 @@ def floor_lift(arm, objs):
     bpy.context.view_layer.update()
     bpy.context.view_layer.update()
     target = floor_target(arm, obs)
+    arm['ds_floor_target'] = target   # the ink shell is clamped here too (set_floor_z)
     arm['ds_floor_up'] = target - FLOOR_AIR - arm.matrix_world.translation.z   # the floor's rise here, for the check   # kept keyed for older checks: the target is the floor itself
     total = 0.0
     for _ in range(3):   # a rigid move shifts everything equally; the repeats only mop up perspective ink
@@ -374,3 +379,126 @@ def floor_settle(arm, objs, frames, log=None):
     finally:
         restore()
     return worst
+
+
+# ---------------------------------------------------------------- the ink shell stays above the floor
+# The outline shell is pushed a few ink widths away from the camera (Depth Bias) so creases don't
+# draw. From a high camera "away" points down, so under the feet the shell went through the floor
+# and the floor hid the bottom of the foot strokes. The shell's push is now clamped at the floor:
+# a shell point that started above the floor never ends below it (one that started below, a foot
+# really dug in, is left alone for the floor lift to fix). The floor height comes from the rig
+# (world z on the rig's floor holder, keyed per frame by the bridge).
+FLOOR_OFF = -1000.0
+
+
+def _ink_groups():
+    return [ng for ng in bpy.data.node_groups if ng.bl_idname == 'GeometryNodeTree'
+            and any(getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Depth Bias' for it in ng.interface.items_tree)]
+
+
+def clamp_shell_group(ng):
+    """Add the floor clamp to an ink node group (old saved files included). Idempotent."""
+    if any(getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z' for it in ng.interface.items_tree):
+        return False
+    flip = next((n for n in ng.nodes if n.bl_idname == 'GeometryNodeFlipFaces'), None)
+    sp = flip.inputs['Mesh'].links[0].from_node if flip and flip.inputs['Mesh'].links else None   # the shell's Set Position
+    if sp is None or sp.bl_idname != 'GeometryNodeSetPosition' or not sp.inputs['Offset'].links:
+        return False                                                # not a shell group (a fill-only ink)
+    sock = ng.interface.new_socket('Floor Z', in_out='INPUT', socket_type='NodeSocketFloat')
+    sock.default_value = FLOOR_OFF
+    off_link = sp.inputs['Offset'].links[0]
+    off = off_link.from_socket
+    gi = next(n for n in ng.nodes if n.bl_idname == 'NodeGroupInput')
+    N, L = ng.nodes.new, ng.links.new
+    pos = N('GeometryNodeInputPosition').outputs[0]
+    me = N('GeometryNodeSelfObject')
+    oi = N('GeometryNodeObjectInfo'); oi.transform_space = 'ORIGINAL'
+    L(me.outputs[0], oi.inputs['Object'])
+    M = oi.outputs['Transform']
+    tw = lambda v: (lambda n: (L(M, n.inputs['Transform']), L(v, n.inputs['Vector']), n.outputs[0])[-1])(N('FunctionNodeTransformPoint'))
+    pw = tw(pos)
+    tgt = N('ShaderNodeVectorMath'); tgt.operation = 'ADD'; L(pos, tgt.inputs[0]); L(off, tgt.inputs[1])
+    qw = tw(tgt.outputs[0])
+    sz = lambda v: (lambda n: (L(v, n.inputs[0]), n.outputs['Z'])[-1])(N('ShaderNodeSeparateXYZ'))
+    def m(op, a, b):
+        n = N('ShaderNodeMath'); n.operation = op
+        L(a, n.inputs[0]) if not isinstance(a, (int, float)) else setattr(n.inputs[0], 'default_value', a)
+        L(b, n.inputs[1]) if not isinstance(b, (int, float)) else setattr(n.inputs[1], 'default_value', b)
+        return n.outputs[0]
+    lift = m('MAXIMUM', m('SUBTRACT', m('MINIMUM', sz(pw), gi.outputs['Floor Z']), sz(qw)), 0.0)
+    cz = N('ShaderNodeCombineXYZ'); L(lift, cz.inputs['Z'])
+    inv = N('FunctionNodeInvertMatrix'); L(M, inv.inputs[0])
+    td = N('FunctionNodeTransformDirection'); L(inv.outputs[0], td.inputs['Transform']); L(cz.outputs[0], td.inputs['Direction'])
+    tot = N('ShaderNodeVectorMath'); tot.operation = 'ADD'; L(off, tot.inputs[0]); L(td.outputs[0], tot.inputs[1])
+    ng.links.remove(off_link)
+    L(tot.outputs[0], sp.inputs['Offset'])
+    return True
+
+
+def _rig_of(ob):
+    p = ob
+    while p is not None and p.type != 'ARMATURE':
+        p = p.parent
+    if p is not None:
+        return p
+    for m in ob.modifiers:
+        if m.type == 'ARMATURE' and m.object:
+            return m.object
+    return None
+
+
+def floor_holder(arm):
+    """An empty beside each rig that carries its floor height ('ds_floor_z', world z). A property
+    on the rig itself can't drive the ink: the legs already depend on the rig, so the driver
+    would loop."""
+    name = arm.name + '.floor'
+    ob = bpy.data.objects.get(name)
+    if ob is None:
+        ob = bpy.data.objects.new(name, None)
+        ob.hide_render = True; ob.hide_viewport = True
+        (arm.users_collection[0] if arm.users_collection else bpy.context.scene.collection).objects.link(ob)
+        ob['ds_floor_z'] = FLOOR_OFF
+    return ob
+
+
+def set_floor_z(arm, z, frame=None):
+    h = floor_holder(arm)
+    h['ds_floor_z'] = z
+    h.update_tag()
+    if frame is not None:
+        h.keyframe_insert('["ds_floor_z"]', frame=frame)
+
+
+def _floor_sid(md):
+    return next((it.identifier for it in md.node_group.interface.items_tree if getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z'), None)
+
+
+def bind_shell_floor():
+    """Clamp every ink group and drive each ink modifier's Floor Z from its character's rig."""
+    groups = _ink_groups()
+    for ng in groups:
+        clamp_shell_group(ng)
+    groups = [ng for ng in groups if any(getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z' for it in ng.interface.items_tree)]
+    n = 0
+    for ob in bpy.data.objects:
+        for md in ob.modifiers:
+            if md.type != 'NODES' or md.node_group not in groups:
+                continue
+            if _floor_sid(md) not in md.keys():
+                md.node_group = md.node_group          # pick up the new input on an old modifier
+            arm = _rig_of(ob)
+            sid = next(it.identifier for it in md.node_group.interface.items_tree if getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z')
+            if arm is None:
+                md[sid] = FLOOR_OFF
+                continue
+            h = floor_holder(arm)
+            path = f'modifiers["{md.name}"]["{sid}"]'
+            ob.driver_remove(path)
+            d = ob.driver_add(path).driver
+            d.type = 'AVERAGE'
+            v = d.variables.new(); v.type = 'SINGLE_PROP'
+            v.targets[0].id = h; v.targets[0].data_path = '["ds_floor_z"]'
+            d.is_valid = True
+            n += 1
+    bpy.context.view_layer.update()
+    return n

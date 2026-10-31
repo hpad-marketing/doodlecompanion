@@ -46,10 +46,13 @@ const next = () => {
     console.log(`${label} (${lead} + ${costars.join(', ') || 'none'})`, JSON.stringify({ lows, gaps, cLows, cGaps }));
     if (extra.floorCollision === false) {
       ok(F.some(f => f.stroke_in_floor), 'with floor collision off the check catches strokes in the floor');
+      ok(F.some(f => f.shell_low < -0.002), 'and it sees the shell under the floor too');
     } else {
       const dug = [1, 2, 3];   // the poses that would go into the floor
       ok(F.length === POSES.length + 1, `${label}: every frame checked`);
       ok(F.every(f => !f.stroke_in_floor && !f.below_floor), `${label}: no leg or ink stroke under the floor`);
+      const shells = F.map(f => f.shell_low);
+      ok(shells.every(z => z != null && z >= -0.002), `${label}: the outline shell, as it renders, stays on top of the floor too (${shells})`);
       ok(dug.every(i => F[i].floor_low >= 0 && F[i].floor_low < 0.003), `${label}: ${lead} is lifted only by the depth it went in, no float (${lows})`);
       const lifts = JSON.parse(fs.readFileSync(path.join(dir, last, 'floor.json'), 'utf8'));
       const moved = f => (lifts.lead || []).some(x => x.frame === f && x.cm !== 0) || (lifts.costars || []).some(c => (c.lifts || []).some(x => x.frame === f && x.cm !== 0));

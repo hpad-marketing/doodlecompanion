@@ -1,8 +1,8 @@
 {
- "version": "20261031-090215",
- "notes": "Syllable lip sync: one mouth per syllable, lips move at every syllable edge, teeth on hiss, rest in silence, no one-frame flicker; optional vocal stem for the cleanest read over music. Lipsync over MCP waits for the scene audio to decode, and every MCP call reports the real error.",
+ "version": "20261031-100718",
+ "notes": "Foot strokes no longer cut off by the floor in high shots (the outline's push away from the camera stops at the floor). Raised set floors facing inward (park) are now found, so Bunny stands on them.",
  "runtime": "44.9.0",
- "published": "2026-10-31T09:02:15.994Z",
+ "published": "2026-10-31T10:07:18.312Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -60,9 +60,9 @@
    "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "f84d21c557f1277b304f71df0bfd42832a3cd0b5b7230bea956e40672dac18e5",
-   "size": 18093,
-   "gz": "files/f84d21c557f1277b304f71df0bfd42832a3cd0b5b7230bea956e40672dac18e5.gz"
+   "sha256": "e835a1ecee00fa88512459f93c476e405dea9a17497180ce9bbd4e13ca7ce0dc",
+   "size": 18330,
+   "gz": "files/e835a1ecee00fa88512459f93c476e405dea9a17497180ce9bbd4e13ca7ce0dc.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "dbca9d4583a9cf63a52f1929fa48787fa62f1845c457117809ce8b6e6ae5122e",
-   "size": 41351,
-   "gz": "files/dbca9d4583a9cf63a52f1929fa48787fa62f1845c457117809ce8b6e6ae5122e.gz"
+   "sha256": "de0462dfd92f508154f350761f62371f357a4510a90efe267c76515397ff5580",
+   "size": 41619,
+   "gz": "files/de0462dfd92f508154f350761f62371f357a4510a90efe267c76515397ff5580.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -110,14 +110,14 @@
    "gz": "files/41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606.gz"
   },
   "resources/app/blender/lib/cast.py": {
-   "sha256": "ffbe4e6a3b2221ccbdb0013fb9fe52bfd3bd6467da6b1e3d1ca57abdbaf5fd5c",
-   "size": 9211,
-   "gz": "files/ffbe4e6a3b2221ccbdb0013fb9fe52bfd3bd6467da6b1e3d1ca57abdbaf5fd5c.gz"
+   "sha256": "35c0889248c270d60706a5236bdd3810cb553d73a9cad3d58352295b4944f4c6",
+   "size": 9304,
+   "gz": "files/35c0889248c270d60706a5236bdd3810cb553d73a9cad3d58352295b4944f4c6.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "1eabbcd6b873343bffe3749bc81821554b93726f07ffc79d0b88dec2643c05b1",
-   "size": 15142,
-   "gz": "files/1eabbcd6b873343bffe3749bc81821554b93726f07ffc79d0b88dec2643c05b1.gz"
+   "sha256": "ead0e3e7513090dad04495018ff6e5210c1a7d042c8d16e94295b1a36b31fef6",
+   "size": 21446,
+   "gz": "files/ead0e3e7513090dad04495018ff6e5210c1a7d042c8d16e94295b1a36b31fef6.gz"
   },
   "resources/app/blender/lib/compat.py": {
    "sha256": "e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9",
@@ -170,9 +170,9 @@
    "gz": "files/ffeb3e64fd978d0a61ef394598015b546ccaabf06f200b68ca1cd2dc4b842e89.gz"
   },
   "resources/app/blender/lib/rules3d.py": {
-   "sha256": "6d6c3a95cdf6dcd1b5e89f408e56f8cb5439a15a6a40009be175df38d960c566",
-   "size": 3110,
-   "gz": "files/6d6c3a95cdf6dcd1b5e89f408e56f8cb5439a15a6a40009be175df38d960c566.gz"
+   "sha256": "258ee8fa5412b8be1e76dacdd64fc3de88d3913f5b21cdfcea9e96dc8ae2d11c",
+   "size": 3592,
+   "gz": "files/258ee8fa5412b8be1e76dacdd64fc3de88d3913f5b21cdfcea9e96dc8ae2d11c.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
    "sha256": "3c3df9bf86342ef43e4eeb1c84c711a05efbf5b605b4ca8c876ca95bcb4a9af8",
