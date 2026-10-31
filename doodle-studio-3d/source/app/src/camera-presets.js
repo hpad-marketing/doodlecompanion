@@ -460,6 +460,12 @@ function bakeLook() {
   if (p.tracks.turn && !p.lookTurnBackup) p.lookTurnBackup = p.tracks.turn;   // his own turn keys come back when this is switched off
   const base = p.lookTurnBackup?.length ? p.lookTurnBackup[0].v : 0;
   delete p.tracks.turn;
+  // the head is aimed on every frame, so his own head keys (a motion clip's, say) would fight it:
+  // they are put aside the same way and come back when Look at camera is switched off
+  for (const id of ['headYaw', 'headNod']) {
+    if (p.tracks[id]?.length && !p.lookHeadBackup?.[id]) (p.lookHeadBackup ||= {})[id] = p.tracks[id];
+    delete p.tracks[id];
+  }
   const n = p.length, TURN = Math.max(6, Math.round(p.fps / 3)), LEAD = yawMax * 0.45;
   const camYaw = [], camElev = [];
   let prev = null;
@@ -487,8 +493,9 @@ function bakeLook() {
   const key = (id, fr, v, ease) => { setKey(p, id, fr, v, ease); const k = p.tracks[id].find(k => k.f === fr); k.look = true; };
   key('turn', 0, body[0], 'hold');
   for (const [a, b, from, to] of turns) { key('turn', Math.max(0, a - 1), from, 'ease'); key('turn', b, to, 'hold'); }
-  // head: whatever the body leaves over, inside the neck's range, every 2 frames
-  for (let fr = 0; fr < n; fr += 2) {
+  // head: whatever the body leaves over, inside the neck's range, on every frame, so a hard cut
+  // in the camera lands on the next frame with no in-between blend
+  for (let fr = 0; fr < n; fr++) {
     key('headYaw', fr, Math.max(-yawMax, Math.min(yawMax, camYaw[fr] - body[fr])), 'linear');
     key('headNod', fr, Math.max(-nodMax, Math.min(nodMax, -camElev[fr])), 'linear');
   }
@@ -508,7 +515,8 @@ export function setLookAtCamera(on) {
   ctx.pushUndo();
   const p = ctx.project();
   p.lookAtCamera = !!on;
-  const r = on ? bakeLook() : (clearLook(p), p.lookTurnBackup && (p.tracks.turn = p.lookTurnBackup), delete p.lookTurnBackup, { turns: 0 });
+  const r = on ? bakeLook() : (clearLook(p), p.lookTurnBackup && (p.tracks.turn = p.lookTurnBackup), delete p.lookTurnBackup,
+    Object.assign(p.tracks, p.lookHeadBackup || {}), delete p.lookHeadBackup, { turns: 0 });
   ctx.refresh();
   return r;
 }
