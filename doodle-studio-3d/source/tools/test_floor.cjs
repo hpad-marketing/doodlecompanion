@@ -28,7 +28,13 @@ const runs = [
 ];
 let k = 0;
 const next = () => {
-  if (k >= runs.length) return;
+  if (k >= runs.length) {
+    // a set floor above the rig's ground (raised stage, thick backdrop sweep), straight in Blender
+    const py = require('child_process').spawnSync(process.env.DS3D_BPY || 'python3', [path.join(__dirname, 'floor_raised.py')], { encoding: 'utf8' });
+    for (const line of (py.stdout || '').split('\n')) if (/^(ok|FAIL)/.test(line)) { console.log(line); if (line.startsWith('FAIL')) process.exitCode = 1; }
+    ok(py.status === 0, 'raised-floor checks ran');
+    return;
+  }
   const [lead, costars, extra, cam, label] = runs[k++];
   const name = `Floor ${k} ${lead}`;
   const r = require('../host/render.cjs')({ appDir, settings: { set: () => {}, get: () => ({ rendersRoot: root, blender: path.join(__dirname, 'fakeblender.sh') }) }, notify: j => {
@@ -41,15 +47,17 @@ const next = () => {
     if (extra.floorCollision === false) {
       ok(F.some(f => f.stroke_in_floor), 'with floor collision off the check catches strokes in the floor');
     } else {
-      const ground = F.filter((f, i) => i !== JUMP);
+      const dug = [1, 2, 3];   // the poses that would go into the floor
       ok(F.length === POSES.length + 1, `${label}: every frame checked`);
       ok(F.every(f => !f.stroke_in_floor && !f.below_floor), `${label}: no leg or ink stroke under the floor`);
-      ok(ground.every(f => f.floor_low >= 0 && f.floor_low < 0.003), `${label}: ${lead}'s lowest stroke rests on the floor, no float gap (${lows})`);
-      ok(F.every(f => !f.floating) && ground.every(f => Math.abs(f.floor_gap) < 0.003), `${label}: ${lead} never floats (gaps ${gaps})`);
+      ok(dug.every(i => F[i].floor_low >= 0 && F[i].floor_low < 0.003), `${label}: ${lead} is lifted only by the depth it went in, no float (${lows})`);
+      const lifts = JSON.parse(fs.readFileSync(path.join(dir, last, 'floor.json'), 'utf8'));
+      const moved = f => (lifts.lead || []).some(x => x.frame === f && x.cm !== 0) || (lifts.costars || []).some(c => (c.lifts || []).some(x => x.frame === f && x.cm !== 0));
+      ok(F[0].floor_low > 0.005 && !moved(1) && !moved(JUMP + 1), `${label}: standing and jumping are never moved (stroke ${F[0].floor_low} above the floor)`);
       ok(F[JUMP].floor_low > 0.05, `${label}: a jump keeps its height (${F[JUMP].floor_low})`);
       costars.forEach((c, n) => {
-        const lo = cLows.map(x => x[n]), gp = cGaps.map(x => x[n]);
-        ok(lo.every((z, i) => i === JUMP || (z >= 0 && z < 0.003)) && gp.every((g, i) => i === JUMP || Math.abs(g) < 0.003), `${label}: co-star ${n + 1} (${c}) rests on the floor too (${lo})`);
+        const lo = cLows.map(x => x[n]);
+        ok(dug.every(i => lo[i] >= 0 && lo[i] < 0.003) && lo[0] > 0.005, `${label}: co-star ${n + 1} (${c}) lifted only where it dug in (${lo})`);
       });
     }
     next();
