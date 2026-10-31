@@ -180,8 +180,8 @@ for i, vals in enumerate(frames):
         view = math.radians(float(vals.get('view', 0)))
         cam.location = (0, -math.cos(view) * dist, PIVOT_Z + math.sin(view) * dist)
     if FLOOR:
-        # floor contact (strokes on the floor, never in it or above it), measured after the
-        # camera so the ink width is this frame's
+        # floor collision (no stroke under the floor), measured after the camera so the ink
+        # width is this frame's
         up = collision.floor_lift(arm, objs)
         arm.keyframe_insert('["ds_floor_up"]', frame=f)
         if up:
@@ -269,7 +269,7 @@ if not flag('--no-springs') and n > 1:
         dynamics.bake_springs(c['rig'], 1, n, fps=fps)
 
 if FLOOR:
-    # one last look at every frame as it will render: the stroke rests on the floor
+    # one last look at every frame as it will render: no stroke under the floor
     fix = collision.floor_settle(arm, objs, range(1, n + 1))
     for c in cast:
         fix = max(fix, collision.floor_settle(c['rig'], c['objs'], range(1, n + 1)))

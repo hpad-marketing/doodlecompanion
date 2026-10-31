@@ -264,12 +264,55 @@ def body_zmin(obs):
             m.show_viewport = True
 
 
-def floor_target(arm, obs):
-    """Where the lowest ink stroke belongs: on the floor (plus a hair of air), or as high as the
-    pose itself lifts the body off its standing height (a jump, a hop, sitting up on something)."""
-    floor = arm.matrix_world.translation.z
-    up = body_zmin(obs) - floor - arm.get('floor_z', 0.0)
-    return floor + FLOOR_AIR + max(0.0, up)
+def _is_character(ob):
+    p = ob
+    while p is not None:
+        if p.type == 'ARMATURE' or p.name.startswith(('BUNNY_', 'DS_costar')):
+            return True
+        p = p.parent
+    return False
+
+
+def ground_z(arm, obs):
+    """The floor under the character: the rig's own ground (z of the armature object), or a set
+    floor or backdrop that sits higher right under the feet (found by casting straight down
+    under each leg, skipping every character). Never a table or shelf: only surfaces within a
+    few centimetres of the rig's ground count."""
+    from mathutils import Vector
+    base = arm.matrix_world.translation.z
+    sc = bpy.context.scene
+    dg = bpy.context.evaluated_depsgraph_get()
+    best = base
+    for ob in obs:
+        if 'leg' not in ob.name:
+            continue
+        ev = ob.evaluated_get(dg)
+        me = ev.to_mesh()
+        mw = ob.matrix_world
+        pts = sorted(((mw @ v.co) for v in me.vertices), key=lambda p: p.z)[:1]
+        ev.to_mesh_clear()
+        for p in pts:
+            o = Vector((p.x, p.y, base + 0.3))
+            for _ in range(12):
+                hit, loc, nrm, _i, hob, _m = sc.ray_cast(dg, o, Vector((0, 0, -1)), distance=0.4)
+                if not hit:
+                    break
+                if hob is not None and (hob.hide_render or _is_character(hob)):
+                    o = loc - Vector((0, 0, 1e-4))
+                    continue
+                if base - 0.05 <= loc.z <= base + GROUND_RISE and nrm.z > 0.5:
+                    best = max(best, loc.z)
+                break
+    return best
+
+
+GROUND_RISE = 0.06   # a set floor up to 6 cm above the rig's ground still counts as the floor
+
+
+def floor_target(arm, obs=None):
+    """The lowest the ink stroke may go: the floor plus a hair of air. Poses above it stay as they
+    are (standing height, jumps); only a pose that would dig in is raised to it."""
+    return (ground_z(arm, obs) if obs else arm.matrix_world.translation.z) + FLOOR_AIR
 
 
 def floor_keyed_target(arm):
@@ -278,12 +321,11 @@ def floor_keyed_target(arm):
 
 
 def floor_lift(arm, objs):
-    """Floor contact: the lowest ink stroke of the legs (or a hand or the hoodie) rests on the
-    floor, never in it and never floating above it. A pose that would dig in is raised by
-    exactly how deep it went; a standing pose is set down so its stroke touches the floor; a
-    jump keeps its height. The whole character moves on its root bone; the rig is untouched.
+    """Floor collision: when the lowest ink stroke of the legs (or a hand or the hoodie) would
+    go under the floor, raise the character by exactly how deep it went. Anything that already
+    clears the floor (standing, jumping) is never moved. The whole character moves on its root bone; the rig is untouched.
     The floor is the rig's own ground (z of the armature object: the set floors sit there).
-    Returns the move in metres (+ up, - down, 0 when it already rested on the floor)."""
+    Returns the lift in metres (0 when nothing reached the floor)."""
     from mathutils import Vector
     obs = [objs[k] for k in FLOOR_PARTS if k in objs and not objs[k].hide_render]
     if not obs:
@@ -294,13 +336,13 @@ def floor_lift(arm, objs):
     # type and lens, and on a camera's first move they settle one evaluation late
     bpy.context.view_layer.update()
     bpy.context.view_layer.update()
-    target = floor_target(arm, obs)   # a rigid move keeps the pose's own lift, so measure it once
-    arm['ds_floor_up'] = target - arm.matrix_world.translation.z - FLOOR_AIR   # read back by the rule check
+    target = floor_target(arm, obs)
+    arm['ds_floor_up'] = target - FLOOR_AIR - arm.matrix_world.translation.z   # the floor's rise here, for the check   # kept keyed for older checks: the target is the floor itself
     total = 0.0
     for _ in range(3):   # a rigid move shifts everything equally; the repeats only mop up perspective ink
         lo = drawn_zmin(obs)
         d = target - lo if lo is not None else 0.0
-        if abs(d) <= 2e-4:
+        if d <= 2e-4:   # lift only: a pose that clears the floor is never moved
             break
         root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
         total += d
@@ -323,8 +365,8 @@ def floor_settle(arm, objs, frames, log=None):
         for f in frames:
             sc.frame_set(f)
             lo = drawn_zmin(obs)
-            d = floor_keyed_target(arm) - lo if lo is not None else 0.0
-            if abs(d) > 5e-4:
+            d = floor_target(arm, obs) - lo if lo is not None else 0.0
+            if d > 5e-4:
                 to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
                 root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
                 root.keyframe_insert('location', frame=f, group=root.name)

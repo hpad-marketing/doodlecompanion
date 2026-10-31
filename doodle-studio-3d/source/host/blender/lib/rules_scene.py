@@ -261,7 +261,7 @@ def costar_framing(cast, cam, lead_objs):
 
 def frame_bad(r):
     """A frame breaks a blocking rule (near-misses are warnings only)."""
-    return bool(r.get('arm_head_clip') or r.get('below_floor') or r.get('stroke_in_floor') or r.get('floating') or r.get('ears_touch') or r.get('bodies_touch')
+    return bool(r.get('arm_head_clip') or r.get('below_floor') or r.get('stroke_in_floor') or r.get('ears_touch') or r.get('bodies_touch')
                 or r.get('scenery_touch') or r.get('held_in_body') or r.get('slivers') or r.get('tangents') or r.get('costar_cut'))
 
 

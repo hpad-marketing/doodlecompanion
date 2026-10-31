@@ -133,13 +133,13 @@ export function audioDrive(project, from, id, min, max, { step = 2, smooth = 2, 
 
 // ---------------------------------------------------------------- lip sync
 // Speech mouths from the voice, per video frame (indices into face.speech:
-// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). The vocal is separated from the
-// music first when there is music under it (vocals.js: centre of the mix, harmonic/percussive
-// split, voice band), so a beat never moves the mouth; then loudness, brightness and the zero-crossing rate
-// pick open or round vowels, teeth on hiss and buzz, and lips that meet between syllables.
-// No network, no models: it runs on the PC in about a second per 20 s of audio.
+// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). Reads loudness, how bright
+// the sound is (band energies) and the zero-crossing rate, so vowels open wide or round,
+// hiss and buzz get teeth, and the lips close for a beat before a word starts. No network.
+// (vocals.js also has an experimental vocal separation; it stays off, because on a real rap
+// track it left the mouth hanging open.)
 let lips = null, lipsKey = '';
-export function visemes(fps, { gate = 0.1, hold = 2, vocals = 'auto' } = {}) {
+export function visemes(fps, { gate = 0.1, hold = 2, vocals = false } = {}) {
   if (!buf) return null;
   const key = bufPath + '|' + fps + '|' + gate + '|' + hold + '|' + vocals;
   if (lips && lipsKey === key) return lips;

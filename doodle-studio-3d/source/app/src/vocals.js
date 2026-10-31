@@ -244,9 +244,10 @@ export function bedLevel(L, R, sr, fps) {
   return sorted[Math.floor(sorted.length * 0.2)] / top;
 }
 
-// the whole pipeline: channels in, mouths per frame out. vocals: 'auto' separates only when
-// music sits under the voice; true always; false reads the plain signal (a dry voice track)
-export function mouthsFor(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = 'auto' } = {}) {
+// the whole pipeline: channels in, mouths per frame out. vocals: false (default) reads the plain
+// signal, as every build up to 20261031-044106 did; true or 'auto' separate the vocal first. The
+// separation is opt-in only: on a real rap track (Bambi v9) it left the mouth hanging open.
+export function mouthsFor(L, R, sr, fps, { gate = 0.1, hold = 2, vocals = false } = {}) {
   const n = Math.ceil(L.length / sr * fps);
   if (vocals === 'auto') vocals = bedLevel(L, R, sr, fps) > 0.06;
   if (!vocals) return finishMouths(visemesFrom(L, sr, fps, { gate, hold }).slice(0, n), { hold });

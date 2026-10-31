@@ -49,14 +49,14 @@ def check_frame(objs, arm, ear_sets=None, tol=0.0015):
     # floor collision: nothing drawn (ink strokes included) goes under the rig's own ground
     obs = [objs[k] for k in collision.FLOOR_PARTS if k in objs and not objs[k].hide_render]
     lo = collision.drawn_zmin(obs)
-    out['floor_low'] = round(lo - arm.matrix_world.translation.z, 4) if lo is not None else None
+    floor = collision.ground_z(arm, obs)   # the rig's ground, or a set floor just above it under the feet
+    out['floor_low'] = round(lo - floor, 4) if lo is not None else None
     out['stroke_in_floor'] = lo is not None and out['floor_low'] < -tol
-    # and never floating: the stroke rests on the floor unless the pose itself is off the ground
+    # how far the lowest stroke is above the floor (for reports; the rig's standing height stays)
     if lo is not None:
-        gap = lo - (collision.floor_keyed_target(arm) if 'ds_floor_up' in arm else collision.floor_target(arm, obs)) + collision.FLOOR_AIR
+        gap = lo - floor
         out['floor_gap'] = round(gap, 4)
-        # in the air (a jump) there is no floor contact to keep
-        out['floating'] = gap > 0.004 and float(arm.get('ds_floor_up', 0.0)) < 0.01
+        out['floating'] = False   # reported as floor_gap only: standing height is the rig's own
     if arm.get('ear_width_lock'):
         # Frog: the 'ears' are rigid eye bumps that sit ~1 mm apart by design and never move apart or fold
         out['ears_touch'] = False

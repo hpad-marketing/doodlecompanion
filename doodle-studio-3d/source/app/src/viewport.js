@@ -190,14 +190,12 @@ export class Viewport {
     this.values = values;
     this.rig.pose(values);
     for (const o of this.objects) this.rig.deform(o.m, o.buf);
-    // floor contact, as in the render: the lowest ink stroke rests on the floor (z = 0), never
-    // in it and never above it, unless the pose itself is off the ground (a jump keeps its
-    // height); the body moves just enough, the keyed values stay as they are
+    // floor collision, as in the render: nothing drawn, its ink stroke included, goes under the
+    // floor (z = 0); the body is raised just enough, the keyed values stay as they are
     this.lift = 0;
     if (this.floorCollision !== false) {
-      const low = this.drawnLow(), up = Math.max(0, low - (this.data.floor_z || 0));
-      const d = this.inkWorld() + 0.001 + up - low;
-      if (Math.abs(d) > 1e-4) {
+      const d = this.inkWorld() + 0.001 - this.drawnLow();
+      if (d > 1e-4) {
         this.lift = d;
         this.rig.pose({ ...values, bodyY: Number(values.bodyY ?? 0) - d * STAGE_BODY_UNIT / this.rig.S });
         for (const o of this.objects) this.rig.deform(o.m, o.buf);

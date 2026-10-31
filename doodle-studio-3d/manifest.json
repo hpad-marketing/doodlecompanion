@@ -1,8 +1,8 @@
 {
- "version": "20261031-075119",
- "notes": "Every library is visual: motions play as small looping previews with family and category chips, and faces, speech mouths, mouth sets, characters and clothes all show as pictures",
+ "version": "20261031-081610",
+ "notes": "Fixes both 065836 regressions: lip sync back to the v8 timing (vocal separation off), floor collision lift-only again with raised set floors detected and the overhead float fix kept.",
  "runtime": "44.9.0",
- "published": "2026-10-31T07:51:19.706Z",
+ "published": "2026-10-31T08:16:10.756Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -60,9 +60,9 @@
    "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "cf03e215284f7437ef8dc087f8c03e944c91f55b5b50a4d530bc93fc07aded52",
-   "size": 18115,
-   "gz": "files/cf03e215284f7437ef8dc087f8c03e944c91f55b5b50a4d530bc93fc07aded52.gz"
+   "sha256": "f84d21c557f1277b304f71df0bfd42832a3cd0b5b7230bea956e40672dac18e5",
+   "size": 18093,
+   "gz": "files/f84d21c557f1277b304f71df0bfd42832a3cd0b5b7230bea956e40672dac18e5.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "920b75190c89d3562414ae9b4f9f07c6ac76953ef2d2f3f378e557612410bdc3",
-   "size": 41236,
-   "gz": "files/920b75190c89d3562414ae9b4f9f07c6ac76953ef2d2f3f378e557612410bdc3.gz"
+   "sha256": "b682e98e9cc42d248796237abee547fda53b6444b5ba52473ffd9309a11d7108",
+   "size": 40920,
+   "gz": "files/b682e98e9cc42d248796237abee547fda53b6444b5ba52473ffd9309a11d7108.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -115,9 +115,9 @@
    "gz": "files/ffbe4e6a3b2221ccbdb0013fb9fe52bfd3bd6467da6b1e3d1ca57abdbaf5fd5c.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "0b6b12efc38318f1bfcfb5a399fcbf6184dd740de6c501265b12842ad7856941",
-   "size": 13563,
-   "gz": "files/0b6b12efc38318f1bfcfb5a399fcbf6184dd740de6c501265b12842ad7856941.gz"
+   "sha256": "1eabbcd6b873343bffe3749bc81821554b93726f07ffc79d0b88dec2643c05b1",
+   "size": 15142,
+   "gz": "files/1eabbcd6b873343bffe3749bc81821554b93726f07ffc79d0b88dec2643c05b1.gz"
   },
   "resources/app/blender/lib/compat.py": {
    "sha256": "e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9",
@@ -170,14 +170,14 @@
    "gz": "files/ffeb3e64fd978d0a61ef394598015b546ccaabf06f200b68ca1cd2dc4b842e89.gz"
   },
   "resources/app/blender/lib/rules3d.py": {
-   "sha256": "c1e290c812e6d3b97ab38e93cb03bae027940c5a1118a6994661c4e294b4c7d4",
-   "size": 3192,
-   "gz": "files/c1e290c812e6d3b97ab38e93cb03bae027940c5a1118a6994661c4e294b4c7d4.gz"
+   "sha256": "6d6c3a95cdf6dcd1b5e89f408e56f8cb5439a15a6a40009be175df38d960c566",
+   "size": 3110,
+   "gz": "files/6d6c3a95cdf6dcd1b5e89f408e56f8cb5439a15a6a40009be175df38d960c566.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
-   "sha256": "da665128f9b7c7583c5405e0fd72378b348f6378a27f5e490a0223e671211da4",
-   "size": 13322,
-   "gz": "files/da665128f9b7c7583c5405e0fd72378b348f6378a27f5e490a0223e671211da4.gz"
+   "sha256": "3c3df9bf86342ef43e4eeb1c84c711a05efbf5b605b4ca8c876ca95bcb4a9af8",
+   "size": 13301,
+   "gz": "files/3c3df9bf86342ef43e4eeb1c84c711a05efbf5b605b4ca8c876ca95bcb4a9af8.gz"
   },
   "resources/app/blender/lib/skin.py": {
    "sha256": "9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517",
@@ -220,9 +220,9 @@
    "gz": "files/52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "d9ae84e6f52c5ef8415bd2ed01866fc0f1a47bbfe3734dd24af1fd30263e04db",
-   "size": 8134,
-   "gz": "files/d9ae84e6f52c5ef8415bd2ed01866fc0f1a47bbfe3734dd24af1fd30263e04db.gz"
+   "sha256": "857297b1df4ed4ade236556c3dc1e1716fd0adac5717ab18d2776b55dfe29718",
+   "size": 8068,
+   "gz": "files/857297b1df4ed4ade236556c3dc1e1716fd0adac5717ab18d2776b55dfe29718.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "8ddf6f87945fc930f68c375670598daf18fd3a2585d7ae32fe73b4521571921f",
@@ -325,14 +325,14 @@
    "gz": "files/0f8e247a13d77a13c06255e4a553801493f97ab09fa7ad4f12490b89945bce5b.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "8754e27f3b65e9e0dec055123a6c532c109a166a4ddbdae751b7a950e2b9339a",
-   "size": 18985,
-   "gz": "files/8754e27f3b65e9e0dec055123a6c532c109a166a4ddbdae751b7a950e2b9339a.gz"
+   "sha256": "eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9",
+   "size": 18816,
+   "gz": "files/eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9.gz"
   },
   "resources/app/ui/src/vocals.js": {
-   "sha256": "d1c21a26558906ca1604b039b1afdda603f1aac9a1359b22d37e289dd13fa390",
-   "size": 13722,
-   "gz": "files/d1c21a26558906ca1604b039b1afdda603f1aac9a1359b22d37e289dd13fa390.gz"
+   "sha256": "45ecdc25b32f0a46b00c9b14f272c3e59003c0b181109036d0a3e73cb09cb1b9",
+   "size": 13824,
+   "gz": "files/45ecdc25b32f0a46b00c9b14f272c3e59003c0b181109036d0a3e73cb09cb1b9.gz"
   },
   "resources/app/ui/src/workflow.js": {
    "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",
