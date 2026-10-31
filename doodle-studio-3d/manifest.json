@@ -1,8 +1,8 @@
 {
- "version": "20261031-030952",
- "notes": "Scrollbars are brand colours everywhere: ink on mustard, mustard on ink in dark mode. No more grey and white.",
+ "version": "20261031-044106",
+ "notes": "Floor collision: no leg, hand or hoodie, and none of their ink strokes, goes under the floor, for every character and co-star, in renders and the live view",
  "runtime": "44.9.0",
- "published": "2026-10-31T03:09:52.298Z",
+ "published": "2026-10-31T04:41:06.372Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -60,9 +60,9 @@
    "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425",
-   "size": 16583,
-   "gz": "files/0ac62effa3b993f75de2520b30d9d433dcf603863123870680984b4a59edb425.gz"
+   "sha256": "97f6406c6fb4ab3d4676c673d6a875223d141a9ffcfb858541c7690410cc1ca1",
+   "size": 17350,
+   "gz": "files/97f6406c6fb4ab3d4676c673d6a875223d141a9ffcfb858541c7690410cc1ca1.gz"
   },
   "resources/app/blender/ds_concat.py": {
    "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5",
-   "size": 40236,
-   "gz": "files/f971adecf031f765eae16bfd55c03d0bd3b283f29c3b51b6c1df3a3b26e4b4c5.gz"
+   "sha256": "ed6aae27af0831939a95a2bafc9a9ed6246b3ad420e213b6700fe2935a4e3271",
+   "size": 40684,
+   "gz": "files/ed6aae27af0831939a95a2bafc9a9ed6246b3ad420e213b6700fe2935a4e3271.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -110,14 +110,14 @@
    "gz": "files/41ae1811388a7a0560c1ede7fa57e857712fd0c72a1394322d9977ca6a326606.gz"
   },
   "resources/app/blender/lib/cast.py": {
-   "sha256": "6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e",
-   "size": 8979,
-   "gz": "files/6d9442a671ae15602a6f31e121b9f62e54866bf3aec7e59aa5b980e05091491e.gz"
+   "sha256": "a533077a8e5b7561f4145478849bbed749cbd2870acf26de41a7346a00b909d6",
+   "size": 9155,
+   "gz": "files/a533077a8e5b7561f4145478849bbed749cbd2870acf26de41a7346a00b909d6.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "a546871be85792d29e0548a700ec443fc488a03e4b01c95e3002a24dc127d0f8",
-   "size": 7203,
-   "gz": "files/a546871be85792d29e0548a700ec443fc488a03e4b01c95e3002a24dc127d0f8.gz"
+   "sha256": "da99f45ccae45438b12faef5902159bada634442bcce9fef7edc994f8e7c227c",
+   "size": 9011,
+   "gz": "files/da99f45ccae45438b12faef5902159bada634442bcce9fef7edc994f8e7c227c.gz"
   },
   "resources/app/blender/lib/compat.py": {
    "sha256": "e4e358fb8fc9b04e240dbac91ff4ec7e92110080f2dd844ba5c94f7f5c78ead9",
@@ -170,14 +170,14 @@
    "gz": "files/ffeb3e64fd978d0a61ef394598015b546ccaabf06f200b68ca1cd2dc4b842e89.gz"
   },
   "resources/app/blender/lib/rules3d.py": {
-   "sha256": "e0c6a293f6d74c39cc5a2a9fa761d264d7588a64d28ca7d0cc376394da0316a4",
-   "size": 2166,
-   "gz": "files/e0c6a293f6d74c39cc5a2a9fa761d264d7588a64d28ca7d0cc376394da0316a4.gz"
+   "sha256": "ddaa0fb1cbc9e5b0634af0592c2a9baee7a46dcd7189ec09d65cf55ced165819",
+   "size": 2744,
+   "gz": "files/ddaa0fb1cbc9e5b0634af0592c2a9baee7a46dcd7189ec09d65cf55ced165819.gz"
   },
   "resources/app/blender/lib/rules_scene.py": {
-   "sha256": "cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8",
-   "size": 13273,
-   "gz": "files/cc3f8f84d5ad1f29e9b72a3c88d51743420986d9b95b193f2a807d8b414dedf8.gz"
+   "sha256": "3c3df9bf86342ef43e4eeb1c84c711a05efbf5b605b4ca8c876ca95bcb4a9af8",
+   "size": 13301,
+   "gz": "files/3c3df9bf86342ef43e4eeb1c84c711a05efbf5b605b4ca8c876ca95bcb4a9af8.gz"
   },
   "resources/app/blender/lib/skin.py": {
    "sha256": "9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517",
@@ -275,9 +275,9 @@
    "gz": "files/b21d7b12dc0baa9d844b4daab1fac3ac97777c835da23243105532488b811975.gz"
   },
   "resources/app/ui/src/rig.js": {
-   "sha256": "2f24414d909905595f8636d7daf75523fd13c662a20bdf2340373e13dcbcb295",
-   "size": 23057,
-   "gz": "files/2f24414d909905595f8636d7daf75523fd13c662a20bdf2340373e13dcbcb295.gz"
+   "sha256": "8db8385060ab57543ae451032eb9f265b6ea099a1fd62e2554010ce6100c7313",
+   "size": 23064,
+   "gz": "files/8db8385060ab57543ae451032eb9f265b6ea099a1fd62e2554010ce6100c7313.gz"
   },
   "resources/app/ui/src/stage3d.js": {
    "sha256": "33214760ecb8ddd61bb89a603f473bdd3ec9224a4247ec568b47fc54f851397f",
@@ -310,9 +310,9 @@
    "gz": "files/0f8e247a13d77a13c06255e4a553801493f97ab09fa7ad4f12490b89945bce5b.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "8013151cefb38f497918315628cb8a1555f22c496fda3815f3d2e587dae7aebb",
-   "size": 17117,
-   "gz": "files/8013151cefb38f497918315628cb8a1555f22c496fda3815f3d2e587dae7aebb.gz"
+   "sha256": "eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9",
+   "size": 18816,
+   "gz": "files/eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9.gz"
   },
   "resources/app/ui/src/workflow.js": {
    "sha256": "9ab7f8e31c2adebb1539e1f1669ae9a51a7f963ed8a2eaef7bb60741e45b3ba0",

@@ -31,7 +31,7 @@ for (const s of ['L', 'R']) {
     ['thigh', 'thigh_fk'], ['shin', 'shin_fk'], ['foot', 'foot_fk']]) FOLLOWS[`DEF-${d}.${s}`] = `${c}.${s}`;
 }
 
-const STAGE_BODY_UNIT = 100 * 0.00205066345 * 490 * 0.4;
+export const STAGE_BODY_UNIT = 100 * 0.00205066345 * 490 * 0.4;
 const AXIS = { 1: new Vector3(1, 0, 0), 2: new Vector3(0, 1, 0), 3: new Vector3(0, 0, 1) };
 const RAD = Math.PI / 180;
 

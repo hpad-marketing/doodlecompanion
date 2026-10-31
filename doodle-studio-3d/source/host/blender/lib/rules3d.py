@@ -1,7 +1,8 @@
 """Per-frame rule checks on the real 3D geometry (ANIMATION-RULES.md, 3D edition).
 
 1. Hands and arms never clip into the head  (mesh-vs-mesh, not joint points)
-2. Grounding: lowest foot point sits on the floor (or above it, never below)
+2. Grounding: lowest foot point sits on the floor (or above it, never below), and no ink
+   stroke of the legs, hands or hoodie goes under the floor
 3. Ears never touch/merge with each other
 Stroke weight is one ink width for every Bunny part by construction.
 Uses the same cage meshes as the collision solver, so a solved pose passes.
@@ -38,11 +39,18 @@ def check_frame(objs, arm, ear_sets=None, tol=0.0015):
             if ob and hb.overlap(collision._cage_bvh(ob)):
                 clips.append(f'{part}.{side}')
     out['arm_head_clip'] = clips
-    root_z = (arm.matrix_world @ arm.pose.bones['root'].head).z + arm.get('floor_z', 0.0)
-    lows = [_zmin(objs[f'leg.{s}']) - root_z for s in 'LR']
+    # the floor is the rig's own ground (the set floors sit there); at rest the feet stand floor_z above it
+    ground = arm.matrix_world.translation.z
+    rest = arm.get('floor_z', 0.0)
+    lows = [_zmin(objs[f'leg.{s}']) - ground - rest for s in 'LR']
     out['foot_low'] = [round(z, 4) for z in lows]
-    out['grounded'] = -tol < min(lows) < 0.02
-    out['below_floor'] = min(lows) < -tol
+    out['grounded'] = -rest - tol < min(lows) < 0.02
+    out['below_floor'] = min(lows) + rest < -tol
+    # floor collision: nothing drawn (ink strokes included) goes under the rig's own ground
+    obs = [objs[k] for k in collision.FLOOR_PARTS if k in objs and not objs[k].hide_render]
+    lo = collision.drawn_zmin(obs)
+    out['floor_low'] = round(lo - arm.matrix_world.translation.z, 4) if lo is not None else None
+    out['stroke_in_floor'] = lo is not None and out['floor_low'] < -tol
     if arm.get('ear_width_lock'):
         # Frog: the 'ears' are rigid eye bumps that sit ~1 mm apart by design and never move apart or fold
         out['ears_touch'] = False

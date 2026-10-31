@@ -2,7 +2,9 @@
 // screen-constant outline, the face drawn on the head) with a real camera.
 // Final frames come from Blender; this is the fast, interactive preview.
 import * as THREE from 'three';
-import { BunnyRig, decodeMesh, subdivide } from './rig.js';
+import { BunnyRig, decodeMesh, subdivide, STAGE_BODY_UNIT } from './rig.js';
+
+const FLOOR_PART = /_(leg|pelvis|shirt|hand|cuff)\.?[LR]?$/;   // what can reach the floor (as in Blender)
 
 export const INK = new THREE.Color('#1F1F1D');
 export const MUSTARD = new THREE.Color('#E0A64B');
@@ -172,7 +174,7 @@ export class Viewport {
   }
   _actor(data) {
     const a = Object.create(Viewport.prototype);
-    Object.assign(a, { data, scene: this.scene, outlineUniforms: this.outlineUniforms, rig: new BunnyRig(data), meshes: data.meshes.map(decodeMesh), objects: [],
+    Object.assign(a, { data, lead: this, scene: this.scene, outlineUniforms: this.outlineUniforms, rig: new BunnyRig(data), meshes: data.meshes.map(decodeMesh), objects: [],
       faceState: { expression: 0, gaze: 0, mouth: 0, blink: 0 }, _faceInk: this._faceInk });
     a.buildFace();
     a.buildBunny();
@@ -187,8 +189,19 @@ export class Viewport {
   pose(values) {
     this.values = values;
     this.rig.pose(values);
+    for (const o of this.objects) this.rig.deform(o.m, o.buf);
+    // floor collision, as in the render: nothing drawn, its ink stroke included, goes under the
+    // floor (z = 0); the body is raised just enough, the keyed values stay as they are
+    this.lift = 0;
+    if (this.floorCollision !== false) {
+      const d = this.inkWorld() + 0.001 - this.drawnLow();
+      if (d > 1e-4) {
+        this.lift = d;
+        this.rig.pose({ ...values, bodyY: Number(values.bodyY ?? 0) - d * STAGE_BODY_UNIT / this.rig.S });
+        for (const o of this.objects) this.rig.deform(o.m, o.buf);
+      }
+    }
     for (const o of this.objects) {
-      this.rig.deform(o.m, o.buf);
       o.g.attributes.position.needsUpdate = true;
       o.g.computeVertexNormals();
     }
@@ -318,7 +331,25 @@ export class Viewport {
     // the floor is z = 0 (the set's floor too); at rest the doodle feet sit about 2 cm up
     let low = 9;
     for (const o of this.objects) if (/leg|foot|feet/.test(o.m.name)) for (let i = 2; i < o.buf.length; i += 3) low = Math.min(low, o.buf[i]);
-    return { clips, feet: +low.toFixed(3), belowFloor: low < -0.01, inAir: low > 0.045 };
+    return { clips, feet: +low.toFixed(3), belowFloor: low < -0.01, inAir: low > 0.045, lifted: +(this.lift || 0).toFixed(3) };
+  }
+
+  // lowest point of the parts that can touch the floor (body surface, group space)
+  drawnLow() {
+    let low = 9;
+    for (const o of this.objects) if (FLOOR_PART.test(o.m.name)) for (let i = 2; i < o.buf.length; i += 3) low = Math.min(low, o.buf[i]);
+    return low;
+  }
+  // the outline's width in metres at the feet (it is screen-constant, so it follows the camera)
+  inkWorld() {
+    const lead = this.lead || this, cam = lead.camera, h = lead.size?.[1] || 1920;
+    if (!cam || !lead.outlineUniforms) return 0.014;
+    const px = lead.outlineUniforms.inkPx.value || INK_PX_1920 * (h / 1920);
+    if (cam.isOrthographicCamera) return px * lead.outlineUniforms.worldPerPxOrtho.value;
+    const g = this.group ? this.group.position : new THREE.Vector3();
+    const d = cam.position.distanceTo(new THREE.Vector3(g.x, g.y, 0));
+    const pr = lead.renderer?.getPixelRatio?.() || 1;
+    return px * 2 * d * Math.tan(cam.fov * Math.PI / 360) / (h * pr);
   }
 
   // the middle of the posed head in world space (caption checks, rule lights)

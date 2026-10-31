@@ -83,7 +83,7 @@ def setup(shot, cam, here, log):
     return out
 
 
-def pose_frame(c, i, f, lead_settings, collide=True):
+def pose_frame(c, i, f, lead_settings, collide=True, floor=True):
     vals = c['frames'][min(i, len(c['frames']) - 1)] if c['frames'] else {}
     apply = lambda v: ds_map.apply_pose(c['rig'], c['meta']['controls'], v, c['S'], c['settings'])
     if collide:
@@ -96,6 +96,10 @@ def pose_frame(c, i, f, lead_settings, collide=True):
             c['settings'][k] = lead_settings[k]
             c['settings'].keyframe_insert(f'["{k}"]', frame=f)
     rig = c['rig']
+    if floor:
+        up = collision.floor_lift(rig, c['objs'])
+        if up:
+            c.setdefault('lifts', []).append({'frame': f, 'cm': round(up * 100, 2)})
     for b in c['pose_bones']:
         b.keyframe_insert(ds_map.rotation_path(b), frame=f, group=b.name)
         b.keyframe_insert('location', frame=f, group=b.name)
