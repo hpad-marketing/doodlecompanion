@@ -85,9 +85,20 @@ def setup(shot, cam, here, log):
 
 def pose_frame(c, i, f, lead_settings, collide=True, floor=True):
     vals = c['frames'][min(i, len(c['frames']) - 1)] if c['frames'] else {}
+    try:
+        import constraints
+        vals = constraints.prepare(vals, c['rig'])
+    except Exception:
+        pass
     apply = lambda v: ds_map.apply_pose(c['rig'], c['meta']['controls'], v, c['S'], c['settings'])
     if collide:
         vals, c['hint'] = collision.solve_frame(apply, vals, c['objs'], c['ears'], hint=c['hint'])
+        try:
+            import constraints
+            vals, c['ahint'] = constraints.arm_in_front(apply, vals, c['objs'], hint=c.get('ahint'))
+            c['ahint'] = c['ahint'] or None
+        except Exception as e:
+            print('rules: co-star arm skipped:', e, flush=True)
     else:
         apply(vals)
     # one ink weight for everyone: the lead's (it follows the camera zoom)

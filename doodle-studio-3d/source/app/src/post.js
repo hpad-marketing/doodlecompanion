@@ -67,9 +67,24 @@ export function parseSrt(scene, text, lang) {
   captionsOf(scene).tracks[lang] = out;
   return out.length;
 }
+// Captions are placed by construction (a default, not a check): the height snaps inside the
+// Instagram safe zone (14%-80% of the frame) and below the face, and a line too wide for the
+// zone shrinks to fit. captions.snap = false keeps the height exactly as set.
+export const SAFE = { top: 0.14, bottom: 0.8, width: 0.88, belowFace: 0.05 };
+export function safeCaptionY(text, y, headY = null) {
+  const half = captionLines(text).length * 0.045 * 1.15 / 2;
+  let yy = y ?? 0.7;
+  if (headY != null && headY > -1 && headY < 2) yy = Math.max(yy, headY + SAFE.belowFace + half + 0.002);
+  return Math.max(SAFE.top + half + 0.002, Math.min(SAFE.bottom - half - 0.002, yy));
+}
+export const captionY = (scene, text, headY = null) => (scene.captions?.snap === false ? scene.captions?.y ?? 0.7 : safeCaptionY(text, scene.captions?.y ?? 0.7, headY));
 // one caption drawn on a transparent full frame; `hi` is the highlighted word (or -1)
-export function drawCaption(g, W, H, text, y, hi = -1) {
-  const rows = captionLines(text), size = Math.round(H * 0.045), lw = inkPx(W, H);
+export function drawCaption(g, W, H, text, y, hi = -1, fit = true) {
+  const rows = captionLines(text), lw = inkPx(W, H);
+  let size = Math.round(H * 0.045);
+  g.font = `${size}px ${FONT}`;
+  const widest = Math.max(...rows.map(r => g.measureText(r.join(' ')).width));
+  if (fit && widest > SAFE.width * W) size = Math.floor(size * SAFE.width * W / widest);
   g.font = `${size}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
   let k = 0;
   rows.forEach((words, r) => {
