@@ -7,7 +7,7 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, CHARACTERS, CATEGORIES, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
@@ -22,6 +22,8 @@ import * as CS from './cast.js';
 import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
 import * as MR from './mirror.js';
+import * as BB from './babblescene.js';
+import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
@@ -1102,7 +1104,7 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => babbleDialog()], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()], ['Co-stars (more characters)…', () => castDialog()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
@@ -1201,7 +1203,7 @@ const SUBS = {
 };
 // menu commands shown as buttons in a section (same commands, same undo, also in Ctrl+K)
 const SHELVES = {
-  'face:voice': [['Voice', 'File', ['Import audio for the scene…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)', 'Audio drives a control…']], ['From the voice', 'Post', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
+  'face:voice': [['Voice', 'File', ['Import audio for the scene…', 'Babble voice (type a line)…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)', 'Audio drives a control…']], ['From the voice', 'Post', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
   'animate:keys': [['Keys', 'Edit', ['Key Bunny pose', 'Key camera', 'Delete selected key', 'Clear all keys']], ['Timing', 'Animate', ['Breakdown halfway (tween)', 'Stepped blocking on / off', 'Simplify keys', 'Retime shot…', 'Time warp…', 'Moving hold from the playhead…', 'Euler filter (no 360° flips)']], ['Markers', 'Edit', ['Add marker with a note', 'Draw a review note on this frame', 'Tap a beat marker']]],
   'animate:body': [['Limbs', 'Animate', ['IK drag on / off', 'Pin a hand or foot…', 'Motion path…', 'Fix popping arcs on the path']], ['Body', 'Animate', ['Squash and stretch at the playhead…', 'Hand contact (hip, belly, chest)…', 'Pose from a stick figure (draw it)']], ['Checks', 'View', ['Balance marker on / off', 'Rule lights on / off', 'Silhouette check', 'Onion skin']]],
   'animate:layers': [['Layers', 'Animate', ['Add animation layer']], ['Copy', 'Animate', ['Copy keys (this shot)', 'Paste keys at the playhead', 'Retarget the scene to…']], ['Curves', 'View', ['Graph editor (curves) on / off']]],
@@ -1549,9 +1551,119 @@ async function importAudio(pick) {
   pushUndo();
   scene.audio = p ? { path: p } : null;
   await loadAudio(api, p);
+  // babble lines stay: they are mixed over the new voice (or play alone when it is removed)
+  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true });
   drawTracks();
   if (p) toast(`Audio: ${p.split(/[\\/]/).pop()} (${audioInfo().seconds} s). It plays with the timeline and goes into scene renders.`, 5000);
   return audioInfo();
+}
+// ---------------------------------------------------------------- babble.js: typed lines spoken as cute gibberish
+// Every sound is synthesised here (babble.js), nothing is sampled. A rebuild renders all the
+// scene's lines into one voice file, mixed over the recorded voice if there is one, keys each
+// speaker's mouth from the syllables and writes timed captions. The file name carries a hash
+// of what made it, so Undo goes back to the matching older file.
+const bbHash = str => { let x = 2166136261; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(36); };
+async function rebuildBabble({ quiet = false } = {}) {
+  const lines = BB.linesOf(scene), basePath = scene.audio?.babble ? scene.audio.base || null : scene.audio?.path || null, stem = scene.audio?.stem;
+  if (!lines.length) {
+    if (scene.audio?.babble) { scene.audio = basePath ? { path: basePath, ...(stem ? { stem } : {}) } : null; await loadAudio(api, null); await loadAudio(api, basePath); }
+    if (scene.captions) for (const k of Object.keys(scene.captions.tracks)) scene.captions.tracks[k] = scene.captions.tracks[k].filter(c => !c.babble);
+    dirty = true; apply(); drawTracks(); drawPost();
+    return { lines: [], audio: scene.audio?.path || null };
+  }
+  let base = null, sr = 48000;
+  if (basePath) { const d = await decodeChannels(api, basePath); base = d.channels; sr = d.sr; }
+  const caps = P.captionsOf(scene);
+  const r = BB.build(scene, { leadChar: character(), fps: scene.fps, setKey, base, sr, captionTrack: caps.tracks[caps.active] });
+  const tag = bbHash(JSON.stringify([scene.babble, scene.voices, basePath, scene.fps, scene.shots.map(s => [s.uid, s.length]), character()]));
+  const root = (await api('settings', {})).rendersRoot, nm = safeName(scene.name);
+  const w = await api('write-file', { path: `${root}/${nm}/work/audio/${nm.replace(/ /g, '_')}_babble_${tag}.wav`, data: BB.wavChannelsBase64(r.channels, r.sr) });
+  scene.audio = { path: w.path, babble: true, base: basePath, ...(stem ? { stem } : {}) };
+  await loadAudio(api, null); await loadAudio(api, w.path);
+  dirty = true; apply(); drawTracks(); drawPost();
+  const over = r.lines.filter(l => l.pastShotEnd);
+  if (!quiet) toast(`Babble: ${r.lines.length} line${r.lines.length > 1 ? 's' : ''}, ${r.keys} mouth keys${base ? ', mixed over your voice' : ''}${over.length ? `. ${over.length} line${over.length > 1 ? 's run' : ' runs'} past the end of the shot: make the shot longer or the line shorter` : ''}`, 6000);
+  return { lines: r.lines, keys: r.keys, audio: w.path, mixedOver: basePath };
+}
+const bbLead = () => character();
+const bbIcon = n => { const x = icon(n); x.style.cssText = 'width:14px;height:14px;vertical-align:-2px'; return x; };
+const bbDraft = { text: '', who: 'lead', mood: 'neutral' };
+function bbVoiceOf(who) { return BB.speakerChar(scene, project, who, bbLead()); }
+function bbPreview(text, who, mood) {
+  const ch = bbVoiceOf(who), d = BB.dialsOf(scene, ch);
+  const r = bbSpeak(text || 'Hello there! This is my voice.', bbVoiceFor(ch, d, mood), { style: d.style });
+  playSamples(r.samples, r.sr);
+  return { char: ch, seconds: +r.seconds.toFixed(2) };
+}
+async function babbleAct(a = {}) {
+  const shotOf = x => (x == null ? project : scene.shots[shotIndex(x)]);
+  switch (a.action || 'list') {
+    case 'list': return { lines: BB.linesOf(scene).map(l => ({ ...l, shot: scene.shots.find(s => s.uid === l.shot)?.code })), voices: Object.fromEntries(Object.keys(BB_VOICES).map(k => [k, { ...BB_VOICES[k], ...BB.dialsOf(scene, k) }])), audio: scene.audio || null };
+    case 'add': {
+      const sh = shotOf(a.shot);
+      if (a.who != null && a.who !== 'lead') BB.speakerChar(scene, sh, a.who, bbLead());
+      if (a.mood && !BB_MOODS[a.mood]) throw Error('mood must be ' + Object.keys(BB_MOODS).join(', '));
+      if (a.style && !BB_STYLES[a.style]) throw Error('style must be ' + Object.keys(BB_STYLES).join(', '));
+      pushUndo('Babble line');
+      const line = BB.addLine(scene, sh, a.frame ?? (sh === project ? frame : 0), a.text, { who: a.who ?? 'lead', mood: a.mood || 'neutral', style: a.style });
+      return { line, ...(await rebuildBabble()) };
+    }
+    case 'remove': { pushUndo('Remove babble line'); BB.removeLine(scene, a.id); return rebuildBabble(); }
+    case 'clear': { pushUndo('Clear babble'); scene.babble = []; return rebuildBabble(); }
+    case 'voice': {
+      const ch = a.character || bbLead();
+      if (!BB_VOICES[ch]) throw Error('character must be ' + Object.keys(BB_VOICES).join(', '));
+      pushUndo('Babble voice');
+      const d = BB.dialsOf(scene, ch);
+      if (a.reset) for (const k of Object.keys(d)) delete d[k];
+      if (a.style) { if (!BB_STYLES[a.style]) throw Error('style must be ' + Object.keys(BB_STYLES).join(', ')); d.style = a.style; }
+      for (const [k, [lo, hi]] of Object.entries(BB_DIALS)) if (a[k] != null) d[k] = Math.max(lo, Math.min(hi, Number(a[k])));
+      const out = { character: ch, voice: { ...BB_VOICES[ch], ...d } };
+      if (BB.linesOf(scene).length) Object.assign(out, await rebuildBabble({ quiet: true }));
+      return out;
+    }
+    case 'preview': return bbPreview(a.text, a.who ?? 'lead', a.mood || 'neutral');
+    case 'rebuild': return rebuildBabble();
+    default: throw Error('action must be list, add, remove, clear, voice, preview or rebuild');
+  }
+}
+async function bbRun(a, reopen = true) { try { const r = await babbleAct(a); if (reopen) babbleDialog(); return r; } catch (e) { toast(e.message, 5000); if (reopen) babbleDialog(); return null; } }
+function babbleDialog() {
+  const who = [['lead', `${(BB_VOICES[bbLead()] || {}).name || bbLead()} (lead)`], ...CS.costarsOf(project).map((c, i) => [String(i), `${(BB_VOICES[c.character] || {}).name || c.character} (co-star ${i + 1})`])];
+  if (!who.some(w => w[0] === String(bbDraft.who))) bbDraft.who = 'lead';
+  const ch = bbVoiceOf(bbDraft.who), d = BB.dialsOf(scene, ch), v = { ...BB_VOICES[ch], ...d };
+  const pick = (opts, cur, set) => opts.map(([k, label]) => h('button', { 'aria-pressed': String(String(cur) === String(k)), onclick: () => { set(k); babbleDialog(); } }, label));
+  document.querySelectorAll('.ds-modal[aria-label="Babble voice"]').forEach(x => x.remove());
+  const m = modal({ h }, 'Babble voice', close => {
+    const reopen = fn => () => { close(); fn(); };
+    const add = reopen(async () => { const r = await bbRun({ action: 'add', text: bbDraft.text, who: bbDraft.who, mood: bbDraft.mood, frame }, false); if (r) bbDraft.text = ''; babbleDialog(); });
+    const text = h('input', { type: 'text', value: bbDraft.text, placeholder: 'Type what the character says… (? lifts the end, ! punches it)', style: 'flex:1;min-width:24em', 'aria-label': 'Line', oninput: e => { bbDraft.text = e.target.value; }, onkeydown: e => { e.stopPropagation(); if (e.key === 'Enter' && bbDraft.text.trim()) add(); if (e.key === 'Escape') close(); } });
+    const dials = Object.entries(BB_DIALS).map(([k, [lo, hi, step, label]]) => {
+      const out = h('span', { class: 'hint', style: 'min-width:3.2em;display:inline-block' }, String(+(+v[k]).toFixed(2)));
+      const sl = h('input', { type: 'range', min: lo, max: hi, step, value: v[k], 'aria-label': label, style: 'width:84px', oninput: e => { out.textContent = String(+(+e.target.value).toFixed(2)); }, onchange: e => { close(); bbRun({ action: 'voice', character: ch, [k]: Number(e.target.value) }); } });
+      return h('label', { class: 'row', style: 'gap:4px', title: `${label} for ${v.name}. Changes every ${v.name} line in this scene.` }, { 'Pitch (Hz)': 'Pitch', 'Pitch range': 'Range' }[label] || label, sl, out);
+    });
+    const lines = BB.linesOf(scene).filter(l => l.shot === project.uid);
+    return [
+      h('p', { class: 'hint' }, 'Type a line and the character speaks it as cute gibberish, made from scratch here. The mouth moves on every syllable and the line becomes a timed caption. Lines mix over a recorded voice if the scene has one.'),
+      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Who '), ...pick(who, bbDraft.who, k => { bbDraft.who = k; })),
+      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Mood '), ...pick(Object.entries(BB_MOODS).map(([k, m]) => [k, m.label]), bbDraft.mood, k => { bbDraft.mood = k; })),
+      h('div', { class: 'row', style: 'gap:6px' }, text,
+        h('button', { title: 'Hear this line in this voice (nothing is added)', onclick: () => { try { bbPreview(bbDraft.text, bbDraft.who, bbDraft.mood); } catch (e) { toast(e.message, 4000); } } }, bbIcon('play'), ' Hear it'),
+        h('button', { title: `Add the line at frame ${frame} of this shot (Enter)`, onclick: add }, `Add at frame ${frame}`)),
+      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, `${v.name}'s voice `), ...Object.entries(BB_STYLES).map(([k, label]) => h('button', { 'aria-pressed': String(v.style === k), title: { syllables: 'One soft sound per syllable, closest to speech', letters: 'A quick blip per letter, chattery', tones: 'Pure musical beeps' }[k], onclick: reopen(() => bbRun({ action: 'voice', character: ch, style: k })) }, label))),
+      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:12px;white-space:nowrap' }, ...dials, h('button', { title: `Back to ${v.name}'s own voice`, onclick: reopen(() => bbRun({ action: 'voice', character: ch, reset: true })) }, 'Reset')),
+      h('b', {}, lines.length ? `Lines on this shot (${lines.length})` : 'No lines on this shot yet'),
+      h('div', { class: 'ds-list' }, ...lines.map(l => h('div', { class: 'row', style: 'gap:6px' },
+        h('span', { class: 'hint', style: 'min-width:4.5em' }, `frame ${l.f}`), h('span', { style: 'min-width:7em' }, who.find(w => w[0] === String(l.who))?.[1] || l.who), h('span', { class: 'hint' }, BB_MOODS[l.mood]?.label || ''),
+        h('span', { style: 'flex:1' }, l.text),
+        h('button', { title: 'Hear it', onclick: () => bbPreview(l.text, l.who, l.mood) }, bbIcon('play')),
+        h('button', { title: 'Remove this line (Ctrl+Z brings it back)', onclick: reopen(() => bbRun({ action: 'remove', id: l.id })) }, bbIcon('trash'))))),
+      h('div', { class: 'row', style: 'gap:6px' }, h('button', { title: 'Render every line in the scene again', onclick: reopen(() => bbRun({ action: 'rebuild' })) }, 'Rebuild voice'), h('button', { onclick: close }, 'Close'))];
+  });
+  m.box.firstChild.style.width = 'min(1000px, 96vw)';
+  m.box.addEventListener('keydown', e => { if (e.key === 'Escape') m.close(); });
+  const inp = m.box.querySelector('input[aria-label="Line"]'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
 }
 function audioDriveDialog() {
   const id = prompt('Which control should follow the audio? e.g. bodyY (bounce), earLFold, headNod, cam.dist', 'bodyY');
@@ -1574,6 +1686,8 @@ async function lipsyncFromAudio({ shot = null, all = false, gate, hold, stem, en
   const opts = { ...(gate != null ? { gate: Number(gate) } : {}), ...(hold != null ? { hold: Number(hold) } : {}), ...(engine ? { engine } : {}) };
   const st = shotStarts(), which = all ? scene.shots.map((_, i) => i) : [shot ?? scene.active];
   const out = which.map(i => { const s = scene.shots[i]; if (!s) throw Error('No shot ' + i); return { shot: i, code: s.code, keys: audioLipsync(s, st[i], setKey, opts) }; });
+  // babble lines key their own mouths again over the voice's lip sync
+  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true });
   dirty = true; apply(); drawTracks();
   toast(`Lip sync: ${out.reduce((n, o) => n + o.keys, 0)} mouth keys on ${out.length} shot${out.length > 1 ? 's' : ''}`);
   return { shots: out };
@@ -1960,7 +2074,8 @@ function buildTimelineTools() {
       g('Edit', ib('undo', 'Undo (Ctrl+Z)', undo), ib('redo', 'Redo (Ctrl+Shift+Z)', redo), ib('cut', 'Split the shot at the playhead', () => splitHere()),
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),
         h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped')),
-      g('Voice', h('button', { onclick: () => importAudio(true), title: scene.audio?.path ? 'Voice: ' + scene.audio.path + '. Click to replace it.' : 'Import the voice or song for the scene: it plays and shows as a waveform' }, icon('mic'), scene.audio?.path ? ' Replace voice' : ' Add voice'))),
+      g('Voice', h('button', { onclick: () => importAudio(true), title: scene.audio?.path ? 'Voice: ' + (scene.audio.babble ? (scene.audio.base ? scene.audio.base + ' with babble mixed over it' : 'babble only') : scene.audio.path) + '. Click to replace the recorded voice.' : 'Import the voice or song for the scene: it plays and shows as a waveform' }, icon('mic'), scene.audio?.path && !(scene.audio.babble && !scene.audio.base) ? ' Replace voice' : ' Add voice'),
+        h('button', { onclick: () => babbleDialog(), title: 'Babble: type a line and the character speaks it as cute gibberish, with lip sync and a caption', 'aria-pressed': String(BB.linesOf(scene).some(l => l.shot === project.uid)) }, icon('mic'), ' Babble'))),
     h('div', { class: 'tl-row' },
       g('Zoom', ib('minus', 'Zoom out', () => setZoom(tlZoom / 1.5)), zoom, ib('plus', 'Zoom in', () => setZoom(tlZoom * 1.5)), ib('fit', 'Fit the whole shot (\\). Shift-click: fit the selected keys', e => (e.shiftKey ? fitKeys() : setZoom(1)))),
       g('Rows', rows, filter),
@@ -2624,6 +2739,7 @@ function loop() {
     importAudio: p => importAudio(p ?? null),
     audioDrive: (id, a, b, opts) => driveFromAudio(id, a, b, opts),
     lipsync: (o = {}) => lipsyncFromAudio(o),
+    babble: (a = {}) => babbleAct(a),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
     story(a = {}) {
       const out = { retention: () => retentionCheck(), chapters: () => exportChapters(), loop_back: () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); return r; },
