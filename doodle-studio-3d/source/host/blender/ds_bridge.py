@@ -152,6 +152,9 @@ fixes = []
 lifts = []
 FLOOR = shot.get('floorCollision', True) is not False
 rep = None
+if FLOOR:
+    # the outline shell never sinks through the floor, whatever the camera (high shots push it down)
+    collision.bind_shell_floor()
 unhold_bias = collision.hold_depth_bias() if FLOOR else (lambda: None)
 for i, vals in enumerate(frames):
     f = i + 1
@@ -184,6 +187,7 @@ for i, vals in enumerate(frames):
         # width is this frame's
         up = collision.floor_lift(arm, objs)
         arm.keyframe_insert('["ds_floor_up"]', frame=f)
+        collision.set_floor_z(arm, arm.get('ds_floor_target', collision.FLOOR_OFF), frame=f)
         if up:
             lifts.append({'frame': f, 'cm': round(up * 100, 2)})
     for b in pose_bones:
