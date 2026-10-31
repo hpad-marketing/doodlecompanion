@@ -152,6 +152,7 @@ fixes = []
 lifts = []
 FLOOR = shot.get('floorCollision', True) is not False
 rep = None
+unhold_bias = collision.hold_depth_bias() if FLOOR else (lambda: None)
 for i, vals in enumerate(frames):
     f = i + 1
     if flag('--no-collide'):
@@ -179,8 +180,10 @@ for i, vals in enumerate(frames):
         view = math.radians(float(vals.get('view', 0)))
         cam.location = (0, -math.cos(view) * dist, PIVOT_Z + math.sin(view) * dist)
     if FLOOR:
-        # floor collision, measured after the camera so the ink width is this frame's
+        # floor contact (strokes on the floor, never in it or above it), measured after the
+        # camera so the ink width is this frame's
         up = collision.floor_lift(arm, objs)
+        arm.keyframe_insert('["ds_floor_up"]', frame=f)
         if up:
             lifts.append({'frame': f, 'cm': round(up * 100, 2)})
     for b in pose_bones:
@@ -207,8 +210,10 @@ for i, vals in enumerate(frames):
         cam.data.dof.keyframe_insert('focus_distance', frame=f)
         cam.data.dof.keyframe_insert('aperture_fstop', frame=f)
 
-if lifts:
-    print(f"floor: lifted clear of the floor on {len(lifts)} frames (up to {max(x['cm'] for x in lifts)} cm)", flush=True)
+unhold_bias()
+ups = [x for x in lifts if x['cm'] > 0.05]
+if ups:
+    print(f"floor: lifted out of the floor on {len(ups)} frames (up to {max(x['cm'] for x in ups)} cm)", flush=True)
 if cast:
     costars.finish(cast, n)
     for c in cast:
@@ -263,6 +268,15 @@ if not flag('--no-springs') and n > 1:
     for c in cast:
         dynamics.bake_springs(c['rig'], 1, n, fps=fps)
 
+if FLOOR:
+    # one last look at every frame as it will render: the stroke rests on the floor
+    fix = collision.floor_settle(arm, objs, range(1, n + 1))
+    for c in cast:
+        fix = max(fix, collision.floor_settle(c['rig'], c['objs'], range(1, n + 1)))
+    if fix > 0.002:
+        print(f'floor: settled by up to {fix * 100:.1f} cm after the bake', flush=True)
+    sc.frame_set(1)
+
 cloth_mods = [(ob, m) for ob in bpy.data.objects for m in ob.modifiers if m.type == 'CLOTH']
 for ob, m in cloth_mods:
     m.show_render = m.show_viewport = not flag('--no-cloth')
@@ -301,6 +315,8 @@ if flag('--check'):
             r['arm_head_clip'] = r['arm_head_clip'] + [f"{c['name']}{k + 1}:{x}" for x in rc['arm_head_clip']]
             r['below_floor'] = r['below_floor'] or rc['below_floor']
             r['stroke_in_floor'] = r['stroke_in_floor'] or rc['stroke_in_floor']
+            r['floating'] = r.get('floating') or rc.get('floating')
+            r.setdefault('costar_floor_gap', []).append(rc.get('floor_gap'))
             r.setdefault('costar_floor_low', []).append(rc['floor_low'])
             r['ears_touch'] = r['ears_touch'] or rc['ears_touch']
             if rc['below_floor']:

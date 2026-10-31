@@ -185,9 +185,60 @@ FLOOR_PARTS = ('leg.L', 'leg.R', 'pelvis', 'shirt', 'hand.L', 'hand.R', 'cuff.L'
 FLOOR_AIR = 0.001   # a millimetre of air under the stroke (covers line boil)
 
 
+def _depth_bias(ob):
+    """(modifier, input id) of each ink shell's Depth Bias. The shell is pushed a few ink widths
+    away from the camera so creases stop drawing; that push is hidden behind the body, not a
+    stroke, and from above it points straight down, so floor checks must leave it out."""
+    out = []
+    for m in ob.modifiers:
+        if m.type == 'NODES' and m.node_group is not None:
+            for it in m.node_group.interface.items_tree:
+                if getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Depth Bias':
+                    out.append((m, it.identifier))
+    return out
+
+
+def hold_depth_bias():
+    """Zero every ink shell's Depth Bias while the floor is worked out frame by frame (the bridge
+    loop); returns a restore function. Switching it per measurement can lag one evaluation."""
+    held = [(m, k, m[k]) for ob in bpy.data.objects if ob.type == 'MESH' for m, k in _depth_bias(ob)]
+    for m, k, _ in held:
+        m[k] = 0.0
+    for ob in {m.id_data for m, _, _ in held}:
+        ob.update_tag()
+
+    def restore():
+        for m, k, v in held:
+            m[k] = v
+        for ob in {m.id_data for m, _, _ in held}:
+            ob.update_tag()
+    return restore
+
+
 def drawn_zmin(obs):
-    """Lowest world z of the drawn surfaces, ink outline shell included (every modifier on)."""
+    """Lowest world z of the drawn surfaces, ink stroke included: the outline's real width round
+    the body, without its push away from the camera (see _depth_bias)."""
+    bias = [(m, k, m[k]) for ob in obs for m, k in _depth_bias(ob) if m[k] != 0.0]
+    for m, k, _ in bias:
+        m[k] = 0.0
+    for ob in obs:
+        ob.update_tag()
+    try:
+        return _zmin_eval(obs)
+    finally:
+        for m, k, v in bias:
+            m[k] = v
+        for ob in obs:
+            ob.update_tag()
+
+
+def _zmin_eval(obs):
     dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    # the ink drivers read the camera and the keyed ink width, and can settle one pass late
+    # (a camera's first move, a fresh frame_set): evaluate the measured parts once more
+    for ob in obs:
+        ob.update_tag()
     dg.update()
     z = None
     for ob in obs:
@@ -201,24 +252,83 @@ def drawn_zmin(obs):
     return z
 
 
+def body_zmin(obs):
+    """Lowest world z of the body surface itself, ink off."""
+    ink = [m for ob in obs for m in ob.modifiers if m.type == 'NODES' and m.show_viewport]
+    for m in ink:
+        m.show_viewport = False
+    try:
+        return _zmin_eval(obs)
+    finally:
+        for m in ink:
+            m.show_viewport = True
+
+
+def floor_target(arm, obs):
+    """Where the lowest ink stroke belongs: on the floor (plus a hair of air), or as high as the
+    pose itself lifts the body off its standing height (a jump, a hop, sitting up on something)."""
+    floor = arm.matrix_world.translation.z
+    up = body_zmin(obs) - floor - arm.get('floor_z', 0.0)
+    return floor + FLOOR_AIR + max(0.0, up)
+
+
+def floor_keyed_target(arm):
+    """The target floor_lift found for the current frame (keyed), for the rule check."""
+    return arm.matrix_world.translation.z + FLOOR_AIR + float(arm.get('ds_floor_up', 0.0))
+
+
 def floor_lift(arm, objs):
-    """Floor collision: when a leg (or a hand or the hoodie) would dip into the floor, its ink
-    stroke included, raise the whole character on its root bone just enough to stand on it.
+    """Floor contact: the lowest ink stroke of the legs (or a hand or the hoodie) rests on the
+    floor, never in it and never floating above it. A pose that would dig in is raised by
+    exactly how deep it went; a standing pose is set down so its stroke touches the floor; a
+    jump keeps its height. The whole character moves on its root bone; the rig is untouched.
     The floor is the rig's own ground (z of the armature object: the set floors sit there).
-    Returns the lift in metres (0 when nothing reached the floor)."""
+    Returns the move in metres (+ up, - down, 0 when it already rested on the floor)."""
     from mathutils import Vector
     obs = [objs[k] for k in FLOOR_PARTS if k in objs and not objs[k].hide_render]
     if not obs:
         return 0.0
-    floor = arm.matrix_world.translation.z
     root = arm.pose.bones['root']
     to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
+    # this frame's camera and ink width first: twice, because the ink drivers read the camera's
+    # type and lens, and on a camera's first move they settle one evaluation late
+    bpy.context.view_layer.update()
+    bpy.context.view_layer.update()
+    target = floor_target(arm, obs)   # a rigid move keeps the pose's own lift, so measure it once
+    arm['ds_floor_up'] = target - arm.matrix_world.translation.z - FLOOR_AIR   # read back by the rule check
     total = 0.0
-    for _ in range(3):   # a rigid lift moves everything equally; the repeats only mop up perspective ink
+    for _ in range(3):   # a rigid move shifts everything equally; the repeats only mop up perspective ink
         lo = drawn_zmin(obs)
-        d = floor + FLOOR_AIR - lo if lo is not None else 0.0
-        if d <= 1e-4:
+        d = target - lo if lo is not None else 0.0
+        if abs(d) <= 2e-4:
             break
         root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
         total += d
     return total
+
+
+def floor_settle(arm, objs, frames, log=None):
+    """After everything is keyed and baked: step through the frames once more, measure the
+    stroke where it really ended up, and fix the root key by whatever is left (a millimetre or
+    two of perspective, or a first frame whose ink settled late). Returns the biggest fix (m)."""
+    from mathutils import Vector
+    sc = bpy.context.scene
+    obs = [objs[k] for k in FLOOR_PARTS if k in objs and not objs[k].hide_render]
+    root = arm.pose.bones['root']
+    worst = 0.0
+    if not obs:
+        return worst
+    restore = hold_depth_bias()
+    try:
+        for f in frames:
+            sc.frame_set(f)
+            lo = drawn_zmin(obs)
+            d = floor_keyed_target(arm) - lo if lo is not None else 0.0
+            if abs(d) > 5e-4:
+                to_bone = root.bone.matrix_local.to_3x3().inverted() @ arm.matrix_world.to_3x3().inverted()
+                root.location = root.location + to_bone @ Vector((0.0, 0.0, d))
+                root.keyframe_insert('location', frame=f, group=root.name)
+                worst = max(worst, abs(d))
+    finally:
+        restore()
+    return worst
