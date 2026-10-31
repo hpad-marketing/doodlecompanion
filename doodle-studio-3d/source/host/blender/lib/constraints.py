@@ -9,7 +9,7 @@ while the shot is built, the way the floor lift keeps strokes off the floor:
   faceClear     a set piece or placed prop never blocks the face from the camera: it slides
                 sideways just far enough (set pieces that can't move hide on those frames)
   propsOnFloor  props and set pieces that stand on the floor rest their ink stroke a hair above
-                the ground plane (the one floor base for every set, character and prop), the same lift the characters get (lift only: a prop on a table, in the air
+                the floor you see under them (the set's own floor, never an outline or a hidden plane), the same lift the characters get (lift only: a prop on a table, in the air
                 or deliberately sunk deep stays where it was put)
   eyeSize       eyes keep one size: the Frog's eye bumps ignore EAR Scale / EAR Squash
 
@@ -275,6 +275,38 @@ def _animated_location(ob):
     return bool(ad and ad.action and any(getattr(fc, 'data_path', '') == 'location' for fc in __import__('compat').fcurves(ob)))
 
 
+def _surface_under(obs, lo, ground):
+    """Height of the visible surface under the piece's lowest points: cast straight down with
+    every ink outline switched off (outlines are never a floor), skipping the piece itself and
+    the characters. Nothing found: the ground plane."""
+    sc = bpy.context.scene
+    ink = [m for ob in sc.objects if ob.type == 'MESH' for m in ob.modifiers if m.type == 'NODES' and m.show_viewport]
+    for m in ink:
+        m.show_viewport = False
+    try:
+        dg = bpy.context.evaluated_depsgraph_get()
+        dg.update()
+        mine = set(obs)
+        pts = sorted(_points(obs, every=3), key=lambda p: p.z)[:24:4]
+        best = None
+        for p in pts:
+            o = Vector((p.x, p.y, lo + SINK))
+            for _ in range(16):
+                hit, loc, nrm, _i, hob, _m = sc.ray_cast(dg, o, Vector((0, 0, -1)), distance=2 * SINK + 0.05)
+                if not hit:
+                    break
+                if hob in mine or (hob is not None and (hob.hide_render or collision._is_character(hob))) or abs(nrm.z) < 0.5:
+                    o = loc - Vector((0, 0, 1e-4))
+                    continue
+                best = loc.z if best is None else max(best, loc.z)
+                break
+        return ground if best is None else best
+    finally:
+        for m in ink:
+            m.show_viewport = True
+        bpy.context.view_layer.update()
+
+
 SINK = 0.15   # a prop whose stroke goes deeper than this into the floor was sunk on purpose
 
 
@@ -300,9 +332,9 @@ def props_on_floor(pieces, ground, log=None):
         lo = collision.drawn_zmin(obs)
         if lo is None:
             continue
-        # one floor base for everything (user, 2026-10-31): the real ground plane, never a set
-        # piece's outline or a raised set mesh
-        target = ground + collision.FLOOR_AIR
+        # the floor is the surface you see in the scene right under the piece (user, 2026-10-31):
+        # the set's own floor mesh, never an ink outline or a hidden plane at another height
+        target = _surface_under(obs, lo, ground) + collision.FLOOR_AIR
         d = target - lo
         if d <= 2e-4 or d > SINK:
             continue
