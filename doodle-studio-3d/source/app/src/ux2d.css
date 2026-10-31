@@ -167,3 +167,9 @@ body.ux2d #timeline-tools{gap:6px 12px;padding:5px 8px}
 .char-cards .libx-card{width:104px;flex:none}
 .char-cards .libx-card .pic img{object-fit:cover}
 .mouth-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
+
+/* babble: who buttons show the character */
+.bb-who{display:inline-flex;align-items:center;gap:6px;padding-left:4px}
+.bb-who img{height:26px;width:auto}
+.bb-at{min-width:5.5em;min-height:26px;height:26px;padding:0 8px;font-weight:500;font-size:12px}
+.bb-who img{height:30px;background:var(--bg);border-radius:2px}

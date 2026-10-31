@@ -38,6 +38,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 const ICON = {
+  bubble: 'M4 5h16v11H10l-5 4v-4H4zM8 10h.01M12 10h.01M16 10h.01',
   sync: 'M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4',
   start: 'M5 4v16M19 4 8 12l11 8z', play: 'M7 4v16l13-8z', pause: 'M7 4h4v16H7zM13 4h4v16h-4z', end: 'M19 4v16M5 4l11 8-11 8z',
   prev: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7', key: 'M12 3l9 9-9 9-9-9z', trash: 'M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13',
@@ -1646,7 +1647,7 @@ function babbleDialog() {
     const lines = BB.linesOf(scene).filter(l => l.shot === project.uid);
     return [
       h('p', { class: 'hint' }, 'Type a line and the character speaks it as cute gibberish, made from scratch here. The mouth moves on every syllable and the line becomes a timed caption. Lines mix over a recorded voice if the scene has one.'),
-      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Who '), ...pick(who, bbDraft.who, k => { bbDraft.who = k; })),
+      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Who '), ...pick(who, bbDraft.who, k => { bbDraft.who = k; }).map((b, i) => { b.classList.add('bb-who'); b.prepend(h('img', { src: `chars/${bbVoiceOf(who[i][0])}.png`, alt: '', draggable: 'false' })); return b; })),
       h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Mood '), ...pick(Object.entries(BB_MOODS).map(([k, m]) => [k, m.label]), bbDraft.mood, k => { bbDraft.mood = k; })),
       h('div', { class: 'row', style: 'gap:6px' }, text,
         h('button', { title: 'Hear this line in this voice (nothing is added)', onclick: () => { try { bbPreview(bbDraft.text, bbDraft.who, bbDraft.mood); } catch (e) { toast(e.message, 4000); } } }, bbIcon('play'), ' Hear it'),
@@ -1655,7 +1656,7 @@ function babbleDialog() {
       h('div', { class: 'row', style: 'flex-wrap:wrap;gap:12px;white-space:nowrap' }, ...dials, h('button', { title: `Back to ${v.name}'s own voice`, onclick: reopen(() => bbRun({ action: 'voice', character: ch, reset: true })) }, 'Reset')),
       h('b', {}, lines.length ? `Lines on this shot (${lines.length})` : 'No lines on this shot yet'),
       h('div', { class: 'ds-list' }, ...lines.map(l => h('div', { class: 'row', style: 'gap:6px' },
-        h('span', { class: 'hint', style: 'min-width:4.5em' }, `frame ${l.f}`), h('span', { style: 'min-width:7em' }, who.find(w => w[0] === String(l.who))?.[1] || l.who), h('span', { class: 'hint' }, BB_MOODS[l.mood]?.label || ''),
+        h('button', { class: 'bb-at', title: `Go to frame ${l.f}`, onclick: () => { goto(l.f); babbleDialog(); } }, `frame ${l.f}`), h('span', { style: 'min-width:7em' }, who.find(w => w[0] === String(l.who))?.[1] || l.who), h('span', { class: 'hint' }, BB_MOODS[l.mood]?.label || ''),
         h('span', { style: 'flex:1' }, l.text),
         h('button', { title: 'Hear it', onclick: () => bbPreview(l.text, l.who, l.mood) }, bbIcon('play')),
         h('button', { title: 'Remove this line (Ctrl+Z brings it back)', onclick: reopen(() => bbRun({ action: 'remove', id: l.id })) }, bbIcon('trash'))))),
@@ -2075,7 +2076,7 @@ function buildTimelineTools() {
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),
         h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped')),
       g('Voice', h('button', { onclick: () => importAudio(true), title: scene.audio?.path ? 'Voice: ' + (scene.audio.babble ? (scene.audio.base ? scene.audio.base + ' with babble mixed over it' : 'babble only') : scene.audio.path) + '. Click to replace the recorded voice.' : 'Import the voice or song for the scene: it plays and shows as a waveform' }, icon('mic'), scene.audio?.path && !(scene.audio.babble && !scene.audio.base) ? ' Replace voice' : ' Add voice'),
-        h('button', { onclick: () => babbleDialog(), title: 'Babble: type a line and the character speaks it as cute gibberish, with lip sync and a caption', 'aria-pressed': String(BB.linesOf(scene).some(l => l.shot === project.uid)) }, icon('mic'), ' Babble'))),
+        h('button', { onclick: () => babbleDialog(), title: 'Babble: type a line and the character speaks it as cute gibberish, with lip sync and a caption', 'aria-pressed': String(BB.linesOf(scene).some(l => l.shot === project.uid)) }, icon('bubble'), ' Babble'))),
     h('div', { class: 'tl-row' },
       g('Zoom', ib('minus', 'Zoom out', () => setZoom(tlZoom / 1.5)), zoom, ib('plus', 'Zoom in', () => setZoom(tlZoom * 1.5)), ib('fit', 'Fit the whole shot (\\). Shift-click: fit the selected keys', e => (e.shiftKey ? fitKeys() : setZoom(1)))),
       g('Rows', rows, filter),
