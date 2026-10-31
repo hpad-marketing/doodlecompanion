@@ -3,6 +3,8 @@
 :root{--bg:#E0A64B;--fg:#1F1F1D;--line:2px solid var(--fg);color-scheme:light;accent-color:#1F1F1D}
 body[data-theme=dark]{--bg:#1F1F1D;--fg:#E0A64B;--line:2px solid #E0A64B;color-scheme:dark;accent-color:#E0A64B}
 *{box-sizing:border-box}
+/* scrollbars in brand colours only: ink thumb on mustard (swapped in dark mode), never grey or white */
+*{scrollbar-color:var(--fg) var(--bg)}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,sans-serif;overflow:hidden;display:grid;
   grid-template-columns:minmax(0,1fr) var(--panel-width,380px);grid-template-rows:30px 52px minmax(0,1fr) var(--timeline-height,230px);

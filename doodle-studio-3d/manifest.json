@@ -1,8 +1,8 @@
 {
- "version": "20261031-022843",
- "notes": "Look at camera now aims the head on every frame: a motion clip's head keys are set aside while it is on (and come back when it is off), and a hard camera cut no longer gets a one-frame head blend.",
+ "version": "20261031-030952",
+ "notes": "Scrollbars are brand colours everywhere: ink on mustard, mustard on ink in dark mode. No more grey and white.",
  "runtime": "44.9.0",
- "published": "2026-10-31T02:28:43.486Z",
+ "published": "2026-10-31T03:09:52.298Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
@@ -295,9 +295,9 @@
    "gz": "files/6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735",
-   "size": 14261,
-   "gz": "files/25b6d094901122511f5f531407a3681eafd5de601f21a68899a6677f50b07735.gz"
+   "sha256": "c5e7a0e91a7a50dd22056876dd396d426d527829de4c8b54fb2eb5cdb47d78be",
+   "size": 14405,
+   "gz": "files/c5e7a0e91a7a50dd22056876dd396d426d527829de4c8b54fb2eb5cdb47d78be.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "f835d84f6caa154f63294cdfb812a603d690f24eb09d9e9aa7be2cae344d5a43",
