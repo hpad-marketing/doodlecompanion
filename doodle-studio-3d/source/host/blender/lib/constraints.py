@@ -89,7 +89,7 @@ def _points(obs, every=3):
 def hidden_share(objs, side, cam, head_bvh):
     """Share of the arm's surface points that the head hides from the camera (0..1)."""
     obs = [objs[f'{p}.{side}'] for p in ARM_PARTS if f'{p}.{side}' in objs and not objs[f'{p}.{side}'].hide_render]
-    pts = _points(obs)
+    pts = _points(obs, every=6)
     if not pts:
         return 0.0, None
     hid = front = 0
@@ -149,7 +149,16 @@ def _ok(apply, cand, objs, side, cam, hb):
     return _clear(s, fr), c
 
 
-def arm_in_front(apply, vals, objs, cam=None, hint=None, scan=120, step=6):
+STEEP = 45.0     # degrees: a camera looking down (or up) steeper than this sees hands under the head naturally
+BUDGET = 48      # most candidate poses tried per arm per frame (keeps renders fast)
+
+
+def _steep(cam):
+    fwd = (cam.matrix_world.to_3x3() @ Vector((0, 0, -1))).normalized()
+    return abs(math.degrees(math.asin(max(-1.0, min(1.0, fwd.z))))) > STEEP
+
+
+def arm_in_front(apply, vals, objs, cam=None, hint=None, scan=90, step=10):
     """Pose `vals` (already collision-solved) so that neither arm hides behind the head as the
     camera sees it. Returns (vals, fix) where fix maps side -> {track: delta}."""
     cam = cam or _cam
@@ -158,7 +167,7 @@ def arm_in_front(apply, vals, objs, cam=None, hint=None, scan=120, step=6):
         return vals, fix
     apply(vals)
     bpy.context.view_layer.update()
-    if _facing_away(objs['head'], vals, cam):
+    if _steep(cam) or _facing_away(objs['head'], vals, cam):
         return vals, fix      # his back is to the camera: a hand at his face is simply out of sight
     hb = collision._cage_bvh(objs['head'])
     for side in 'LR':
@@ -181,9 +190,10 @@ def arm_in_front(apply, vals, objs, cam=None, hint=None, scan=120, step=6):
         # bringing the hand forward, in front of the face, is preferred: it keeps the gesture
         # (a raised arm stays raised) and counts as a smaller change than lowering or swinging
         if not found:
-            best, rad, left = None, step, list(dirs)
-            while left and rad <= scan and (best is None or rad * FORWARD_COST < best[0]):
+            best, rad, left, tries = None, step, list(dirs), 0
+            while left and rad <= scan and tries < BUDGET and (best is None or rad * FORWARD_COST < best[0]):
                 for d in list(left):
+                    tries += 1
                     cand = dict(vals)
                     n = math.sqrt(sum(x * x for x in d))
                     for k, dk in zip(ids, d):
@@ -377,14 +387,36 @@ def face_clear(pieces, faces, cam, n, room_prefix=None, log=None, every=4, reach
     if not on('faceClear') or cam is None:
         return [], {}
     import rules_scene
+    from bpy_extras.object_utils import world_to_camera_view
     sc = bpy.context.scene
     frames = sorted(set([1, n] + list(range(1, n + 1, every))))
     moved, hidden = [], {}
+
+    def _screen_box(pts):
+        q = [world_to_camera_view(sc, cam, p) for p in pts]
+        q = [x for x in q if x.z > 0]
+        if not q:
+            return None
+        return min(x.x for x in q), max(x.x for x in q), min(x.y for x in q), max(x.y for x in q), min(x.z for x in q)
+
+    def maybe(ob):
+        """Cheap test first: the piece's box overlaps a face's box on screen and is nearer the camera."""
+        a = _screen_box([ob.matrix_world @ Vector(b) for b in ob.bound_box])
+        if a is None:
+            return False
+        for o in faces:
+            fo = [objs_[k] for objs_ in (o,) for k in CLEAR_PARTS if k in objs_]
+            b = _screen_box([x.matrix_world @ Vector(c) for x in fo for c in x.bound_box])
+            if b and a[0] < b[1] and b[0] < a[1] and a[2] < b[3] and b[2] < a[3] and a[4] < b[4] + 0.3:
+                return True
+        return False
 
     def blockers(ob, fset):
         out = []
         for f in fset:
             sc.frame_set(f)
+            if not maybe(ob):
+                continue
             t = rules_scene._world_bvh(ob)
             if any(_blocks(t, cam, _face_points(o)) for o in faces):
                 out.append(f)

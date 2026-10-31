@@ -62,8 +62,8 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   const PY = process.env.DS3D_BPY;
   if (!PY) { console.log('skip Blender part (set DS3D_BPY)'); process.exit(); }
   const B = path.join(__dirname, '..', 'host', 'blender'), out = fs.mkdtempSync('/tmp/rules-');
-  const cam = { yaw: 70, pitch: 5, dist: 4.5, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.6 };
-  const frames = Array.from({ length: 3 }, () => ({ expression: 1, armL: 135, armR: 135, elbowL: 30, elbowR: 30, cam }));
+  const cam = { yaw: 0, pitch: 5, dist: 4.5, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.6 };
+  const frames = Array.from({ length: 3 }, () => ({ expression: 1, armL: 140, armLForward: -40, elbowL: 60, cam }));
   const run = (tag, extra) => {
     const shot = path.join(out, tag + '.json');
     fs.writeFileSync(shot, JSON.stringify({ fps: 30, width: 120, height: 200, frames, ...extra }));
@@ -71,6 +71,9 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
     return (p.stdout || '') + (p.stderr || '');
   };
   const on = run('on', {}), off = run('off', { rules: { armInFront: false, faceClear: false, propsOnFloor: false, eyeSize: false } });
-  ok(/rules: arm brought clear of the head on 3 frames/.test(on), 'rules on: the far hand hidden behind the head (side view, arms up) is brought clear');
+  ok(/rules: arm brought clear of the head on 3 frames/.test(on), 'rules on: a hand peeking from behind the head is brought clear');
   ok(!/rules:/.test(off), 'rules off: nothing is changed');
+  // speed: an overhead camera sees hands under the head naturally, so the arm rule stays out of it
+  const t0 = Date.now(), oh = run('overhead', { frames: frames.map(f => ({ ...f, cam: { ...cam, pitch: 62, dist: 4.2, lens: 35 } })) }), secs = (Date.now() - t0) / 1000;
+  ok(!/arm brought clear/.test(oh) && secs < 120, `overhead: the arm rule stays out and the shot is quick (${secs.toFixed(0)} s)`);
 })();
