@@ -466,6 +466,17 @@ Type what a character says and they "speak" it as cozy-game style gibberish. Eve
 - Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
 - Watch out: a line longer than the rest of its shot keeps playing into the next shot, but the mouth keys stop at the shot's end (the toast says so). Importing or removing the recorded voice rebuilds the babble on top of it.
 
+### 3.18 Materials (looks, colours, look add-ons)
+
+The Materials tab (the last tab) dresses the shot in a material instead of the flat Ink & Mustard look. Blender draws it, so you see it in renders, in **Preview this frame** and in **Open in Blender**; the 3D view keeps its quick ink look.
+- **Apply to:** Whole scene, Characters, Set, All props, or the Picked prop (click it in the 3D view first). The narrower choice wins: a picked prop beats All props, and Characters, Set and All props beat Whole scene. **For:** Every shot, or This shot only.
+- **Looks** (picture cards): Ink & Mustard (flat, unlit), Clay, Cel toon, Soft vinyl toy, Felt, Paper cut-out, Glazed ceramic. Each has its own sliders (clay: roughness, thumb dents, dent size, colour wobble, soft glow; cel: bands, shadow depth, shadow hue, edge softness; and so on). Double-click a slider's name for its default.
+- **Colours** (palette cards, each named for its colour-theory idea): Brand mustard, Sunbaked (analogous warm), Teal & coral (complementary), Playroom (triadic), Dusk (split-complementary), Sage (monochrome), Nursery (pastel), Midnight (analogous cool with a warm accent). Walls, floor and ceiling take their own colours; furniture and props take the palette's piece colours; rugs, lamps, clocks and cushions take the accent. Ink & Mustard with a palette repaints the flat look in those colours.
+- **Brand guards, all switchable:** Keep Bunny mustard (on), outfits take the palette's ink (near-black), the Ink outline stays at Bunny's weight (on), and lit looks cast no shadows unless you turn on Cast shadows.
+- **Light for lit looks** (every shot): key, fill, ambient, height, side and softness. Defaults: key 3.2, fill 0.3, ambient 0.5, height 28°, side 40°, softness 0.5, no shadows.
+- **Look add-ons** (for example ClayDoh): drop the add-on's folder or .zip into the Doodle Library's `looks` folder, or install it in Blender. It shows up as cards; the first click renders one test frame of Bunny wearing it, and only a look that passes can be picked. If it is later missing on a PC, that target renders Ink & Mustard and the log says so. The recipe an add-on needs is in `blender/addons/doodle_looks/CONTRACT.md`.
+- MCP: `materials action=list`, `materials action=apply {target, look, addon, params, palette, ink, keepCharacter, color, scope, item}`, `materials action=clear {target}`, `materials action=light {key, fill, ambient, height, angle, softness, shadows}`.
+
 ---
 
 ## 4. Cross-uses: made for one thing, great for another
@@ -585,7 +596,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`babble`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
+`babble`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 

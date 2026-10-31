@@ -108,6 +108,9 @@ const renders = require('./render.cjs')({
 const mirror = require('./mirror.cjs')({ appDir, port: PORT, blender: () => renders.blender(), blendFor: s => renders.blendFor(s), withMaster: s => renders.withMaster(s),
   folders: n => renders.folders(n), env: () => renders.env() });
 
+// Materials tab: built-in looks, look add-ons (ClayDoh...) and palettes (looks.cjs)
+const looks = require('./looks.cjs')({ appDir, settings, dataDir, blender: () => renders.blender() });
+
 // 3D view models of library sets, props and scenery (models.cjs): Blender converts each once
 const stageModels = require('./models.cjs')({ libraryDir: () => settings.get().libraryDir, cacheDir: () => path.join(dataDir, 'models'),
   command: (ids, dir) => { const exe = renders.blender(); return exe ? [exe, ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'preview_export.py'), '--', settings.get().libraryDir, dir, ...ids]] : null; } });
@@ -122,6 +125,7 @@ function insideRenders(p, exts = ['.png']) {
 
 const api = {
   ...mirror.api,
+  ...looks.api,
   'stage-models': req => stageModels.models(req),
   'models-info': () => stageModels.info(),
   // the scene file lives at DeepInDoodles\<Scene>\work\<Scene>.ds3d

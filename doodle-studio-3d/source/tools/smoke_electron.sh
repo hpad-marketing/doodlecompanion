@@ -18,6 +18,8 @@ call carousel '{"action":"bubble","slide":0,"bubble":{"text":"Hi"}}' 300
 call apply_camera_preset '{"list":true}' 150
 call add_marker '{"frame":10,"note":"beat"}' 200
 call save_version '{"label":"smoke"}' 200
+call materials '{"action":"list"}' 300
+call materials '{"action":"apply","target":"set","look":"clay","palette":"sage"}' 300
 call storyboard '{}' 200
 call set_shot_look '{"horizonLock":true,"ink":120}' 200
 call anim_tool '{"action":"loop_check"}' 200

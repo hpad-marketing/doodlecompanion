@@ -1,0 +1,11 @@
+{
+  "contract": 1,
+  "name": "Test look add-on",
+  "module": "test_look",
+  "material": "material",
+  "looks": [
+    {"id": "glow", "name": "Test glow", "about": "A stand-in for a look add-on such as ClayDoh: an emissive rim.", "params": [
+      {"id": "rim", "label": "Rim", "type": "float", "min": 0, "max": 2, "default": 1}]},
+    {"id": "broken", "name": "Broken look", "about": "Always fails, to test the fallback.", "params": []}
+  ]
+}

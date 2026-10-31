@@ -1,0 +1,29 @@
+{
+  "about": "Colour palettes for Doodle Studio 3D's Materials tab. Each names the colour-theory idea behind it. Roles: character (the lead's fill), ink (outfits and drawn details), wall, floor, ceiling, pieces (furniture and props, picked per piece), accent (rugs and small things), ambient (the light that fills the shadows).",
+  "palettes": [
+    {"id": "brand", "name": "Brand mustard", "theory": "One hue: the Doodle Studio mustard and ink",
+     "character": "#E0A64B", "ink": "#1F1F1D", "wall": "#E0A64B", "floor": "#E0A64B", "ceiling": "#E0A64B",
+     "pieces": ["#E0A64B"], "accent": "#E0A64B", "ambient": "#FFF1D6"},
+    {"id": "sunbaked", "name": "Sunbaked", "theory": "Analogous warm: sand, apricot and terracotta, neighbours on the wheel",
+     "character": "#E0A64B", "ink": "#2A1A14", "wall": "#F0D3A0", "floor": "#C0704A", "ceiling": "#F6E2BE",
+     "pieces": ["#E39A5A", "#B4573A", "#E7B866", "#D9855B"], "accent": "#8E3B2E", "ambient": "#FFE8CC"},
+    {"id": "teal-coral", "name": "Teal & coral", "theory": "Complementary: teal walls against warm coral and mustard",
+     "character": "#E0A64B", "ink": "#1C2B2B", "wall": "#3F8A87", "floor": "#EFE0C8", "ceiling": "#F3E9DA",
+     "pieces": ["#F07F64", "#F4B183", "#2D6766", "#F2D3B3"], "accent": "#F25C45", "ambient": "#E4FFFB"},
+    {"id": "playroom", "name": "Playroom", "theory": "Triadic: mustard, cobalt and berry, evenly spaced",
+     "character": "#E0A64B", "ink": "#1F1F2A", "wall": "#F3E6C8", "floor": "#3D5A98", "ceiling": "#F7EEDA",
+     "pieces": ["#C43C6B", "#3D5A98", "#E0A64B", "#7C93C9"], "accent": "#C43C6B", "ambient": "#F2F0FF"},
+    {"id": "dusk", "name": "Dusk", "theory": "Split-complementary: mustard against violet and blue-violet",
+     "character": "#E0A64B", "ink": "#15121F", "wall": "#5B4B8A", "floor": "#2E2A4F", "ceiling": "#6E5E9C",
+     "pieces": ["#8C7BC2", "#D9744F", "#3F3770", "#B9A9E6"], "accent": "#F2C14E", "ambient": "#CFC6FF"},
+    {"id": "sage", "name": "Sage", "theory": "Monochrome: one green in light, mid and deep values",
+     "character": "#E0A64B", "ink": "#1E2A1C", "wall": "#A9BFA0", "floor": "#6F8A68", "ceiling": "#C6D6BE",
+     "pieces": ["#8BA582", "#5E7757", "#CFDDC8", "#7A9671"], "accent": "#3F5A3B", "ambient": "#F0FFEA"},
+    {"id": "nursery", "name": "Nursery", "theory": "Pastel tetradic: pink, mint, butter and periwinkle at high value",
+     "character": "#E0A64B", "ink": "#3A3340", "wall": "#F6D6DE", "floor": "#BFE3D8", "ceiling": "#FBEDEF",
+     "pieces": ["#C9D7F2", "#F9E2AE", "#F4B8C5", "#BFE3D8"], "accent": "#9BB7E6", "ambient": "#FFF6F8"},
+    {"id": "midnight", "name": "Midnight", "theory": "Analogous cool with a warm accent: navy blues and one lamp of mustard",
+     "character": "#E0A64B", "ink": "#0B1220", "wall": "#1F3550", "floor": "#14233A", "ceiling": "#2A4466",
+     "pieces": ["#2F5D80", "#4B7FA8", "#E0A64B", "#3A6B91"], "accent": "#F2C14E", "ambient": "#9DB7FF"}
+  ]
+}

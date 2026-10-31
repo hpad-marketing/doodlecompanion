@@ -50,10 +50,18 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     return f;
   };
   // a Bunny co-star comes from the master Bunny file too, when one is set
-  const withMaster = shot => {
+  const withMaster = shot0 => {
+    const shot = withLooks(shot0);
     const m = settings.get().masterBlend;
     if (!shot.costars?.length || !m || !fs.existsSync(m)) return shot;
     return { ...shot, costars: shot.costars.map(c => (c.character === 'bunny' ? { ...c, blend: m } : c)) };
+  };
+  // Materials tab: tell Blender where each look add-on lives on this PC (looks.cjs)
+  const withLooks = shot => {
+    if (!shot.materials && !shot.items?.some(i => i && i.material)) return shot;
+    let dirs = {};
+    try { dirs = require('./looks.cjs').addonDirs({ appDir, libraryDir: libraryDir() }); } catch {}
+    return { ...shot, materials: { ...(shot.materials || {}), addons: dirs } };
   };
   const shotHash = (s, preview) => crypto.createHash('sha256').update(JSON.stringify([s.shot, s.audio || null, !!preview, fs.statSync(blendFor(s.shot)).mtimeMs, settings.get().libraryDir || ''])).digest('hex').slice(0, 16);
 

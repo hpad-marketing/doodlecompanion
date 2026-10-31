@@ -16,7 +16,7 @@ module.exports = ({ appDir, port, blender, blendFor, folders, withMaster, env = 
   function structure(shot) {
     const st = { ...(shot.stage || {}) }; delete st.pieces; delete st.sun;
     const items = (shot.items || []).map(i => { const { at, rot, scale, ...rest } = i; return rest; });
-    return JSON.stringify([shot.character || 'bunny', st, items, shot.costars || null, shot.powers || null, shot.rules || null]);
+    return JSON.stringify([shot.character || 'bunny', st, items, shot.costars || null, shot.powers || null, shot.rules || null, shot.materials || null]);
   }
 
   function toBlender(msg) {
@@ -78,7 +78,7 @@ module.exports = ({ appDir, port, blender, blendFor, folders, withMaster, env = 
         if (sig !== link.sig || (msg.code && msg.code !== link.code)) {
           link.sig = sig; if (msg.code) link.code = msg.code;
           writeShot(link.dir, msg.shot);
-          return toBlender({ ...msg, t: 'rebuild' }), { ...status(), rebuild: true };
+          return toBlender({ ...msg, shot: withMaster(msg.shot), t: 'rebuild' }), { ...status(), rebuild: true };
         }
       }
       toBlender(msg);

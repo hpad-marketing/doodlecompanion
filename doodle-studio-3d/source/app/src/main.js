@@ -4,7 +4,7 @@ import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
-import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
 import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
@@ -25,6 +25,7 @@ import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
 import * as MR from './mirror.js';
 import * as BB from './babblescene.js';
+import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
@@ -185,6 +186,9 @@ const libCtx = () => ({
   added: (row, res) => { if (res?.added && project.items) { const i = project.items.indexOf(res.added); if (i >= 0 && !res.added.hold && ['prop', 'scenery'].includes(row.category)) selectItem(i); } },
   defaultSpot, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem, editItem, itemTransform, dropItem, duplicateItem,
 });
+// Materials tab (materials.js): looks on the scene, characters, set or props, drawn by Blender
+const matCtx = () => ({ h, api, toast, pushUndo, scene: () => scene, project: () => project, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem,
+  changed: () => { dirty = true; updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
 // ---------------------------------------------------------------- live stage (stage3d.js): pick, place and move what is in the shot
 let stage = null;
 const libRowMap = () => { const rows = libraryRows(); if (rowMapFor !== rows) { rowMap = new Map(rows.map(r => [r.id, r])); rowMapFor = rows; } return rowMap; };
@@ -1322,7 +1326,7 @@ function refreshQuickbar() { const q = $('#quickbar'); if (q) q.replaceChildren(
 function closeMenus() { document.querySelectorAll('#menubar .menu.open').forEach(m => { m.classList.remove('open'); m.querySelector('button').setAttribute('aria-expanded', 'false'); }); }
 
 // ---------------------------------------------------------------- side panel: workspaces, each with a section row (as in the 2D app)
-const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render']];
+const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render'], ['materials', 'Materials']];
 const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output' };
 const SUBS = {
   pose: () => shownParts().map(([id, n]) => [id, n]),
@@ -1332,6 +1336,7 @@ const SUBS = {
   stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['drawings', 'Drawings'], ['cast', 'Co-stars']],
   library: () => CATEGORIES.filter(c => !['motion', 'outfit', 'accessory'].includes(c[0])),
   carousel: () => [],
+  materials: () => [],
   render: () => [['output', 'Shot & output'], ['post', 'Captions, music & look'], ['blender', 'Blender, autosave & cache']],
 };
 // menu commands shown as buttons in a section (same commands, same undo, also in Ctrl+K)
@@ -1458,6 +1463,8 @@ function buildPanel() {
     api('models-info').then(r => { const el = $('#models-info'); if (el) el.textContent = `${r.models} pieces ready to show in the 3D view${r.queued ? `, ${r.queued} being made` : ''}.`; }).catch(() => {});
   } else if (tab === 'carousel') {
     c.append(carouselPanel(carCtx()));
+  } else if (tab === 'materials') {
+    c.append(MAT.materialsPanel(matCtx()));
   } else if (tab === 'render') {
     if (s === 'post') c.append(h('div', { class: 'ws three' }, ...shelves('render:post').map(x => h('div', { class: 'col' }, x))));
     else if (s === 'blender') {
@@ -1627,7 +1634,7 @@ const prodCtx = () => ({
   changed: lengthToo => { dirty = true; if (lengthToo) { layout(); buildTimelineTools(); } apply(); drawTracks(); buildPanel(); updateHud(); },
   rebuild: () => buildPanel(),
   envelope: () => envelopeNow(),
-  bridgeFor: (sc, s) => toBridgeShot(bindShot(sc, s), ALL_IDS(), data.face.faces, sc.character || 'bunny', stageOf(sc, s)),
+  bridgeFor: (sc, s) => toBridgeShot(bindShot(sc, s), ALL_IDS(), data.face.faces, sc.character || 'bunny', stageOf(sc, s), materialsOf(sc, s)),
   autosaveMinutes: () => autosaveSettings().minutes, setAutosave: p => { const r = setAutosave(p); startAutosave(polCtx()); return r; },
   importAudio: () => importAudio(),
 });
@@ -2561,7 +2568,7 @@ async function exportBridge() {
 }
 const ALL_IDS = () => BUNNY_IDS.concat(FACE_IDS, CAM_IDS);
 const character = () => scene.character || 'bunny';
-const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s));
+const bridge = s => toBridgeShot(s, ALL_IDS(), data.face.faces, character(), stageOf(scene, s), materialsOf(scene, s));
 const idleNow = () => idleFor(project, data.face.faces, character());
 // a 360 shot renders equirectangular (2:1), so the joined video takes its size
 const frameSize = shots => { const w = shots.map(s => s.powers?.pano360).find(Boolean); return w ? { width: w, height: w / 2, pano360: true } : { width: scene.width, height: scene.height }; };
@@ -2907,6 +2914,8 @@ function loop() {
     autosave: (p = {}) => { const s = setAutosave(p); startAutosave(polCtx()); return s; },
     mirrorPose(at) { if (at != null) goto(at); putPose(mirrorValues(poseNow())); return this.state(); },
     blendPoses(a, b, t, at) { if (at != null) goto(at); poseBuf.A = a; poseBuf.B = b; blendPose(Math.max(0, Math.min(100, Number(t)))); return this.state(); },
+    // Materials tab (materials.js): list looks and palettes, apply a look to a target, clear it, set the light
+    materials(a) { return MAT.mcp(matCtx(), a || {}); },
     setShotLook(p) {
       pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink)));
       for (const [k, v] of Object.entries(p.rules || {})) if (RULES.some(r => r[0] === k)) { project.rules ||= {}; if (v === false) project.rules[k] = false; else delete project.rules[k]; }

@@ -149,8 +149,23 @@ export function stageOf(scene, shot) {
   return st;
 }
 
+// Materials tab: the scene's looks (scene, character, set, props) with this shot's own on top.
+// A shot layer set to null clears the scene's one for that shot. Props picked one by one carry
+// their own look on the item (item.material) and travel with the items.
+export const MATERIAL_TARGETS = ['scene', 'character', 'set', 'props'];
+export function materialsOf(scene, shot) {
+  const S = scene.materials || {}, T = shot.materials || {};
+  const layers = {};
+  for (const k of MATERIAL_TARGETS) {
+    const v = T.layers && k in T.layers ? T.layers[k] : S.layers?.[k];
+    if (v && v.look) layers[k] = v;
+  }
+  const light = { ...(S.light || {}), ...(T.light || {}) };
+  return Object.keys(layers).length ? { layers, ...(Object.keys(light).length ? { light } : {}) } : null;
+}
+
 // Blender bridge shot: one entry per frame, cam block per frame
-export function toBridgeShot(project, allIds, faceNames, character, stage = {}) {
+export function toBridgeShot(project, allIds, faceNames, character, stage = {}, materials = null) {
   const frames = [];
   const idle = idleFor(project, faceNames, character);
   for (let f = 0; f < project.length; f++) {
@@ -168,6 +183,7 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;
   if (project.items?.length) out.items = project.items;
+  if (materials) out.materials = materials;   // Materials tab (materials.py); none = Ink & Mustard as before
   if (project.powers && Object.keys(project.powers).length) out.powers = project.powers;   // Blender powers (powers.py)
   // scene drawings stand in the 3D world (drawings.py); screen drawings are laid on top as PNGs
   const dr = drawingsForBridge(project);
