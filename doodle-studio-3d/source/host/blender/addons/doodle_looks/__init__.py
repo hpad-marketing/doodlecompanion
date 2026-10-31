@@ -114,26 +114,42 @@ def _principled(t, base, **kw):
 
 
 # ---------------------------------------------------------------- the looks
+def _speckle(t, base, amount, scale, lo=0.8, hi=1.15):
+    """colour that varies in tiny flecks (felt fibres, glaze specks)"""
+    nz = t.n('ShaderNodeTexNoise', Scale=scale, Detail=3.0, Roughness=0.8)
+    t.link(_coords(t), nz.inputs['Vector'])
+    k = t.n('ShaderNodeMapRange', **{'From Min': 0.35, 'From Max': 0.65})
+    t.link(nz.outputs['Fac'], k.inputs['Value'])
+    return _mix(t, k.outputs['Result'], _lin(_shift(base, 1 - (1 - lo) * amount)), _lin(_shift(base, 1 + (hi - 1) * amount, ds=1 - 0.2 * amount)))
+
+
 def _clay(t, base, P):
-    p = _principled(t, base, Roughness=P['roughness'], **{'Specular IOR Level': 0.3})
+    # matte modelling clay: soft lumps, big thumb dents, fine tool scratches, colour blotches
+    p = _principled(t, base, Roughness=P['roughness'], **{'Specular IOR Level': 0.18})
     if P['glow'] > 0:
         p.inputs['Subsurface Weight'].default_value = P['glow']
         p.inputs['Subsurface Radius'].default_value = (1.0, 0.45, 0.25)
         p.inputs['Subsurface Scale'].default_value = 0.02
-    col = _wobble(t, base, P['wobble'])
+    col = _wobble(t, base, P['wobble'], scale=4.0)
     if col:
         t.link(col, p.inputs['Base Color'])
     co = _coords(t)
-    vor = t.n('ShaderNodeTexVoronoi', Scale=9.0 / max(0.05, P['dentSize']), Randomness=0.9)
-    t.link(co, vor.inputs['Vector'])
-    nz = t.n('ShaderNodeTexNoise', Scale=60.0, Detail=6.0, Roughness=0.6)
-    t.link(co, nz.inputs['Vector'])
-    add = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD', **{})
-    add.inputs[1].default_value = 0.15
-    t.link(nz.outputs['Fac'], add.inputs[0])
-    t.link(vor.outputs['Distance'], add.inputs[2])
-    p_n = _bump(t, add.outputs['Value'], 0.08 + 0.5 * P['dents'], 0.015)
-    t.link(p_n, p.inputs['Normal'])
+    dent = t.n('ShaderNodeTexVoronoi', Scale=5.0 / max(0.05, P['dentSize']), Randomness=1.0, _feature='SMOOTH_F1')
+    t.link(co, dent.inputs['Vector'])
+    dent.inputs['Smoothness'].default_value = 0.6
+    lump = t.n('ShaderNodeTexNoise', Scale=2.5, Detail=2.0)
+    t.link(co, lump.inputs['Vector'])
+    scratch = t.n('ShaderNodeTexNoise', Scale=70.0, Detail=8.0, Roughness=0.65)
+    t.link(co, scratch.inputs['Vector'])
+    h1 = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD')
+    h1.inputs[1].default_value = 0.6
+    t.link(lump.outputs['Fac'], h1.inputs[0])
+    t.link(dent.outputs['Distance'], h1.inputs[2])
+    h = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD')
+    h.inputs[1].default_value = 0.025
+    t.link(scratch.outputs['Fac'], h.inputs[0])
+    t.link(h1.outputs['Value'], h.inputs[2])
+    t.link(_bump(t, h.outputs['Value'], 0.2 + 0.8 * P['dents'], 0.12), p.inputs['Normal'])
     return p.outputs['BSDF']
 
 
@@ -173,61 +189,85 @@ def _cel(t, base, P):
 
 
 def _vinyl(t, base, P):
-    p = _principled(t, base, Roughness=P['roughness'], **{'Coat Weight': P['coat'], 'Coat Roughness': 0.35 * (1 - P['coatGloss']), 'Specular IOR Level': 0.45})
+    # soft vinyl toy: satin body, one broad soft highlight, slightly richer colour, no texture
+    rich = _shift(base, 1.0, ds=1.12)
+    p = _principled(t, rich, Roughness=P['roughness'], **{'Coat Weight': P['coat'], 'Coat Roughness': 0.12 + 0.3 * (1 - P['coatGloss']), 'Specular IOR Level': 0.35,
+                                                           'Subsurface Weight': 0.12, 'Subsurface Scale': 0.01})
+    p.inputs['Subsurface Radius'].default_value = (1.0, 0.5, 0.3)
     return p.outputs['BSDF']
 
 
 def _felt(t, base, P):
-    p = _principled(t, base, Roughness=1.0, **{'Sheen Weight': P['sheen'], 'Sheen Roughness': 0.35, 'Specular IOR Level': 0.1})
-    p.inputs['Sheen Tint'].default_value = _lin(_shift(base, 1.35, ds=0.6))
-    col = _wobble(t, base, 0.06, scale=40.0 / max(0.1, P['fibres']))
-    if col:
-        t.link(col, p.inputs['Base Color'])
-    nz = t.n('ShaderNodeTexNoise', Scale=260.0 / max(0.1, P['fibres']), Detail=8.0, Roughness=0.75)
-    t.link(_coords(t), nz.inputs['Vector'])
-    t.link(_bump(t, nz.outputs['Fac'], 0.1 + 0.5 * P['fuzz'], 0.01), p.inputs['Normal'])
+    # wool felt: no shine, dense fibre flecks, fuzzy surface, light halo at the edges
+    p = _principled(t, base, Roughness=1.0, **{'Sheen Weight': P['sheen'], 'Sheen Roughness': 0.5, 'Specular IOR Level': 0.0})
+    p.inputs['Sheen Tint'].default_value = _lin(_shift(base, 1.25, ds=0.75))
+    sc = 320.0 / max(0.1, P['fibres'])
+    t.link(_speckle(t, base, 0.5 + 0.5 * P['fuzz'], sc, 0.72, 1.2), p.inputs['Base Color'])
+    co = _coords(t)
+    fz = t.n('ShaderNodeTexNoise', Scale=sc * 1.6, Detail=10.0, Roughness=0.85)
+    t.link(co, fz.inputs['Vector'])
+    pill = t.n('ShaderNodeTexNoise', Scale=18.0, Detail=3.0)
+    t.link(co, pill.inputs['Vector'])
+    h = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD')
+    h.inputs[1].default_value = 0.25
+    t.link(pill.outputs['Fac'], h.inputs[0])
+    t.link(fz.outputs['Fac'], h.inputs[2])
+    t.link(_bump(t, h.outputs['Value'], 0.3 + 0.7 * P['fuzz'], 0.012), p.inputs['Normal'])
     return p.outputs['BSDF']
 
 
 def _paper(t, base, P):
+    # crumpled card: each facet catches the light a little differently, with a fine grain
     co = _coords(t)
+    fac = t.n('ShaderNodeTexVoronoi', Scale=3.0 + 4.0 * P['fibres'], Randomness=1.0)
+    t.link(co, fac.inputs['Vector'])
     grain = t.n('ShaderNodeTexNoise', Scale=420.0, Detail=4.0, Roughness=0.7)
     t.link(co, grain.inputs['Vector'])
-    fib = t.n('ShaderNodeTexWave', Scale=6.0, Distortion=18.0, Detail=6.0)
-    t.link(co, fib.inputs['Vector'])
-    h = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD')
-    h.inputs[1].default_value = P['fibres'] * 0.35
-    t.link(fib.outputs['Fac'], h.inputs[0])
-    t.link(grain.outputs['Fac'], h.inputs[2])
-    dif = t.n('ShaderNodeBsdfDiffuse', Color=_lin(base))
-    t.link(_bump(t, h.outputs['Value'], 0.05 + 0.35 * P['grain'], 0.004), dif.inputs['Normal'])
+    # facet tone: a random light level per facet
+    bw0 = t.n('ShaderNodeRGBToBW')
+    t.link(fac.outputs['Color'], bw0.inputs['Color'])
+    tone = t.n('ShaderNodeMapRange', **{'From Min': 0.25, 'From Max': 0.75, 'To Min': 0.0, 'To Max': 1.0})
+    t.link(bw0.outputs['Val'], tone.inputs['Value'])
+    # overall light from the key, softened: card never goes dark
+    dif = t.n('ShaderNodeBsdfDiffuse', Color=(1, 1, 1, 1))
+    t.link(_bump(t, grain.outputs['Fac'], 0.1 + 0.4 * P['grain'], 0.004), dif.inputs['Normal'])
     s2r = t.n('ShaderNodeShaderToRGB')
     t.link(dif.outputs['BSDF'], s2r.inputs['Shader'])
-    # soft two-tone: lit card stock never goes dark, so lift the shade toward the flat colour
-    mixed = _mix(t, float(P['shade']), _lin(base), s2r.outputs['Color'])
+    bw = t.n('ShaderNodeRGBToBW')
+    t.link(s2r.outputs['Color'], bw.inputs['Color'])
+    lit = t.n('ShaderNodeMapRange', **{'From Min': 0.3, 'From Max': 1.6, 'To Min': 0.0, 'To Max': 1.0})
+    t.link(bw.outputs['Val'], lit.inputs['Value'])
+    f = t.n('ShaderNodeMath', _operation='MULTIPLY_ADD')
+    f.inputs[1].default_value = 0.75 * P['shade']
+    t.link(tone.outputs['Result'], f.inputs[0])
+    lw = t.n('ShaderNodeMath', _operation='MULTIPLY')
+    lw.inputs[1].default_value = 0.3
+    t.link(lit.outputs['Result'], lw.inputs[0])
+    t.link(lw.outputs['Value'], f.inputs[2])
+    lo = _lin(_shift(base, 1 - 0.5 * P['shade'], dh=-0.015, ds=1.1))
+    hi = _lin(_shift(base, 1.15, ds=0.95))
+    col = _mix(t, f.outputs['Value'], lo, hi)
     em = t.n('ShaderNodeEmission', Strength=1.0)
-    t.link(mixed, em.inputs['Color'])
+    t.link(col, em.inputs['Color'])
     return em.outputs['Emission']
 
 
 def _ceramic(t, base, P):
-    p = _principled(t, base, Roughness=0.03 + 0.4 * (1 - P['gloss']), **{'Coat Weight': 0.8 * P['gloss'], 'Coat Roughness': 0.05, 'Specular IOR Level': 0.6})
+    # glazed pottery: mirror-sharp highlights, dark crackle lines, glaze speckles, colour pooled in dips
+    p = _principled(t, base, Roughness=0.02 + 0.3 * (1 - P['gloss']), **{'Coat Weight': 1.0 * P['gloss'], 'Coat Roughness': 0.0, 'Specular IOR Level': 0.7})
     co = _coords(t)
-    col = _lin(base)
+    col = _speckle(t, base, 0.7, 90.0, 0.7, 1.05)
     if P['pool'] > 0:
-        ao = t.n('ShaderNodeAmbientOcclusion', Distance=0.08)
-        col = _mix(t, ao.outputs['AO'], _lin(_shift(base, 1 - 0.45 * P['pool'], ds=1 + 0.3 * P['pool'])), col)
+        ao = t.n('ShaderNodeAmbientOcclusion', Distance=0.1)
+        col = _mix(t, ao.outputs['AO'], _lin(_shift(base, 1 - 0.55 * P['pool'], ds=1 + 0.35 * P['pool'])), col)
     if P['crackle'] > 0:
-        vor = t.n('ShaderNodeTexVoronoi', Scale=14.0, _feature='DISTANCE_TO_EDGE')
+        vor = t.n('ShaderNodeTexVoronoi', Scale=11.0, _feature='DISTANCE_TO_EDGE')
         t.link(co, vor.inputs['Vector'])
         line = t.n('ShaderNodeMath', _operation='LESS_THAN')
-        line.inputs[1].default_value = 0.02 * P['crackle']
+        line.inputs[1].default_value = 0.035 * P['crackle']
         t.link(vor.outputs['Distance'], line.inputs[0])
-        col = _mix(t, line.outputs['Value'], col, _lin(_shift(base, 0.55)))
-    if isinstance(col, tuple):
-        p.inputs['Base Color'].default_value = col
-    else:
-        t.link(col, p.inputs['Base Color'])
+        col = _mix(t, line.outputs['Value'], col, _lin(_shift(base, 0.35)))
+    t.link(col, p.inputs['Base Color'])
     return p.outputs['BSDF']
 
 
