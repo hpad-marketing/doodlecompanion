@@ -7,7 +7,7 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
+import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, CHARACTERS, CATEGORIES, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
@@ -1083,7 +1083,7 @@ const MENUS = [
     ['Simplify keys', () => toast(`Removed ${simplify(animCtx()).removed} keys the curves did not need`, 4000)],
     ['Loop check', () => { const r = loopCheck(animCtx()); toast(r.seamless ? 'Seamless: the last frame matches the first' : `Not seamless: ${r.mismatched.map(m => LABEL[m.id] || m.id).slice(0, 4).join(', ')}${r.mismatched.length > 4 ? '…' : ''}`, 5000); }],
     ['Make seamless loop', () => { makeLoop(animCtx()); toast('Last frame keyed to match the first'); }],
-    ['Lip sync from the voice (this shot)', () => lipsyncFromAudio()], ['Lip sync from the voice (every shot)', () => lipsyncFromAudio({ all: true })],
+    ['Lip sync from the voice (this shot)', () => lipsyncFromAudio().catch(e => toast(e.message, 5000))], ['Lip sync from the voice (every shot)', () => lipsyncFromAudio({ all: true }).catch(e => toast(e.message, 5000))],
     ['Audio drives a control…', () => audioDriveDialog()], ['Mark beats from the audio', () => markBeats()],
     ['Retime shot…', () => { const x = prompt('Speed: below 1 is slower, above 1 is faster (e.g. 0.8 or 1.25). Keys after the playhead move.', '1'); if (x) retime(animCtx(), 1 / Number(x), frame); }], '-',
     ['Playblast (viewport video)', () => playblast(animCtx()).catch(e => toast(e.message, 5000))], '-',
@@ -1536,10 +1536,15 @@ function audioDriveDialog() {
   return driveFromAudio(id, a, b);
 }
 // lip sync from the scene voice: mouth keys on one shot, or on every shot (all)
-function lipsyncFromAudio({ shot = null, all = false, gate, hold } = {}) {
+async function lipsyncFromAudio({ shot = null, all = false, gate, hold, stem, engine } = {}) {
+  // right after opening a scene the voice may still be decoding: wait for it rather than fail
+  if (scene.audio?.path && audioInfo()?.path !== scene.audio.path) await loadAudio(api, scene.audio.path);
   if (!audioInfo()) throw Error('Import the voice for the scene first (File › Import audio…)');
+  // a separated vocal (stem) is kept with the scene audio, so later lip syncs read it too; '' clears it
+  if (stem != null && scene.audio) { if (stem) scene.audio.stem = stem; else delete scene.audio.stem; }
+  await loadStem(api, scene.audio?.stem || null);
   pushUndo('Lip sync from the voice');
-  const opts = { ...(gate != null ? { gate: Number(gate) } : {}), ...(hold != null ? { hold: Number(hold) } : {}) };
+  const opts = { ...(gate != null ? { gate: Number(gate) } : {}), ...(hold != null ? { hold: Number(hold) } : {}), ...(engine ? { engine } : {}) };
   const st = shotStarts(), which = all ? scene.shots.map((_, i) => i) : [shot ?? scene.active];
   const out = which.map(i => { const s = scene.shots[i]; if (!s) throw Error('No shot ' + i); return { shot: i, code: s.code, keys: audioLipsync(s, st[i], setKey, opts) }; });
   dirty = true; apply(); drawTracks();
