@@ -91,7 +91,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(!pshot.music && !pshot.bleeps && pshot.looks.length === 1, 'single shot render: looks and cut-ins, no scene sound side');
 
   // menu
-  await p.click('#menubar .menu > button:text-is("Story")');
+  await p.click('#menubar .menu > button:text-is("Post")');
   await p.click('#menubar .menu-list button:has-text("Captions…")');
   ok(await p.locator('.ds-modal button:text-is("Hindi")').count() === 1, 'captions dialog with language tabs');
   await ev(() => document.querySelectorAll('.ds-modal').forEach(m => m.remove()));

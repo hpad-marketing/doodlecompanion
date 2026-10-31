@@ -204,7 +204,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - How: Face tab toggles; `set_idle {blink, twitch, blinkEvery, twitchEvery, seed, allShots}`.
 
 **Eye darts.** Quick glances, with eye size constant.
-- How: Story › Eye darts; `story2 action=eye_darts {every, seed}`.
+- How: Post › Eye darts; `story2 action=eye_darts {every, seed}`.
 - Also try: nervous lies, suspicion, a horror beat before the reveal.
 
 ### 3.4 Motion
@@ -225,7 +225,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - Also try: a "Gestures" layer at 50% to calm a performance down.
 
 **Gestures from the voice.** Head nods and body leans on a Gestures layer, driven by the voice. Never the jaw.
-- How: Story › Gestures from the voice; `story2 action=gestures {strength}`.
+- How: Post › Gestures from the voice; `story2 action=gestures {strength}`.
 
 **Cycles.** Check and make seamless loops.
 - How: `anim_tool action=loop_check|make_loop`.

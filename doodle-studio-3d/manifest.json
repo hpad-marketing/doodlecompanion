@@ -1,8 +1,8 @@
 {
- "version": "20261031-144827",
- "notes": "Feet keep their full outline: the outline's push away from the camera now stops at the floor along the camera ray, so the shape on screen never changes and nothing is cut flat (v10 shuffle) or hidden by the floor. Floor settle measures the outline as it renders. (Repackaged without Python cache files.)",
+ "version": "20261031-184100",
+ "notes": "Stage 3D view: even ink lines on every set piece (no more thick and thin), edge lines so flat shapes like the moon and the flag read clearly, a 3 px minimum line, and View › Shape shading (3D view only, renders stay flat). The library loads at start-up, so Stage shows its sets on first open. The Story tab and Story menu are removed; captions, music, look, cut-ins and the voice tools are in the new Post menu and Render › Captions, music & look.",
  "runtime": "44.9.0",
- "published": "2026-10-31T14:48:28.654Z",
+ "published": "2026-10-31T18:39:31.580Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -85,9 +85,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "87b5a3290a16e7db6d544c661f6b6a194582ff9783e51c26a8c9b3cdbfbbc6c0",
-   "size": 43201,
-   "gz": "files/87b5a3290a16e7db6d544c661f6b6a194582ff9783e51c26a8c9b3cdbfbbc6c0.gz"
+   "sha256": "d639e3778673f512ce7b0a78da985b2165653dfb5ded5d14464207736d21ba61",
+   "size": 43199,
+   "gz": "files/d639e3778673f512ce7b0a78da985b2165653dfb5ded5d14464207736d21ba61.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -260,14 +260,14 @@
    "gz": "files/b879ebed9850faf4f40345ff143cf350ea94a86c365c5583a2beb51b775d0ab1.gz"
   },
   "resources/app/ui/src/libview.js": {
-   "sha256": "3e763eb7126b48bd05fe79cadfd28c1c4a9718fead88fd4528f3a19dafaa2be1",
-   "size": 30147,
-   "gz": "files/3e763eb7126b48bd05fe79cadfd28c1c4a9718fead88fd4528f3a19dafaa2be1.gz"
+   "sha256": "a534013e32c4997fac5841acd5d3fd8ecd4b0c1bb4d13aaa5648a6cd20b44ea5",
+   "size": 30402,
+   "gz": "files/a534013e32c4997fac5841acd5d3fd8ecd4b0c1bb4d13aaa5648a6cd20b44ea5.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "f9d654e49a3e80953a84b7ed8952be9d8f0f474299f7b62205b641a1fd39909c",
-   "size": 237384,
-   "gz": "files/f9d654e49a3e80953a84b7ed8952be9d8f0f474299f7b62205b641a1fd39909c.gz"
+   "sha256": "ff394383b9d6fa707bb3acb4009271536c67b12188b8dd970f644bc0947237a3",
+   "size": 235762,
+   "gz": "files/ff394383b9d6fa707bb3acb4009271536c67b12188b8dd970f644bc0947237a3.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -300,9 +300,9 @@
    "gz": "files/8db8385060ab57543ae451032eb9f265b6ea099a1fd62e2554010ce6100c7313.gz"
   },
   "resources/app/ui/src/stage3d.js": {
-   "sha256": "33214760ecb8ddd61bb89a603f473bdd3ec9224a4247ec568b47fc54f851397f",
-   "size": 23467,
-   "gz": "files/33214760ecb8ddd61bb89a603f473bdd3ec9224a4247ec568b47fc54f851397f.gz"
+   "sha256": "30d14bab7763129cf3a3d15006b01adaa3a1c3c1184b642f464fcb125ebf09a2",
+   "size": 26868,
+   "gz": "files/30d14bab7763129cf3a3d15006b01adaa3a1c3c1184b642f464fcb125ebf09a2.gz"
   },
   "resources/app/ui/src/storytime.js": {
    "sha256": "883a45c7d619ecd824242592dcccc16f75c5add4aefef5cb743fd7ec7585c521",
@@ -330,9 +330,9 @@
    "gz": "files/0f8e247a13d77a13c06255e4a553801493f97ab09fa7ad4f12490b89945bce5b.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9",
-   "size": 18816,
-   "gz": "files/eca68e583a241ebeaae9560bffdfa788790b766a39b6ea06668eb475db3610f9.gz"
+   "sha256": "b3050e26a8a0453d334c592580c7b8d83ddc10e9aaba82f4267f786e70bbc96c",
+   "size": 18953,
+   "gz": "files/b3050e26a8a0453d334c592580c7b8d83ddc10e9aaba82f4267f786e70bbc96c.gz"
   },
   "resources/app/ui/src/vocals.js": {
    "sha256": "998889b0dd22a07512e0e19cfeb00e8e347dc44297b380e88f186e7b201ba209",
@@ -473,6 +473,21 @@
    "sha256": "9848ad589dfcf5f3769d0836472cb37cc46e6e0b36eb42ebcf7c898d0072e8ec",
    "size": 41663,
    "gz": "files/9848ad589dfcf5f3769d0836472cb37cc46e6e0b36eb42ebcf7c898d0072e8ec.gz"
+  },
+  "resources/app/ui/vendor/addons/lines/LineMaterial.js": {
+   "sha256": "4a58808a6e3a48f2a98eb2a410022ae648f801eaae89d457fcd662b077a7cf27",
+   "size": 10986,
+   "gz": "files/4a58808a6e3a48f2a98eb2a410022ae648f801eaae89d457fcd662b077a7cf27.gz"
+  },
+  "resources/app/ui/vendor/addons/lines/LineSegments2.js": {
+   "sha256": "9dcce823f86d7f00c4faa8c80ea3833fa86bf4957f394a1f64f3b126f6eea661",
+   "size": 9607,
+   "gz": "files/9dcce823f86d7f00c4faa8c80ea3833fa86bf4957f394a1f64f3b126f6eea661.gz"
+  },
+  "resources/app/ui/vendor/addons/lines/LineSegmentsGeometry.js": {
+   "sha256": "213a12e0e1ea878495d4998817cb83b1945441f19194267dba108c3a9e8f31ac",
+   "size": 4693,
+   "gz": "files/213a12e0e1ea878495d4998817cb83b1945441f19194267dba108c3a9e8f31ac.gz"
   },
   "resources/app/ui/vendor/addons/loaders/GLTFLoader.js": {
    "sha256": "45139faddd5aaf48ed2d62203d976e5cbd703db1a592de40527f9f6cf58abd44",

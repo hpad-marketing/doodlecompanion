@@ -45,9 +45,8 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(s2.keyed.armR.find(k => k[0] === s2.length - 1)?.[1] === 50, 'loop back: the last shot ends on the opening pose');
   rr = await ev(() => ds3d.story({ action: 'bible', bible: { premise: 'Bunny vs chai' } }));
   ok(rr.premise === 'Bunny vs chai', 'story bible saved');
-  await ev(() => [...document.querySelectorAll('#menubar .menu > button')].find(b => b.textContent === 'Story').click());
-  await ev(() => [...document.querySelectorAll('#menubar button')].find(b => b.textContent.startsWith('Story bible')).click());
-  ok(await p.locator('.ds-modal textarea').count() === 3, 'story bible dialog opens');
+  ok(!(await ev(() => [...document.querySelectorAll('#menubar .menu > button')].some(b => b.textContent === 'Story'))), 'the Story menu is gone (user, 2026-10-31)');
+  ok(!(await ev(() => [...document.querySelectorAll('#tabs button')].some(b => b.textContent === 'Story'))), 'the Story tab is gone');
   await p.screenshot({ path: path.join(out, 'batch4.png') });
   ok(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); dev.kill();

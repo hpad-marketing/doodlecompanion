@@ -182,7 +182,9 @@ const libCtx = () => ({
 let stage = null;
 const libRowMap = () => { const rows = libraryRows(); if (rowMapFor !== rows) { rowMap = new Map(rows.map(r => [r.id, r])); rowMapFor = rows; } return rowMap; };
 let rowMap = new Map(), rowMapFor = null;
-const stageCtx = () => ({ api, toast, snap: () => snap.on, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
+let shapeShading = (() => { try { return localStorage.getItem('ds3d.shading') !== 'off'; } catch { return true; } })();
+function toggleShading(on) { shapeShading = on ?? !shapeShading; try { localStorage.setItem('ds3d.shading', shapeShading ? 'on' : 'off'); } catch {} stage?.setShading(shapeShading); apply(); toast(shapeShading ? 'Shape shading on (3D view only, the render stays flat)' : 'Shape shading off: flat Doodle look in the 3D view'); }
+const stageCtx = () => ({ api, toast, snap: () => snap.on, shading: () => shapeShading, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
   changed: () => requestAnimationFrame(() => { apply(); updateHud(); }), pushUndo: l => pushUndo(l),
   editItem: (i, patch, label) => editItem(i, patch, label, true), editPiece,
   // once a new item's model is in: stand it beside the character (level with him, never in front), clear of his body
@@ -1091,7 +1093,7 @@ const MENUS = [
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M'], ['Draw a review note on this frame', () => reviewNote(), 'N'], ['Tap a beat marker', () => tapBeat(), 'B']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Shape shading in the 3D view on / off', () => toggleShading()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ...DOCK.LAYOUTS.map(([id, n]) => [`Panels: ${n}`, () => DOCK.setLayout(id)]), ['Detach the timeline (another window)', () => DOCK.detach('timeline')], ['Detach the tools panel (another window)', () => DOCK.detach('tools')], ['Dock everything back', () => DOCK.dockAll()], ['Hide the tools panel', () => (DOCK.toggleHidden('tools') ? toast('Tools panel hidden: Ctrl+Shift+H brings it back') : toast('Tools panel shown')), 'Ctrl+Shift+H'], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
@@ -1113,16 +1115,9 @@ const MENUS = [
     ['Retarget the scene to…', () => pick2('Retarget the scene to', CHARACTERS.map(c => [c[0], c[1]]), c => retargetTo(c).catch(e => toast(e.message, 5000)))], '-',
     ['Reference video…', () => referenceVideo().catch(e => toast(e.message, 5000))], ['Remove reference video', () => clearReference()], '-',
     ['Squash and stretch at the playhead…', () => pick2('Squash and stretch', Object.entries(F2.SQUASH_MOVES), k => featRun({ action: 'squash', kind: k }))], ['Hand contact (hip, belly, chest)…', () => contactDialog()], ['Pose from a stick figure (draw it)', () => stickMode()]]],
-  ['Story', [['Hook and retention check', () => retentionCheck()], ['Loop back to the opening (Reels)', () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); toast(`${r.shot} now ends on the opening pose`); }],
-    ['Export YouTube chapters', () => exportChapters()], ['Chapter cards from the chapter markers', () => storyRun('chapter_cards')], '-',
-    ['Cold open: flash forward to this shot…', () => storyRun('cold_open')], ['Story beat map…', () => beatMapDialog()], ['Mood strip…', () => S2.moodStripDialog(s2Ctx())],
-    ['Genre moment at the playhead…', () => pick2('Genre moment', Object.entries(S2.GENRES).map(([k, g]) => [k, g.name]), g => storyRun('genre', { genre: g }))], '-',
-    ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Jump scare at the playhead', () => storyRun('jump_scare')], ['Auto foley (sound effects)', () => storyRun('foley')],
-    ['Freeze-frame name label…', () => { const t = prompt('Name label at the playhead (the picture freezes for 1.5 s):', `${charName()}: `); if (t) storyRun('freeze_label', { text: t }); }],
-    ['Sponsor segue after this shot…', () => { const n = prompt('Sponsor name:'); if (n) storyRun('sponsor', { name: n }); }], '-',
-    ['Make Shorts from this video', () => storyRun('shorts')], ['Import retention CSV (YouTube Studio)…', () => retentionImport()], ['Clear the retention overlay', () => storyRun('retention_clear')], '-', ['Split the voice into sentences…', () => sentenceDialog()], ['Story bible…', () => bibleDialog(polCtx())], '-',
-    ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()],
-    ['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Script to blocking…', () => scriptDialog()]]],
+  // Story tab and its storytime workflow removed (user, 2026-10-31). The voice and finishing tools it held stay, in Post.
+  ['Post', [['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()], '-',
+    ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Auto foley (sound effects)', () => storyRun('foley')], ['Split the voice into sentences…', () => sentenceDialog()]]],
   ['Blender', [['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
     ['Transition into this shot…', () => transitionDialog()], ['Paper finish…', () => { const v = prompt('Paper finish on the joined scene, 0 to 100 (0 is off):', String(Math.round((scene.paper || 0) * 100))); if (v != null) pwRun({ action: 'paper', amount: Number(v) / 100 }); }], '-',
     ['Linked controls…', () => linkDialog()], ['Macros…', () => macroDialog()], ['Master Bunny file…', () => masterDialog()]]],
@@ -1176,8 +1171,8 @@ function refreshQuickbar() { const q = $('#quickbar'); if (q) q.replaceChildren(
 function closeMenus() { document.querySelectorAll('#menubar .menu.open').forEach(m => { m.classList.remove('open'); m.querySelector('button').setAttribute('aria-expanded', 'false'); }); }
 
 // ---------------------------------------------------------------- side panel: workspaces, each with a section row (as in the 2D app)
-const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['story', 'Story'], ['carousel', 'Carousel'], ['render', 'Render']];
-const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', story: 'story', render: 'output' };
+const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render']];
+const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output' };
 const SUBS = {
   pose: () => shownParts().map(([id, n]) => [id, n]),
   face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life'], ['voice', 'Voice & lip sync']],
@@ -1185,13 +1180,12 @@ const SUBS = {
   camera: () => [['lens', 'Lens & angle'], ['presets', 'Shot presets'], ['moves', 'Camera moves'], ['view', 'View & checks']],
   stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['cast', 'Co-stars']],
   library: () => CATEGORIES.filter(c => !['motion', 'outfit', 'accessory'].includes(c[0])),
-  story: () => [['story', 'Story & retention'], ['acting', 'Acting & moments'], ['post', 'Look, captions & music'], ['blender', 'Blender powers']],
   carousel: () => [],
-  render: () => [['output', 'Shot & output'], ['blender', 'Blender, autosave & cache']],
+  render: () => [['output', 'Shot & output'], ['post', 'Captions, music & look'], ['blender', 'Blender, autosave & cache']],
 };
 // menu commands shown as buttons in a section (same commands, same undo, also in Ctrl+K)
 const SHELVES = {
-  'face:voice': [['Voice', 'File', ['Import audio for the scene…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)', 'Audio drives a control…']], ['Story', 'Story', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
+  'face:voice': [['Voice', 'File', ['Import audio for the scene…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)', 'Audio drives a control…']], ['From the voice', 'Post', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
   'animate:keys': [['Keys', 'Edit', ['Key Bunny pose', 'Key camera', 'Delete selected key', 'Clear all keys']], ['Timing', 'Animate', ['Breakdown halfway (tween)', 'Stepped blocking on / off', 'Simplify keys', 'Retime shot…', 'Time warp…', 'Moving hold from the playhead…', 'Euler filter (no 360° flips)']], ['Markers', 'Edit', ['Add marker with a note', 'Draw a review note on this frame', 'Tap a beat marker']]],
   'animate:body': [['Limbs', 'Animate', ['IK drag on / off', 'Pin a hand or foot…', 'Motion path…', 'Fix popping arcs on the path']], ['Body', 'Animate', ['Squash and stretch at the playhead…', 'Hand contact (hip, belly, chest)…', 'Pose from a stick figure (draw it)']], ['Checks', 'View', ['Balance marker on / off', 'Rule lights on / off', 'Silhouette check', 'Onion skin']]],
   'animate:layers': [['Layers', 'Animate', ['Add animation layer']], ['Copy', 'Animate', ['Copy keys (this shot)', 'Paste keys at the playhead', 'Retarget the scene to…']], ['Curves', 'View', ['Graph editor (curves) on / off']]],
@@ -1199,10 +1193,7 @@ const SHELVES = {
   'animate:reference': [['Reference video', 'Animate', ['Reference video…', 'Remove reference video']]],
   'camera:moves': [['Dolly', 'Camera', ['Dolly zoom: wide, keep size', 'Dolly zoom: long, keep size']], ['Moves', 'Camera', ['Multi-cam angles…', 'Beat-synced camera…', 'Floor-plan camera path…']], ['Previz', 'Camera', ['Previz grey on / off', 'Render a previz of this shot']]],
   'camera:view': [['View', 'View', ['Floor grid', 'Frame Bunny', 'Mirror view', 'Silhouette check', 'Onion skin', 'Snapping on / off', 'Show fps', 'Dark mode']], ['Checks', 'View', ['Rule lights on / off', 'Balance marker on / off']], ['Second screen', 'View', ['Pop out the viewport (second screen)']]],
-  'story:story': [['Retention', 'Story', ['Hook and retention check', 'Loop back to the opening (Reels)', 'Import retention CSV (YouTube Studio)…', 'Clear the retention overlay']], ['Structure', 'Story', ['Story beat map…', 'Mood strip…', 'Cold open: flash forward to this shot…', 'Story bible…', 'Script to blocking…']], ['Chapters', 'Story', ['Export YouTube chapters', 'Chapter cards from the chapter markers', 'Make Shorts from this video']]],
-  'story:acting': [['Moments', 'Story', ['Genre moment at the playhead…', 'Jump scare at the playhead', 'Freeze-frame name label…', 'Sponsor segue after this shot…']], ['From the voice', 'Story', ['Gestures from the voice', 'Eye darts', 'Auto foley (sound effects)']]],
-  'story:post': [['Look', 'Story', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Words and music', 'Story', ['Captions…', 'Music bed…', 'Split the voice into sentences…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
-  'story:blender': [['Powers', 'Blender', ['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', 'Draw ink doodles in 3D']], ['Rig', 'Blender', ['Linked controls…', 'Macros…', 'Master Bunny file…']]],
+  'render:post': [['Words and music', 'Post', ['Captions…', 'Music bed…', 'Split the voice into sentences…']], ['Look', 'Post', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
   'render:blender': [['Production', 'Tools', ['Check before export (preflight)', 'Health check…', 'Overnight batch…', 'Cancel sleep after renders', 'Render presets…', 'Pack project…', 'Clean up cache…', 'Claude change log…']], ['Files', 'File', ['Save version…', 'Versions…', 'Export Blender shot file…']]],
 };
 function shelf(group, menu, labels) {
@@ -1313,12 +1304,11 @@ function buildPanel() {
     c.append(libraryBrowser(libCtx(), { cats: SUBS.library(), cat: s, noChips: true, side: true }));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('span', { class: 'hint', id: 'models-info', style: 'flex:1' }, ''), h('button', { title: 'Convert every set, prop and scenery piece now, so they all show at once later (about a minute in Blender)', onclick: () => api('stage-models', { all: true }).then(r => toast(`Making ${r.pending.length} 3D models in the background`, 4000)).catch(e => toast(e.message)) }, 'Make 3D models for the whole library')));
     api('models-info').then(r => { const el = $('#models-info'); if (el) el.textContent = `${r.models} pieces ready to show in the 3D view${r.queued ? `, ${r.queued} being made` : ''}.`; }).catch(() => {});
-  } else if (tab === 'story') {
-    c.append(h('div', { class: 'ws three' }, ...shelves('story:' + s).map(x => h('div', { class: 'col' }, x))));
   } else if (tab === 'carousel') {
     c.append(carouselPanel(carCtx()));
   } else if (tab === 'render') {
-    if (s === 'blender') {
+    if (s === 'post') c.append(h('div', { class: 'ws three' }, ...shelves('render:post').map(x => h('div', { class: 'col' }, x))));
+    else if (s === 'blender') {
       c.append(h('div', { class: 'ws three' }, h('div', { class: 'col' }, h('h3', {}, 'Blender location'), h('div', { class: 'row' }, h('span', { id: 'blender-path', class: 'hint', style: 'flex:1;overflow-wrap:anywhere' }, '…'), h('button', { onclick: pickBlender }, 'Change…'))),
         h('div', { class: 'col' }, autosavePanel()), h('div', { class: 'col' }, ...shelves('render:blender'))));
       api('settings', {}).then(st => { const el = $('#blender-path'); if (el) el.textContent = st.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
@@ -1980,7 +1970,7 @@ function drawTracks() {
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave])));
   const ret = S2.retentionLane(h, scene, sceneStart(), project.length, ppf);
-  if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (Story › Import retention CSV). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));
+  if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (story2 MCP tool, action retention). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));
   // what is placed in the shot: drag a piece along to change when it appears
   if (project.items?.length) {
     const sel = stage?.selected?.type === 'item' ? stage.selected.index : -1;
@@ -2501,6 +2491,8 @@ function loop() {
   $('#shot-name').addEventListener('change', e => { scene.name = e.target.value; dirty = true; });
   new ResizeObserver(() => { if (!window.__fixedSize) { layout(); drawTracks(); } }).observe($('#canvas-wrap'));
   refreshAll();
+  // the library loads at start-up, so the Stage tab's sets, outfits and items are there on first open
+  loadLibrary(api).then(() => { if (['stage', 'library', 'animate', 'face'].includes(tab)) buildPanel(); apply(); }).catch(() => {});
   if (scene.audio?.path) loadAudio(api, scene.audio.path).then(drawTracks).catch(() => {});
   window.ds3dLibraryExtra = () => EXTRA.map(({ ask, def, ...r }) => r);
   window.ds3d = {

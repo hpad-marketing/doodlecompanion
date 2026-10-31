@@ -145,6 +145,7 @@ export function setPanel(ctx) {
   const { h } = ctx;
   const scene = ctx.scene(), project = ctx.project(), st = stageOf(scene, project), rows = libraryRows();
   const re = () => ctx.rebuild();
+  if (!rows.length) loadLibrary(ctx.api).then(re);
   const scope = h('div', { class: 'chips' }, h('button', { 'aria-pressed': String(!ui.shotOnly), onclick: () => { ui.shotOnly = false; re(); }, title: 'Changes apply to every shot' }, 'Whole scene'),
     h('button', { 'aria-pressed': String(ui.shotOnly), onclick: () => { ui.shotOnly = true; re(); }, title: 'Changes apply to this shot only, on top of the scene' }, `${project.code} only`));
   const chars = h('div', { class: 'char-cards', role: 'list' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String((scene.character || 'bunny') === id), title: `Make the ${n} the lead character`, onclick: () => ctx.setCharacter(id) }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, n))));
@@ -164,7 +165,8 @@ export function setPanel(ctx) {
     grid.replaceChildren(h('button', { class: 'libx-card', 'aria-pressed': String(!st.set), onclick: () => { setStage(ctx, { set: null }, ui.shotOnly); re(); }, title: 'No set: the plain mustard backdrop' }, h('span', { class: 'pic' }, h('span', { class: 'glyph' }, '▢')), h('span', {}, 'Plain backdrop')),
       ...sets.filter(r => words.every(w => (r.name + ' ' + r.sub + ' ' + (r.tags || []).join(' ')).toLowerCase().includes(w))).map(r =>
         h('button', { class: 'libx-card', 'aria-pressed': String(st.set === roomOf(r)), title: `${r.name} · ${r.sub}. Click to build it in the 3D view.`, onclick: () => { setStage(ctx, { set: roomOf(r) }, ui.shotOnly); re(); } },
-          h('span', { class: 'pic' }, picture(h, r)), h('span', {}, r.name), h('small', {}, r.sub || ''))));
+          h('span', { class: 'pic' }, picture(h, r)), h('span', {}, r.name), h('small', {}, r.sub || ''))),
+      ...(rows.length ? [] : [h('p', { class: 'hint' }, 'Loading the library…')]));
   };
   q.addEventListener('input', () => { ui.setQ = q.value; fill(); });
   fill();
@@ -188,6 +190,7 @@ export function wardrobePanel(ctx) {
   const { h } = ctx;
   const scene = ctx.scene(), project = ctx.project(), st = stageOf(scene, project), rows = libraryRows(), lib = ctx.lib?.();
   const re = () => ctx.rebuild();
+  if (!rows.length) loadLibrary(ctx.api).then(re);
   const outfits = rows.filter(r => r.category === 'outfit'), accs = rows.filter(r => r.category === 'accessory');
   const card = (r, on, fn, title) => h('button', { class: 'libx-card', 'aria-pressed': String(on), onclick: fn, title }, h('span', { class: 'pic' }, picture(h, r)), h('span', {}, r?.name || 'None'));
   return h('div', { class: 'ws three' },
@@ -210,6 +213,7 @@ export function wardrobePanel(ctx) {
 export function itemsPanel(ctx) {
   const { h } = ctx;
   const project = ctx.project(), rows = libraryRows(), items = project.items || [];
+  if (!rows.length) loadLibrary(ctx.api).then(() => ctx.rebuild());
   const selIdx = ctx.selectedItem();
   const list = h('div', { class: 'item-list' });
   if (!items.length) list.append(h('p', { class: 'hint' }, 'Nothing added yet. Add props, scenery, effects, reactions and storytime pieces from the Library tab: they show in the 3D view at once.'));

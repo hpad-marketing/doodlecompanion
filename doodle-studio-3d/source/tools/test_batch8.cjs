@@ -49,11 +49,6 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   st = await ev(() => ds3d.stage());
   ok(r.mood === 'scary' && st.stage.time === 'night', 'scary mood sets night light');
   ok(await p.locator('.shot-chip[style*="box-shadow"]').count() === 1, 'mood colour on the shot chip');
-  await p.click('#menubar .menu > button:text-is("Story")');
-  await p.click('#menubar .menu-list button:has-text("Mood strip")');
-  ok(await p.locator('.mood-strip .mood-swatch').count() === 2, 'mood strip dialog shows each shot');
-  await p.screenshot({ path: path.join(out, 'mood-strip.png') });
-  await ev(() => document.querySelectorAll('.ds-modal').forEach(m => m.remove()));
 
   // genre moment
   await ev(() => ds3d.selectShot(1));

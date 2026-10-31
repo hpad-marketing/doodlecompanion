@@ -7,6 +7,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { outlineVS, outlineFS, INK, MUSTARD } from './viewport.js';
 import { glyphOf } from './libview.js';
 
@@ -22,6 +26,19 @@ const FX = {
   dust: { kind: 'rise', n: 80, speed: 0.08, dot: 0.012 }, sparkles: { kind: 'twinkle', n: 40, dot: 0.03 }, fireworks: { kind: 'burst', n: 120, speed: 1.6, high: 1.8 }, poof: { kind: 'burst', n: 40, speed: 0.5, dot: 0.06 },
   sparkle_burst: { kind: 'burst', n: 50, speed: 0.9, dot: 0.03, high: 0.6 },
 };
+const STAGE_BIAS = 1.2;            // outline push behind a set piece, in ink widths
+const CREASE_DEG = 32;            // edges sharper than this get a line, as the library's crease lines in Blender
+// Viewport-only shape shading: faces turned away from a light over the camera's shoulder go a
+// step darker, so a shape reads from any angle. Two flat bands, no gradients; the render is untouched.
+const fillVS = `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const fillFS = `uniform vec3 base; uniform vec3 ink; uniform float shade; varying vec3 vN;
+void main(){
+  vec3 n = normalize(gl_FrontFacing ? vN : -vN);
+  float l = dot(n, normalize(vec3(-0.45, 0.55, 0.70)));
+  float k = l < 0.12 ? shade : (l < 0.5 ? shade * 0.45 : 0.0);
+  gl_FragColor = vec4(mix(base, ink, k), 1.0);
+#include <colorspace_fragment>
+}`;
 const rnd = s => { let x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
 
 export class Stage {
@@ -36,7 +53,18 @@ export class Stage {
     this.selected = null;         // { type: 'item', index } | { type: 'piece', id } | { type: 'bunny' }
     this.waiting = new Set(); this.polling = false;
     this.inkMats = { mustard: new THREE.MeshBasicMaterial({ color: MUSTARD }), ink: new THREE.MeshBasicMaterial({ color: INK }), room: new THREE.MeshBasicMaterial({ color: MUSTARD, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), line: new THREE.LineBasicMaterial({ color: INK }) };
-    this.outline = new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: view.outlineUniforms, side: THREE.BackSide });
+    // set pieces sit on the floor: a smaller push behind keeps their outline above the ground (Bunny's own stays as it is)
+    this.outline = new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: { ...view.outlineUniforms, bias: { value: STAGE_BIAS } }, side: THREE.BackSide });
+    // fills: flat mustard, or two-band shape shading (View › Shape shading, 3D view only)
+    this.shadeU = { value: 0 };
+    this.fill = new THREE.ShaderMaterial({ vertexShader: fillVS, fragmentShader: fillFS, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+      uniforms: { base: { value: MUSTARD.clone() }, ink: { value: INK.clone() }, shade: this.shadeU } });
+    this.setShading(ctx.shading ? ctx.shading() : true);
+    // crease and border lines: one ink width on screen, the same width as Bunny's outline
+    this.lineMat = new LineMaterial({ color: INK.getHex(), linewidth: 4, worldUnits: false });
+    this.lineMat.polygonOffset = true; this.lineMat.polygonOffsetFactor = -1; this.lineMat.polygonOffsetUnits = -2;
+    const U = view.outlineUniforms;
+    this.inkSync = () => { this.lineMat.resolution.copy(U.res.value); this.lineMat.linewidth = U.inkPx.value; };
     this.gizmo = new TransformControls(view.camera, view.canvas);
     this.gizmo.setSize(0.85);
     this.helper = this.gizmo.getHelper();
@@ -110,17 +138,44 @@ export class Stage {
     meshes.forEach(o => {
       const ink = (Array.isArray(o.material) ? o.material : [o.material]).every(m => m?.userData?.ds_ink || /ink/i.test(m?.name || ''));
       if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
-      if (inShell(o)) {
-        // the room is seen from inside: walls and floor show both faces, drawn lines on their edges
-        o.material = ink ? this.inkMats.ink : this.inkMats.room;
-        if (!ink) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30), this.inkMats.line); e.userData.isInk = true; e.raycast = () => {}; o.add(e); }
-        return;
-      }
-      o.material = ink ? this.inkMats.ink : this.inkMats.mustard;
-      if (!ink && !o.userData.noInk) { const line = new THREE.Mesh(o.geometry, this.outline); line.userData.isInk = true; line.raycast = () => {}; o.add(line); }
+      const shell = inShell(o);
+      o.material = ink ? this.inkMats.ink : shell ? this.inkMats.room : this.fill;
+      if (o.userData.noInk) return;
+      const { hull, edges } = this.inkGeometry(o.geometry, shell);
+      // silhouette: the screen-constant hull, on smooth normals so it never cracks at hard
+      // edges (cracked hulls were the uneven thick and thin lines). Ink parts get it too, as in Blender.
+      if (!shell) { const line = new THREE.Mesh(hull, this.outline); line.userData.isInk = true; line.raycast = () => {}; o.add(line); }
+      // creases and open borders as lines one ink wide: flat shapes (a far moon, a flag) keep their edge
+      if (edges && !ink) o.add(this.inkLines(edges));
     });
     return g;
   }
+
+  // the hull (smooth normals, welded) and the crease/border edges of a model's geometry, cached per geometry
+  inkGeometry(geo, shell) {
+    this.inkCache ||= new WeakMap();
+    let c = this.inkCache.get(geo);
+    if (c) return c;
+    const pos = new THREE.BufferGeometry();
+    pos.setAttribute('position', geo.attributes.position);
+    if (geo.index) pos.setIndex(geo.index);
+    const welded = mergeVertices(pos, 1e-4);
+    welded.computeVertexNormals();
+    const e = new THREE.EdgesGeometry(welded, CREASE_DEG);
+    const arr = e.attributes.position.array;
+    c = { hull: shell ? null : welded, edges: arr.length ? arr : null };
+    e.dispose();
+    this.inkCache.set(geo, c);
+    return c;
+  }
+  inkLines(arr) {
+    const g = new LineSegmentsGeometry(); g.setPositions(arr);
+    const l = new LineSegments2(g, this.lineMat);
+    l.userData.isInk = true; l.raycast = () => {};
+    l.onBeforeRender = this.inkSync;
+    return l;
+  }
+  setShading(on) { this.shading = !!on; this.shadeU.value = on ? 0.2 : 0; }
 
   // ---------------------------------------------------------------- what is on stage this frame
   // st: stageOf(scene, shot); items: shot.items; f: frame; rows: library rows by id

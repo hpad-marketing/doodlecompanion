@@ -9,6 +9,7 @@ const FLOOR_PART = /_(leg|pelvis|shirt|hand|cuff)\.?[LR]?$/;   // what can reach
 export const INK = new THREE.Color('#1F1F1D');
 export const MUSTARD = new THREE.Color('#E0A64B');
 const INK_PX_1920 = 12.73;          // Blender's outline width on a 1920 px tall frame
+const MIN_INK_PX = 3;               // the ink never gets thinner than this many screen pixels in the 3D view
 const DEPTH_BIAS = 4.5;              // outline pushed away from the camera by this many ink widths
 
 export const outlineVS = `
@@ -372,7 +373,7 @@ export class Viewport {
     const [w, h] = this.size || [this.canvas.width, this.canvas.height];
     const pr = this.renderer.getPixelRatio();
     this.outlineUniforms.res.value.set(w * pr, h * pr);
-    this.outlineUniforms.inkPx.value = INK_PX_1920 * (h * pr / 1920) * this.inkScale;
+    this.outlineUniforms.inkPx.value = Math.max(MIN_INK_PX * pr, INK_PX_1920 * (h * pr / 1920) * this.inkScale);
     // face strokes: same screen width as the outline at the head's distance
     const headDist = this.camera.position.distanceTo(new THREE.Vector3(0, -0.3, 0.55));
     const wpp = 2 * headDist * Math.tan(this.camera.fov * Math.PI / 360) / (h * pr);
