@@ -3,11 +3,11 @@
 // recorded voice, mouth keys only inside the line, captions tagged and replaced), then the app
 // itself (Babble button, dialog, add/remove, Undo, voice dials, MCP-shaped ds3d.babble).
 // Run: node tools/test_babble.cjs
-const path = require('path'), fs = require('fs'), { spawn } = require('child_process');
+const path = require('path'), fs = require('fs'), { spawn } = require('child_process'), { pathToFileURL } = require('url');
 const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
 (async () => {
-  const B = await import(path.join(__dirname, '..', 'app', 'src', 'babble.js'));
-  const S = await import(path.join(__dirname, '..', 'app', 'src', 'babblescene.js'));
+  const B = await import(pathToFileURL(path.join(__dirname, '..', 'app', 'src', 'babble.js')).href);
+  const S = await import(pathToFileURL(path.join(__dirname, '..', 'app', 'src', 'babblescene.js')).href);
   const line = 'Hi there! Did you see my new doodle? I drew it all by myself.';
   const a = B.speak(line, B.voiceFor('bunny')), b = B.speak(line, B.voiceFor('bunny'));
   ok(a.samples.length === b.samples.length && a.samples.every((x, i) => x === b.samples[i]), 'same line, same voice → identical sound');

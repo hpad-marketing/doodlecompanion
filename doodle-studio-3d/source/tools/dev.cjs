@@ -15,7 +15,7 @@ const mirror = require('../host/mirror.cjs')({ appDir: path.join(__dirname, '..'
   blendFor: s => (s.character && s.character !== 'bunny' ? path.join(__dirname, '..', 'host', 'blender', 'chars', s.character + '.blend') : path.join(__dirname, '..', 'host', 'blender', 'Bunny3D_v2.blend')),
   withMaster: s => s, folders: n => { const work = path.join(out, 'DeepInDoodles', String(n || 'scene'), 'work'); fs.mkdirSync(work, { recursive: true }); return { work }; },
   env: () => ({ DSL_LIBRARY: libDir(), DSL_BUNNY: path.join(__dirname, '..', 'host', 'blender') }) });
-start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models: () => path.join(out, 'models') }, port: PORT, api: { ...mirror.api,
+start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models: () => path.join(out, 'models') }, port: PORT, mcp: require('../host/mcp.cjs')({ call: async () => { throw Error('dev server: no app window to drive'); }, api: {} }), api: { ...mirror.api,
   save: ({ project, path: p }) => { const f = p || path.join(out, (project.name || 'shot') + '.ds3d.json'); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
   open: () => ({}),
   'save-at': ({ project, path: p }) => { const f = p.endsWith('.ds3d') ? p : p + '.ds3d'; fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },

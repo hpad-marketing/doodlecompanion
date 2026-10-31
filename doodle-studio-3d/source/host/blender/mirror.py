@@ -89,6 +89,7 @@ def _pusher():
                 break
         try:
             _post('mirror-push', {'token': S['token'], 'msgs': batch}, 10)
+            S['connected'] = True
         except Exception:
             time.sleep(0.5)
 
@@ -234,7 +235,7 @@ def remember_layout(shot):
     for o in _pieces():
         xf = pieces.get(o['dsl_prop']) or {}
         at, rot, sc = Vector(xf.get('at') or (0, 0, 0)), math.radians(float(xf.get('rot') or 0)), float(xf.get('scale') or 1)
-        S['piece_base'][o.name] = (o.location - at, o.rotation_euler.z - rot, o.scale / sc)
+        S['piece_base'][o.name] = (o.location - at, o.rotation_euler.z - rot, o.scale / sc, (o.rotation_euler.x, o.rotation_euler.y))
     for pid in {o['dsl_prop'] for o in _pieces()}:
         xf = pieces.get(pid) or {}
         at = Vector(xf.get('at') or (0, 0, 0))
@@ -267,6 +268,7 @@ def place_pieces(shot):
         xf = pieces.get(o['dsl_prop']) or {}
         at, rot, sc = Vector(xf.get('at') or (0, 0, 0)), math.radians(float(xf.get('rot') or 0)), float(xf.get('scale') or 1)
         o.location = b[0] + at
+        o.rotation_euler.x, o.rotation_euler.y = b[3]
         o.rotation_euler.z = b[1] + rot
         o.scale = b[2] * sc
         for c in _on(o['dsl_prop']):
@@ -458,7 +460,7 @@ def detect():
     cur = frame_values(new['frame'])
     if new['bones'] != old['bones'] or new['arm'] != old['arm']:
         vals = rig_values(ctx)
-        changed = {k: round(v, 3) for k, v in vals.items() if abs(float(cur.get(k, 0 if k != 's' else 1)) - v) > EPS_DEG}
+        changed = {k: round(v, 3) for k, v in vals.items() if abs(float(cur.get(k, 0 if k != 's' else 1)) - v) > (1e-3 if k in ('depth', 's') else EPS_DEG)}
         if changed:
             msg['values'] = changed
     if new['cam'] != old['cam']:
@@ -582,9 +584,7 @@ def apply_incoming():
     if not busy and not playing and S['pending_shot']:
         m, S['pending_shot'] = S['pending_shot'], None
         try:
-            rebake(m['shot'])
-            if m.get('f') is not None:
-                bpy.context.scene.frame_set(int(m['f']) + 1)
+            rebake(m['shot'])   # the playhead has its own messages: this shot's frame may be stale
         except Exception as e:
             log(f'could not update the keys: {e}')
         took = True
@@ -602,16 +602,21 @@ def tick():
             return None
         if S['rebuild']:
             return TICK
+        modal = _modal_running()
+        if S.get('was_modal') and not modal:
+            S['last_local'] = time.time()   # what the drag left is read and answered first
+        S['was_modal'] = modal
         apply_incoming()
         if S['rebuild']:
             return TICK
-        if not _modal_running() and S['snap'] is not None and S.get('dirty_layout'):
-            S['dirty_layout'] = False
-            settle()
         before = S['last_local']
         detect()
         if S['last_local'] != before:
             S['dirty_layout'] = True
+        # after detect: settle() takes a new snapshot, and what a drag left (a cancel) must be sent first
+        if not modal and S['snap'] is not None and S.get('dirty_layout'):
+            S['dirty_layout'] = False
+            settle()
         redraw_header()
     except Exception as e:
         log(f'tick: {e}')
@@ -654,6 +659,21 @@ def _run_bridge_timer():
     return None
 
 
+def _rebuild_failed(ctx):
+    """Save must not reach the clean file that is open now, and the old objects are gone."""
+    try:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ctx['out_dir'], 'rebuild_failed.blend'))
+    except Exception as e:
+        log(f'could not leave the clean file: {e}')
+    S['status'] = 'Doodle Studio 3D could not rebuild the shot'
+    log(S['status'])
+    try:
+        _post('mirror-push', {'token': S['token'], 'msgs': [{'t': 'failed'}]}, 5)
+    except Exception:
+        pass
+    S['alive'] = False
+
+
 def _run_bridge():
     import runpy
     import sys
@@ -667,6 +687,9 @@ def _run_bridge():
         log(f'rebuild: {e}')
     fr = (S['rebuild'] or {}).get('frame')
     S['rebuild'] = None
+    if S['ctx'] is ctx:     # start() never ran again: the build stopped before the link came back
+        _rebuild_failed(ctx)
+        return None
     if fr is not None:
         bpy.context.scene.frame_set(int(fr) + 1)
     S['snap'] = snapshot()
@@ -717,6 +740,11 @@ def start(ctx):
     S['ctx'] = ctx
     S['url'], S['token'] = ctx['url'], ctx['token']
     remember_layout(ctx['shot'])
+    for name in ds_map.BONE_MAP.values():
+        b = ctx['arm'].pose.bones.get(name)
+        if b is not None:
+            b.lock_location = (True, True, True)
+            b.lock_scale = (True, True, True)
     S['snap'] = None
     if not S['threads']:
         S['threads'] = True

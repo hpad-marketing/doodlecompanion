@@ -93,6 +93,7 @@ function handle(m) {
   if (m.t === 'hello') { connected = true; info = { ...info, blender: m.blender }; C.toast(`Blender ${m.blender} is live: move, turn or pose things on either side`, 5000); changed(); return; }
   if (m.t === 'closed') return stop(m.by === 'app' ? null : 'Blender was closed: the live link has ended');
   if (m.t === 'rebuilt') return;
+  if (m.t === 'failed') { C.api('mirror-close', {}).catch(() => {}); return stop('Blender could not rebuild the shot: the live link has ended. See blender.log in the work folder.'); }
   if (m.t === 'frame') {
     if (m.f === C.frame()) return;
     fromBlender++;
