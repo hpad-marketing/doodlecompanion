@@ -1,8 +1,8 @@
 {
- "version": "20261031-184100",
- "notes": "Stage 3D view: even ink lines on every set piece (no more thick and thin), edge lines so flat shapes like the moon and the flag read clearly, a 3 px minimum line, and View › Shape shading (3D view only, renders stay flat). The library loads at start-up, so Stage shows its sets on first open. The Story tab and Story menu are removed; captions, music, look, cut-ins and the voice tools are in the new Post menu and Render › Captions, music & look.",
+ "version": "20261031-200343",
+ "notes": "Open in Blender: the shot opens in a full Blender window and stays live both ways (moves, turns, poses, camera, playhead; a new prop or set rebuilds it in about 2 s; Blender works on its own copy in work\\blender-live). Babble voice: type a line and Bunny, Koala or Frog speaks it as cute gibberish with lip sync and a caption (File › Babble voice, Face › Voice). SVG import and drawings: import an SVG or draw on the screen; it draws on, boils with noise and sits on its own layer, over the screen or in the 3D scene (Stage › Drawings). Also includes the stage view fixes, built-in rules and floor fixes from today.",
  "runtime": "44.9.0",
- "published": "2026-10-31T18:39:31.580Z",
+ "published": "2026-10-31T20:03:44.049Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -10,14 +10,19 @@
    "gz": "files/527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "bd546a1d7eeac7c07ca8d7f08d2cdc095fd37c18ee02c5dfbc775ac868fa2462",
-   "size": 27387,
-   "gz": "files/bd546a1d7eeac7c07ca8d7f08d2cdc095fd37c18ee02c5dfbc775ac868fa2462.gz"
+   "sha256": "fbd677be5258713a6722a7f642a12741cbc335b699658f1ba25bad943d8329ae",
+   "size": 28216,
+   "gz": "files/fbd677be5258713a6722a7f642a12741cbc335b699658f1ba25bad943d8329ae.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "010f45b0ba6ab0f368276f314776240cf9d9bfe76e4e74bff3ffb772e707c464",
-   "size": 39723,
-   "gz": "files/010f45b0ba6ab0f368276f314776240cf9d9bfe76e4e74bff3ffb772e707c464.gz"
+   "sha256": "7f37aaa4fbc873460e2a7fdc0f932ac6e2e7e05bb4c47ae4ecce6ad274f1fa18",
+   "size": 43825,
+   "gz": "files/7f37aaa4fbc873460e2a7fdc0f932ac6e2e7e05bb4c47ae4ecce6ad274f1fa18.gz"
+  },
+  "resources/app/mirror.cjs": {
+   "sha256": "9d2afae4530af257e78b36666abfbf31c028456624871da018c5980901f65127",
+   "size": 7003,
+   "gz": "files/9d2afae4530af257e78b36666abfbf31c028456624871da018c5980901f65127.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "83447e61d8ef68b6b6f3386f78a77efb56bdc7bafdc4dba22e026f52802c821c",
@@ -35,9 +40,9 @@
    "gz": "files/5add752336180af8751f6dd34a5972d43ae8902d52c2b5ac6eb9a6d0413db99c.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103",
-   "size": 20408,
-   "gz": "files/648a8d9034f104e712d4dfdc96a37bf5451b5824e7cc82322cce20ee0ecb1103.gz"
+   "sha256": "141533d72503687bbe5db019400ff2d249aaa4604a21f99ce7b27477004c6c96",
+   "size": 20612,
+   "gz": "files/141533d72503687bbe5db019400ff2d249aaa4604a21f99ce7b27477004c6c96.gz"
   },
   "resources/app/server.cjs": {
    "sha256": "841400db7129961c481dcac6cafb508731483a76262471832c122a590891a5d8",
@@ -60,14 +65,19 @@
    "gz": "files/60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8.gz"
   },
   "resources/app/blender/ds_bridge.py": {
-   "sha256": "f7c322b8377f9faf10e94848afbd0022fd8d1fa7ea64b14e6e803326be0b0cd4",
-   "size": 20154,
-   "gz": "files/f7c322b8377f9faf10e94848afbd0022fd8d1fa7ea64b14e6e803326be0b0cd4.gz"
+   "sha256": "6199d3702de6ea6d47c8e5f6d44e008ab9ed0f1595ae1df2c731dbe260448430",
+   "size": 22025,
+   "gz": "files/6199d3702de6ea6d47c8e5f6d44e008ab9ed0f1595ae1df2c731dbe260448430.gz"
   },
   "resources/app/blender/ds_concat.py": {
-   "sha256": "7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f",
-   "size": 7347,
-   "gz": "files/7d2184875011ebd090fb89bff291c97d76ba8ed640a7206da05b7adf284c580f.gz"
+   "sha256": "077be628a809916a780a89820b3b3796eeb68720f1bb93ba6fdb5c4ccb42c9fa",
+   "size": 7620,
+   "gz": "files/077be628a809916a780a89820b3b3796eeb68720f1bb93ba6fdb5c4ccb42c9fa.gz"
+  },
+  "resources/app/blender/mirror.py": {
+   "sha256": "190e3a56fbe9f2eac6406a1cfc7f4a268fc953ec0d285613dea288110e3c9f98",
+   "size": 29569,
+   "gz": "files/190e3a56fbe9f2eac6406a1cfc7f4a268fc953ec0d285613dea288110e3c9f98.gz"
   },
   "resources/app/blender/preview_export.py": {
    "sha256": "c6502f061afb5ce5c5c70d4f394ae107f7ea439ab9f86206ee6468b1b620b11e",
@@ -75,9 +85,9 @@
    "gz": "files/c6502f061afb5ce5c5c70d4f394ae107f7ea439ab9f86206ee6468b1b620b11e.gz"
   },
   "resources/app/blender/stage.py": {
-   "sha256": "aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e",
-   "size": 11518,
-   "gz": "files/aacb1d1a12101cfb34f37cec7780646593831d928cf9da3b8fab5578232c085e.gz"
+   "sha256": "71cca28af16ca62fe63959a4cc48cea0ad433ab2754453da7055f9a8ec90793a",
+   "size": 12196,
+   "gz": "files/71cca28af16ca62fe63959a4cc48cea0ad433ab2754453da7055f9a8ec90793a.gz"
   },
   "resources/app/ui/bunny3d.json": {
    "sha256": "2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746",
@@ -85,9 +95,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "d639e3778673f512ce7b0a78da985b2165653dfb5ded5d14464207736d21ba61",
-   "size": 43199,
-   "gz": "files/d639e3778673f512ce7b0a78da985b2165653dfb5ded5d14464207736d21ba61.gz"
+   "sha256": "dc239f83f8bb85aef879c46749afe1e168b8535ae6a79612c100f3d3441e64c9",
+   "size": 47651,
+   "gz": "files/dc239f83f8bb85aef879c46749afe1e168b8535ae6a79612c100f3d3441e64c9.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -95,9 +105,9 @@
    "gz": "files/c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd.gz"
   },
   "resources/app/ui/index.html": {
-   "sha256": "c5e09307a2cdf4a77ff22829d5ae20b74a8c6ce1ea1c89420b60d2db2282b2ab",
-   "size": 2967,
-   "gz": "files/c5e09307a2cdf4a77ff22829d5ae20b74a8c6ce1ea1c89420b60d2db2282b2ab.gz"
+   "sha256": "2f38121f81846abfb12f11061a1efb2beb88f6c139f6e56d438fefc74c4dcd6d",
+   "size": 2999,
+   "gz": "files/2f38121f81846abfb12f11061a1efb2beb88f6c139f6e56d438fefc74c4dcd6d.gz"
   },
   "resources/app/blender/chars/frog.blend": {
    "sha256": "9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f",
@@ -128,6 +138,11 @@
    "sha256": "0ebf3b0ffb0291b37937bff85e2def11f41c5324cf7ba19684efafb6431a4e56",
    "size": 19978,
    "gz": "files/0ebf3b0ffb0291b37937bff85e2def11f41c5324cf7ba19684efafb6431a4e56.gz"
+  },
+  "resources/app/blender/lib/drawings.py": {
+   "sha256": "b988a78ffcbaf9cb0b2e58b54943da39e258bebb2517a1d12e867968de638e13",
+   "size": 6828,
+   "gz": "files/b988a78ffcbaf9cb0b2e58b54943da39e258bebb2517a1d12e867968de638e13.gz"
   },
   "resources/app/blender/lib/ds_map.py": {
    "sha256": "39df59a73ea7a3d69a1c715a4347e12cebc7a6ca6d2b293948df78e3a42e4a8a",
@@ -225,9 +240,19 @@
    "gz": "files/52d988e824f1cac23c0b63f59800356e09f996c264545b73a7a1d85e698bc50c.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "cbe862fc2b5afefd8f8b82189089edcf3b5937672e5a4fda0672c0e4ad80d982",
-   "size": 8871,
-   "gz": "files/cbe862fc2b5afefd8f8b82189089edcf3b5937672e5a4fda0672c0e4ad80d982.gz"
+   "sha256": "d01ac0e7553e66b50b169139ab29250581d4a4d5fcc6d9831c39fa416be88276",
+   "size": 9797,
+   "gz": "files/d01ac0e7553e66b50b169139ab29250581d4a4d5fcc6d9831c39fa416be88276.gz"
+  },
+  "resources/app/ui/src/babble.js": {
+   "sha256": "e51892e645c0d887c82ea2f588deff6116041c51f2390159183c75373125620a",
+   "size": 13310,
+   "gz": "files/e51892e645c0d887c82ea2f588deff6116041c51f2390159183c75373125620a.gz"
+  },
+  "resources/app/ui/src/babblescene.js": {
+   "sha256": "e3a226d58ca13dc63517c7eb8c4cc72081e01c59189888788c25318e50f0e9e0",
+   "size": 6369,
+   "gz": "files/e3a226d58ca13dc63517c7eb8c4cc72081e01c59189888788c25318e50f0e9e0.gz"
   },
   "resources/app/ui/src/camera-presets.js": {
    "sha256": "8ddf6f87945fc930f68c375670598daf18fd3a2585d7ae32fe73b4521571921f",
@@ -243,6 +268,16 @@
    "sha256": "b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4",
    "size": 3464,
    "gz": "files/b85370ff7a9a32e7068a7c9b4f54d3606b47e0ed6c3bf2c9ae0db13d4b6a37d4.gz"
+  },
+  "resources/app/ui/src/drawings.js": {
+   "sha256": "002e793ba43548a7272c46f37bc98573a722b1115dd5e6025e7f151eb7b7d818",
+   "size": 14990,
+   "gz": "files/002e793ba43548a7272c46f37bc98573a722b1115dd5e6025e7f151eb7b7d818.gz"
+  },
+  "resources/app/ui/src/drawings3d.js": {
+   "sha256": "c9a78aefc71f773562ac61d775b8fa9b17d9d65565ab58f6d5571381ae2d3756",
+   "size": 2969,
+   "gz": "files/c9a78aefc71f773562ac61d775b8fa9b17d9d65565ab58f6d5571381ae2d3756.gz"
   },
   "resources/app/ui/src/features2.js": {
    "sha256": "1772ca3b12f9c52342b432652531a1c40b57bb8ed3783c172abb0bd0128bdef2",
@@ -265,9 +300,14 @@
    "gz": "files/a534013e32c4997fac5841acd5d3fd8ecd4b0c1bb4d13aaa5648a6cd20b44ea5.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "ff394383b9d6fa707bb3acb4009271536c67b12188b8dd970f644bc0947237a3",
-   "size": 235762,
-   "gz": "files/ff394383b9d6fa707bb3acb4009271536c67b12188b8dd970f644bc0947237a3.gz"
+   "sha256": "385c4038aff9f63fa2ccaaddda1edeba188bd0b2469310c87298853e8a8f5a3c",
+   "size": 263099,
+   "gz": "files/385c4038aff9f63fa2ccaaddda1edeba188bd0b2469310c87298853e8a8f5a3c.gz"
+  },
+  "resources/app/ui/src/mirror.js": {
+   "sha256": "a5ff40b16713669bb4b374a0fd773c8903c65cf433fb494e06ac2f70f7519fa6",
+   "size": 6086,
+   "gz": "files/a5ff40b16713669bb4b374a0fd773c8903c65cf433fb494e06ac2f70f7519fa6.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -290,9 +330,9 @@
    "gz": "files/64a23aa38697e327018da7845f40f37ccb60e7f44fd08afbc946a23824c80572.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "ac32acdc5a7f807614b7f69060afb6d71e22f1be4506cb4bd0a2475032c5b4c2",
-   "size": 9288,
-   "gz": "files/ac32acdc5a7f807614b7f69060afb6d71e22f1be4506cb4bd0a2475032c5b4c2.gz"
+   "sha256": "4fb6c3decc0b9eab02b9a32ee3336dcc9c1700727ada99afe2717d4aeff7af5c",
+   "size": 9519,
+   "gz": "files/4fb6c3decc0b9eab02b9a32ee3336dcc9c1700727ada99afe2717d4aeff7af5c.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "8db8385060ab57543ae451032eb9f265b6ea099a1fd62e2554010ce6100c7313",
@@ -315,14 +355,14 @@
    "gz": "files/6168240606ba8bf25cab714893dc6e75626c36ec82fec2d607d92c1d77661f16.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "c5e7a0e91a7a50dd22056876dd396d426d527829de4c8b54fb2eb5cdb47d78be",
-   "size": 14405,
-   "gz": "files/c5e7a0e91a7a50dd22056876dd396d426d527829de4c8b54fb2eb5cdb47d78be.gz"
+   "sha256": "acca1face7846eba54333220137c6fd73dc6b0382d2e2105d5ba90a7365c4a47",
+   "size": 14420,
+   "gz": "files/acca1face7846eba54333220137c6fd73dc6b0382d2e2105d5ba90a7365c4a47.gz"
   },
   "resources/app/ui/src/ux2d.css": {
-   "sha256": "ce0eb654ca2beb94114e78102dd658c3f6f8265289c9080970c43f59e9b3483c",
-   "size": 13733,
-   "gz": "files/ce0eb654ca2beb94114e78102dd658c3f6f8265289c9080970c43f59e9b3483c.gz"
+   "sha256": "f4bc36ff73794efc7568aa6e56b40c5845044df54f019c718d0a0c6cf74c84cd",
+   "size": 14748,
+   "gz": "files/f4bc36ff73794efc7568aa6e56b40c5845044df54f019c718d0a0c6cf74c84cd.gz"
   },
   "resources/app/ui/src/ux2d.js": {
    "sha256": "0f8e247a13d77a13c06255e4a553801493f97ab09fa7ad4f12490b89945bce5b",
