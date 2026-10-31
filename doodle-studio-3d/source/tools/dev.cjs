@@ -8,7 +8,14 @@ const libDir = () => process.env.DSL_LIBRARY || path.join(__dirname, '..', '..',
 // 3D view models: DS3D_BPY is a Python with the bpy module (pip install bpy), standing in for Blender
 const models = require('../host/models.cjs')({ libraryDir: libDir, cacheDir: () => path.join(out, 'models'),
   command: (ids, dir) => (process.env.DS3D_BPY ? [process.env.DS3D_BPY, [path.join(__dirname, '..', 'host', 'blender', 'preview_export.py'), '--', libDir(), dir, ...ids]] : null) });
-start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models: () => path.join(out, 'models') }, port: Number(process.argv[2] || 54190), api: {
+// Open in Blender: a bpy stand-in for the Blender window (fakeblender_live.sh) when DS3D_BPY is set
+const PORT = Number(process.argv[2] || 54190);
+const mirror = require('../host/mirror.cjs')({ appDir: path.join(__dirname, '..', 'host'), port: PORT,
+  blender: () => process.env.DS3D_BLENDER || (process.env.DS3D_BPY ? path.join(__dirname, 'fakeblender_live.sh') : null),  // DS3D_BLENDER: a real Blender for window tests
+  blendFor: s => (s.character && s.character !== 'bunny' ? path.join(__dirname, '..', 'host', 'blender', 'chars', s.character + '.blend') : path.join(__dirname, '..', 'host', 'blender', 'Bunny3D_v2.blend')),
+  withMaster: s => s, folders: n => { const work = path.join(out, 'DeepInDoodles', String(n || 'scene'), 'work'); fs.mkdirSync(work, { recursive: true }); return { work }; },
+  env: () => ({ DSL_LIBRARY: libDir(), DSL_BUNNY: path.join(__dirname, '..', 'host', 'blender') }) });
+start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models: () => path.join(out, 'models') }, port: PORT, mcp: require('../host/mcp.cjs')({ call: async () => { throw Error('dev server: no app window to drive'); }, api: {} }), api: { ...mirror.api,
   save: ({ project, path: p }) => { const f = p || path.join(out, (project.name || 'shot') + '.ds3d.json'); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
   open: () => ({}),
   'save-at': ({ project, path: p }) => { const f = p.endsWith('.ds3d') ? p : p + '.ds3d'; fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
@@ -24,6 +31,7 @@ start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models:
   'open-file': ({ file }) => ({ project: JSON.parse(fs.readFileSync(file, 'utf8')), path: file }), disk: () => ({ root: out, freeGB: 3, totalGB: 100 }),
   'write-file': ({ path: p, data }) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(data, 'base64')); return { path: p }; },
   'pick-image': () => ({ path: process.env.DS3D_IMAGE || null }), 'read-image': ({ path: p }) => ({ data: fs.readFileSync(p).toString('base64'), type: /png$/i.test(p) ? 'image/png' : 'image/jpeg' }),
+  'read-svg': ({ path: p }) => ({ text: fs.readFileSync(p, 'utf8') }),
   'pick-video': () => ({ path: process.env.DS3D_VIDEO || null }), 'ref-video': ({ path: p }) => start.registerRef(p),
   'pick-audio': () => ({ path: process.env.DS3D_AUDIO || null }), 'read-audio': ({ path: p }) => ({ data: fs.readFileSync(p).toString('base64') }),
   'render-estimate': () => ({ full: 2.5, preview: 0.6 }), 'sleep-when-done': ({ on }) => { fs.writeFileSync(path.join(out, 'sleep.json'), JSON.stringify({ on })); return { on }; },

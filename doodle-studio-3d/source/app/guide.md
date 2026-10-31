@@ -137,6 +137,16 @@ The tools and their descriptions are the same whichever assistant connects. This
 
 Each entry covers: **what it does · how (UI / MCP) · where it fits · also try · watch out.** MCP calls are written as `tool action=… {args}`.
 
+### 3.0 Open in Blender (live)
+
+**The shot in a full Blender window, mirrored both ways.** Press **Open in Blender** above the canvas (or Ctrl+B, or Blender › Open in Blender). Blender opens the active shot with its set, props, outfit and camera. While the button reads **● Blender live**, a change on either side shows up on the other within about a tenth of a second.
+- What syncs: Bunny's pose (turn the FK control bones: head, torso, arms, legs, ears, the root for placement and turn, or move the whole rig in Object Mode), the face (expression, gaze, mouth, blink on the face bone), the camera (move or turn it, change its lens), the playhead, props and scenery (move, turn, scale), set pieces (move, turn about Z, scale; anything standing on a piece follows it), and the sun's angle and strength.
+- Keys: a change made in Blender keys at the playhead when Keys is on Auto, the same as a change made in the app. Each burst of Blender edits is one undo step, named "Blender: …".
+- A new prop, another set, another character or another shot rebuilds the Blender scene. This takes a few seconds, and the header reads "rebuilding the shot".
+- Blender works on its own copy, saved in `work\blender-live\<Scene>_<shot>\`. Ctrl+S in Blender saves there and never touches the app's files.
+- Stop: click **● Blender live**, or use Blender › Stop the live Blender link. The Blender window stays open. MCP: `blender_live action=open|status|close`.
+- Watch out: Blender shows the raw pose, without the render's rule nudges (arm in front, props on the floor, face clear), cloth or ear springs. Renders still apply all of them. Values stay inside Bunny's joint limits, so a bone turned past a limit snaps back to it, and a twist the rig has no control for is dropped. IK targets in Blender are not read: pose with the FK bones. Co-stars come across when the shot is rebuilt but are not posed live.
+
 ### 3.1 Characters
 
 **Bunny, the Koala and the Frog.** All three share one rig, so every key, motion, face and camera move carries over. The Koala adds nose controls (`noseWiggle`, `noseSniff`). The Frog's "ears" are rigid eye bumps: ear controls do nothing, and an ear twitch makes the bumps pop.
@@ -360,6 +370,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 
 ### 3.10 Drawing in 3D
 
+- **Drawings layer (Stage › Drawings, File › Import SVG drawing…, Post › Draw on the screen…):** import an SVG or draw by hand, and the lines sit on their own layer, apart from the characters, like the 2D studio's cutaways. Every line and shape outline becomes one ink line at Bunny's weight (fills, text and images are left out; convert text to outlines first). It draws on stroke by stroke over *Draws on over* frames from *Starts at frame*, boils like a hand-drawn line (*Noise*, a new wobble every *Boil every* frames), and can leave at *Gone at frame*. **On the screen** lays it over everything in the render; **In the 3D scene** stands it in the world at *Depth* metres behind the character, facing the camera, so the character can be in front of it. Ink or mustard only. `drawings action=import {svg | path, layer, x, y, size, frame, build, noise, colour}`, `draw {strokes}`, `set`, `place`, `remove`, `list`.
 - **Ink doodles in 3D space:** strokes in frame fractions at a depth, drawn on over N frames. `powers action=doodle {strokes, depth, draw}`.
 - **Auto-ink:** Line Art at Bunny's stroke weight on imported models. `powers action=autoink`.
 - **Headlines as 3D lettering**, and **story pieces:** time skip, journey map, chat, label and arrow, end screen. `library_use {id: story:…, text}`.
@@ -445,6 +456,15 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 - **Macros:** record a sequence and replay it from any frame. `powers action=macro_start`, `macro_stop {name}`, `macro_play {name, frame}`. Macros record app clicks and MCP calls alike, so an assistant can record a move once and replay it as one call.
 - **Linked controls (drivers):** one control drives another. `powers action=link {from, to, factor, offset}`.
 - **Master Bunny file:** your own Bunny .blend used by every render. `powers action=master`.
+
+### 3.17 Babble voice (typed lines, cute gibberish)
+
+Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
+- How: File › Babble voice (also in the Face tab's Voice section). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
+- Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
+- Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
+- Watch out: a line longer than the rest of its shot keeps playing into the next shot, but the mouth keys stop at the shot's end (the toast says so). Importing or removing the recorded voice rebuilds the babble on top of it.
 
 ---
 
@@ -556,6 +576,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 - **Lip sync keys the shot as it is.** Retime or split a shot, then run `audio lipsync` again. Sample a few frames by eye: the engine reads the sound, not the words.
 - **A missing library item is skipped.** If a stage names an outfit or accessory that isn't in the library, the render leaves it out and says so in `work\checks\<render>\blender.log`. `library_list` shows the real ids.
 - **"Blender was not found":** set it under Render › Blender location, or run `production action=fix {fix: pick-blender}`.
+- **Open in Blender: the button stays on "Blender opening…"** Blender is still building the shot (long shots take longer). If it never goes live, read `work\blender-live\<Scene>_<shot>\blender.log`.
 - **"Needs a yes first":** the call would replace unsaved work. Ask the user, then repeat it with `force: true`.
 
 ---
@@ -564,7 +585,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `powers`, `features`, `production`, `workflow`.
+`babble`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 

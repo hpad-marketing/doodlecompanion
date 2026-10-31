@@ -104,6 +104,10 @@ const renders = require('./render.cjs')({
   },
 });
 
+// Open in Blender: the active shot in a full Blender window, live-linked both ways (mirror.cjs)
+const mirror = require('./mirror.cjs')({ appDir, port: PORT, blender: () => renders.blender(), blendFor: s => renders.blendFor(s), withMaster: s => renders.withMaster(s),
+  folders: n => renders.folders(n), env: () => renders.env() });
+
 // 3D view models of library sets, props and scenery (models.cjs): Blender converts each once
 const stageModels = require('./models.cjs')({ libraryDir: () => settings.get().libraryDir, cacheDir: () => path.join(dataDir, 'models'),
   command: (ids, dir) => { const exe = renders.blender(); return exe ? [exe, ['-b', '--factory-startup', '--python', path.join(appDir, 'blender', 'preview_export.py'), '--', settings.get().libraryDir, dir, ...ids]] : null; } });
@@ -117,6 +121,7 @@ function insideRenders(p, exts = ['.png']) {
 }
 
 const api = {
+  ...mirror.api,
   'stage-models': req => stageModels.models(req),
   'models-info': () => stageModels.info(),
   // the scene file lives at DeepInDoodles\<Scene>\work\<Scene>.ds3d
@@ -224,6 +229,12 @@ const api = {
     if (!/[.](png|jpe?g|webp)$/i.test(String(p))) throw Error('Not an image file');
     if (fs.statSync(p).size > 30e6) throw Error('Image over 30 MB');
     return { data: fs.readFileSync(p).toString('base64'), type: /png$/i.test(p) ? 'image/png' : /webp$/i.test(p) ? 'image/webp' : 'image/jpeg' };
+  },
+  // an SVG drawing for the drawings layer: read as text, never run
+  async 'read-svg'({ path: p }) {
+    if (!/[.]svg$/i.test(String(p))) throw Error('Not an .svg file');
+    if (fs.statSync(p).size > 8e6) throw Error('SVG over 8 MB');
+    return { text: fs.readFileSync(p, 'utf8') };
   },
   async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
   async 'read-audio'({ path: p }) {
@@ -391,4 +402,6 @@ else {
     nightlyBackup(); setInterval(nightlyBackup, 60 * 60000);
   }).catch(e => { dialog.showErrorBox('Doodle Studio 3D could not open', String(e && e.stack || e)); app.exit(1); });
   app.on('window-all-closed', () => app.quit());
+  // an open Blender window is told the link has ended (it stays open with its own copy)
+  app.on('before-quit', () => { try { mirror.api['mirror-close']({ quiet: true }); } catch {} });
 }
