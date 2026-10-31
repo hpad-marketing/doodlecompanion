@@ -66,4 +66,30 @@ bpy.context.view_layer.update()
 ok(abs(collision.ground_z(arm, obs)) < 1e-4, 'a surface far above the ground (a table) is not taken for the floor')
 ok(collision.floor_lift(arm, objs) == 0.0, 'and he is not lifted onto it')
 
+# a small prop under the feet (a bench foot, a kerb stone) is scenery, not the floor
+floor.location.z = 0.0
+bpy.ops.mesh.primitive_cube_add(size=0.6, location=(0, 0, -0.27))   # top 3 cm up, under both feet
+stone = bpy.context.active_object
+stone.name = 'SET_test:stone'
+pose({})
+bpy.context.view_layer.update()
+ok(abs(collision.ground_z(arm, obs)) < 1e-4, 'a small prop under the feet is not taken for the floor')
+bpy.data.objects.remove(stone)
+
+# the set's ink outline floating over the floor (an outline hull) is never the floor
+ink = bpy.data.materials.get('DS_ink_outline') or bpy.data.materials.new('DS_ink_outline')
+bpy.ops.mesh.primitive_plane_add(size=6, location=(0, 0, 0.05))
+hull = bpy.context.active_object
+hull.name = 'SET_test:hull'
+hull.data.materials.append(ink)
+bpy.context.view_layer.update()
+ok(abs(collision.ground_z(arm, obs)) < 1e-4, "a set's outline hull above the floor is not taken for the floor")
+bpy.data.objects.remove(hull)
+
+# a stage 15 cm up is the floor you see: he stands on it
+floor.location.z = 0.15
+pose({})
+collision.floor_lift(arm, objs)
+ok(0.15 <= stroke() < 0.153, f'a stage 15 cm up is the floor: the stroke rests on it ({stroke():.4f})')
+
 sys.exit(1 if fails else 0)

@@ -274,10 +274,12 @@ def _is_character(ob):
 
 
 def ground_z(arm, obs):
-    """The floor under the character: the rig's own ground (z of the armature object), or a set
-    floor or backdrop that sits higher right under the feet (found by casting straight down
-    under each leg, skipping every character). Never a table or shelf: only surfaces within a
-    few centimetres of the rig's ground count."""
+    """The floor under the character: the floor you see in the scene is the base (user rule,
+    31 Oct). That is the rig's own ground (z of the armature object), or the set's floor or a
+    broad surface (a stage, a sweep) up to 25 cm higher right under the feet, found by casting
+    straight down under each leg. Skipped on the way down: every character, every ink face (a
+    set's outline hull floats 5-10 cm off the floor in a high shot and was once taken for the
+    ground), and small scenery (a bench, a bin, a stone). A table top is never the floor."""
     from mathutils import Vector
     base = arm.matrix_world.translation.z
     sc = bpy.context.scene
@@ -297,10 +299,12 @@ def ground_z(arm, obs):
                 hit, loc, nrm, _i, hob, _m = sc.ray_cast(dg, o, Vector((0, 0, -1)), distance=0.4)
                 if not hit:
                     break
-                if hob is not None and (hob.hide_render or _is_character(hob)):
+                if hob is not None and (hob.hide_render or _is_character(hob) or not _floor_like(hob) or _is_ink_face(hob, _i, dg)):
                     o = loc - Vector((0, 0, 1e-4))
                     continue
-                if base - 0.05 <= loc.z <= base + GROUND_RISE and abs(nrm.z) > 0.5:   # set shells face inward (down)
+                # a real floor faces up; the set's outline hull (flipped, pushed off the floor by
+                # the ink width, 5-10 cm in a high shot) faces down and is never the ground
+                if base - 0.05 <= loc.z <= base + GROUND_RISE and nrm.z > 0.5:
                     best = max(best, loc.z)
                     break
                 if loc.z < base - 0.05:
@@ -310,7 +314,24 @@ def ground_z(arm, obs):
     return best
 
 
-GROUND_RISE = 0.06   # a set floor up to 6 cm above the rig's ground still counts as the floor
+def _floor_like(ob):
+    """Only a set's room shell or a broad surface (a stage, a sweep, a big floor plane) can be the
+    floor. A bench, a bin or a kerb a foot steps beside is scenery, never the ground."""
+    return bool(ob.get('dsl_shell')) or min(ob.dimensions.x, ob.dimensions.y) >= 1.5
+
+
+def _is_ink_face(ob, index, dg):
+    """True when a ray hit landed on ink: the outline hull (the inverted shell DS/DSL Ink adds,
+    pushed off the surface) or a drawn stroke, not on the surface itself."""
+    try:
+        me = ob.evaluated_get(dg).data
+        mat = me.materials[me.polygons[index].material_index]
+        return mat is not None and ('outline' in mat.name or mat.name.startswith(('DS_ink', 'DSL_ink')))
+    except (IndexError, AttributeError, TypeError):
+        return False
+
+
+GROUND_RISE = 0.25   # the floor you see (a raised park floor, a stage) up to 25 cm above the rig's ground is the floor
 
 
 def floor_target(arm, obs=None):
@@ -389,6 +410,7 @@ def floor_settle(arm, objs, frames, log=None):
 # really dug in, is left alone for the floor lift to fix). The floor height comes from the rig
 # (world z on the rig's floor holder, keyed per frame by the bridge).
 FLOOR_OFF = -1000.0
+SHELL_FADE = 0.06   # the push away from the camera fades in over this height above the floor
 
 
 def _ink_groups():
@@ -417,14 +439,25 @@ def clamp_shell_group(ng):
     M = oi.outputs['Transform']
     tw = lambda v: (lambda n: (L(M, n.inputs['Transform']), L(v, n.inputs['Vector']), n.outputs[0])[-1])(N('FunctionNodeTransformPoint'))
     pw = tw(pos)
-    tgt = N('ShaderNodeVectorMath'); tgt.operation = 'ADD'; L(pos, tgt.inputs[0]); L(off, tgt.inputs[1])
-    qw = tw(tgt.outputs[0])
     sz = lambda v: (lambda n: (L(v, n.inputs[0]), n.outputs['Z'])[-1])(N('ShaderNodeSeparateXYZ'))
     def m(op, a, b):
         n = N('ShaderNodeMath'); n.operation = op
         L(a, n.inputs[0]) if not isinstance(a, (int, float)) else setattr(n.inputs[0], 'default_value', a)
         L(b, n.inputs[1]) if not isinstance(b, (int, float)) else setattr(n.inputs[1], 'default_value', b)
         return n.outputs[0]
+    # near the floor the push away from the camera fades out (gone at the floor, full 6 cm up):
+    # behind a foot the ground can rise (a slope, a sweep, a bump), and a pushed outline would
+    # sink into it. Down there the outline is just the stroke around the form.
+    add = off_link.from_node
+    if add.bl_idname == 'ShaderNodeVectorMath' and add.operation == 'ADD' and add.inputs[0].links and add.inputs[1].links:
+        fade = m('MINIMUM', m('MAXIMUM', m('DIVIDE', m('SUBTRACT', sz(pw), gi.outputs['Floor Z']), SHELL_FADE), 0.0), 1.0)
+        sc_away = N('ShaderNodeVectorMath'); sc_away.operation = 'SCALE'
+        L(add.inputs[1].links[0].from_socket, sc_away.inputs[0]); L(fade, sc_away.inputs['Scale'])
+        off2 = N('ShaderNodeVectorMath'); off2.operation = 'ADD'
+        L(add.inputs[0].links[0].from_socket, off2.inputs[0]); L(sc_away.outputs[0], off2.inputs[1])
+        off = off2.outputs[0]
+    tgt = N('ShaderNodeVectorMath'); tgt.operation = 'ADD'; L(pos, tgt.inputs[0]); L(off, tgt.inputs[1])
+    qw = tw(tgt.outputs[0])
     lift = m('MAXIMUM', m('SUBTRACT', m('MINIMUM', sz(pw), gi.outputs['Floor Z']), sz(qw)), 0.0)
     cz = N('ShaderNodeCombineXYZ'); L(lift, cz.inputs['Z'])
     inv = N('FunctionNodeInvertMatrix'); L(M, inv.inputs[0])

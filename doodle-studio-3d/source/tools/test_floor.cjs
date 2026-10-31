@@ -29,7 +29,7 @@ const runs = [
 let k = 0;
 const next = () => {
   if (k >= runs.length) {
-    // a set floor above the rig's ground (raised stage, thick backdrop sweep), straight in Blender
+    // the floor you see is the base (a raised set floor counts; props, tables and outlines never do), straight in Blender
     const py = require('child_process').spawnSync(process.env.DS3D_BPY || 'python3', [path.join(__dirname, 'floor_raised.py')], { encoding: 'utf8' });
     for (const line of (py.stdout || '').split('\n')) if (/^(ok|FAIL)/.test(line)) { console.log(line); if (line.startsWith('FAIL')) process.exitCode = 1; }
     ok(py.status === 0, 'raised-floor checks ran');
