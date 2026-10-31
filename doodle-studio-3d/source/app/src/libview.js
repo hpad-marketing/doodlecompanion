@@ -18,9 +18,49 @@ export const glyphOf = id => GLYPH[String(id).split(':')[1]] || '◆';
 const ui = { cat: 'prop', q: '', mirror: false, blend: 0, hold: '', shotOnly: false, sel: null, page: 1 };
 export const libUi = ui;
 
+// ---------------------------------------------------------------- pictures for every library row
+// Motions play as small looping sprite sheets (Doodle Library previews/motion_anim, made from the
+// Doodle Studio rig); faces without a library picture are drawn from the character's own face
+// drawings; outfit and accessory pictures are trimmed to the character so they fill the card.
+let animIdx = null, pictureData = null;
+export const hasAnim = id => !!animIdx?.items?.[id];
+function animPic(h, id) {
+  const A = animIdx, [s, r] = A.items[id], sh = A.sheets[s];
+  return h('span', { class: 'anim', 'aria-hidden': 'true', style: `--n:${A.n};aspect-ratio:${A.fw}/${A.fh};background-image:url('/lib/previews/motion_anim/${sh.file}');background-size:${A.n * 100}% ${sh.rows * 100}%;background-position-y:${sh.rows > 1 ? (r / (sh.rows - 1)) * 100 : 0}%` });
+}
+const trimCache = new Map();
+function trimmed(h, src) {
+  const img = h('img', { src: trimCache.get(src) || src, alt: '', loading: 'lazy', draggable: 'false' });
+  if (trimCache.has(src)) return img;
+  const once = () => {
+    img.removeEventListener('load', once);
+    try {
+      const w = img.naturalWidth, ht = img.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = ht;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, w, ht).data;
+      let x0 = w, y0 = ht, x1 = -1, y1 = -1;
+      for (let y = 0; y < ht; y += 2) for (let x = 0; x < w; x += 2) { const i = (y * w + x) * 4; if (d[i + 3] > 128 && d[i] < 110) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+      if (x1 < 0) { trimCache.set(src, src); return; }
+      const side = Math.max(x1 - x0, y1 - y0) * 1.12 + 8, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, o = document.createElement('canvas'); o.width = o.height = 256;
+      const og = o.getContext('2d'); og.fillStyle = '#E0A64B'; og.fillRect(0, 0, 256, 256); og.drawImage(img, cx - side / 2, cy - side / 2, side, side, 0, 0, 256, 256);
+      const url = o.toDataURL(); trimCache.set(src, url); img.src = url;
+    } catch { trimCache.set(src, src); }
+  };
+  img.addEventListener('load', once);
+  return img;
+}
+function faceIndexOf(row) {
+  const F = pictureData?.face; if (!F) return -1;
+  const n = String(row.data?.expression_name || row.name).toLowerCase();
+  return Number.isInteger(row.data?.expression) ? row.data.expression : F.faces.findIndex(x => x.toLowerCase() === n);
+}
 export function picture(h, row, big = false) {
+  if (row?.category === 'motion' && hasAnim(row.id)) return animPic(h, row.id);
+  if (row?.preview && ['outfit', 'accessory'].includes(row.category)) return trimmed(h, '/lib/' + row.preview);
   if (row?.preview) return h('img', { src: '/lib/' + row.preview, alt: '', loading: 'lazy', draggable: 'false' });
-  return h('span', { class: 'glyph', 'aria-hidden': 'true' }, row ? glyphOf(row.id) : '·');
+  if (row?.category === 'expression') { const i = faceIndexOf(row); if (i >= 0) return h('img', { src: faceThumb(pictureData, i, row.data?.gaze > 0 ? row.data.gaze : 0, big ? 240 : 120), alt: '', draggable: 'false' }); }
+  if (row?.category === 'expression' && /^(Frog|Koala|Bunny)\b/.test(row.name)) { const c = row.name.split(' ')[0].toLowerCase(); return h('img', { src: `chars/${c}.png`, alt: '', draggable: 'false', title: `A ${row.name.split(' ')[0]} face` }); }
+  if (row?.category === 'motion') return h('span', { class: 'glyph', 'aria-hidden': 'true', title: 'A Blender action: no picture yet' }, '▶');
+  return h('span', { class: 'glyph', 'aria-hidden': 'true' }, row ? glyphOf(row.id) : '⊘');
 }
 
 // ---------------------------------------------------------------- the browser (Library tab, Animate › Motion library)
@@ -31,6 +71,8 @@ export function libraryBrowser(ctx, opts = {}) {
   if (opts.cat) ui.cat = opts.cat;
   if (!cats.some(c => c[0] === ui.cat)) ui.cat = cats[0][0];
   const rows = libraryRows();
+  if (ctx.data) pictureData = ctx.data();
+  if (ctx.lib?.()?.anim) animIdx = ctx.lib().anim;
   const box = h('div', { class: 'libx library' });
   const main = h('div', {}), side = h('div', { class: 'libx-side' });
   const lib = ctx.lib?.();
@@ -39,7 +81,21 @@ export function libraryBrowser(ctx, opts = {}) {
   const q = h('input', { type: 'search', placeholder: ui.cat === 'motion' ? 'Search motions, e.g. wave, walk, shrug' : 'Search, e.g. mug, tree, rain', value: ui.q, 'aria-label': 'Search the library' });
   const top = h('div', { class: 'libx-top' }, q);
   if (cats.length > 1 && !opts.noChips) top.append(h('div', { class: 'chips' }, ...cats.map(([id, n]) => h('button', { 'aria-pressed': String(ui.cat === id), onclick: () => { ui.cat = id; ui.sel = null; ui.page = 1; ctx.rebuild(); } }, n))));
+  let catRows = null;
   if (ui.cat === 'motion') {
+    // motion families and categories as two horizontal chip rows (hand-made, performance, mocap)
+    const fam = r => (/^Mocap/.test(r.sub || '') ? 'Mocap' : /^Performance/.test(r.sub || '') ? 'Performance' : r.kind === 'ds' ? 'Doodle' : 'Blender');
+    const mot = rows.filter(r => r.category === 'motion'), fams = ['All', ...['Doodle', 'Performance', 'Mocap', 'Blender'].filter(f => mot.some(r => fam(r) === f))];
+    ui.fam ||= 'All'; ui.sub ||= 'All';
+    const pool = mot.filter(r => ui.fam === 'All' || fam(r) === ui.fam), subs = [...new Set(pool.map(r => r.sub || 'Other'))];
+    if (ui.sub !== 'All' && !subs.includes(ui.sub)) ui.sub = 'All';
+    const chip = (on, label, n, fn) => h('button', { 'aria-pressed': String(on), onclick: fn }, label, h('small', { class: 'n' }, ' ' + n));
+    const short = s => (ui.fam === 'All' ? s : s.replace(/^(Mocap|Performance) · /, ''));
+    catRows = h('div', { class: 'libx-cats' },
+      h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Motion family' }, ...fams.map(f => chip(ui.fam === f, f === 'Doodle' ? 'Hand-made' : f, f === 'All' ? mot.length : mot.filter(r => fam(r) === f).length, () => { ui.fam = f; ui.sub = 'All'; ui.page = 1; ctx.rebuild(); }))),
+      h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Motion category' }, chip(ui.sub === 'All', 'All categories', pool.length, () => { ui.sub = 'All'; ui.page = 1; ctx.rebuild(); }),
+        ...subs.map(s => chip(ui.sub === s, short(s), pool.filter(r => (r.sub || 'Other') === s).length, () => { ui.sub = s; ui.page = 1; ctx.rebuild(); }))));
+    ui.motionFilter = r => (ui.fam === 'All' || fam(r) === ui.fam) && (ui.sub === 'All' || (r.sub || 'Other') === ui.sub);
     const m = h('input', { type: 'checkbox' }); m.checked = ui.mirror; m.addEventListener('change', () => { ui.mirror = m.checked; });
     const b = h('input', { type: 'number', min: 0, max: 60, step: 1, value: ui.blend, style: 'width:56px', 'aria-label': 'Blend in frames' }); b.addEventListener('change', () => { ui.blend = Math.max(0, Number(b.value) || 0); });
     top.append(h('label', { class: 'hint', title: 'Swap left and right' }, m, ' Mirror'), h('label', { class: 'hint', title: 'Clip blending: crossfade from the animation already there into the clip over this many frames. 0 cuts straight in.' }, 'Blend in ', b, ' frames'));
@@ -62,7 +118,7 @@ export function libraryBrowser(ctx, opts = {}) {
   };
   const LIMIT = 120 * ui.page;
   const fill = () => {
-    const found = search(rows, { category: ui.cat, query: ui.q, limit: LIMIT + 1 });
+    const found = ui.cat === 'motion' && ui.motionFilter ? search(rows, { category: 'motion', query: ui.q, limit: 1e5 }).filter(ui.motionFilter).slice(0, LIMIT + 1) : search(rows, { category: ui.cat, query: ui.q, limit: LIMIT + 1 });
     grid.replaceChildren(...found.slice(0, LIMIT).map(r => {
       const b = h('button', { class: 'lib-item libx-card', role: 'listitem', 'aria-pressed': String(ui.sel === r.id), 'data-id': r.id, title: `${r.name}${r.sub ? ' · ' + r.sub : ''}\nClick to pick, double-click to add at the playhead`,
         onclick: () => { ui.sel = r.id; grid.querySelectorAll('.libx-card').forEach(x => x.setAttribute('aria-pressed', String(x === b))); showSide(r); if (!opts.side) add(r); },
@@ -76,7 +132,7 @@ export function libraryBrowser(ctx, opts = {}) {
     if (!found.length) grid.append(h('p', { class: 'hint' }, lib || rows.length ? 'Nothing matches.' : 'Loading the library…'));
   };
   q.addEventListener('input', () => { ui.q = q.value; ui.page = 1; fill(); });
-  main.append(top, grid);
+  main.append(...[top, catRows, grid].filter(Boolean));
   box.append(main, side);
   fill();
   showSide(rows.find(x => x.id === ui.sel));
@@ -91,7 +147,7 @@ export function setPanel(ctx) {
   const re = () => ctx.rebuild();
   const scope = h('div', { class: 'chips' }, h('button', { 'aria-pressed': String(!ui.shotOnly), onclick: () => { ui.shotOnly = false; re(); }, title: 'Changes apply to every shot' }, 'Whole scene'),
     h('button', { 'aria-pressed': String(ui.shotOnly), onclick: () => { ui.shotOnly = true; re(); }, title: 'Changes apply to this shot only, on top of the scene' }, `${project.code} only`));
-  const chars = h('div', { class: 'chips' }, ...CHARACTERS.map(([id, n]) => h('button', { 'aria-pressed': String((scene.character || 'bunny') === id), onclick: () => ctx.setCharacter(id) }, n)));
+  const chars = h('div', { class: 'char-cards', role: 'list' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String((scene.character || 'bunny') === id), title: `Make the ${n} the lead character`, onclick: () => ctx.setCharacter(id) }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, n))));
   const sel = (label, key, opts, value, title) => {
     const s = h('select', { 'aria-label': label }, ...opts.map(([v, n]) => h('option', { value: v }, n)));
     s.value = value ?? '';
@@ -140,10 +196,13 @@ export function wardrobePanel(ctx) {
       ...outfits.map(r => card(r, st.outfit === r.data?.outfit, () => { setStage(ctx, { outfit: r.data?.outfit }, ui.shotOnly); re(); }, 'Brand black outfits from the clothing studio'))),
       outfits.length ? null : h('p', { class: 'hint' }, 'No outfits in this library yet.')),
     h('div', { class: 'col' }, h('h3', {}, 'Accessories'), accs.length ? h('div', { class: 'libx-grid' }, ...accs.map(r => card(r, (st.accessories || []).includes(r.data?.accessory), () => useItem(ctx, r, { shotOnly: ui.shotOnly }).then(re), 'Click to wear or take off'))) : h('p', { class: 'hint' }, 'No accessories in this library yet.')),
-    h('div', { class: 'col' }, h('h3', {}, 'Mouths'), (() => {
-      const s = h('select', { 'aria-label': 'Mouths' }, h('option', { value: '' }, 'Doodle Studio\'s own'), ...(lib?.mouthSets || []).map(m => h('option', { value: m.id }, m.name)));
-      s.value = st.mouthSet || ''; s.addEventListener('change', () => { setStage(ctx, { mouthSet: s.value || null }, ui.shotOnly); re(); });
-      return h('label', { class: 'lbl-row', title: 'Speech mouth set for lip sync' }, h('span', { class: 'lbl' }, 'Mouth set'), s);
+    h('div', { class: 'col' }, h('h3', {}, 'Mouth set'), (() => {
+      const bare = id => String(id).replace(/^(mouthset|mouths?)-/, '');
+      const mrow = id => rows.find(r => r.category === 'mouth_set' && (r.id === id || bare(r.id) === bare(id) || r.data?.set === id || r.data?.id === id));
+      const pick = id => { setStage(ctx, { mouthSet: id }, ui.shotOnly); re(); };
+      const mcard = (id, name, row, note) => h('button', { class: 'libx-card', 'aria-pressed': String((st.mouthSet || null) === id), onclick: () => pick(id), title: (note ? note + '. ' : '') + 'Speech mouth set for lip sync' },
+        h('span', { class: 'pic' }, row ? picture(h, row) : h('span', { class: 'glyph' }, '◡')), h('span', {}, name));
+      return h('div', { class: 'libx-grid', role: 'list' }, mcard(null, 'Doodle Studio\'s own', mrow('builtin')), ...(lib?.mouthSets || []).filter(m => bare(m.id) !== 'builtin').map(m => mcard(m.id, m.name, mrow(m.id), m.note)));
     })(), h('p', { class: 'hint' }, 'Outfits, accessories and mouth sets render in Blender. Scope (whole scene or this shot) follows the Set & light section.')));
 }
 
@@ -189,6 +248,30 @@ export function itemsPanel(ctx) {
       h('p', { class: 'hint' }, 'In the 3D view: drag the arrows to move, use the rail\'s Rotate and Scale tools (or W, E, R). View › Snapping makes moves step 5 cm and 5°.')].filter(Boolean));
   } else detail.append(h('h3', {}, 'Selected'), h('p', { class: 'hint' }, 'Click an item here or in the 3D view to place it.'));
   return h('div', { class: 'ws two' }, h('div', { class: 'col' }, h('h3', {}, `In ${project.code}`), list), detail);
+}
+
+// ---------------------------------------------------------------- speech mouth pictures (lip-sync shapes)
+const speechCache = new Map();
+export function speechThumb(data, sp, w = 96) {
+  const key = data.species + ':s' + sp + ':' + w;
+  if (speechCache.has(key)) return speechCache.get(key);
+  const its = data.face.items.filter(it => it.role === 'speech' && it.speech === sp), c = document.createElement('canvas');
+  c.width = w; c.height = Math.round(w / 1.25);
+  const g = c.getContext('2d'); g.fillStyle = '#E0A64B'; g.fillRect(0, 0, c.width, c.height);
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const it of its) for (const p of it.outer || it.pts || []) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
+  if (isFinite(x0)) {
+    const span = Math.max(x1 - x0, (z1 - z0) * 1.25) * 2.2, k = c.width / span, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    g.fillStyle = '#1F1F1D';
+    for (const it of its) { const p = new Path2D(); const loop = pts => pts.forEach((q, i) => (i ? p.lineTo : p.moveTo).call(p, c.width / 2 + (q[0] - cx) * k, c.height / 2 - (q[1] - cz) * k)); loop(it.outer || it.pts); p.closePath(); for (const hl of it.holes || []) { loop(hl); p.closePath(); } g.fill(p, 'evenodd'); }
+  }
+  const url = c.toDataURL(); speechCache.set(key, url); return url;
+}
+export function mouthGrid(ctx, current, pick) {
+  const { h } = ctx, data = ctx.data(), S = data.face.speech;
+  return h('div', { class: 'face-grid mouth-grid', role: 'list' }, ...S.map((n, i) => h('button', { 'aria-pressed': String(current === i), title: `${i === 0 ? 'The expression\'s own mouth' : n}. Click to key it at the playhead.`, onclick: () => pick(i) },
+    i === 0 ? h('span', { class: 'glyph', style: 'aspect-ratio:1.25;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent);background:#E0A64B;color:#1F1F1D;font-size:30px' }, '☺') : h('img', { src: speechThumb(data, i), alt: '', style: 'width:100%;aspect-ratio:1.25;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent)' }),
+    h('span', {}, i === 0 ? 'Face default' : n))));
 }
 
 // ---------------------------------------------------------------- face pictures (the character's own drawings)

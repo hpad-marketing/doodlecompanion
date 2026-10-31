@@ -1,13 +1,13 @@
 {
- "version": "20261031-065836",
- "notes": "Lip sync follows the voice over music (offline vocal separation); characters rest exactly on the floor from any angle, never floating",
+ "version": "20261031-075119",
+ "notes": "Every library is visual: motions play as small looping previews with family and category chips, and faces, speech mouths, mouth sets, characters and clothes all show as pictures",
  "runtime": "44.9.0",
- "published": "2026-10-31T06:58:36.158Z",
+ "published": "2026-10-31T07:51:19.706Z",
  "files": {
   "resources/app/library.cjs": {
-   "sha256": "56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704",
-   "size": 2415,
-   "gz": "files/56b861ef20065889a4174e055da92c7fa46db398ba503a8c74b661e0bc132704.gz"
+   "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
+   "size": 2843,
+   "gz": "files/527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29.gz"
   },
   "resources/app/main.cjs": {
    "sha256": "32d78b7ed6c0919224023315d3aec1df20efcae3e44fec8eb71aa84f4389b487",
@@ -184,15 +184,30 @@
    "size": 5366,
    "gz": "files/9aa6579d36da18fcb3d245cf73193cf53f7c57a29dc54d80bbbc7c36f95f0517.gz"
   },
+  "resources/app/ui/chars/bunny.png": {
+   "sha256": "c6b9f583b6e87423505397d65ea925440f1ea88cf5d1a9b5de3923fe53c6ec81",
+   "size": 21475,
+   "gz": "files/c6b9f583b6e87423505397d65ea925440f1ea88cf5d1a9b5de3923fe53c6ec81.gz"
+  },
   "resources/app/ui/chars/frog.json": {
    "sha256": "046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3",
    "size": 5169286,
    "gz": "files/046bd3e2affe07c93e55b89bed2b720a80e51edd3e66faa92dccb71e20fb31b3.gz"
   },
+  "resources/app/ui/chars/frog.png": {
+   "sha256": "70b4177fa0ec029e7f456c2ef7619f6833f1ffe1f85201e7fd1d146e1d1b2fc7",
+   "size": 13930,
+   "gz": "files/70b4177fa0ec029e7f456c2ef7619f6833f1ffe1f85201e7fd1d146e1d1b2fc7.gz"
+  },
   "resources/app/ui/chars/koala.json": {
    "sha256": "d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402",
    "size": 5569967,
    "gz": "files/d286681d190eaa6fd9990b29b650976a69f7424d1a123a698b9eaad58d056402.gz"
+  },
+  "resources/app/ui/chars/koala.png": {
+   "sha256": "1f5cb7d5da556da1b07eaef2570efa667df5446d8a19d8de484efcac832b852e",
+   "size": 19225,
+   "gz": "files/1f5cb7d5da556da1b07eaef2570efa667df5446d8a19d8de484efcac832b852e.gz"
   },
   "resources/app/ui/src/animtools.js": {
    "sha256": "cd944f7bb5da55a999500b8a6d4fc9f22244f7a3862d1ab3bf385015543667bf",
@@ -240,14 +255,14 @@
    "gz": "files/b879ebed9850faf4f40345ff143cf350ea94a86c365c5583a2beb51b775d0ab1.gz"
   },
   "resources/app/ui/src/libview.js": {
-   "sha256": "ffb2235262a28ce1f8dda90799e228cf54124f98720af658913af59a42b3e972",
-   "size": 22057,
-   "gz": "files/ffb2235262a28ce1f8dda90799e228cf54124f98720af658913af59a42b3e972.gz"
+   "sha256": "3e763eb7126b48bd05fe79cadfd28c1c4a9718fead88fd4528f3a19dafaa2be1",
+   "size": 30147,
+   "gz": "files/3e763eb7126b48bd05fe79cadfd28c1c4a9718fead88fd4528f3a19dafaa2be1.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9",
-   "size": 233321,
-   "gz": "files/6735b68ed73de028d2f6ac640c13fa61e0cff38a54d49148ee372c24125f6dc9.gz"
+   "sha256": "373a4d46499e7e3676a1c0091e6442e56db7cb5952e0f2b2a8aff9eaa7b44f12",
+   "size": 233929,
+   "gz": "files/373a4d46499e7e3676a1c0091e6442e56db7cb5952e0f2b2a8aff9eaa7b44f12.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "1fd9aa4fca7a8b137602fe64bb50df98646cec6827033c616bde1ed3b56b398c",
@@ -300,9 +315,9 @@
    "gz": "files/c5e7a0e91a7a50dd22056876dd396d426d527829de4c8b54fb2eb5cdb47d78be.gz"
   },
   "resources/app/ui/src/ux2d.css": {
-   "sha256": "f835d84f6caa154f63294cdfb812a603d690f24eb09d9e9aa7be2cae344d5a43",
-   "size": 12810,
-   "gz": "files/f835d84f6caa154f63294cdfb812a603d690f24eb09d9e9aa7be2cae344d5a43.gz"
+   "sha256": "ce0eb654ca2beb94114e78102dd658c3f6f8265289c9080970c43f59e9b3483c",
+   "size": 13733,
+   "gz": "files/ce0eb654ca2beb94114e78102dd658c3f6f8265289c9080970c43f59e9b3483c.gz"
   },
   "resources/app/ui/src/ux2d.js": {
    "sha256": "0f8e247a13d77a13c06255e4a553801493f97ab09fa7ad4f12490b89945bce5b",

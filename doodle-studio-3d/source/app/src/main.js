@@ -21,7 +21,7 @@ import * as PW from './powers.js';
 import * as CS from './cast.js';
 import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
-import { libraryBrowser, faceGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
+import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -855,7 +855,7 @@ async function castDialog() {
           h('button', { onclick: () => { close(); castRun({ action: 'clear_keys', index: i }); } }, 'Clear keys')));
     });
     return [h('p', { class: 'hint' }, `Co-stars share ${charName()}'s rig, look and rules. In the render they are pushed apart, eased, whenever two bodies would touch.`), ...rows,
-      CS.costarsOf(project).length < CS.MAX_COSTARS ? h('div', { class: 'row' }, ...CHARACTERS.map(([id, n]) => h('button', { onclick: () => { close(); castRun({ action: 'add', character: id }).then(castDialog); } }, `Add ${n}`)), h('button', { onclick: close }, 'Close')) : h('button', { onclick: close }, 'Close')];
+      CS.costarsOf(project).length < CS.MAX_COSTARS ? h('div', { class: 'row' }, h('div', { class: 'char-cards' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', title: `Add the ${n} as a co-star`, onclick: () => { close(); castRun({ action: 'add', character: id }).then(castDialog); } }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, `Add ${n}`)))), h('button', { onclick: close }, 'Close')) : h('button', { onclick: close }, 'Close')];
   });
 }
 function stickMode() {
@@ -1258,10 +1258,11 @@ function buildPanel() {
     };
     if (s === 'expressions') {
       c.append(cols('two', [h('h3', {}, 'Expression'), faceGrid(libCtx(), Math.round(current('expression')), i => { pushUndo('Expression'); setValue('expression', i); drawTracks(); buildPanel(); })],
-        [h('h3', {}, 'Now'), sel('expression', F.faces), sel('mouth', F.speech.map((n, i) => i === 0 ? 'Face default (expression mouth)' : n)), sel('blink', ['Open', 'Half', 'Closed', 'Squeeze', 'Wink']),
+        [h('h3', {}, 'Now'), sel('expression', F.faces), sel('blink', ['Open', 'Half', 'Closed', 'Squeeze', 'Wink']),
+          h('h3', {}, 'Mouth'), mouthGrid(libCtx(), Math.round(current('mouth')), i => { pushUndo('Mouth'); setValue('mouth', i); drawTracks(); buildPanel(); }),
           h('h3', {}, 'Gaze'), gazePad(), h('p', { class: 'hint' }, 'Point at a face to see it on the character; click to key it at the playhead. Faces are Doodle Studio\'s own drawings; eyes and mouth keep a constant size. Look at the camera with the middle gaze for direct address.')]));
     } else if (s === 'eyes') {
-      c.append(cols('two', [h('h3', {}, 'Gaze'), gazePad(), h('h3', {}, 'Blink and mouth'), sel('blink', ['Open', 'Half', 'Closed', 'Squeeze', 'Wink']), sel('mouth', F.speech.map((n, i) => i === 0 ? 'Face default (expression mouth)' : n))],
+      c.append(cols('two', [h('h3', {}, 'Gaze'), gazePad(), h('h3', {}, 'Blink'), sel('blink', ['Open', 'Half', 'Closed', 'Squeeze', 'Wink']), h('h3', {}, 'Mouth'), mouthGrid(libCtx(), Math.round(current('mouth')), i => { pushUndo('Mouth'); setValue('mouth', i); drawTracks(); buildPanel(); })],
         [h('h3', {}, 'Expression'), sel('expression', F.faces), h('p', { class: 'hint' }, 'Gaze keys hold until the next one. Middle = straight at the camera.')]));
     } else if (s === 'idle') c.append(cols('two', idlePanel(), h('p', { class: 'hint' }, 'Idle life keeps him alive between your keys: natural blinks and ear flicks, the same in the 3D view and the Blender render.')));
     else c.append(h('div', { class: 'ws three' }, ...shelves('face:voice').map(x => h('div', { class: 'col' }, x))));
@@ -1287,7 +1288,7 @@ function buildPanel() {
     else if (s === 'wardrobe') c.append(wardrobePanel(libCtx()));
     else if (s === 'items') c.append(itemsPanel(libCtx()));
     else c.append(cols('two', [h('h3', {}, 'Co-stars'), h('p', { class: 'hint' }, 'More characters in this shot, each on the same rig with its own keys. They collide with the lead in the render.'), h('div', { class: 'row' }, h('button', { onclick: () => castDialog() }, 'Co-stars…'))],
-      [h('h3', {}, 'Lead character'), h('div', { class: 'chips' }, ...CHARACTERS.map(([id, n]) => h('button', { 'aria-pressed': String(character() === id), onclick: () => setCharacter(id).catch(e => toast(e.message, 5000)) }, n)))]));
+      [h('h3', {}, 'Lead character'), h('div', { class: 'char-cards', role: 'list' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String(character() === id), title: `Make the ${n} the lead character`, onclick: () => setCharacter(id).catch(e => toast(e.message, 5000)) }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, n))))]));
   } else if (tab === 'library') {
     c.append(libraryBrowser(libCtx(), { cats: SUBS.library(), cat: s, noChips: true, side: true }));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('span', { class: 'hint', id: 'models-info', style: 'flex:1' }, ''), h('button', { title: 'Convert every set, prop and scenery piece now, so they all show at once later (about a minute in Blender)', onclick: () => api('stage-models', { all: true }).then(r => toast(`Making ${r.pending.length} 3D models in the background`, 4000)).catch(e => toast(e.message)) }, 'Make 3D models for the whole library')));

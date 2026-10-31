@@ -19,7 +19,17 @@ module.exports = ({ settings }) => {
       cache = { file, mtime, items: rows.map(r => Object.fromEntries(KEEP.filter(k => r[k] != null).map(k => [k, r[k]]))) };
       blobs.clear();
     }
-    return { dir: dir(), found: true, items: cache.items, mouthSets: mouthSets() };
+    return { dir: dir(), found: true, items: cache.items, mouthSets: mouthSets(), anim: anim() };
+  }
+
+  // animated motion previews: sprite sheets plus an index (motion id -> sheet, row)
+  function anim() {
+    const f = path.join(dir(), 'previews', 'motion_anim', 'index.json');
+    try {
+      const mtime = fs.statSync(f).mtimeMs;
+      if (cache.animMtime !== mtime) cache = { ...cache, animMtime: mtime, anim: JSON.parse(fs.readFileSync(f, 'utf8')) };
+      return cache.anim;
+    } catch { return null; }
   }
 
   // speech mouth sets live in their own file, not as library rows
