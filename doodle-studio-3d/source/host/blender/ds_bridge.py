@@ -45,6 +45,7 @@ import stage  # noqa: E402
 import powers  # noqa: E402
 import cast as costars  # noqa: E402
 import rules_scene  # noqa: E402
+import constraints  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -126,6 +127,10 @@ def camera_3d(c, t):
         cam.data.dof.focus_distance = focus
         cam.data.dof.aperture_fstop = float(c.get('fstop', 2.8) or 2.8)
 
+# the animation rules as always-on defaults (lib/constraints.py); shot['rules'] turns any off
+RULES = constraints.configure(shot, cam)
+log = lambda m: print(m, flush=True)
+
 # previz grey: a fast blocking pass in plain grey clay, no cloth, no springs, no ink pass
 previz = bool(shot.get('previz'))
 if previz:
@@ -156,8 +161,10 @@ if FLOOR:
     # the outline shell never sinks through the floor, whatever the camera (high shots push it down)
     collision.bind_shell_floor()
 unhold_bias = collision.hold_depth_bias() if FLOOR else (lambda: None)
+arm_fixes, solved, ahint = {}, [], None
 for i, vals in enumerate(frames):
     f = i + 1
+    vals = constraints.prepare(vals, arm)
     if flag('--no-collide'):
         apply(vals)
     else:
@@ -182,6 +189,14 @@ for i, vals in enumerate(frames):
         dist = (BASE_ORTHO / float(vals.get('camZoom', 1) or 1) / 2) / math.tan(math.radians(fov) / 2)
         view = math.radians(float(vals.get('view', 0)))
         cam.location = (0, -math.cos(view) * dist, PIVOT_Z + math.sin(view) * dist)
+    # arm in front of the face (as this frame's camera sees it), before the floor is measured
+    if not flag('--no-collide'):
+        bpy.context.view_layer.update()
+        vals, afix = constraints.arm_in_front(apply, vals, objs, cam, hint=ahint)
+        ahint = afix or None
+        if afix:
+            arm_fixes[f] = afix
+    solved.append(vals)
     if FLOOR:
         # floor collision (no stroke under the floor), measured after the camera so the ink
         # width is this frame's
@@ -215,6 +230,12 @@ for i, vals in enumerate(frames):
         cam.data.dof.keyframe_insert('aperture_fstop', frame=f)
 
 unhold_bias()
+if arm_fixes:
+    print(f"rules: arm brought clear of the head on {len(arm_fixes)} frames", flush=True)
+    try:
+        constraints.ease_fixes(arm, apply, solved, arm_fixes, objs, log)
+    except Exception as e:
+        print('rules: arm easing skipped:', e, flush=True)
 ups = [x for x in lifts if x['cm'] > 0.05]
 if ups:
     print(f"floor: lifted out of the floor on {len(ups)} frames (up to {max(x['cm'] for x in ups)} cm)", flush=True)
@@ -227,12 +248,31 @@ if cast:
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
 
+# props and set pieces standing on the floor rest their stroke just above it, like the characters
+if stage_items is not None:
+    try:
+        sc.frame_set(1)
+        _scenery, _ = rules_scene.classify(arm, cast, objs.values())
+        constraints.props_on_floor([o for o in _scenery if o.dimensions.z >= 0.08], arm.matrix_world.translation.z, log)
+    except Exception as e:
+        print('rules: props on floor skipped:', e, flush=True)
+
 # the set keeps a clear zone round the characters and drops pieces the camera cuts to slivers
 if stage_items is not None and shot.get('stage', {}).get('set') and not (shot.get('stage') or {}).get('keepLayout'):
     try:
         rules_scene.tidy_set(arm, cast, objs.values(), cam, n, lambda m: print(m, flush=True), str(shot['stage']['set']))
     except Exception as e:
         print('set tidy skipped:', e, flush=True)
+
+# nothing stands between the camera and a face (set pieces and placed props slide aside)
+if stage_items is not None:
+    try:
+        sc.frame_set(1)
+        _scenery, _ = rules_scene.classify(arm, cast, objs.values())
+        room = str((shot.get('stage') or {}).get('set') or '') or None
+        constraints.face_clear(_scenery, [objs] + [c['objs'] for c in cast], cam, n, room, log)
+    except Exception as e:
+        print('rules: face clear skipped:', e, flush=True)
 
 # held props: each frame turns the prop clear of his head and body inside its grip, since the
 # shot's own pose can move the hand after the grip was found (B14)

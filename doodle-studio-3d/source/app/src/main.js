@@ -459,6 +459,8 @@ const cutRect = (c, W, H) => c.kind === 'bubble' ? { cx: c.x ?? 0.64, cy: c.y ??
   : P.pipRect(c, c.shotRef ? W / H : (c.aspect || 16 / 9));
 const cutsAt = (s, f) => (s.cuts || []).filter(c => f >= c.frame && f < c.frame + c.length);
 function captionWord(l, f) { const n = P.captionLines(l.text).flat().length; return Math.min(n - 1, Math.floor((f - l.f) / Math.max(1, l.to - l.f) * n)); }
+// the head's screen height (0 top, 1 bottom) in the live view, for caption placement
+function liveHeadY() { try { view.camera.updateMatrixWorld(); return (1 - view.headPoint().project(view.camera).y) / 2; } catch { return null; } }
 function drawPost() {
   const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame);
   let c = document.getElementById('post-layer');
@@ -473,7 +475,7 @@ function drawPost() {
     else P.drawBubble(g, W, H, r);
     if (k.kind !== 'photo') { g.font = `${Math.round(H * 0.025)}px system-ui`; g.textAlign = 'center'; g.fillStyle = '#1F1F1D'; g.fillText(k.shotRef || (k.path || '').split(/[\\/]/).pop(), r.cx * W, r.cy * H); }
   }
-  if (cap) P.drawCaption(g, W, H, cap.text, scene.captions.y ?? 0.7, scene.captions.highlight ? captionWord(cap, frame) : -1);
+  if (cap) P.drawCaption(g, W, H, cap.text, P.captionY(scene, cap.text, liveHeadY()), scene.captions.highlight ? captionWord(cap, frame) : -1, scene.captions.snap !== false);
 }
 const pngOf = (W, H, draw) => { const c = document.createElement('canvas'); c.width = W; c.height = H; draw(c.getContext('2d')); return c.toDataURL('image/png').split(',')[1]; };
 // what one render lays on top: indices are the shots in it, in order; full adds the sound side
@@ -505,11 +507,14 @@ async function buildPost(indices, full) {
       post.overlays.push({ path: await write(g => (c.kind === 'pip' ? P.drawOutline : P.drawBubble)(g, W, H, r), c.kind), start, length: len });
     }
     for (const l of caps.filter(x => x.shot === s.uid)) {
-      const y = scene.captions.y ?? 0.7, words = P.captionLines(l.text).flat().length;
-      if (!scene.captions.highlight) { post.overlays.push({ path: await write(g => P.drawCaption(g, W, H, l.text, y), 'caption'), start: at + l.f, length: l.to - l.f }); continue; }
+      const fit = scene.captions.snap !== false, words = P.captionLines(l.text).flat().length;
+      let headY = null;
+      if (fit) try { headY = projector(prodCtx())(s, { frame: l.f })?.headY ?? null; } catch {}
+      const y = P.captionY(scene, l.text, headY);
+      if (!scene.captions.highlight) { post.overlays.push({ path: await write(g => P.drawCaption(g, W, H, l.text, y, -1, fit), 'caption'), start: at + l.f, length: l.to - l.f }); continue; }
       for (let w = 0; w < words; w++) {
         const a = l.f + Math.round(w * (l.to - l.f) / words), b = l.f + Math.round((w + 1) * (l.to - l.f) / words);
-        if (b > a) post.overlays.push({ path: await write(g => P.drawCaption(g, W, H, l.text, y, w), 'caption'), start: at + a, length: b - a });
+        if (b > a) post.overlays.push({ path: await write(g => P.drawCaption(g, W, H, l.text, y, w, fit), 'caption'), start: at + a, length: b - a });
       }
     }
     at += s.length;
@@ -537,6 +542,20 @@ function cutsDialog() {
       h('button', { onclick: () => { close(); pick2('Imagination bubble plays', [['', 'A video file…'], ...scene.shots.filter((s, i) => i !== scene.active).map(s => [s.code, shotName(s)])], r => postRun({ action: 'bubble', clip_shot: r || undefined })); } }, 'Add imagination bubble…'),
       h('button', { onclick: close }, 'Close'))]);
 }
+// The animation rules, built in as defaults the render applies while it poses each frame
+// (host/blender/lib/constraints.py). Nothing is checked or blocked; each one can be switched
+// off for a shot when the idea needs to break it.
+const RULES = [
+  ['armInFront', 'Arms in front', 'A hand never hides behind the head from the camera: the arm takes the smallest turn, forward first, that brings it in front of the face or clear of the head. Off: hands go exactly where keyed.'],
+  ['faceClear', 'Face clear', 'A set piece or placed prop that would block the face or body from the camera slides sideways just enough. Off: everything stays where it was put.'],
+  ['propsOnFloor', 'Props on floor', 'Props and set pieces standing on the floor rest their stroke a hair above it, like the characters. Off: they keep their exact height.'],
+  ['eyeSize', 'Same eye size', 'Eyes keep one size: the Frog\'s eye bumps ignore EAR Scale and Squash. Off: the eye bumps scale with those values.'],
+];
+function rulesRow() {
+  return h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px', title: 'Built-in rules: applied while the render poses each frame. Switch one off for this shot when the idea needs it.' },
+    h('b', {}, 'Built-in rules'),
+    ...RULES.map(([k, label, tip]) => h('button', { 'aria-pressed': String(project.rules?.[k] !== false), title: tip, onclick: () => { pushUndo(); project.rules ||= {}; if (project.rules[k] === false) delete project.rules[k]; else project.rules[k] = false; buildPanel(); } }, label)));
+}
 function captionsDialog() {
   const c = P.captionsOf(scene);
   modal({ h }, 'Captions', close => {
@@ -544,6 +563,7 @@ function captionsDialog() {
     const lines = (c.tracks[c.active] || []).filter(l => l.shot === project.uid);
     return [h('div', { class: 'row' }, ...Object.entries(P.LANGS).map(([k, n]) => h('button', { 'aria-pressed': String(c.active === k), onclick: () => { close(); postRun({ action: 'caption_lang', lang: k }).then(() => captionsDialog()); } }, n))),
       h('p', { class: 'hint' }, 'Below the face, inside the safe zone. One to three words stay on one line; longer ones take two. The render uses the language picked here.'),
+      h('label', { class: 'row', title: 'On: each caption snaps inside the Instagram safe zone, below the face, and shrinks to fit the width. Off: captions sit exactly at the height set.' }, h('input', { type: 'checkbox', checked: c.snap !== false, onchange: e => { pushUndo(); c.snap = e.target.checked ? undefined : false; drawPost(); } }), ' Keep captions in the safe zone, below the face'),
       h('div', { class: 'row' }, text, secs, h('button', { onclick: () => { if (text.value.trim()) { close(); postRun({ action: 'caption', text: text.value, seconds: Number(secs.value) }).then(() => captionsDialog()); } } }, 'Add')),
       h('div', { class: 'ds-list' }, ...lines.map(l => h('div', { class: 'row' }, h('span', { style: 'min-width:7em' }, `${l.f}–${l.to}`), h('span', {}, l.text)))),
       h('label', { class: 'row' }, h('input', { type: 'checkbox', checked: c.highlight, onchange: e => postRun({ action: 'highlight', on: e.target.checked }) }), ' Highlight each word as it is said'),
@@ -1306,6 +1326,7 @@ function buildPanel() {
       const field = (label, obj, key, attrs) => { const i = h('input', { ...attrs, value: obj[key] }); i.addEventListener('change', () => { pushUndo(); obj[key] = attrs.type === 'number' ? Number(i.value) : i.value; buildTimelineTools(); drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
       c.append(cols('two', [h('h3', {}, `Shot ${project.code}`), field('Name', project, 'label', { type: 'text', placeholder: 'optional, e.g. intro' }), field('Length (frames)', project, 'length', { type: 'number', min: 1, max: 54000 }),
         h('span', { title: 'Line weight for this shot in Blender, as a percent of Doodle Studio\'s ink (100 = Bunny\'s usual weight). Every line in the shot changes together, so weights stay equal.' }, field('Line weight (%)', project, 'ink', { type: 'number', min: 40, max: 250, placeholder: '100' })),
+        rulesRow(),
         h('h3', {}, `Scene: ${scene.shots.length} shot${scene.shots.length > 1 ? 's' : ''}, ${(sceneFrames() / scene.fps).toFixed(1)} s`),
         field('Frame rate', scene, 'fps', { type: 'number', min: 12, max: 60 }),
         field('Width (px)', scene, 'width', { type: 'number', min: 64, max: 3840 }), field('Height (px)', scene, 'height', { type: 'number', min: 64, max: 3840 }),
@@ -2614,7 +2635,13 @@ function loop() {
     autosave: (p = {}) => { const s = setAutosave(p); startAutosave(polCtx()); return s; },
     mirrorPose(at) { if (at != null) goto(at); putPose(mirrorValues(poseNow())); return this.state(); },
     blendPoses(a, b, t, at) { if (at != null) goto(at); poseBuf.A = a; poseBuf.B = b; blendPose(Math.max(0, Math.min(100, Number(t)))); return this.state(); },
-    setShotLook(p) { pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); apply(); buildPanel(); return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100 }; },
+    setShotLook(p) {
+      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink)));
+      for (const [k, v] of Object.entries(p.rules || {})) if (RULES.some(r => r[0] === k)) { project.rules ||= {}; if (v === false) project.rules[k] = false; else delete project.rules[k]; }
+      if (p.captionSnap != null) { P.captionsOf(scene).snap = p.captionSnap ? undefined : false; drawPost(); }
+      apply(); buildPanel();
+      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
+    },
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
     save: () => saveShot(false, true),

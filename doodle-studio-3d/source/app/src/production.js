@@ -2,6 +2,7 @@
 // meter, editable render presets with a time estimate, the export preflight, an overnight
 // batch, the health check with one-click fixes, pack project and cache cleanup.
 import * as THREE from 'three';
+import { safeCaptionY } from './post.js';
 
 export const modal = (ctx, title, body) => {
   const { h } = ctx;
@@ -220,8 +221,14 @@ export function preflight(ctx, sc = ctx.scene(), { envelope = null, project2d = 
     lines++;
     const tag = `${s.code} [${lang}] "${l.text}"`, words = String(l.text).trim().split(/\s+/).filter(Boolean);
     const rows = words.length <= 3 ? [words] : [words.slice(0, Math.ceil(words.length / 2)), words.slice(Math.ceil(words.length / 2))];
-    const y = C.y ?? 0.7, half = rows.length * 0.045 * 1.15 / 2, wide = Math.max(...rows.map(r => r.join(' ').length)) * 0.55 * 0.045 * aspect;
-    if (wide > 0.88) bad.push(`${tag}: too wide for the safe zone (${Math.round(wide * 100)}% of the width), make it shorter`);
+    // with snapping on (the default) the caption is placed in the zone below the face and shrunk
+    // to fit when drawn, so it lands right by construction; the same placement is measured here
+    const snap = C.snap !== false;
+    let headY = null;
+    if (snap && project2d) try { headY = project2d(s, { frame: l.f })?.headY ?? null; } catch {}
+    const half = rows.length * 0.045 * 1.15 / 2, wide = Math.max(...rows.map(r => r.join(' ').length)) * 0.55 * 0.045 * aspect;
+    const y = snap ? safeCaptionY(l.text, C.y ?? 0.7, headY) : (C.y ?? 0.7);
+    if (wide > 0.88 && !snap) bad.push(`${tag}: too wide for the safe zone (${Math.round(wide * 100)}% of the width), make it shorter`);
     if (y - half < 0.14 || y + half > 0.8) bad.push(`${tag}: outside the Instagram safe zone (caption height ${Math.round(y * 100)}%)`);
     else if (project2d) {
       const p = project2d(s, { frame: l.f });

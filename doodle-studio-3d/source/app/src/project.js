@@ -169,6 +169,10 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}) 
   if (project.items?.length) out.items = project.items;
   if (project.powers && Object.keys(project.powers).length) out.powers = project.powers;   // Blender powers (powers.py)
   if (project.costars?.length) out.costars = costarsForBridge(project, allIds);   // co-stars (cast.py)   // Blender powers (powers.py)
+  // the built-in rule defaults (arm in front, face clear, props on the floor, eye size) are on
+  // unless this shot turns one off; only the switches that are off travel, so caches hold
+  const off = Object.entries(project.rules || {}).filter(([, v]) => v === false);
+  if (off.length) out.rules = Object.fromEntries(off);
   if (project.camCuts?.length) out.cuts = project.camCuts.map(f => +(f / project.fps).toFixed(4));   // multi-cam: no blur across a cut
   return out;
 }

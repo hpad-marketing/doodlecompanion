@@ -47,22 +47,24 @@ The two apps share the asset library, Bunny's look and the idea of an MCP. Each 
 
 ### The hard rules (from `docs/ANIMATION-RULES.md`)
 
-Nothing is shown to the user or exported until all of these hold. The right-hand column says what checks each one today.
+Most of these are built into the app as defaults: the render shapes each frame so the rule holds, the way floor collision lifts a foot that would dig in. Nothing is checked frame by frame and nothing is blocked. Every default can be switched off for one shot (see **Built-in rules** below the table) when the idea needs to break it. The right-hand column says what keeps each one.
 
 | # | Rule | Checked by |
 |---|---|---|
-| 1 | Hands and arms never cut into the head (outline and ears included). An arm crosses the face only when the whole arm is in front. | Rig solver at render, live rule lights (`workflow rules`) |
+| 1 | Hands and arms never cut into the head (outline and ears included). An arm crosses the face only when the whole arm is in front. | Built in: the rig solver turns an arm out of the head, and **Arms in front** brings a hand that would hide behind the head (as the camera sees it) forward in front of the face, eased over a few frames. A back view and a hand clearly over the face stay as keyed |
 | 1a | No see-through lines: only the front part is drawn where parts overlap. | Built into the look; check stills by eye |
 | 2 | Grounding: feet on the floor, nothing floats, no sitting on props unless asked. Bunny always stands on the floor. Floor collision: no leg, hand or hoodie, and none of their ink strokes, goes under the floor, from any camera angle. The floor you see in the scene is the base: the rig's ground, or the set's own floor (a raised park floor, a stage) up to 25 cm higher right under the feet. Nothing else counts as the floor: not a table, not a bench or a stone, and never a set's own outline (the ink around the ground floats several centimetres up in a high shot). A pose that would dig in (a sunk body, a deep kneel, a toe pushed down) lifts the whole character by exactly how deep it went. Standing and jumping poses are never moved. The outline is drawn a little behind each form, pushed away from the camera, and that push stops at the floor, so in a high or overhead shot the floor never cuts off the bottom of the foot strokes. This holds for Bunny, the Koala, the Frog and every co-star, and your keyed values stay as they are. | Floor collision in the live view and at render (`floor.json` logs every lift); the render check fails a frame with `stroke_in_floor` and reports `shell_low`, the outline as it renders, against the floor. `foot_low`, `grounded` and `floor_gap` are measurements for reports, not fails; the blocking fields are listed by the check. A shot can turn it off with `floorCollision: false` |
 | 3 | Constant stroke weight per depth layer. | By construction; `set_shot_look ink` keeps weights equal |
 | 4 | Smooth camera: eased moves, few cuts, counted across the whole video. Low and high angles only when the set moves with the lens (a real 3D camera does this). Bunny is always framed and never cut off. | Camera presets are eased; preflight warns when hard cuts come faster than one every 2.5 s |
-| 5 | Minimal sets, clear of the character, no tangents. Props behind him. At least 35% of a cropped prop is visible. | The set auto-layout keeps a clear zone round his mark; check preview stills for slivers and tangents |
+| 5 | Minimal sets, clear of the character, no tangents. Props behind him. At least 35% of a cropped prop is visible. | Built in: the set auto-layout keeps a clear zone round his mark and hides slivers; **Face clear** slides any set piece or placed prop that would block his face or body sideways; **Props on floor** rests every standing prop's stroke a hair above the floor |
 | 5a | Cinematic composition: thirds, frame within frame, depth-true scale, one horizon height across shots. | Camera presets (thirds placement), the `group` target for co-stars; preflight blocks a horizon spread over 4% |
 | 6 | Real lip sync from the audio. The mouth is closed in silence. | `audio lipsync` keys it; preflight samples the mouth on loud frames |
-| 7 | Eyes and mouth keep a constant size. Act with expression, gaze, head and body. | By construction (squash never scales the face) |
+| 7 | Eyes and mouth keep a constant size. Act with expression, gaze, head and body. | Built in: squash never scales the face; **Same eye size** keeps the Frog's eye bumps one size whatever EAR Scale says |
 | 8 | Smooth, beat-matched, flowing motion. Act the meaning of the words, not literal mime. | Your eye; beat markers help |
 | 9 | One folder per animation: `DeepInDoodles\<Name>\`. Only the final sits at the top; everything else goes in `work\`. | The app does this automatically |
 | 10 | Token report after the user approves the final and says "done". | `production meter`, `production change_log`, plus Claude Code's usage stats |
+
+**Built-in rules.** Render › Output has a row of toggles for the active shot: Arms in front, Face clear, Props on floor and Same eye size. All are on by default. Over MCP: `set_shot_look {"rules": {"armInFront": false}}` lets that shot break the rule on purpose (a hand scratching behind the head, a prop deliberately in front of him). Captions snap into the safe zone below the face and shrink to fit by default; `set_shot_look {"captionSnap": false}` or the Captions dialog keeps their exact height. Render logs say what each default did (`rules: ...` lines in blender.log).
 
 House preferences that apply to every animation:
 - Vary the expressions; Bunny isn't always smiling.
