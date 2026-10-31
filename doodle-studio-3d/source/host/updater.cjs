@@ -48,12 +48,14 @@ module.exports=({app,dialog,net,window,logDir})=>{
  async function get(url){let error;for(let i=0;i<3;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;error=Error(url+' '+r.status);}catch(e){error=e;}await new Promise(r=>setTimeout(r,1000*(i+1)));}throw error;}
  // One updater at a time, even with several Doodle Studio windows open.
  const lock=()=>{const file=path.join(work,'lock');fs.mkdirSync(work,{recursive:true});try{if(Date.now()-fs.statSync(file).mtimeMs>30*60000)fs.unlinkSync(file);}catch{}try{fs.closeSync(fs.openSync(file,'wx'));return ()=>{try{fs.unlinkSync(file);}catch{}};}catch{return null;}};
- let busy=false,restartAsked=0,runtimeWarned=false;
+ let busy=false,asking=false,restartAsked=0,runtimeWarned=false;
  // Tools › Check for updates passes manual, so a check that finds nothing still answers.
  const tell=(message,detail)=>{const win=window();if(win&&!win.isDestroyed())return dialog.showMessageBox(win,{type:'info',title:'Doodle Studio 3D update',message,detail:detail||''});};
  async function check(manual=false){
   if(busy){if(manual)tell('Already checking for updates','The result shows up here in a moment.');return 'busy';}
-  busy=true;const unlock=lock();if(!unlock){busy=false;if(manual)tell('Already checking for updates','Another Doodle Studio window is installing it.');return 'busy';}
+  busy=true;const held=lock();if(!held){busy=false;if(manual)tell('Already checking for updates','Another Doodle Studio window is installing it.');return 'busy';}
+  // Release once: a check still waiting on its restart question must not free a newer check's lock.
+  let freed=false;const release=()=>{if(freed)return;freed=true;busy=false;held();};
   try{
    const m=await (await get(base+'manifest.json')).json();
    if((state().skip||[]).includes(m.version)){if(manual)tell('An update was held back','Version '+m.version+' broke the MCP connection on this PC and was undone. The next fixed version installs as usual.');return 'skipped';}
@@ -81,11 +83,13 @@ module.exports=({app,dialog,net,window,logDir})=>{
    fs.rmSync(staged,{recursive:true,force:true});
    writeState({version:m.version,notes:m.notes||'',installed:new Date().toISOString(),probation:true,launches:0,skip:state().skip||[]});log('installed '+m.version+' (on probation until its MCP answers)');
    const win=window();if(!win||win.isDestroyed())return 'installed';
-   const choice=await dialog.showMessageBox(win,{type:'info',title:'Doodle Studio 3D updated',message:'Doodle Studio 3D '+m.version+' is installed',detail:(m.notes?m.notes+'\n\n':'')+'Restart to start using it. Your projects stay as they are. If you choose Later, the new version opens next time you start Doodle Studio.',buttons:['Restart now','Later'],defaultId:0,cancelId:1});
+   // Free the updater before asking: a restart question left open must never hold up later checks.
+   release();if(asking)return 'installed';asking=true;
+   let choice;try{choice=await dialog.showMessageBox(win,{type:'info',title:'Doodle Studio 3D updated',message:'Doodle Studio 3D '+m.version+' is installed',detail:(m.notes?m.notes+'\n\n':'')+'Restart to start using it. Your projects stay as they are. If you choose Later, the new version opens next time you start Doodle Studio.',buttons:['Restart now','Later'],defaultId:0,cancelId:1});}finally{asking=false;}
    if(choice.response===0&&!win.isDestroyed()){restartAsked=Date.now();win.close();}
    return 'installed';
   }catch(error){log('update failed: '+(error&&(error.stack||error.message)||error));if(manual)tell('Doodle Studio couldn\'t check for updates','Check the internet connection and try again.\n\n'+(error&&error.message||error));return 'failed';}
-  finally{busy=false;unlock();}
+  finally{release();}
  }
  // The window's close runs the unsaved-project prompt. Relaunch only when the
  // quit really follows a Restart click, once the native host has exited.

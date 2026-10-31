@@ -1,8 +1,8 @@
 {
- "version": "20261031-200343",
- "notes": "Open in Blender: the shot opens in a full Blender window and stays live both ways (moves, turns, poses, camera, playhead; a new prop or set rebuilds it in about 2 s; Blender works on its own copy in work\\blender-live). Babble voice: type a line and Bunny, Koala or Frog speaks it as cute gibberish with lip sync and a caption (File › Babble voice, Face › Voice). SVG import and drawings: import an SVG or draw on the screen; it draws on, boils with noise and sits on its own layer, over the screen or in the 3D scene (Stage › Drawings). Also includes the stage view fixes, built-in rules and floor fixes from today.",
+ "version": "20261031-201244",
+ "notes": "Updater fix: a restart question left open no longer blocks later updates. Includes the live Blender link, babble voice and SVG drawings layer.",
  "runtime": "44.9.0",
- "published": "2026-10-31T20:03:44.049Z",
+ "published": "2026-10-31T20:12:45.298Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -55,9 +55,9 @@
    "gz": "files/f168ac0aa30d88b5715face8c2126fec11fe8ad05a06f41e5ba67cf1152dae4f.gz"
   },
   "resources/app/updater.cjs": {
-   "sha256": "08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de",
-   "size": 11263,
-   "gz": "files/08c32d28cd3e9909bf9e5ad2a21083bd5929d0a9398905f410ce416651e0a1de.gz"
+   "sha256": "6939010e48e6540b0fce25a063a84a8108ae4d6f5f91fd546309279efdc0a765",
+   "size": 11635,
+   "gz": "files/6939010e48e6540b0fce25a063a84a8108ae4d6f5f91fd546309279efdc0a765.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
    "sha256": "60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8",
