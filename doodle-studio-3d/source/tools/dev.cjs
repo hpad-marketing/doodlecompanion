@@ -11,7 +11,7 @@ const models = require('../host/models.cjs')({ libraryDir: libDir, cacheDir: () 
 // Open in Blender: a bpy stand-in for the Blender window (fakeblender_live.sh) when DS3D_BPY is set
 const PORT = Number(process.argv[2] || 54190);
 const mirror = require('../host/mirror.cjs')({ appDir: path.join(__dirname, '..', 'host'), port: PORT,
-  blender: () => (process.env.DS3D_BPY ? path.join(__dirname, 'fakeblender_live.sh') : null),
+  blender: () => process.env.DS3D_BLENDER || (process.env.DS3D_BPY ? path.join(__dirname, 'fakeblender_live.sh') : null),  // DS3D_BLENDER: a real Blender for window tests
   blendFor: s => (s.character && s.character !== 'bunny' ? path.join(__dirname, '..', 'host', 'blender', 'chars', s.character + '.blend') : path.join(__dirname, '..', 'host', 'blender', 'Bunny3D_v2.blend')),
   withMaster: s => s, folders: n => { const work = path.join(out, 'DeepInDoodles', String(n || 'scene'), 'work'); fs.mkdirSync(work, { recursive: true }); return { work }; },
   env: () => ({ DSL_LIBRARY: libDir(), DSL_BUNNY: path.join(__dirname, '..', 'host', 'blender') }) });
