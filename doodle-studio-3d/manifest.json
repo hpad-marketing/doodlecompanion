@@ -1,8 +1,8 @@
 {
- "version": "20261101-121317",
- "notes": "New Flat colour look: pure palette colours with no light. Materials > Pieces and parts lists everything in the shot, so you can recolour any part, like the flowers' petals, stems and centres.",
+ "version": "20261101-122757",
+ "notes": "Switching character now updates the open Blender window.",
  "runtime": "44.9.0",
- "published": "2026-11-01T06:43:17.376Z",
+ "published": "2026-11-01T06:57:57.944Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -25,9 +25,9 @@
    "gz": "files/d7cb5bad3fbc5ef9977600ddd192609af71f4c8222e0ad9c92c277af258b1e50.gz"
   },
   "resources/app/mirror.cjs": {
-   "sha256": "6736fcce67ff109379ff7c54e8567ddd905a71eaf9479749c3fbe814322e1e23",
-   "size": 7178,
-   "gz": "files/6736fcce67ff109379ff7c54e8567ddd905a71eaf9479749c3fbe814322e1e23.gz"
+   "sha256": "d1a7cb07b04fc14045abe8ab4bda992623796bcedb86165ee0adfbb10714604c",
+   "size": 7246,
+   "gz": "files/d1a7cb07b04fc14045abe8ab4bda992623796bcedb86165ee0adfbb10714604c.gz"
   },
   "resources/app/models.cjs": {
    "sha256": "b06842dbc181386f355877db1552c6426eb5a7a790ec5f07c14f6874fe63f2ec",
@@ -80,9 +80,9 @@
    "gz": "files/facd63d4cff100d6e827c104634fc6ca474c66f35f6586dadea2d008ced4f65f.gz"
   },
   "resources/app/blender/mirror.py": {
-   "sha256": "7d37703f0d022276b7e9b08549f67055b7967f5183390f59ad9e553f4ec21b8d",
-   "size": 30333,
-   "gz": "files/7d37703f0d022276b7e9b08549f67055b7967f5183390f59ad9e553f4ec21b8d.gz"
+   "sha256": "4865c44dc2cd150bed7f624558c22fb0c606fa8ee0cea380500a5cfd7a07aba9",
+   "size": 30457,
+   "gz": "files/4865c44dc2cd150bed7f624558c22fb0c606fa8ee0cea380500a5cfd7a07aba9.gz"
   },
   "resources/app/blender/preview_export.py": {
    "sha256": "bf1768928b626cc3f28e01974119e74f644624c61b457c61e7960767e6e32e16",
