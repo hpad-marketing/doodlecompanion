@@ -24,8 +24,9 @@ const fs = require('node:fs'), path = require('node:path');
 
 const TOOLS = __dirname;
 const NEEDS = {
-  // filled in from a full run: what each suite reaches for beyond node + playwright
-  library: ['batch7', 'batch13', 'costar_frame', 'floor', 'library', 'lights', 'looks', 'mirror', 'rules_scene', 'ux2d', 'visual_library'],
+  // filled in from full runs: what each suite reaches for beyond node + playwright (a suite that
+  // renders a library set or prop needs the library even if it never names it)
+  library: ['batch7', 'batch13', 'costar_frame', 'floor', 'library', 'lights', 'looks', 'mirror', 'rules_scene', 'squash', 'stage', 'stage_close', 'ux2d', 'visual_library'],
   bpy: ['carousel', 'costar_frame', 'floor', 'lights', 'looks', 'mirror', 'render', 'rules', 'rules_scene', 'scene', 'scene50', 'squash',
     'stage', 'stage_close', 'ux2d'],
   audio: ['vocals', 'babble'],
