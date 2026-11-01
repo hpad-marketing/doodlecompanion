@@ -1,8 +1,8 @@
 {
- "version": "20261101-111154",
- "notes": "The playhead now sits exactly under the mouse and starts at zero, with a handle on the ruler. Restart after an update reopens the app.",
+ "version": "20261101-112649",
+ "notes": "Transcribe now gives correct text. Playhead sits exactly under the mouse and starts at zero, with a handle on the ruler. Restart after an update reopens the app.",
  "runtime": "44.9.0",
- "published": "2026-11-01T05:41:54.938Z",
+ "published": "2026-11-01T05:56:49.390Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -435,9 +435,9 @@
    "gz": "files/dbb8db6e96899e3119450a1def7a7ec5c82872cbfb7c161af1bb4fa67528c691.gz"
   },
   "resources/app/ui/src/transcribe-worker.js": {
-   "sha256": "fc16e63a591de77c797256bd7dc9923ac984f7c0f643c59a4ad6f13892dce2b7",
-   "size": 1756,
-   "gz": "files/fc16e63a591de77c797256bd7dc9923ac984f7c0f643c59a4ad6f13892dce2b7.gz"
+   "sha256": "6d06955c008106d10bf5bc899a13a57dda8193e3b07c794efc0bb7311600de2c",
+   "size": 1613,
+   "gz": "files/6d06955c008106d10bf5bc899a13a57dda8193e3b07c794efc0bb7311600de2c.gz"
   },
   "resources/app/ui/src/transcribe.js": {
    "sha256": "2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43",
