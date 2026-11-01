@@ -358,7 +358,20 @@ else {
     });
     const mcp = require('./mcp.cjs')({ call, api });
     api['mcp-replay'] = ({ name, args }) => mcp.replay(name, args);
-    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models') } });
+    // the old copy may still be closing after an update restart: give the port a few seconds
+    for (let tries = 0; ; tries++) {
+      try {
+        await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models') } });
+        break;
+      } catch (e) {
+        if (e.code !== 'EADDRINUSE' || tries >= 8) {
+          dialog.showErrorBox('Doodle Studio 3D could not start', e.code === 'EADDRINUSE' ? `Another program is using port ${PORT}, which Doodle Studio 3D needs. It may be another copy still open: close it, or restart the PC, then open Doodle Studio 3D again.` : String(e.message || e));
+          app.quit();
+          return;
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
     let saved = {};
     try { saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'window.json'), 'utf8')); } catch {}
     const valid = saved.bounds && screen.getAllDisplays().some(d => saved.bounds.x < d.workArea.x + d.workArea.width && saved.bounds.x + saved.bounds.width > d.workArea.x);
