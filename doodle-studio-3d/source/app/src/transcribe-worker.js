@@ -9,11 +9,10 @@ let asr = null;
 async function load() {
   if (asr) return asr;
   const progress = p => { if (p.status === 'progress' && p.total) postMessage({ kind: 'progress', file: p.file, done: p.loaded, total: p.total }); };
-  const gpu = !!navigator.gpu && !!(await navigator.gpu.requestAdapter().catch(() => null));
-  postMessage({ kind: 'status', text: gpu ? 'Loading the speech model on the graphics card' : 'Loading the speech model' });
-  asr = await pipeline('automatic-speech-recognition', MODEL, gpu
-    ? { device: 'webgpu', dtype: { encoder_model: 'fp32', decoder_model_merged: 'q8' }, progress_callback: progress }
-    : { dtype: 'q8', progress_callback: progress });
+  // on the CPU on purpose: the graphics card path gave garbage text in the real app, and this
+  // runs faster than the speech itself
+  postMessage({ kind: 'status', text: 'Loading the speech model' });
+  asr = await pipeline('automatic-speech-recognition', MODEL, { dtype: 'q8', progress_callback: progress });
   return asr;
 }
 onmessage = async e => {
