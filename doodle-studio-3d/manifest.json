@@ -1,8 +1,8 @@
 {
- "version": "20261101-112649",
- "notes": "Transcribe now gives correct text. Playhead sits exactly under the mouse and starts at zero, with a handle on the ruler. Restart after an update reopens the app.",
+ "version": "20261101-115548",
+ "notes": "Set a shot's length on the timeline, in frames or seconds. A palette on the whole scene now colours Bunny and the outfit too; Character colours override it by hand.",
  "runtime": "44.9.0",
- "published": "2026-11-01T05:56:49.390Z",
+ "published": "2026-11-01T06:25:48.953Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -100,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "1162e05fb6ef03783f77a7aeba54886585c2bb6722bb9bdb45941dbb11f4a898",
-   "size": 55343,
-   "gz": "files/1162e05fb6ef03783f77a7aeba54886585c2bb6722bb9bdb45941dbb11f4a898.gz"
+   "sha256": "ab8ecced173256b74664c9e1bdf3ae961a2e04a15539091062a10fe323b63c50",
+   "size": 55445,
+   "gz": "files/ab8ecced173256b74664c9e1bdf3ae961a2e04a15539091062a10fe323b63c50.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -185,14 +185,14 @@
    "gz": "files/562dd970b01fda7c4766463cd0afa8da06137708d78c0cd44c88ebbd12c9c274.gz"
   },
   "resources/app/blender/lib/materials.py": {
-   "sha256": "060045a2528aaf0b8f084d219f40f7bdd1bec5b445a1d134ce3eb1e83417e049",
-   "size": 28095,
-   "gz": "files/060045a2528aaf0b8f084d219f40f7bdd1bec5b445a1d134ce3eb1e83417e049.gz"
+   "sha256": "2622cbfd980a6c42ec1fb78c4d63429d947f52f4ea97157739880a2a79702a42",
+   "size": 28261,
+   "gz": "files/2622cbfd980a6c42ec1fb78c4d63429d947f52f4ea97157739880a2a79702a42.gz"
   },
   "resources/app/blender/lib/palettes.json": {
-   "sha256": "b264e67572ba66e98e10c1cc944b7897cf4ea08ea057192231b6c126be6557d3",
-   "size": 6302,
-   "gz": "files/b264e67572ba66e98e10c1cc944b7897cf4ea08ea057192231b6c126be6557d3.gz"
+   "sha256": "403455b3cb277176500f24f5d3618e507a1c94f633e1390a7a9cd0ad8e25e40b",
+   "size": 6702,
+   "gz": "files/403455b3cb277176500f24f5d3618e507a1c94f633e1390a7a9cd0ad8e25e40b.gz"
   },
   "resources/app/blender/lib/physics.py": {
    "sha256": "c66927e934dde86dac8a684b669213ecf10d3d79cb951b93ff1b00fe02b91034",
@@ -370,14 +370,14 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "8e62f4765087fdf77e576f9eb144e499924cbbaa49d5f38689a3e30bf043caca",
-   "size": 293885,
-   "gz": "files/8e62f4765087fdf77e576f9eb144e499924cbbaa49d5f38689a3e30bf043caca.gz"
+   "sha256": "c8415bffbf53e56fd07adce038b412762a839cad631f2780f453807d3c623453",
+   "size": 295234,
+   "gz": "files/c8415bffbf53e56fd07adce038b412762a839cad631f2780f453807d3c623453.gz"
   },
   "resources/app/ui/src/materials.js": {
-   "sha256": "d123157692322985a2bd0a410cb27167e594f2fc46dbd301261e903c48c1ee71",
-   "size": 22695,
-   "gz": "files/d123157692322985a2bd0a410cb27167e594f2fc46dbd301261e903c48c1ee71.gz"
+   "sha256": "deb0ceaff3287546753086abf7a8516431ee9a646d9b7717e95bde8e8c732e5f",
+   "size": 22994,
+   "gz": "files/deb0ceaff3287546753086abf7a8516431ee9a646d9b7717e95bde8e8c732e5f.gz"
   },
   "resources/app/ui/src/mirror.js": {
    "sha256": "e1409676671560ed814a746253340c6851a16df1d3cf5d2aa3ff7101e13c265b",
@@ -385,9 +385,9 @@
    "gz": "files/e1409676671560ed814a746253340c6851a16df1d3cf5d2aa3ff7101e13c265b.gz"
   },
   "resources/app/ui/src/palettes.js": {
-   "sha256": "3ebf72dd930d952a7b60f12582f5aa58a81c2edc12b3723ecd3defb2e01dcf74",
-   "size": 7146,
-   "gz": "files/3ebf72dd930d952a7b60f12582f5aa58a81c2edc12b3723ecd3defb2e01dcf74.gz"
+   "sha256": "71ec758d4c88d32d44d7da7779d1cffee067533d282b263b9f040001224e6b16",
+   "size": 7229,
+   "gz": "files/71ec758d4c88d32d44d7da7779d1cffee067533d282b263b9f040001224e6b16.gz"
   },
   "resources/app/ui/src/polish.js": {
    "sha256": "d38c3e7d2436314272f32b5bb52597282d3b513b834de6450abde79c5484f0ea",
@@ -445,9 +445,9 @@
    "gz": "files/2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "88c62b6046e4f3ca5a0d6a7681a1084c81b2b0bc9700059169dafe1a9d0b584e",
-   "size": 17631,
-   "gz": "files/88c62b6046e4f3ca5a0d6a7681a1084c81b2b0bc9700059169dafe1a9d0b584e.gz"
+   "sha256": "f19ebcee00f29b98bfe11a238def96a20aee88f330cfea2f9f60e5fbfdc2d403",
+   "size": 17666,
+   "gz": "files/f19ebcee00f29b98bfe11a238def96a20aee88f330cfea2f9f60e5fbfdc2d403.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842",
