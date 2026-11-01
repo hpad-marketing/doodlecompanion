@@ -42,7 +42,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(k.armR.join() === '0,30,60,70,100' && k.headYaw.join() === '0,30,70', 'Ctrl+C / Ctrl+V pastes the keys at the playhead');
   await p.keyboard.press('Control+a');
   ok(await ev(() => document.querySelectorAll('#tracks .key.sel').length) === 8, 'Ctrl+A selects every key');
-  await p.click('#timeline-tools button:has-text("Clear all")');
+  await p.click('#menubar .menu > button:text-is("Edit")'); await p.click('#menubar .menu-list button:has-text("Clear all keys")');
   ok(!Object.keys(await keys()).length, 'Clear all empties the shot');
   await p.keyboard.press('Control+z');
   ok((await keys()).armR?.length === 5, 'undo brings the keys back');

@@ -14,6 +14,7 @@ copy('app/index.html', 'ui/index.html');
 copy('app/src', 'ui/src');
 copy('app/vendor', 'ui/vendor');
 copy('app/bunny3d.json', 'ui/bunny3d.json');
+for (const f of fs.readdirSync(path.join(__dirname, '..', 'app', 'fonts'))) copy(`app/fonts/${f}`, `ui/fonts/${f}`);
 copy('app/guide.md', 'ui/guide.md');
 for (const c of ['koala', 'frog']) copy(`app/chars/${c}.json`, `ui/chars/${c}.json`);
 for (const c of ['bunny', 'koala', 'frog']) copy(`app/chars/${c}.png`, `ui/chars/${c}.png`);

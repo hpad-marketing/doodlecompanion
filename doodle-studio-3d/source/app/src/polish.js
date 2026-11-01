@@ -84,9 +84,11 @@ export function commandSearch(ctx) {
   const run = c => { close(); try { Promise.resolve(c.run()).catch(e => ctx.toast(e.message, 4000)); } catch (e) { ctx.toast(e.message, 4000); } };
   const fill = () => {
     const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
-    shown = cmds.filter(c => words.every(w => (c.group + ' ' + c.label).toLowerCase().includes(w))).slice(0, 14);
+    // recent tools come first before anything is typed; right-click pins one to the menu bar
+    const recent = words.length ? [] : ctx.recentIds().map(id => cmds.find(c => ctx.cmdId(c) === id)).filter(Boolean);
+    shown = [...new Set([...recent, ...cmds.filter(c => words.every(w => (c.group + ' ' + c.label).toLowerCase().includes(w)))])].slice(0, 14);
     sel = Math.min(sel, Math.max(0, shown.length - 1));
-    list.replaceChildren(...shown.map((c, i) => h('button', { role: 'option', 'aria-selected': String(i === sel), onclick: () => run(c) }, h('span', {}, c.label), h('small', {}, c.group + (c.key ? ' · ' + c.key : '')))));
+    list.replaceChildren(...shown.map((c, i) => h('button', { role: 'option', 'aria-selected': String(i === sel), title: 'Right-click to pin or unpin it on the menu bar', onclick: () => run(c), oncontextmenu: e => { e.preventDefault(); ctx.toast(ctx.toggleFav(ctx.cmdId(c)) ? `${c.label} pinned to the menu bar` : `${c.label} unpinned`); ctx.refreshQuickbar(); } }, h('span', {}, (ctx.isFav(ctx.cmdId(c)) ? '★ ' : '') + c.label), h('small', {}, c.group + (c.key ? ' · ' + c.key : '')))));
   };
   input.addEventListener('input', () => { sel = 0; fill(); });
   input.addEventListener('keydown', e => {

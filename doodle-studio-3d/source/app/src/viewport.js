@@ -3,6 +3,7 @@
 // Final frames come from Blender; this is the fast, interactive preview.
 import * as THREE from 'three';
 import { BunnyRig, decodeMesh, subdivide, STAGE_BODY_UNIT } from './rig.js';
+import { LIT, litPars, litBasic, shadowPass } from './lit.js';
 
 const FLOOR_PART = /_(leg|pelvis|shirt|hand|cuff)\.?[LR]?$/;   // what can reach the floor (as in Blender)
 
@@ -13,13 +14,13 @@ const MIN_INK_PX = 3;               // the ink never gets thinner than this many
 const DEPTH_BIAS = 4.5;              // outline pushed away from the camera by this many ink widths
 
 export const outlineVS = `
-uniform float inkPx; uniform vec2 res; uniform float bias; uniform float ortho; uniform float worldPerPxOrtho;
+uniform float inkPx; uniform float inkK; uniform vec2 res; uniform float bias; uniform float ortho; uniform float worldPerPxOrtho;
 void main(){
   vec4 vp = modelViewMatrix * vec4(position, 1.0);
   vec3 vn = normalize(normalMatrix * normal);
   float wpp = ortho > 0.5 ? worldPerPxOrtho : (2.0 * -vp.z / projectionMatrix[1][1]) / res.y;
   vec3 away = ortho > 0.5 ? vec3(0.0, 0.0, -1.0) : normalize(vp.xyz);
-  vp.xyz += vn * inkPx * wpp + away * bias * inkPx * wpp;
+  vp.xyz += vn * inkPx * inkK * wpp + away * bias * inkPx * inkK * wpp;
   gl_Position = projectionMatrix * vp;
 }`;
 export const outlineFS = `uniform vec3 color; void main(){ gl_FragColor = vec4(color, 1.0);
@@ -28,20 +29,22 @@ export const outlineFS = `uniform vec3 color; void main(){ gl_FragColor = vec4(c
 
 const headVS = `
 attribute vec3 restPos; attribute vec3 restNrm; attribute float faceMask;
-varying vec3 vRest; varying float vFront;
+varying vec3 vRest; varying float vFront; varying vec3 vLitN; varying vec3 vLitP;
 void main(){
   vRest = restPos;
+  vLitN = normalize(mat3(modelMatrix) * normal); vLitP = (modelMatrix * vec4(position, 1.0)).xyz;
   vFront = faceMask * smoothstep(0.02, 0.25, -restNrm.y);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
 const headFS = `
 uniform sampler2D face; uniform vec4 box; uniform vec3 base; uniform vec3 ink;
-varying vec3 vRest; varying float vFront;
+varying vec3 vRest; varying float vFront; varying vec3 vLitN; varying vec3 vLitP;
+${litPars}
 void main(){
   vec2 uv = vec2((vRest.x - box.x) / (box.z - box.x), (vRest.z - box.y) / (box.w - box.y));
   float a = 0.0;
   if (vFront > 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0) a = texture2D(face, uv).a * step(0.5, vFront);
-  gl_FragColor = vec4(mix(base, ink, a), 1.0);
+  gl_FragColor = vec4(mix(mix(base, ink, litBand(normalize(vLitN), vLitP)), ink, a), 1.0);
 #include <colorspace_fragment>
 }`;
 
@@ -92,7 +95,7 @@ export class Viewport {
     this.meshes = data.meshes.map(decodeMesh);
     this.objects = [];
     this.outlineUniforms = { inkPx: { value: 8 }, res: { value: new THREE.Vector2(1, 1) }, bias: { value: DEPTH_BIAS },
-      ortho: { value: 0 }, worldPerPxOrtho: { value: 0.001 }, color: { value: INK.clone() } };
+      ortho: { value: 0 }, worldPerPxOrtho: { value: 0.001 }, color: { value: INK.clone() }, inkK: { value: 1 } };
     this.buildFace();
     this.buildBunny();
     this.buildStage();
@@ -135,21 +138,39 @@ export class Viewport {
         for (let i = 0; i < m.count; i++) mask[i] = sub[3 * i] > 0.98 ? 1 : 0;
         g.setAttribute('faceMask', new THREE.BufferAttribute(mask, 1));
         mat = new THREE.ShaderMaterial({ vertexShader: headVS, fragmentShader: headFS,
-          uniforms: { face: { value: this.faceTex }, box: { value: this.faceBox }, base: { value: MUSTARD.clone() }, ink: { value: INK.clone() } } });
+          uniforms: { ...LIT, face: { value: this.faceTex }, box: { value: this.faceBox }, base: { value: MUSTARD.clone() }, ink: { value: INK.clone() } } });
       } else {
-        mat = new THREE.MeshBasicMaterial({ vertexColors: true });
+        mat = litBasic(new THREE.MeshBasicMaterial({ vertexColors: true }));
       }
       const mesh = new THREE.Mesh(g, mat);
       mesh.frustumCulled = false;
+      mesh.layers.enable(1);   // casts in the shadow pass (lit.js)
       this.group.add(mesh);
       let outline = null;
       if (m.outline) {
         outline = new THREE.Mesh(g, new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS,
-          uniforms: this.outlineUniforms, side: THREE.BackSide }));
+          uniforms: { ...this.outlineUniforms, inkK: this.inkK ||= { value: 1 } }, side: THREE.BackSide }));
         outline.frustumCulled = false;
         this.group.add(outline);
       }
       this.objects.push({ m, g, mesh, outline, buf: pos });
+    }
+  }
+
+  // a palette's colours for the body and the outfit; nothing for the brand mustard and black
+  setColours(body, outfit) {
+    const key = (body || '') + '|' + (outfit || '');
+    if (key === (this.colKey || '|')) return;
+    this.colKey = key;
+    const B = body ? new THREE.Color(body) : MUSTARD, F = outfit ? new THREE.Color(outfit) : INK;
+    for (const o of this.objects) {
+      const worn = /_(shirt|sleeve|cuff|hood|pelvis)/.test(o.m.name), col = o.g.attributes.color;
+      for (let i = 0; i < o.m.count; i++) {
+        const c = (o.m.materials[o.m.material[i]] || o.m.materials[0] || '').includes('ink') ? (worn ? F : INK) : B;
+        col.setXYZ(i, c.r, c.g, c.b);
+      }
+      col.needsUpdate = true;
+      o.mesh.material.uniforms?.base?.value.copy(B);
     }
   }
 
@@ -164,7 +185,7 @@ export class Viewport {
     this.rig = new BunnyRig(data);
     this.meshes = data.meshes.map(decodeMesh);
     this.objects = [];
-    this._faceInk = 0;
+    this._faceInk = 0; this.colKey = null;
     this.faceState = { expression: 0, gaze: 0, mouth: 0, blink: 0 };
     this.buildFace();
     this.buildBunny();
@@ -435,6 +456,7 @@ export class Viewport {
     val(cam.matrixWorld); val(cam.projectionMatrix);
     const [w, h] = this.size || [this.canvas.width, this.canvas.height];
     num(w); num(h); num(this.renderer.getPixelRatio()); num(this.inkScale); val(this.scene.background);
+    for (const k in LIT) val(LIT[k].value);   // the shared light and shadow uniforms (lit.js)
     this.scene.traverse(o => {
       num(o.id); num(o.visible);
       if (!o.visible) return;
@@ -471,6 +493,7 @@ export class Viewport {
     const want = (this.outlineUniforms.inkPx.value * wpp) / (0.1132 * this.data.S);
     if (!this._faceInk || Math.abs(want / this._faceInk - 1) > 0.08) { this._faceInk = want; this.drawFace(); }
     for (const a of this.actors || []) if (!a._faceInk || Math.abs(want / a._faceInk - 1) > 0.08) { a._faceInk = want; a.drawFace(); }
+    shadowPass(this);
     this.renderer.render(this.scene, this.camera);
   }
 }

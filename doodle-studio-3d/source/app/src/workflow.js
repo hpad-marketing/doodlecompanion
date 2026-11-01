@@ -136,13 +136,14 @@ export function closePop() { if (pop && !pop.closed) pop.close(); pop = null; }
 // ---------------------------------------------------------------- favourites and recents
 const favs = store('ds3d.favs', () => []), recents = store('ds3d.recents', () => []);
 export function noteRun(id) { recents.set([id, ...recents.get().filter(x => x !== id)].slice(0, 12)); }
+export const recentIds = () => recents.get();
+export const isFav = id => favs.get().includes(id);
 export function toggleFav(id) { const f = favs.get(); const on = !f.includes(id); favs.set(on ? [...f, id] : f.filter(x => x !== id)); return on; }
 export function quickbar(ctx) {
   const { h } = ctx, cmds = new Map(ctx.commands().map(c => [cmdId(c), c]));
-  const f = favs.get().filter(id => cmds.has(id)), r = recents.get().filter(id => cmds.has(id) && !f.includes(id)).slice(0, Math.max(0, 6 - Math.min(f.length, 6)));
-  const btn = (id, fav) => h('button', { class: fav ? 'fav' : 'recent', title: `${id}${fav ? ' (favourite: right-click to unpin)' : ' (recent: right-click to pin)'}`,
-    onclick: () => ctx.runCommand(cmds.get(id)), oncontextmenu: e => { e.preventDefault(); toggleFav(id); ctx.refreshQuickbar(); } }, (fav ? '★ ' : '') + cmds.get(id).label.replace(/…$/, ''));
-  return [...f.map(id => btn(id, true)), ...r.map(id => btn(id, false))];
+  // only what you pinned sits on the bar; recent tools stay in Ctrl+K, out of the way
+  return favs.get().filter(id => cmds.has(id)).map(id => h('button', { class: 'fav', title: `${id} (favourite: right-click to unpin)`,
+    onclick: () => ctx.runCommand(cmds.get(id)), oncontextmenu: e => { e.preventDefault(); toggleFav(id); ctx.refreshQuickbar(); } }, '★ ' + cmds.get(id).label.replace(/…$/, '')));
 }
 
 // ---------------------------------------------------------------- snapping

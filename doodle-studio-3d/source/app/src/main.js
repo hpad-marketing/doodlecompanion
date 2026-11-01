@@ -12,7 +12,7 @@ import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js
 import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, CHARACTERS, CATEGORIES, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 import { modal, historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
-import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, popSizeNow, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
+import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, popSizeNow, noteRun, toggleFav, recentIds, isFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
 import * as A2 from './animtools2.js';
 import * as S2 from './storytime2.js';
 import * as P from './post.js';
@@ -25,9 +25,15 @@ import * as DOCK from './ux2d.js';
 import * as ST from './stage3d.js';
 import * as MR from './mirror.js';
 import * as BB from './babblescene.js';
+import * as BK from './blocks.js';
+import { bubbleUi } from './bubbleui.js';
+import * as VF from './voicefx.js';
+import * as STT from './transcribe.js';
 import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
-import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
+import { updateLit, LIGHT_PRESETS } from './lit.js';
+import { inkBar, makeLighting } from './lightpanel.js';
+import { libraryBrowser, faceGrid, mouthGrid, setPanel, lightPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -177,6 +183,7 @@ async function setCharacter(c) {
   toast(`${charName()} on stage`);
 }
 const libCtx = () => ({
+  cameraYaw: () => view.cam.yaw, characterName: () => CHARACTERS.find(c => c[0] === character())?.[1] || 'Character', selectedTarget: selectedLightTarget, itemName: id => libRowMap().get(id)?.name, previewLighting: l => { litPreview = l; apply(); },
   h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, data: () => data, lib: libraryInfo, character,
   trackIds: () => BUNNY_IDS.concat(FACE_IDS), setCharacter: c => setCharacter(c).catch(e => toast(e.message, 5000)),
   changed: keys => { dirty = true; apply(); drawTracks(); if (keys) buildTimelineTools(); updateHud(); },
@@ -188,14 +195,48 @@ const libCtx = () => ({
 });
 // Materials tab (materials.js): looks on the scene, characters, set or props, drawn by Blender
 const matCtx = () => ({ h, api, toast, pushUndo, scene: () => scene, project: () => project, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem,
-  changed: () => { dirty = true; updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
+  changed: () => { dirty = true; apply(); updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
 // ---------------------------------------------------------------- live stage (stage3d.js): pick, place and move what is in the shot
 let stage = null;
 const libRowMap = () => { const rows = libraryRows(); if (rowMapFor !== rows) { rowMap = new Map(rows.map(r => [r.id, r])); rowMapFor = rows; } return rowMap; };
 let rowMap = new Map(), rowMapFor = null;
-let shapeShading = (() => { try { return localStorage.getItem('ds3d.shading') !== 'off'; } catch { return true; } })();
-function toggleShading(on) { shapeShading = on ?? !shapeShading; try { localStorage.setItem('ds3d.shading', shapeShading ? 'on' : 'off'); } catch {} stage?.setShading(shapeShading); apply(); toast(shapeShading ? 'Shape shading on (3D view only, the render stays flat)' : 'Shape shading off: flat Doodle look in the 3D view'); }
-const stageCtx = () => ({ api, toast, snap: () => snap.on, shading: () => shapeShading, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
+// the shadow button and each object's outline. A slider drag previews here; the shot saves when it is let go
+let litPreview = null, inkPreview = null;
+function toggleShadows(on) {
+  const was = !!stageOf(scene, project).shadows;
+  on ??= !was;
+  setStage(libCtx(), on ? { shadows: true } : { shadows: false, halftone: null }, libUi.shotOnly);
+  if (tab === 'stage') buildPanel();
+  toast(on ? 'Shadows on: the whole scene, characters included' : 'Shadows off: flat Doodle look');
+}
+function inkTarget() {
+  const s = stage?.selected, st = stageOf(scene, project);
+  if (s?.type === 'piece') return { id: 'piece:' + s.id, key: s.id, name: s.obj?.userData?.dsl_label || s.id, value: inkPreview?.id === 'piece:' + s.id ? inkPreview.value : st.inks?.[s.id] ?? 100 };
+  if (s?.type === 'bunny') return { id: 'lead', key: '@lead', name: CHARACTERS.find(c => c[0] === character())?.[1] || 'Character', value: inkPreview?.id === 'lead' ? inkPreview.value : st.inks?.['@lead'] ?? 100 };
+  if (s?.type === 'item') { const it = project.items?.[s.index]; if (it && stage.items[s.index]?.cat) return { id: 'item:' + s.index, index: s.index, name: libRowMap().get(it.id)?.name || it.id, value: inkPreview?.id === 'item:' + s.index ? inkPreview.value : it.ink ?? 100 }; }
+  return null;
+}
+function setInk(key, value, save) {
+  inkPreview = save ? null : { id: key.id, value };
+  if (save) {
+    if (key.index != null) editItem(key.index, { ink: value === 100 ? null : value }, 'Outline');
+    else {
+      const inks = { ...(stageOf(scene, project).inks || {}), [key.key]: value };
+      if (value === 100) delete inks[key.key];
+      setStage(libCtx(), { inks: Object.keys(inks).length ? inks : null }, libUi.shotOnly);
+    }
+  }
+  apply();
+}
+const selectedLightTarget = () => { const s = stage?.selected; return s?.type === 'bunny' ? 'lead' : s?.type === 'item' ? 'item:' + s.index : null; };
+function liveStage() {
+  const st = stageOf(scene, project);
+  if (litPreview) st.lighting = litPreview;
+  if (inkPreview && !inkPreview.id.startsWith('item:')) st.inks = { ...(st.inks || {}), [inkPreview.id === 'lead' ? '@lead' : inkPreview.id.slice(6)]: inkPreview.value };
+  return st;
+}
+const liveItems = () => { const n = inkPreview?.id.startsWith('item:') ? +inkPreview.id.slice(5) : -1, all = project.items || []; return n < 0 ? all : all.map((it, i) => (i === n ? { ...it, ink: inkPreview.value } : it)); };
+const stageCtx = () => ({ api, toast, snap: () => snap.on, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
   changed: () => requestAnimationFrame(() => { apply(); updateHud(); }), pushUndo: l => pushUndo(l),
   editItem: (i, patch, label) => editItem(i, patch, label, true), editPiece,
   // once a new item's model is in: stand it beside the character (level with him, never in front), clear of his body
@@ -385,13 +426,14 @@ function apply() {
     if (sig !== pathSig) { const t = performance.now(); pathPts = A2.pathOf(anim2Ctx(), pathWhat); pathPops = A2.arcCheck(pathPts); pathSig = sig; perf('motion path', performance.now() - t); }
   }
   view.pose(vals);
+  view.group.visible = !isolated('lead') && BK.visibleAt(project, frame, project.length);
   syncCostars();
   const cam = {};
   for (const id of CAM_IDS) cam[id.slice(4)] = current(id);
   if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
   MR.onApply(frame, vals, cam);
-  if (stage) { const t = performance.now(); stage.sync({ stage: stageOf(scene, project), items: project.items || [], frame, length: project.length, rows: libRowMap(), playing }); perf('stage', performance.now() - t); }
+  if (stage) { const t = performance.now(), st = liveStage(); stage.sync({ stage: st, noInk: MAT.outlinesOff(materialsOf(scene, project)), paint: MAT.stagePaint(materialsOf(scene, project), project.items || [], api, () => apply()), items: liveItems(), frame, length: project.length, rows: libRowMap(), playing }); updateLit(view, stage, st); perf('stage', performance.now() - t); }
   // live checks first, so the HUD below shows this frame's lights
   if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
   if (balanceOn) { balanceNow = A2.balance(view); drawCog(); }
@@ -401,6 +443,7 @@ function apply() {
   overlayDraw?.();
   drawDrawings();
   drawPost();
+  BU?.draw();
   if (view3.onion || onionShown) { const t = performance.now(); drawOnion(animCtx()); onionShown = view3.onion; perf('onion skin', performance.now() - t); }
   showNotes(project, frame);
   if (pathWhat && pathPts) A2.drawPath(anim2Ctx(), pathPts, pathKeys(), pathPops);
@@ -490,21 +533,23 @@ function captionWord(l, f) { const n = P.captionLines(l.text).flat().length; ret
 // the head's screen height (0 top, 1 bottom) in the live view, for caption placement
 function liveHeadY() { try { view.camera.updateMatrixWorld(); return (1 - view.headPoint().project(view.camera).y) / 2; } catch { return null; } }
 // ---------------------------------------------------------------- drawings (drawings.js): SVGs and hand lines on their own layer
-let drawStage = null, drawSel = 0;
+let drawStage = null, drawSel = 0, solo = null;
+const isolated = key => solo != null && solo !== key;
 function drawDrawings() {
-  drawStage?.sync(project.drawings || [], frame);
+  const list = (project.drawings || []).filter(d => !d.hidden && !isolated('d:' + d.id));
+  drawStage?.sync(list, frame);
   const fr = $('#frame');
   let c = document.getElementById('drawing-layer');
-  if (!project.drawings?.some(d => d.layer === 'screen')) { c?.remove(); return; }
+  if (!list.some(d => d.layer === 'screen')) { c?.remove(); return; }
   if (!c) { c = h('canvas', { id: 'drawing-layer' }); fr.insertBefore(c, $('#post-layer') || $('#hud')); }
   const pr = Math.min(2, window.devicePixelRatio || 1), W = c.width = Math.round(fr.clientWidth * pr), H = c.height = Math.round(fr.clientHeight * pr);
   // the same line the render lays on: Bunny's ink for this frame size, never under 3 px on screen
-  DR.drawScreen(c.getContext('2d'), W, H, project, frame, Math.max(3 * pr, DR.INK_PX_1920 * Math.max(W, H) / 1920 * (project.ink ?? 100) / 100));
+  DR.drawScreen(c.getContext('2d'), W, H, { drawings: list }, frame, Math.max(3 * pr, DR.INK_PX_1920 * Math.max(W, H) / 1920 * (project.ink ?? 100) / 100));
 }
 async function drRun(a) { try { const r = await dr(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
 async function dr(a = {}) {
   const done = (r, message) => ({ ...r, message });
-  const changed = () => { dirty = true; apply(); updateHud(); if (tab === 'stage' && sub.stage === 'drawings') buildPanel(); };
+  const changed = () => { dirty = true; apply(); updateHud(); drawTracks(); if (tab === 'draw') buildPanel(); };
   const list = () => DR.drawingsOf(project).map((d, i) => ({ index: i, id: d.id, name: d.name, layer: d.layer, x: d.x, y: d.y, size: d.size, rot: d.rot, depth: d.depth, frame: d.frame, build: d.build, until: d.until, noise: d.noise, boil: d.boil, colour: d.colour, strokes: d.strokes.length, placed: d.layer === 'scene' ? !!d.world : undefined }));
   const fit = (art, size) => Math.min(size ?? 0.35, 0.85 * (scene.width / scene.height) / Math.max(0.1, art.aspect || 1));
   switch (a.action || 'list') {
@@ -550,7 +595,7 @@ async function dr(a = {}) {
 }
 function importSvg(layer = 'screen') {
   const inp = h('input', { type: 'file', accept: '.svg,image/svg+xml' });
-  inp.addEventListener('change', async () => { const f = inp.files[0]; if (!f) return; await drRun({ action: 'import', svg: await f.text(), name: f.name.replace(/\.svg$/i, ''), layer }); setTab('stage', 'drawings'); });
+  inp.addEventListener('change', async () => { const f = inp.files[0]; if (!f) return; await drRun({ action: 'import', svg: await f.text(), name: f.name.replace(/\.svg$/i, ''), layer, noise: drawNew.noise, boil: drawNew.boil }); showDrawing(); });
   inp.click();
 }
 // draw by hand on the frame: the lines become a drawing that draws on from the playhead
@@ -568,12 +613,31 @@ function drawOnScreen() {
   const layer = h('select', { 'aria-label': 'Which layer' }, h('option', { value: 'screen' }, 'On the screen (over everything)'), h('option', { value: 'scene' }, 'In the 3D scene (1 m behind)'));
   const close = () => { cv.remove(); bar.remove(); };
   const bar = h('div', { class: 'stick-bar' }, h('span', {}, 'Draw: the lines draw on from the playhead and boil like the 2D cutaways'), layer,
-    h('button', { class: 'primary', onclick: async () => { const W = cv.width, H = cv.height; close(); await drRun({ action: 'draw', layer: layer.value, depth: 1, strokes: strokes.map(s => s.map(([x, y]) => [x / W, y / H])) }); setTab('stage', 'drawings'); } }, 'Make it a drawing'),
+    h('button', { class: 'primary', onclick: async () => { const W = cv.width, H = cv.height; close(); await drRun({ action: 'draw', layer: layer.value, depth: 1, noise: drawNew.noise, boil: drawNew.boil, strokes: strokes.map(s => s.map(([x, y]) => [x / W, y / H])) }); showDrawing(); } }, 'Make it a drawing'),
     h('button', { onclick: () => { strokes.length = 0; redraw(); } }, 'Clear'), h('button', { onclick: close }, 'Cancel'));
   fr.append(bar);
   cv.width = fr.clientWidth; cv.height = fr.clientHeight; redraw();
 }
-// Stage › Drawings: a picture of each drawing, and its settings in rows
+// the noise a new drawing starts with, and the named amounts of line boil
+const drawNew = { noise: 0.5, boil: 2 };
+const NOISE_STEPS = [['Still', 0, 2], ['Soft', 0.25, 3], ['Hand drawn', 0.5, 2], ['Shaky', 1, 2]];
+// open the Draw workspace on the newest drawing, finished, so its line and noise show at once
+function showDrawing() {
+  setTab('draw');
+  const d = DR.drawingsOf(project)[drawSel];
+  if (d) goto(d.frame + Math.max(0, d.build));
+}
+// Noise row: a slider that moves the line live, how often it boils, and the named amounts.
+// set(patch) keeps a change (noise, boil); live(v) follows the slider, live(null) when it is picked up
+function noiseRow(value, boilEvery, set, live) {
+  const out = h('span', { class: 'hint', style: 'min-width:3em;display:inline-block' }, `${Math.round(value * 100)}%`);
+  const sl = h('input', { type: 'range', min: 0, max: 100, step: 1, value: Math.round(value * 100), 'aria-label': 'Noise', style: 'width:180px', title: 'Line boil: how much the hand-drawn line wobbles (0 = still)',
+    onpointerdown: () => live?.(null), oninput: e => { out.textContent = `${e.target.value}%`; live?.(Number(e.target.value) / 100); }, onchange: e => set({ noise: Number(e.target.value) / 100 }) });
+  const every = h('input', { type: 'number', min: 1, max: 12, step: 1, value: boilEvery, style: 'width:56px', 'aria-label': 'Boil every', title: 'A new wobble every this many frames (2 = on twos)', onchange: e => set({ boil: Math.max(1, Math.min(12, Math.round(Number(e.target.value) || 1))) }) });
+  return h('div', { class: 'row dr-row' }, h('b', { class: 'dr-grp' }, 'Noise'), sl, out, h('label', { class: 'dr-f' }, 'Boil every', every),
+    ...NOISE_STEPS.map(([n, v, b]) => h('button', { 'aria-pressed': String(value === v && boilEvery === b), title: `${n}: noise ${Math.round(v * 100)}%, a new wobble every ${b} frames`, onclick: () => set({ noise: v, boil: b }) }, n)));
+}
+// Draw workspace: a picture of each drawing, and its settings in rows
 function drawingsPanel() {
   const all = DR.drawingsOf(project);
   drawSel = Math.max(0, Math.min(drawSel, all.length - 1));
@@ -582,15 +646,22 @@ function drawingsPanel() {
     h('button', { title: 'Draw lines by hand on the frame', onclick: () => drawOnScreen() }, 'Draw on the screen…'),
     all.length ? h('button', { onclick: () => drRun({ action: 'clear' }) }, 'Clear all') : null,
     h('span', { class: 'hint' }, 'Drawings sit on their own layer, apart from the characters, like the 2D studio. One line weight (Bunny\'s), ink or mustard only.'));
-  if (!all.length) return h('div', {}, head, h('p', { class: 'hint' }, 'No drawings on this shot yet.'));
+  if (!all.length) return h('div', {}, head, h('p', { class: 'hint' }, 'No drawings on this shot yet. New drawings start with this noise:'), noiseRow(drawNew.noise, drawNew.boil, o => { Object.assign(drawNew, o); buildPanel(); }));
   const cards = h('div', { class: 'char-cards', role: 'list' }, ...all.map((d, i) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String(i === drawSel), title: `${d.name}: ${d.layer === 'scene' ? 'in the 3D scene' : 'on the screen'}, from frame ${d.frame}`, onclick: () => { drawSel = i; goto(d.frame + Math.max(0, d.build)); buildPanel(); } },
     h('img', { src: DR.thumb(d, 64), alt: '', width: 64, height: 64 }), h('span', {}, d.name))));
   const d = all[drawSel], i = drawSel;
   const setv = (k, v) => drRun({ action: 'set', index: i, [k]: v });
-  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(3), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'dr-f', title: tip }, label, inp); };
+  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(1), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'dr-f', title: tip }, label, inp); };
   const sel = (label, k, opts, tip) => { const s = h('select', { 'aria-label': label, title: tip }, ...opts.map(([v, n]) => h('option', { value: v, selected: d[k] === v }, n))); s.addEventListener('change', () => setv(k, s.value)); return h('label', { class: 'dr-f', title: tip }, label, s); };
   const grp = (name, ...kids) => h('div', { class: 'row dr-row' }, h('b', { class: 'dr-grp' }, name), ...kids.filter(Boolean));
-  return h('div', {}, head, cards,
+  // the slider moves the line as it goes; letting go keeps it as one undo step
+  let noiseWas = d.noise;
+  const noiseLive = v => {
+    if (v == null) { noiseWas = d.noise; if (!DR.stateAt(d, frame)) goto(d.frame + Math.max(0, d.build)); return; }
+    d.noise = v; apply();
+  };
+  const noiseSet = o => { Object.assign(drawNew, o); d.noise = noiseWas; drRun({ action: 'set', index: i, ...o }); };
+  return h('div', {}, head, cards, noiseRow(d.noise, d.boil, noiseSet, noiseLive),
     grp('Where',
       sel('Layer', 'layer', [['screen', 'On the screen'], ['scene', 'In the 3D scene']], 'On the screen: over everything, like a 2D cutaway. In the 3D scene: stands in the world, so characters can pass in front of it.'),
       sel('Colour', 'colour', [['ink', 'Ink'], ['mustard', 'Mustard']], 'Brand colours only'),
@@ -604,10 +675,7 @@ function drawingsPanel() {
       num('Draws on over', 'build', d.build, 0, 600, 1, 'Frames to draw every line, one after another (0 = appears at once)'),
       num('Gone at frame', 'until', d.until, 0, 100000, 1, 'Frame it disappears (empty = stays to the end of the shot)'),
       h('button', { title: 'Disappear at the playhead', onclick: () => setv('until', Math.max(d.frame + 1, frame)) }, 'Gone at playhead')),
-    grp('Line',
-      num('Noise %', 'noise', d.noise, 0, 100, 5, 'Line boil: how much the hand-drawn line wobbles (0 = still)', 100), num('Boil every', 'boil', d.boil, 1, 12, 1, 'A new wobble every this many frames (2 = on twos)'),
-      h('span', { style: 'flex:1' }),
-      h('button', { title: `Remove ${d.name} (Ctrl+Z brings it back)`, onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
+    h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { title: `Remove ${d.name} (Ctrl+Z brings it back)`, onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
 }
 function drawPost() {
   const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame);
@@ -625,6 +693,13 @@ function drawPost() {
   }
   if (cap) P.drawCaption(g, W, H, cap.text, P.captionY(scene, cap.text, liveHeadY()), scene.captions.highlight ? captionWord(cap, frame) : -1, scene.captions.snap !== false);
 }
+let BU = null;
+const buCtx = () => ({ h, $, toast, pushUndo, headRadius: 0.2, scene: () => scene, project: () => project, frame: () => frame, view: () => view, goto, showFrame, isolated,
+  dirty: () => { dirty = true; }, tracks: () => drawTracks(), refresh: () => { if (tab === 'library' && sub.library === 'bubble') buildPanel(); drawTracks(); },
+  changed: () => { dirty = true; apply(); drawTracks(); updateHud(); if (tab === 'library' && sub.library === 'bubble') buildPanel(); },
+  babble: a => (a.action === 'rebuild' ? rebuildBabble() : babbleAct(a)), babbleLen: l => { const [a, b] = bbSpan(l); return b - a; },
+  shotStart: () => shotStarts()[scene.active], envelope: () => audioEnvelope(project.fps), castName: k => (k === 'lead' ? charName() : castName(CS.costarsOf(project)[k]?.character)),
+  frameAtX: x => { const box = $('#tracks'), r = box.getBoundingClientRect(); return Math.max(0, Math.min(project.length - 1, Math.round((x - r.left + box.scrollLeft - NAME_W) / pxPerFrame()))); } });
 const pngOf = (W, H, draw) => { const c = document.createElement('canvas'); c.width = W; c.height = H; draw(c.getContext('2d')); return c.toDataURL('image/png').split(',')[1]; };
 // what one render lays on top: indices are the shots in it, in order; full adds the sound side
 async function buildPost(indices, full) {
@@ -632,7 +707,7 @@ async function buildPost(indices, full) {
   const markers = full ? (() => { const st = shotStarts(); return scene.shots.flatMap((s, i) => (s.markers || []).map(m => ({ F: st[i] + m.f, note: String(m.note || '') }))).sort((a, b) => a.F - b.F); })() : [];
   const spans = P.markerSpans(markers, scene.fps);
   const trans = full ? PW.transitionsOf(scene.shots) : [];
-  const any = shots.some(s => s.look || s.cuts?.length || s.drawings?.some(d => d.layer === 'screen') || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
+  const any = shots.some(s => s.look || s.cuts?.length || s.bubbles?.length || s.drawings?.some(d => d.layer === 'screen') || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
   if (!any) return null;
   await P.loadFont();
   const W = scene.width, H = scene.height, safe = safeName(scene.name), dir = `${(await api('settings', {})).rendersRoot}/${safe}/work/post`;
@@ -649,6 +724,7 @@ async function buildPost(indices, full) {
         post.drawings.push({ path: made.get(run.sig), start: at + run.start, length: run.length });
       }
     }
+    await BU.bake(s, at, W, H, write, post);
     if (s.look && P.LOOK_STRIP[s.look]) {
       const ov = [{ path: await write(g => P.drawLook(g, W, H, s.look), s.look), blend: 'ALPHA_OVER', alpha: 1 }];
       if (s.look === 'flashback') ov.unshift({ path: await write(g => { g.fillStyle = P.MUSTARD; g.fillRect(0, 0, W, H); }, 'warm'), blend: 'MULTIPLY', alpha: 0.45 });
@@ -968,7 +1044,7 @@ async function masterDialog() {
 const costarLoading = new Set();
 const castName = c => (CHARACTERS.find(x => x[0] === c) || [0, c])[1];
 function syncCostars() {
-  const list = CS.costarsOf(project), ids = BUNNY_IDS.concat(FACE_IDS), out = [];
+  const list = CS.costarsOf(project), ids = BUNNY_IDS.concat(FACE_IDS), out = [], shown = [];
   for (const [i, c] of list.entries()) {
     const d = c.character === loadedChar ? data : charData[c.character];
     if (!d) {
@@ -979,8 +1055,10 @@ function syncCostars() {
       continue;
     }
     out.push({ data: d, values: CS.costarValues(project, i, ids, frame), x: c.x, y: c.y, turn: c.turn });
+    shown.push(!isolated('c' + i) && BK.visibleAt(c, frame, project.length));
   }
   if (out.length || view.actors?.length) view.setCostars(out);
+  view.actors?.forEach((a, k) => { a.group.visible = shown[k] !== false; });
 }
 async function castRun(a) { try { const r = await castAct(a); if (r?.message) toast(r.message, 5000); return r; } catch (e) { toast(e.message, 5000); return null; } }
 async function castAct(a) {
@@ -1241,14 +1319,14 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => babbleDialog()], ['Import SVG drawing…', () => importSvg()], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => openBabble()], ['Import SVG drawing…', () => importSvg()], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()], ['Co-stars (more characters)…', () => castDialog()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M'], ['Draw a review note on this frame', () => reviewNote(), 'N'], ['Tap a beat marker', () => tapBeat(), 'B']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Always redraw the 3D view on / off', () => toggleRedraw()], ['Snapping on / off', () => toggleSnap()], ['Shape shading in the 3D view on / off', () => toggleShading()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Always redraw the 3D view on / off', () => toggleRedraw()], ['Snapping on / off', () => toggleSnap()], ['Shadows on / off', () => toggleShadows()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ...DOCK.LAYOUTS.map(([id, n]) => [`Panels: ${n}`, () => DOCK.setLayout(id)]), ['Detach the timeline (another window)', () => DOCK.detach('timeline')], ['Detach the tools panel (another window)', () => DOCK.detach('tools')], ['Dock everything back', () => DOCK.dockAll()], ['Hide the tools panel', () => (DOCK.toggleHidden('tools') ? toast('Tools panel hidden: Ctrl+Shift+H brings it back') : toast('Tools panel shown')), 'Ctrl+Shift+H'], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
@@ -1272,8 +1350,8 @@ const MENUS = [
     ['Squash and stretch at the playhead…', () => pick2('Squash and stretch', Object.entries(F2.SQUASH_MOVES), k => featRun({ action: 'squash', kind: k }))], ['Hand contact (hip, belly, chest)…', () => contactDialog()], ['Pose from a stick figure (draw it)', () => stickMode()]]],
   // Story tab and its storytime workflow removed (user, 2026-10-31). The voice and finishing tools it held stay, in Post.
   ['Post', [['Captions…', () => captionsDialog()], ['Music bed…', () => musicDialog()], '-', ['Shot look…', () => pick2('Shot look', [...Object.entries(P.LOOKS), ['', 'None']], l => postRun({ action: 'look', look: l || null }))], ['Cut-ins: photo, narrator PiP, bubble…', () => cutsDialog()], '-',
-    ['Import SVG drawing…', () => importSvg()], ['Draw on the screen…', () => drawOnScreen()], ['Drawings on this shot…', () => setTab('stage', 'drawings')], '-',
-    ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Auto foley (sound effects)', () => storyRun('foley')], ['Split the voice into sentences…', () => sentenceDialog()]]],
+    ['Import SVG drawing…', () => importSvg()], ['Draw on the screen…', () => drawOnScreen()], ['Drawings on this shot…', () => setTab('draw')], '-',
+    ['Gestures from the voice', () => storyRun('gestures')], ['Eye darts', () => storyRun('eye_darts')], ['Auto foley (sound effects)', () => storyRun('foley')], ['Split the voice into sentences…', () => sentenceDialog()], ['Voice effects…', () => setTab('audio', 'effects')], ['Transcribe the voice…', () => setTab('audio', 'transcribe')]]],
   ['Blender', [['Open in Blender (live)', () => openInBlender(), 'Ctrl+B'], ['Stop the live Blender link', () => MR.close()], '-', ['Powers on this shot (doodles, scatter, crowd, liquids, lens, 360)…', () => powersDialog()], ['Draw ink doodles in 3D', () => doodleMode()], '-',
     ['Transition into this shot…', () => transitionDialog()], ['Paper finish…', () => { const v = prompt('Paper finish on the joined scene, 0 to 100 (0 is off):', String(Math.round((scene.paper || 0) * 100))); if (v != null) pwRun({ action: 'paper', amount: Number(v) / 100 }); }], '-',
     ['Linked controls…', () => linkDialog()], ['Macros…', () => macroDialog()], ['Master Bunny file…', () => masterDialog()]]],
@@ -1327,30 +1405,33 @@ function refreshQuickbar() { const q = $('#quickbar'); if (q) q.replaceChildren(
 function closeMenus() { document.querySelectorAll('#menubar .menu.open').forEach(m => { m.classList.remove('open'); m.querySelector('button').setAttribute('aria-expanded', 'false'); }); }
 
 // ---------------------------------------------------------------- side panel: workspaces, each with a section row (as in the 2D app)
-const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render'], ['materials', 'Materials']];
-const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output' };
+const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render'], ['materials', 'Materials'], ['audio', 'Audio'], ['draw', 'Draw']];
+const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output', audio: 'babble' };
 const SUBS = {
   pose: () => shownParts().map(([id, n]) => [id, n]),
-  face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life'], ['voice', 'Voice & lip sync']],
+  face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life']],
   animate: () => [['motions', 'Motion library'], ['keys', 'Keys & timing'], ['body', 'IK, paths & contact'], ['layers', 'Layers & copy'], ['loops', 'Loops & beats'], ['reference', 'Reference']],
   camera: () => [['lens', 'Lens & angle'], ['presets', 'Shot presets'], ['moves', 'Camera moves'], ['view', 'View & checks']],
-  stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['drawings', 'Drawings'], ['cast', 'Co-stars']],
+  stage: () => [['set', 'Set'], ['light', 'Light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['cast', 'Co-stars']],
   library: () => CATEGORIES.filter(c => !['motion', 'outfit', 'accessory'].includes(c[0])),
   carousel: () => [],
   materials: () => [],
-  render: () => [['output', 'Shot & output'], ['post', 'Captions, music & look'], ['blender', 'Blender, autosave & cache']],
+  audio: () => [['babble', 'Babble voice'], ['effects', 'Voice effects'], ['transcribe', 'Transcribe'], ['voice', 'Voice & lip sync'], ['music', 'Music & beats']],
+  draw: () => [],
+  render: () => [['output', 'Shot & output'], ['post', 'Look & finish'], ['blender', 'Blender, autosave & cache']],
 };
 // menu commands shown as buttons in a section (same commands, same undo, also in Ctrl+K)
 const SHELVES = {
-  'face:voice': [['Voice', 'File', ['Import audio for the scene…', 'Babble voice (type a line)…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)', 'Audio drives a control…']], ['From the voice', 'Post', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
+  'audio:voice': [['Voice', 'File', ['Import audio for the scene…', 'Remove scene audio']], ['Lip sync', 'Animate', ['Lip sync from the voice (this shot)', 'Lip sync from the voice (every shot)']], ['From the voice', 'Post', ['Gestures from the voice', 'Eye darts', 'Split the voice into sentences…']]],
+  'audio:music': [['Music', 'Post', ['Music bed…', 'Auto foley (sound effects)']], ['Beats', 'Animate', ['Mark beats from the audio', 'Audio drives a control…']], ['Captions', 'Post', ['Captions…']]],
   'animate:keys': [['Keys', 'Edit', ['Key Bunny pose', 'Key camera', 'Delete selected key', 'Clear all keys']], ['Timing', 'Animate', ['Breakdown halfway (tween)', 'Stepped blocking on / off', 'Simplify keys', 'Retime shot…', 'Time warp…', 'Moving hold from the playhead…', 'Euler filter (no 360° flips)']], ['Markers', 'Edit', ['Add marker with a note', 'Draw a review note on this frame', 'Tap a beat marker']]],
   'animate:body': [['Limbs', 'Animate', ['IK drag on / off', 'Pin a hand or foot…', 'Motion path…', 'Fix popping arcs on the path']], ['Body', 'Animate', ['Squash and stretch at the playhead…', 'Hand contact (hip, belly, chest)…', 'Pose from a stick figure (draw it)']], ['Checks', 'View', ['Balance marker on / off', 'Rule lights on / off', 'Silhouette check', 'Onion skin']]],
   'animate:layers': [['Layers', 'Animate', ['Add animation layer']], ['Copy', 'Animate', ['Copy keys (this shot)', 'Paste keys at the playhead', 'Retarget the scene to…']], ['Curves', 'View', ['Graph editor (curves) on / off']]],
-  'animate:loops': [['Loops', 'Animate', ['Loop check', 'Make seamless loop']], ['Beats', 'Animate', ['Mark beats from the audio', 'Audio drives a control…']], ['Check', 'Animate', ['Playblast (viewport video)']]],
+  'animate:loops': [['Loops', 'Animate', ['Loop check', 'Make seamless loop']], ['Check', 'Animate', ['Playblast (viewport video)']]],
   'animate:reference': [['Reference video', 'Animate', ['Reference video…', 'Remove reference video']]],
   'camera:moves': [['Dolly', 'Camera', ['Dolly zoom: wide, keep size', 'Dolly zoom: long, keep size']], ['Moves', 'Camera', ['Multi-cam angles…', 'Beat-synced camera…', 'Floor-plan camera path…']], ['Previz', 'Camera', ['Previz grey on / off', 'Render a previz of this shot']]],
   'camera:view': [['View', 'View', ['Floor grid', 'Frame Bunny', 'Mirror view', 'Silhouette check', 'Onion skin', 'Snapping on / off', 'Show fps', 'Dark mode']], ['Checks', 'View', ['Rule lights on / off', 'Balance marker on / off']], ['Second screen', 'View', ['Pop out the viewport (second screen)']]],
-  'render:post': [['Words and music', 'Post', ['Captions…', 'Music bed…', 'Split the voice into sentences…']], ['Look', 'Post', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Drawings', 'Post', ['Import SVG drawing…', 'Draw on the screen…', 'Drawings on this shot…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
+  'render:post': [['Look', 'Post', ['Shot look…', 'Cut-ins: photo, narrator PiP, bubble…']], ['Finish', 'Blender', ['Transition into this shot…', 'Paper finish…']]],
   'render:blender': [['Production', 'Tools', ['Check before export (preflight)', 'Health check…', 'Overnight batch…', 'Cancel sleep after renders', 'Render presets…', 'Pack project…', 'Clean up cache…', 'Claude change log…']], ['Files', 'File', ['Save version…', 'Versions…', 'Export Blender shot file…']]],
 };
 function shelf(group, menu, labels) {
@@ -1368,7 +1449,7 @@ function setTab(id, s) {
   return { tab, section: subOf(tab) };
 }
 function buildTabs() {
-  $('#tabs').replaceChildren(...TABS.map(([id, name]) => h('button', { role: 'tab', 'aria-pressed': String(tab === id), title: `${name} workspace (${TABS.findIndex(t => t[0] === id) + 1})`, onclick: () => setTab(id) }, name)));
+  $('#tabs').replaceChildren(...TABS.map(([id, name]) => h('button', { role: 'tab', 'aria-pressed': String(tab === id), title: `${name} workspace${TABS.findIndex(t => t[0] === id) < 9 ? ` (${TABS.findIndex(t => t[0] === id) + 1})` : ''}`, onclick: () => setTab(id) }, name)));
   const subs = SUBS[tab]?.() || [];
   if (subs.length && !subs.some(s => s[0] === subOf(tab))) { if (tab === 'pose') part = subs[0][0]; else sub[tab] = subs[0][0]; }
   const label = tab === 'pose' ? h('span', { class: 'sub-label' }, 'Part:') : null;
@@ -1433,7 +1514,13 @@ function buildPanel() {
       c.append(cols('two', [h('h3', {}, 'Gaze'), gazePad(), h('h3', {}, 'Blink'), sel('blink', ['Open', 'Half', 'Closed', 'Squeeze', 'Wink']), h('h3', {}, 'Mouth'), mouthGrid(libCtx(), Math.round(current('mouth')), i => { pushUndo('Mouth'); setValue('mouth', i); drawTracks(); buildPanel(); })],
         [h('h3', {}, 'Expression'), sel('expression', F.faces), h('p', { class: 'hint' }, 'Gaze keys hold until the next one. Middle = straight at the camera.')]));
     } else if (s === 'idle') c.append(cols('two', idlePanel(), h('p', { class: 'hint' }, 'Idle life keeps him alive between your keys: natural blinks and ear flicks, the same in the 3D view and the Blender render.')));
-    else c.append(h('div', { class: 'ws three' }, ...shelves('face:voice').map(x => h('div', { class: 'col' }, x))));
+  } else if (tab === 'audio') {
+    if (s === 'babble') c.append(babblePanel());
+    else if (s === 'effects') c.append(voiceFxPanel());
+    else if (s === 'transcribe') c.append(transcribePanel());
+    else c.append(h('div', { class: 'ws three' }, ...shelves('audio:' + s).map(x => h('div', { class: 'col' }, x))));
+  } else if (tab === 'draw') {
+    c.append(drawingsPanel());
   } else if (tab === 'animate') {
     if (s === 'motions') c.append(libraryBrowser(libCtx(), { cats: [['motion', 'Motions'], ['expression', 'Faces']], cat: ['motion', 'expression'].includes(libUi.cat) ? libUi.cat : 'motion', side: true }));
     else c.append(h('div', { class: 'ws three' }, ...shelves('animate:' + s).map(x => h('div', { class: 'col' }, x))));
@@ -1447,18 +1534,18 @@ function buildPanel() {
         [h('h3', {}, 'Lens'), h('div', { class: 'chips' }, ...LENSES.map(l => h('button', { 'aria-pressed': String(Math.round(current('cam.lens')) === l), onclick: () => camSet({ lens: l }) }, `${l} mm`)),
           h('button', { onclick: () => dollyTo(18), title: 'Dolly zoom: go wide while moving in, so Bunny keeps his size and the room stretches' }, 'Dolly wide'),
           h('button', { onclick: () => dollyTo(100), title: 'Dolly zoom: go long while moving out, so Bunny keeps his size and the room flattens' }, 'Dolly long')),
-          h('h3', {}, 'Angle'), h('div', { class: 'chips' }, ...VIEWS.map(([n, v]) => h('button', { onclick: () => camSet(v) }, n))),
           h('p', { class: 'hint' }, 'In the 3D view: drag to orbit, Shift+drag or the Pan tool to move the aim, wheel to move in and out, Alt+wheel for the lens. The set moves with the camera, so angles stay physically true.')]));
     } else if (s === 'presets') c.append(cameraPresetsPanel(presetCtx()));
     else c.append(h('div', { class: 'ws three' }, ...shelves('camera:' + s).map(x => h('div', { class: 'col' }, x))));
   } else if (tab === 'stage') {
     if (s === 'set') c.append(setPanel(libCtx()));
+    if (s === 'light') c.append(lightPanel(libCtx()));
     else if (s === 'wardrobe') c.append(wardrobePanel(libCtx()));
     else if (s === 'items') c.append(itemsPanel(libCtx()));
-    else if (s === 'drawings') c.append(drawingsPanel());
     else c.append(cols('two', [h('h3', {}, 'Co-stars'), h('p', { class: 'hint' }, 'More characters in this shot, each on the same rig with its own keys. They collide with the lead in the render.'), h('div', { class: 'row' }, h('button', { onclick: () => castDialog() }, 'Co-stars…'))],
       [h('h3', {}, 'Lead character'), h('div', { class: 'char-cards', role: 'list' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', role: 'listitem', 'aria-pressed': String(character() === id), title: `Make the ${n} the lead character`, onclick: () => setCharacter(id).catch(e => toast(e.message, 5000)) }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, n))))]));
   } else if (tab === 'library') {
+    if (s === 'bubble') { c.append(BU.panel()); return; }
     c.append(libraryBrowser(libCtx(), { cats: SUBS.library(), cat: s, noChips: true, side: true }));
     c.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('span', { class: 'hint', id: 'models-info', style: 'flex:1' }, ''), h('button', { title: 'Convert every set, prop and scenery piece now, so they all show at once later (about a minute in Blender)', onclick: () => api('stage-models', { all: true }).then(r => toast(`Making ${r.pending.length} 3D models in the background`, 4000)).catch(e => toast(e.message)) }, 'Make 3D models for the whole library')));
     api('models-info').then(r => { const el = $('#models-info'); if (el) el.textContent = `${r.models} pieces ready to show in the 3D view${r.queued ? `, ${r.queued} being made` : ''}.`; }).catch(() => {});
@@ -1657,7 +1744,7 @@ window.alert = msg => { if (!mcpCall) return nativeAlert(msg); toast(String(msg)
 
 // ---------------------------------------------------------------- polish.js: autosave, versions, command search, markers
 const polCtx = () => ({
-  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, file: () => filePath, dirty: () => dirty,
+  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, file: () => filePath, dirty: () => dirty, recentIds, isFav, cmdId, toggleFav, refreshQuickbar,
   changed: () => { dirty = true; drawTracks(); updateHud(); },
   status: t => { const el = $('#status'); if (el) el.textContent = t; },
   restore: (p, file, f) => { undoStack = []; redoStack = []; filePath = file || null; frame = f | 0; useScene(migrate(p)); dirty = true; updateHud(); },
@@ -1694,8 +1781,8 @@ async function importAudio(pick) {
   scene.audio = p ? { path: p } : null;
   await loadAudio(api, p);
   // babble lines stay: they are mixed over the new voice (or play alone when it is removed)
-  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true });
-  drawTracks();
+  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true }); else await buildVoiceFx();
+  drawTracks(); audioPanelRefresh();
   if (p) toast(`Audio: ${p.split(/[\\/]/).pop()} (${audioInfo().seconds} s). It plays with the timeline and goes into scene renders.`, 5000);
   return audioInfo();
 }
@@ -1706,9 +1793,9 @@ async function importAudio(pick) {
 // of what made it, so Undo goes back to the matching older file.
 const bbHash = str => { let x = 2166136261; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(36); };
 async function rebuildBabble({ quiet = false } = {}) {
-  const lines = BB.linesOf(scene), basePath = scene.audio?.babble ? scene.audio.base || null : scene.audio?.path || null, stem = scene.audio?.stem;
+  const lines = BB.linesOf(scene), basePath = scene.audio?.babble ? scene.audio.base || null : scene.audio?.dry || scene.audio?.path || null, stem = scene.audio?.stem;
   if (!lines.length) {
-    if (scene.audio?.babble) { scene.audio = basePath ? { path: basePath, ...(stem ? { stem } : {}) } : null; await loadAudio(api, null); await loadAudio(api, basePath); }
+    if (scene.audio?.babble) { scene.audio = basePath ? { path: basePath, ...(stem ? { stem } : {}) } : null; await loadAudio(api, null); await loadAudio(api, basePath); await buildVoiceFx(); }
     if (scene.captions) for (const k of Object.keys(scene.captions.tracks)) scene.captions.tracks[k] = scene.captions.tracks[k].filter(c => !c.babble);
     dirty = true; apply(); drawTracks(); drawPost();
     return { lines: [], audio: scene.audio?.path || null };
@@ -1722,14 +1809,20 @@ async function rebuildBabble({ quiet = false } = {}) {
   const w = await api('write-file', { path: `${root}/${nm}/work/audio/${nm.replace(/ /g, '_')}_babble_${tag}.wav`, data: BB.wavChannelsBase64(r.channels, r.sr) });
   scene.audio = { path: w.path, babble: true, base: basePath, ...(stem ? { stem } : {}) };
   await loadAudio(api, null); await loadAudio(api, w.path);
+  await buildVoiceFx();
   dirty = true; apply(); drawTracks(); drawPost();
   const over = r.lines.filter(l => l.pastShotEnd);
+  audioPanelRefresh();
   if (!quiet) toast(`Babble: ${r.lines.length} line${r.lines.length > 1 ? 's' : ''}, ${r.keys} mouth keys${base ? ', mixed over your voice' : ''}${over.length ? `. ${over.length} line${over.length > 1 ? 's run' : ' runs'} past the end of the shot: make the shot longer or the line shorter` : ''}`, 6000);
   return { lines: r.lines, keys: r.keys, audio: w.path, mixedOver: basePath };
 }
 const bbLead = () => character();
 const bbIcon = n => { const x = icon(n); x.style.cssText = 'width:14px;height:14px;vertical-align:-2px'; return x; };
 const bbDraft = { text: '', who: 'lead', mood: 'neutral' };
+function bbHearAll() {
+  const text = bbDraft.text || 'Hello there! This is my voice.'; let t = 0;
+  for (const k of Object.keys(BB_VOICES)) { const d = BB.dialsOf(scene, k); setTimeout(() => bbPreview(text, 'voice:' + k, bbDraft.mood), t); t += bbSpeak(text, bbVoiceFor(k, d, bbDraft.mood), { style: d.style }).seconds * 1000 + 300; }
+}
 function bbVoiceOf(who) { return BB.speakerChar(scene, project, who, bbLead()); }
 function bbPreview(text, who, mood) {
   const ch = bbVoiceOf(who), d = BB.dialsOf(scene, ch);
@@ -1743,7 +1836,7 @@ async function babbleAct(a = {}) {
     case 'list': return { lines: BB.linesOf(scene).map(l => ({ ...l, shot: scene.shots.find(s => s.uid === l.shot)?.code })), voices: Object.fromEntries(Object.keys(BB_VOICES).map(k => [k, { ...BB_VOICES[k], ...BB.dialsOf(scene, k) }])), audio: scene.audio || null };
     case 'add': {
       const sh = shotOf(a.shot);
-      if (a.who != null && a.who !== 'lead') BB.speakerChar(scene, sh, a.who, bbLead());
+      if (a.who != null && a.who !== 'lead' && !BB_VOICES[BB.speakerChar(scene, sh, a.who, bbLead())]) throw Error('who must be lead, a co-star index, or voice:' + Object.keys(BB_VOICES).join(', voice:'));
       if (a.mood && !BB_MOODS[a.mood]) throw Error('mood must be ' + Object.keys(BB_MOODS).join(', '));
       if (a.style && !BB_STYLES[a.style]) throw Error('style must be ' + Object.keys(BB_STYLES).join(', '));
       pushUndo('Babble line');
@@ -1769,43 +1862,266 @@ async function babbleAct(a = {}) {
     default: throw Error('action must be list, add, remove, clear, voice, preview or rebuild');
   }
 }
-async function bbRun(a, reopen = true) { try { const r = await babbleAct(a); if (reopen) babbleDialog(); return r; } catch (e) { toast(e.message, 5000); if (reopen) babbleDialog(); return null; } }
-function babbleDialog() {
+async function bbRun(a) { try { return await babbleAct(a); } catch (e) { toast(e.message, 5000); return null; } finally { audioPanelRefresh(); } }
+const audioPanelRefresh = () => { if (tab === 'audio') buildPanel(); };
+function openBabble() { setTab('audio', 'babble'); const inp = document.querySelector('input[aria-label="Line"]'); inp?.focus(); inp?.setSelectionRange(inp.value.length, inp.value.length); }
+// Audio workspace › Babble voice: who, mood and the line on the left; their voice and this shot's lines on the right
+function babblePanel() {
   const who = [['lead', `${(BB_VOICES[bbLead()] || {}).name || bbLead()} (lead)`], ...CS.costarsOf(project).map((c, i) => [String(i), `${(BB_VOICES[c.character] || {}).name || c.character} (co-star ${i + 1})`])];
+  // everyone else can still be heard, and speak off screen: the line plays, no mouth moves
+  for (const k of Object.keys(BB_VOICES)) if (k !== bbLead() && !CS.costarsOf(project).some(c => c.character === k)) who.push(['voice:' + k, `${BB_VOICES[k].name} (voice only)`]);
   if (!who.some(w => w[0] === String(bbDraft.who))) bbDraft.who = 'lead';
   const ch = bbVoiceOf(bbDraft.who), d = BB.dialsOf(scene, ch), v = { ...BB_VOICES[ch], ...d };
-  const pick = (opts, cur, set) => opts.map(([k, label]) => h('button', { 'aria-pressed': String(String(cur) === String(k)), onclick: () => { set(k); babbleDialog(); } }, label));
-  document.querySelectorAll('.ds-modal[aria-label="Babble voice"]').forEach(x => x.remove());
-  const m = modal({ h }, 'Babble voice', close => {
-    const reopen = fn => () => { close(); fn(); };
-    const add = reopen(async () => { const r = await bbRun({ action: 'add', text: bbDraft.text, who: bbDraft.who, mood: bbDraft.mood, frame }, false); if (r) bbDraft.text = ''; babbleDialog(); });
-    const text = h('input', { type: 'text', value: bbDraft.text, placeholder: 'Type what the character says… (? lifts the end, ! punches it)', style: 'flex:1;min-width:24em', 'aria-label': 'Line', oninput: e => { bbDraft.text = e.target.value; }, onkeydown: e => { e.stopPropagation(); if (e.key === 'Enter' && bbDraft.text.trim()) add(); if (e.key === 'Escape') close(); } });
-    const dials = Object.entries(BB_DIALS).map(([k, [lo, hi, step, label]]) => {
-      const out = h('span', { class: 'hint', style: 'min-width:3.2em;display:inline-block' }, String(+(+v[k]).toFixed(2)));
-      const sl = h('input', { type: 'range', min: lo, max: hi, step, value: v[k], 'aria-label': label, style: 'width:84px', oninput: e => { out.textContent = String(+(+e.target.value).toFixed(2)); }, onchange: e => { close(); bbRun({ action: 'voice', character: ch, [k]: Number(e.target.value) }); } });
-      return h('label', { class: 'row', style: 'gap:4px', title: `${label} for ${v.name}. Changes every ${v.name} line in this scene.` }, { 'Pitch (Hz)': 'Pitch', 'Pitch range': 'Range' }[label] || label, sl, out);
-    });
-    const lines = BB.linesOf(scene).filter(l => l.shot === project.uid);
-    return [
-      h('p', { class: 'hint' }, 'Type a line and the character speaks it as cute gibberish, made from scratch here. The mouth moves on every syllable and the line becomes a timed caption. Lines mix over a recorded voice if the scene has one.'),
-      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Who '), ...pick(who, bbDraft.who, k => { bbDraft.who = k; }).map((b, i) => { b.classList.add('bb-who'); b.prepend(h('img', { src: `chars/${bbVoiceOf(who[i][0])}.png`, alt: '', draggable: 'false' })); return b; })),
-      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Mood '), ...pick(Object.entries(BB_MOODS).map(([k, m]) => [k, m.label]), bbDraft.mood, k => { bbDraft.mood = k; })),
-      h('div', { class: 'row', style: 'gap:6px' }, text,
-        h('button', { title: 'Hear this line in this voice (nothing is added)', onclick: () => { try { bbPreview(bbDraft.text, bbDraft.who, bbDraft.mood); } catch (e) { toast(e.message, 4000); } } }, bbIcon('play'), ' Hear it'),
-        h('button', { title: `Add the line at frame ${frame} of this shot (Enter)`, onclick: add }, `Add at frame ${frame}`)),
-      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, `${v.name}'s voice `), ...Object.entries(BB_STYLES).map(([k, label]) => h('button', { 'aria-pressed': String(v.style === k), title: { syllables: 'One soft sound per syllable, closest to speech', letters: 'A quick blip per letter, chattery', tones: 'Pure musical beeps' }[k], onclick: reopen(() => bbRun({ action: 'voice', character: ch, style: k })) }, label))),
-      h('div', { class: 'row', style: 'flex-wrap:wrap;gap:12px;white-space:nowrap' }, ...dials, h('button', { title: `Back to ${v.name}'s own voice`, onclick: reopen(() => bbRun({ action: 'voice', character: ch, reset: true })) }, 'Reset')),
-      h('b', {}, lines.length ? `Lines on this shot (${lines.length})` : 'No lines on this shot yet'),
-      h('div', { class: 'ds-list' }, ...lines.map(l => h('div', { class: 'row', style: 'gap:6px' },
-        h('button', { class: 'bb-at', title: `Go to frame ${l.f}`, onclick: () => { goto(l.f); babbleDialog(); } }, `frame ${l.f}`), h('span', { style: 'min-width:7em' }, who.find(w => w[0] === String(l.who))?.[1] || l.who), h('span', { class: 'hint' }, BB_MOODS[l.mood]?.label || ''),
-        h('span', { style: 'flex:1' }, l.text),
-        h('button', { title: 'Hear it', onclick: () => bbPreview(l.text, l.who, l.mood) }, bbIcon('play')),
-        h('button', { title: 'Remove this line (Ctrl+Z brings it back)', onclick: reopen(() => bbRun({ action: 'remove', id: l.id })) }, bbIcon('trash'))))),
-      h('div', { class: 'row', style: 'gap:6px' }, h('button', { title: 'Render every line in the scene again', onclick: reopen(() => bbRun({ action: 'rebuild' })) }, 'Rebuild voice'), h('button', { onclick: close }, 'Close'))];
+  const pick = (opts, cur, set) => opts.map(([k, label]) => h('button', { 'aria-pressed': String(String(cur) === String(k)), onclick: () => { set(k); buildPanel(); } }, label));
+  const add = async () => { const r = await bbRun({ action: 'add', text: bbDraft.text, who: bbDraft.who, mood: bbDraft.mood, frame }); if (r) { bbDraft.text = ''; openBabble(); } };
+  const text = h('input', { type: 'text', value: bbDraft.text, placeholder: 'Type what the character says… (? lifts the end, ! punches it)', style: 'flex:1;min-width:12em', 'aria-label': 'Line', oninput: e => { bbDraft.text = e.target.value; }, onkeydown: e => { e.stopPropagation(); if (e.key === 'Enter' && bbDraft.text.trim()) add(); } });
+  const dials = Object.entries(BB_DIALS).map(([k, [lo, hi, step, label]]) => {
+    const out = h('span', { class: 'hint', style: 'min-width:3.2em;display:inline-block' }, String(+(+v[k]).toFixed(2)));
+    const sl = h('input', { type: 'range', min: lo, max: hi, step, value: v[k], 'aria-label': label, style: 'width:84px', oninput: e => { out.textContent = String(+(+e.target.value).toFixed(2)); }, onchange: e => { bbRun({ action: 'voice', character: ch, [k]: Number(e.target.value) }); } });
+    return h('label', { class: 'row', style: 'gap:4px', title: `${label} for ${v.name}. Changes every ${v.name} line in this scene.` }, { 'Pitch (Hz)': 'Pitch', 'Pitch range': 'Range' }[label] || label, sl, out);
   });
-  m.box.firstChild.style.width = 'min(1000px, 96vw)';
-  m.box.addEventListener('keydown', e => { if (e.key === 'Escape') m.close(); });
-  const inp = m.box.querySelector('input[aria-label="Line"]'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+  const lines = BB.linesOf(scene).filter(l => l.shot === project.uid);
+  return cols('two', [
+    h('p', { class: 'hint' }, 'Type a line and the character speaks it as cute gibberish, made from scratch here. The mouth moves on every syllable and the line becomes a timed caption. Lines mix over a recorded voice if the scene has one.'),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Who '), ...pick(who, bbDraft.who, k => { bbDraft.who = k; }).map((b, i) => { b.classList.add('bb-who'); b.prepend(h('img', { src: `chars/${bbVoiceOf(who[i][0])}.png`, alt: '', draggable: 'false' })); return b; })),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px;margin-top:6px' }, h('b', {}, 'Mood '), ...pick(Object.entries(BB_MOODS).map(([k, m]) => [k, m.label]), bbDraft.mood, k => { bbDraft.mood = k; })),
+    h('div', { class: 'row', style: 'gap:6px;margin-top:6px;flex-wrap:wrap' }, text,
+      h('button', { title: 'Hear this line in this voice (nothing is added)', onclick: () => { try { bbPreview(bbDraft.text, bbDraft.who, bbDraft.mood); } catch (e) { toast(e.message, 4000); } } }, bbIcon('play'), ' Hear it'),
+      h('button', { title: 'Hear this line in every character\'s voice, one after another', onclick: () => bbHearAll() }, 'Hear all voices'),
+      h('button', { class: 'primary', title: 'Add the line at the playhead of this shot (Enter)', onclick: add }, 'Add at playhead'))],
+  [
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, `${v.name}'s voice `), ...Object.entries(BB_STYLES).map(([k, label]) => h('button', { 'aria-pressed': String(v.style === k), title: { syllables: 'One soft sound per syllable, closest to speech', letters: 'A quick blip per letter, chattery', tones: 'Pure musical beeps' }[k], onclick: () => bbRun({ action: 'voice', character: ch, style: k }) }, label))),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:12px;white-space:nowrap;margin-top:6px' }, ...dials, h('button', { title: `Back to ${v.name}'s own voice`, onclick: () => bbRun({ action: 'voice', character: ch, reset: true }) }, 'Reset')),
+    h('h3', {}, lines.length ? `Lines on this shot (${lines.length})` : 'No lines on this shot yet'),
+    h('div', { class: 'ds-list' }, ...lines.map(l => h('div', { class: 'row', style: 'gap:6px' },
+      h('button', { class: 'bb-at', title: `Go to frame ${l.f}`, onclick: () => goto(l.f) }, `frame ${l.f}`), h('span', { style: 'min-width:7em' }, who.find(w => w[0] === String(l.who))?.[1] || l.who), h('span', { class: 'hint' }, BB_MOODS[l.mood]?.label || ''),
+      h('span', { style: 'flex:1' }, l.text),
+      h('button', { title: 'Hear it', onclick: () => bbPreview(l.text, l.who, l.mood) }, bbIcon('play')),
+      h('button', { title: 'Remove this line (Ctrl+Z brings it back)', onclick: () => bbRun({ action: 'remove', id: l.id }) }, bbIcon('trash'))))),
+    h('div', { class: 'row', style: 'gap:6px;margin-top:6px' }, h('button', { title: 'Render every line in the scene again', onclick: () => bbRun({ action: 'rebuild' }) }, 'Rebuild voice'))]);
+}
+// ---------------------------------------------------------------- blocks.js: layers on the timeline, as in the 2D studio
+// 'lead', 'c0'.. (co-stars) and 'd:<id>' (drawings). Isolate is for looking only: it never reaches a render.
+let cutMode = false;
+function layerOf(key) {
+  if (key == null || key === 'lead') return { key: 'lead', kind: 'char', owner: project, name: charName(), tracks: () => [project.tracks, ...(project.layers || []).map(L => L.tracks)] };
+  const m = /^c?(\d+)$/.exec(String(key));
+  if (m) { const c = CS.costarsOf(project)[Number(m[1])]; if (!c) throw Error(`No co-star ${m[1]} on this shot`); return { key: 'c' + m[1], kind: 'char', owner: c, name: castName(c.character), tracks: () => [c.tracks] }; }
+  if (String(key).startsWith('b:')) { const b = BU.list().find(x => x.id === String(key).slice(2)); if (!b) throw Error(`No layer ${key} on this shot`); return { key, kind: 'bubble', d: b, name: bubbleName(b) }; }
+  const id = String(key).replace(/^d:/, ''), i = DR.drawingsOf(project).findIndex(d => d.id === id);
+  if (i < 0) throw Error(`No layer ${key} on this shot`);
+  return { key: 'd:' + id, kind: 'draw', d: project.drawings[i], index: i, name: project.drawings[i].name };
+}
+const allLayers = () => ['lead', ...CS.costarsOf(project).map((_, i) => 'c' + i), ...DR.drawingsOf(project).map(d => 'd:' + d.id), ...BU.list().map(b => 'b:' + b.id)];
+const bubbleName = b => b.text.split(/\s+/).slice(0, 3).join(' ') || 'Bubble';
+const bubbleSpan = (b, len) => [b.f, Math.min(len, b.f + b.len)];
+function blocksChanged() { dirty = true; apply(); updateHud(); drawTracks(); if (tab === 'draw') buildPanel(); }
+async function blocksAct(a = {}) {
+  const len = project.length, L = () => layerOf(a.layer);
+  switch (a.action || 'list') {
+    case 'list': return { layers: allLayers().map(k => { const l = layerOf(k); return { layer: k, name: l.name, kind: l.kind, shown: !(l.owner || l.d).hidden, isolated: solo === k, ...(l.kind === 'char' ? { blocks: BK.clipsOf(l.owner, len) } : { blocks: [{ id: l.d.id, start: (l.kind === 'bubble' ? bubbleSpan(l.d, len) : BK.drawingSpan(l.d, len))[0], end: (l.kind === 'bubble' ? bubbleSpan(l.d, len) : BK.drawingSpan(l.d, len))[1] }], place: BK.placeOf(l.d) }) }; }) };
+    case 'split': {
+      const l = L(), f = a.frame ?? frame;
+      pushUndo('Cut block');
+      try { if (l.kind === 'bubble') BU.split(l.d.id, f); else if (l.kind === 'char') BK.split(l.owner, len, f); else BK.splitDrawing(project, l.index, f, len, () => 'dr' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36)); }
+      catch (e) { undoStack.pop(); throw e; }
+      blocksChanged(); return blocksAct({ action: 'list' });
+    }
+    case 'move': {
+      const l = L(); pushUndo('Move block');
+      if (l.kind === 'bubble') { const to = Math.max(0, Math.min(len - l.d.len, Math.round(a.start))), ln = l.d.babble && BB.linesOf(scene).find(x => x.id === l.d.babble); l.d.f = to; if (ln) await bbRetime(ln, to); else delete l.d.match; }
+      else if (l.kind === 'char') { BK.move(l.owner, len, a.id ?? 'all', a.start, l.tracks()); BK.tidy(l.owner, len); } else BK.moveDrawing(l.d, len, a.start);
+      blocksChanged(); return blocksAct({ action: 'list' });
+    }
+    case 'trim': {
+      const l = L(); pushUndo('Trim block');
+      if (l.kind === 'bubble') { const s = Math.max(0, Math.round(a.start)), e = Math.min(len, Math.round(a.end)); l.d.f = s; l.d.len = Math.max(2, e - s); delete l.d.match; delete l.d.babble; }
+      else if (l.kind === 'char') { BK.resize(l.owner, len, a.id ?? 'all', a.start, a.end); BK.tidy(l.owner, len); } else BK.resizeDrawing(l.d, len, a.start, a.end);
+      blocksChanged(); return blocksAct({ action: 'list' });
+    }
+    case 'remove': {
+      const l = L(); pushUndo('Remove block');
+      if (l.kind === 'bubble') { BU.remove(l.d.id); if (solo === l.key) solo = null; } else if (l.kind === 'char') BK.remove(l.owner, len, a.id ?? 'all'); else { DR.remove(project, l.index); drawSel = 0; if (solo === l.key) solo = null; }
+      blocksChanged(); return blocksAct({ action: 'list' });
+    }
+    case 'fill': { const l = L(); if (l.kind !== 'char') throw Error('Only a character has gaps to fill'); pushUndo('Add block'); BK.fillGap(l.owner, len, a.frame ?? frame); BK.tidy(l.owner, len); blocksChanged(); return blocksAct({ action: 'list' }); }
+    case 'show': { const l = L(), o = l.owner || l.d; pushUndo(a.on === false ? 'Hide layer' : 'Show layer'); if (a.on === false) o.hidden = true; else delete o.hidden; blocksChanged(); return blocksAct({ action: 'list' }); }
+    case 'isolate': { solo = a.layer == null ? null : L().key; apply(); drawTracks(); return { isolated: solo }; }
+    case 'place': {
+      const l = L(), p = BK.PLACES.find(x => x[0] === a.place);
+      if (l.kind !== 'draw' || !p) throw Error('place needs a drawing layer and one of ' + BK.PLACES.map(x => x[0]).join(', '));
+      return dr({ action: 'set', index: l.index, layer: p[0] === 'screen' ? 'screen' : 'scene', ...(p[0] === 'screen' ? {} : { depth: p[2] }) }).then(r => { drawTracks(); return r; });
+    }
+    default: throw Error('action must be list, split, move, trim, remove, fill, show, isolate or place');
+  }
+}
+async function blRun(a) { try { return await blocksAct(a); } catch (e) { toast(e.message, 4000); return null; } }
+// one block: drag the middle to move it, the ends to trim, right-click for more
+function blockEl({ a, b, label, ppf, title, cls = '', ends = true, commit, click, menu, cut }) {
+  const el = h('div', { class: 'block ' + cls, style: `left:${a * ppf + 1}px;width:${Math.max(6, (b - a) * ppf - 2)}px`, title }, ends ? h('i', { class: 'l' }) : null, h('span', {}, label), ends ? h('i', { class: 'r' }) : null);
+  el.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    e.stopPropagation();
+    if (cutMode && cut) { const r = el.parentElement.getBoundingClientRect(); cut(Math.round((e.clientX - r.left) / ppf)); return; }
+    const mode = e.target.classList.contains('l') ? 'l' : e.target.classList.contains('r') ? 'r' : 'm', w = DOCK.winOf(el), x0 = e.clientX;
+    let na = a, nb = b, moved = false;
+    const mv = ev => {
+      const d = Math.round((ev.clientX - x0) / ppf); if (d) moved = true;
+      if (mode === 'm') { na = Math.max(0, Math.min(project.length - (b - a), a + d)); nb = na + b - a; }
+      else if (mode === 'l') na = Math.max(0, Math.min(b - 1, a + d)); else nb = Math.min(project.length, Math.max(a + 1, b + d));
+      el.style.left = `${na * ppf + 1}px`; el.style.width = `${Math.max(6, (nb - na) * ppf - 2)}px`;
+    };
+    const up = () => { w.removeEventListener('pointermove', mv); w.removeEventListener('pointerup', up); if (moved) commit?.(na, nb, mode); else click?.(); };
+    w.addEventListener('pointermove', mv); w.addEventListener('pointerup', up);
+  });
+  if (menu) el.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); ctxMenu(e, menu); });
+  return el;
+}
+function layerName(key, name, title, extra) {
+  const l = layerOf(key), o = l.owner || l.d, off = !!o.hidden;
+  return h('div', { class: 'tname layer-name', title }, h('span', { class: 'tn' }, name), extra,
+    h('button', { class: 'lb', 'aria-pressed': String(!off), title: off ? 'Hidden, in the render too. Click to show.' : 'Showing. Click to hide this layer, in the render too.', 'aria-label': `Show ${name}`, onclick: () => blRun({ action: 'show', layer: key, on: off }) }, off ? '○' : '●'),
+    h('button', { class: 'lb', 'aria-pressed': String(solo === key), title: 'Isolate: see only this layer while you work. It never changes the render.', 'aria-label': `Isolate ${name}`, onclick: () => blRun({ action: 'isolate', layer: solo === key ? null : key }) }, 'S'));
+}
+function layerRows(ppf) {
+  const out = [], len = project.length;
+  if (solo && !allLayers().includes(solo)) solo = null;
+  const lane2 = kids => h('div', { class: 'lane' }, ...kids);
+  // what the character is on screen for
+  const charRow = key => {
+    const l = layerOf(key), blocks = BK.clipsOf(l.owner, len);
+    const row = lane2(blocks.map(c => blockEl({ a: c.start, b: c.end, label: l.name, ppf, title: `${l.name}: frames ${c.start} to ${c.end}. Drag to move it with its keys, drag an end to trim. A gap hides ${l.name}. Right-click for more.`,
+      commit: (a, b, mode) => (mode === 'm' ? blRun({ action: 'move', layer: key, id: c.id, start: a }) : blRun({ action: 'trim', layer: key, id: c.id, start: a, end: b })),
+      cut: f => blRun({ action: 'split', layer: key, frame: f }),
+      menu: [['Cut here (at the playhead)', () => blRun({ action: 'split', layer: key, frame })], ['Take this block away (a gap)', () => blRun({ action: 'remove', layer: key, id: c.id })]] })));
+    row.addEventListener('contextmenu', e => { e.preventDefault(); const r = row.getBoundingClientRect(), f = Math.round((e.clientX - r.left) / ppf); ctxMenu(e, [['Fill this gap with a block', () => blRun({ action: 'fill', layer: key, frame: f })]]); });
+    return h('div', { class: 'trow block-row' }, layerName(key, l.name, `${l.name}'s layer`), row);
+  };
+  out.push(charRow('lead'));
+  CS.costarsOf(project).forEach((_, i) => out.push(charRow('c' + i)));
+  DR.drawingsOf(project).forEach((d, i) => {
+    const key = 'd:' + d.id, [a, b] = BK.drawingSpan(d, len);
+    const place = h('select', { class: 'lsel', 'aria-label': `Where ${d.name} sits`, title: 'Where it sits against the characters: over everything, in front, through them, or behind', onclick: e => e.stopPropagation() }, ...BK.PLACES.map(([k, n]) => h('option', { value: k, selected: BK.placeOf(d) === k }, n)));
+    place.addEventListener('change', () => blRun({ action: 'place', layer: key, place: place.value }));
+    out.push(h('div', { class: 'trow block-row' }, layerName(key, d.name, `${d.name}: a drawing layer`, place),
+      lane2([blockEl({ a, b, label: d.name, ppf, cls: 'draw' + (tab === 'draw' && i === drawSel ? ' sel' : ''), title: `${d.name}: frames ${a} to ${b}. Drag to move, drag an end to trim. Click to edit it in Draw.`,
+        commit: (na, nb, mode) => (mode === 'm' ? blRun({ action: 'move', layer: key, start: na }) : blRun({ action: 'trim', layer: key, start: na, end: nb })),
+        cut: f => blRun({ action: 'split', layer: key, frame: f }), click: () => { drawSel = i; setTab('draw'); drawTracks(); },
+        menu: [['Cut here (at the playhead)', () => blRun({ action: 'split', layer: key, frame })], ['Remove this drawing', () => blRun({ action: 'remove', layer: key })]] })])));
+  });
+  BU.list().forEach(b => {
+    const key = 'b:' + b.id, [a, c] = bubbleSpan(b, len), nm = bubbleName(b);
+    out.push(h('div', { class: 'trow block-row' }, layerName(key, nm, `${nm}: a speech bubble layer`),
+      lane2([blockEl({ a, b: c, label: nm, ppf, cls: 'draw' + (BU.selected() === b.id ? ' sel' : ''), title: `${nm}: frames ${a} to ${c}. Drag to move, drag an end to trim. Click to pick it, double-click the bubble on the Stage to edit the text.`,
+        commit: (na, nb, mode) => (mode === 'm' ? blRun({ action: 'move', layer: key, start: na }) : blRun({ action: 'trim', layer: key, start: na, end: nb })),
+        cut: f => blRun({ action: 'split', layer: key, frame: f }), click: () => { BU.select(b.id); setTab('library', 'bubble'); goto(Math.min(b.f + 12, c - 1)); drawTracks(); },
+        menu: [['Edit the text', () => BU.edit(b.id)], ['Cut here (at the playhead)', () => blRun({ action: 'split', layer: key, frame })], ['Remove this bubble', () => blRun({ action: 'remove', layer: key })]] })])));
+  });
+  // Babble lines as blocks: drag one to change when it is said
+  const lines = BB.linesOf(scene).filter(l => l.shot === project.uid);
+  if (lines.length) out.push(h('div', { class: 'trow block-row' }, h('div', { class: 'tname', title: 'Babble lines on this shot. Drag one to change when it is said.' }, h('span', { class: 'tn' }, 'Babble')),
+    lane2(lines.map(l => { const [a, b] = bbSpan(l); return blockEl({ a, b: Math.min(len, b), label: l.text, ppf, cls: 'voice', ends: false, title: `"${l.text}" at frame ${l.f}. Drag to retime.`, commit: na => bbRetime(l, na), click: () => goto(l.f) }); }))));
+  return out;
+}
+const bbLens = new Map();
+function bbSpan(l) {
+  const k = JSON.stringify([l.text, l.who, l.mood, l.style, scene.voices, scene.fps]);
+  if (!bbLens.has(k)) bbLens.set(k, Math.ceil(BB.render(scene, l, character()).r.seconds * scene.fps));
+  return [l.f, l.f + bbLens.get(k)];
+}
+async function bbRetime(l, f) {
+  pushUndo('Move babble line');
+  const [a, b] = bbSpan(l), tracks = l.who == null || l.who === 'lead' ? project.tracks : CS.costarsOf(project)[Number(l.who)]?.tracks;
+  if (tracks?.mouth) tracks.mouth = tracks.mouth.filter(k => k.f < a || k.f > b);
+  l.f = f;
+  await rebuildBabble({ quiet: true });
+}
+// ---------------------------------------------------------------- voicefx.js: voice effects on the scene voice
+// the recording stays untouched: scene.audio.dry keeps it, scene.audio.path is the processed copy
+async function buildVoiceFx() {
+  const a = scene.audio, dry = a?.dry || a?.path;
+  if (!dry) return null;
+  if (!VF.isActive(scene.voiceFx)) {
+    if (a.dry) { const { dry: d, ...rest } = a; scene.audio = { ...rest, path: d }; await loadAudio(api, null); await loadAudio(api, d); }
+    return null;
+  }
+  const d = await decodeChannels(api, dry), out = VF.processChannels(d.channels, d.sr, scene.voiceFx);
+  const root = (await api('settings', {})).rendersRoot, nm = safeName(scene.name);
+  const w = await api('write-file', { path: `${root}/${nm}/work/audio/${nm.replace(/ /g, '_')}_fx_${bbHash(JSON.stringify([dry, scene.voiceFx]))}.wav`, data: BB.wavChannelsBase64(out, d.sr) });
+  scene.audio = { ...a, path: w.path, dry };
+  await loadAudio(api, null); await loadAudio(api, w.path);
+  return w.path;
+}
+async function voiceFxAct(a = {}) {
+  if ((a.action || 'set') === 'list') return { current: scene.voiceFx || null, presets: VF.PRESETS, effects: VF.EFFECTS };
+  if (!(scene.audio?.dry || scene.audio?.path)) throw Error('Add a voice first: import audio, or add a Babble line');
+  pushUndo('Voice effect');
+  if (a.action === 'reset') delete scene.voiceFx;
+  else {
+    const P0 = a.preset ? VF.PRESETS[a.preset] : null;
+    if (a.preset && !P0) throw Error('preset must be ' + Object.keys(VF.PRESETS).join(', '));
+    const n = VF.normalize({ ...scene.voiceFx, ...a, ...(P0 ? { pitch: P0[1], effect: P0[2] } : {}) });
+    const preset = a.preset || (a.pitch == null && a.effect == null ? scene.voiceFx?.preset : null);
+    scene.voiceFx = { ...n, ...(preset ? { preset } : {}) };
+  }
+  toast('Working on the voice…'); await new Promise(r => setTimeout(r, 30));
+  const path = await buildVoiceFx();
+  dirty = true; apply(); drawTracks(); audioPanelRefresh();
+  toast(path ? 'Voice effect on. It plays with the timeline and goes into scene renders.' : 'Voice effect off', 4000);
+  return { fx: scene.voiceFx || null, audio: scene.audio?.path || null };
+}
+async function fxRun(a) { try { return await voiceFxAct(a); } catch (e) { toast(e.message, 5000); return null; } }
+function voiceFxPanel() {
+  const fx = VF.normalize(scene.voiceFx || {}), cur = scene.voiceFx?.preset || (scene.voiceFx ? null : 'natural');
+  const slider = (label, k, lo, hi, step, v, show) => { const out = h('span', { class: 'hint', style: 'min-width:3.6em;display:inline-block' }, show(v)); return h('label', { class: 'row', style: 'gap:8px;margin-top:8px', title: label }, h('b', { style: 'min-width:4.5em' }, label), h('input', { type: 'range', min: lo, max: hi, step, value: v, 'aria-label': label, style: 'flex:1;max-width:320px', oninput: e => { out.textContent = show(Number(e.target.value)); }, onchange: e => fxRun({ [k]: Number(e.target.value) }) }), out); };
+  return cols('two', [
+    h('h3', {}, 'Voice'), h('div', { class: 'chips' }, ...Object.entries(VF.PRESETS).map(([k, [n]]) => h('button', { 'aria-pressed': String(cur === k), onclick: () => fxRun({ preset: k }) }, n))),
+    h('p', { class: 'hint' }, 'The effect goes over the whole scene voice, Babble lines included. Your recording stays as it is, and lip sync and captions keep their timing.')],
+  [ h('h3', {}, 'Fine tune'), slider('Pitch', 'pitch', -12, 12, 1, fx.pitch, v => `${v > 0 ? '+' : ''}${v} st`), slider('Amount', 'mix', 0, 1, 0.05, fx.mix, v => `${Math.round(v * 100)}%`),
+    h('div', { class: 'row', style: 'gap:6px;margin-top:10px' }, h('button', { 'aria-pressed': String(fx.on), title: 'Compare with the dry voice', onclick: () => fxRun({ on: !fx.on }) }, fx.on ? 'Effect on' : 'Effect off'), h('button', { onclick: () => fxRun({ action: 'reset' }) }, 'Reset'))]);
+}
+// ---------------------------------------------------------------- transcribe.js: the scene voice to timed words and captions
+const stt = { busy: false, status: '', language: 'auto' };
+async function transcribeAct(a = {}) {
+  const A = scene.audio, path = A?.babble ? A.base : A?.dry || A?.path;
+  if (!path) throw Error(A?.babble ? 'Babble is gibberish, so there is nothing to transcribe. Import a recorded voice first.' : 'Import the voice for the scene first (Add voice in this workspace)');
+  if (stt.busy) throw Error('Already transcribing');
+  stt.busy = true; stt.status = 'Getting ready…'; audioPanelRefresh();
+  try {
+    const d = await decodeChannels(api, path);
+    const r = await STT.transcribe(STT.to16k(d.channels, d.sr), { language: a.language || stt.language, onStatus: t => { stt.status = t; toast(t); const n = document.querySelector('#stt-status'); if (n) n.textContent = t; } });
+    pushUndo('Transcribe'); scene.transcript = r; dirty = true;
+    toast(`Transcribed ${r.words.length} words`, 4000);
+    return { text: r.text, words: r.words.length };
+  } finally { stt.busy = false; stt.status = ''; audioPanelRefresh(); }
+}
+function transcriptCaptions() {
+  const words = scene.transcript?.words;
+  if (!words?.length) throw Error('Transcribe the voice first');
+  pushUndo('Captions from the transcript');
+  const caps = P.captionsOf(scene), t = caps.tracks[caps.active];
+  caps.tracks[caps.active] = t.filter(c => !c.stt);
+  let n = 0;
+  for (const c of STT.captionsFrom(words)) {
+    let start = 0;
+    const F = Math.round(c.t0 * scene.fps), shot = scene.shots.find(s => { if (F < start + s.length) return true; start += s.length; return false; });
+    if (!shot) continue;
+    P.addCaption(scene, shot, F - start, Math.round(c.t1 * scene.fps) - start + Math.round(scene.fps * 0.15), c.text).stt = true;
+    n++;
+  }
+  dirty = true; apply(); drawPost(); toast(`${n} timed captions from the transcript`, 4000);
+  return { captions: n };
+}
+const sttRun = async fn => { try { return await fn(); } catch (e) { toast(e.message, 6000); return null; } };
+function transcribePanel() {
+  const T0 = scene.transcript;
+  return cols('two', [
+    h('h3', {}, 'Transcribe the scene voice'),
+    h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, h('b', {}, 'Language '), ...STT.LANGUAGES.map(([k, n]) => h('button', { 'aria-pressed': String(stt.language === k), onclick: () => { stt.language = k; buildPanel(); } }, n))),
+    h('div', { class: 'row', style: 'gap:6px;margin-top:10px' }, h('button', { class: 'primary', disabled: stt.busy, onclick: () => sttRun(transcribeAct) }, stt.busy ? 'Transcribing…' : T0 ? 'Transcribe again' : 'Transcribe')),
+    h('p', { class: 'hint', id: 'stt-status' }, stt.status || 'Runs on this PC, so your audio stays here. The speech model downloads once, about 90 MB, the first time.')],
+  [ h('h3', {}, 'Transcript'), T0 ? h('div', { class: 'stt-text' }, T0.text) : h('p', { class: 'hint' }, 'The words show here, with their timing kept.'),
+    T0 ? h('div', { class: 'row', style: 'gap:6px;margin-top:10px' }, h('button', { title: 'Timed captions from these words, replacing the last set made here', onclick: () => sttRun(transcriptCaptions) }, 'Make timed captions'), h('button', { title: 'One shot per sentence', onclick: () => sttRun(() => splitSentences(T0.text)) }, 'Split into shots')) : null]);
 }
 function audioDriveDialog() {
   const id = prompt('Which control should follow the audio? e.g. bodyY (bounce), earLFold, headNod, cam.dist', 'bodyY');
@@ -2049,7 +2365,7 @@ function canvasClick(x, y, e = {}) {
     else { stage.select({ type: 'piece', id: hit.id, obj: hit.obj }, GIZMO[tool]); toast(`Set piece ${hit.id} selected: drag to move it for this ${libUi.shotOnly || project.stage?.pieces ? 'shot' : 'scene'}`); }
     updateHud(); return hit;
   }
-  if (body) { if (e.altKey || tool !== 'select') { selectBunny(); return { bunny: true }; } clearSelection(); return clickPick(x, y); }
+  if (body) { if (e.altKey || tool !== 'select' || tab === 'stage') { selectBunny(); return { bunny: true }; } clearSelection(); return clickPick(x, y); }
   clearSelection();
   return null;
 }
@@ -2081,7 +2397,7 @@ function buildRail() {
     b('frame', 'Frame', 'frame', 'Frame Bunny (F)', frameBunny),
     b('grid', 'Grid', 'grid', 'Floor grid (G)', () => { view.grid.visible = !view.grid.visible; buildRail(); }, view.grid.visible),
     b('onion', 'Onion', 'onion', 'Onion skin (O)', () => { view3.onion = !view3.onion; apply(); buildRail(); }, view3.onion),
-    b('popout', 'Pop out', 'popout', 'Show the 3D view on a second screen', () => popOut(wfCtx())));
+    );
 }
 
 // the format row above the canvas (as in the 2D app): frame size, lens, quick angles
@@ -2100,11 +2416,16 @@ function buildCanvasTop() {
   $('#canvas-top').replaceChildren(...[fmt, lens,
     h('span', { style: 'flex:1' }),
     mirrorButton(),
-    h('div', { class: 'seg', role: 'group', 'aria-label': 'Camera angle' }, ...VIEWS.map(([n, c]) => h('button', { title: `Camera: ${n}`, onclick: () => { camSet(c); buildCanvasTop(); } }, n))),
+    angleSelect(),
     st.loading ? h('span', { class: 'of', title: 'Blender is turning the library pieces in this shot into 3D view models (once per piece)' }, `Making ${st.loading} 3D model${st.loading > 1 ? 's' : ''}…`) : null,
     stage?.selected ? h('button', { title: 'Clear the selection (Esc)', onclick: () => clearSelection() }, 'Deselect') : null].filter(Boolean));
 }
 
+function angleSelect() {
+  const s = h('select', { title: 'Jump the camera to an angle', 'aria-label': 'Camera angle' }, h('option', { value: '' }, 'Angle…'), ...VIEWS.map(([n], i) => h('option', { value: i }, n)));
+  s.addEventListener('change', () => { if (s.value !== '') camSet(VIEWS[Number(s.value)][1]); s.value = ''; });
+  return s;
+}
 // Open in Blender: one button, its state in its label (Live / connecting), click again to stop
 function mirrorButton() {
   const m = MR.state();
@@ -2126,6 +2447,7 @@ function layout() {
 }
 
 function updateHud() {
+  inkBar({ h, inkTarget, setInk, host: () => $('#frame') });
   const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
   $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
     h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
@@ -2146,7 +2468,7 @@ function updateHud() {
 let tlZoom = (() => { try { return Math.max(1, Number(localStorage.getItem('ds3d.tlzoom')) || 1); } catch { return 1; } })();
 let rowsMode = (() => { try { return localStorage.getItem('ds3d.rows') || 'keyed'; } catch { return 'keyed'; } })();
 let rowSel = new Set(), keyClip = null, lastCopy = null, lastZone = 'canvas';
-const NAME_W = 170;
+const NAME_W = 200;
 const hiddenRows = () => new Set(scene.hiddenTracks || []);
 const folded = g => !!scene.folded?.[g];
 function setZoom(z) { tlZoom = Math.max(1, Math.min(40, z)); try { localStorage.setItem('ds3d.tlzoom', String(tlZoom)); } catch {} const zs = $('#tl-zoom'); if (zs) zs.value = String(Math.log2(tlZoom)); drawTracks(); centreOn(frame); return tlZoom; }
@@ -2197,8 +2519,6 @@ function buildTimelineTools() {
   const layer = h('select', { title: 'Where new keys go: the base animation or a layer on top of it', 'aria-label': 'Keys go to' }, h('option', { value: -1 }, 'Base'), ...(project.layers || []).map((L, i) => h('option', { value: i }, L.name + (L.on === false ? ' (muted)' : ''))));
   layer.value = String(editLayer);
   layer.addEventListener('change', () => { editLayer = Number(layer.value); selected = null; multi = []; buildTimelineTools(); drawTracks(); apply(); });
-  const shotSel = $('#shot-select');
-  if (shotSel) { shotSel.replaceChildren(...scene.shots.map((s, i) => h('option', { value: i }, `${shotName(s)} · ${(s.length / scene.fps).toFixed(1)} s`))); shotSel.value = String(scene.active); }
   const chips = scene.shots.map((s, i) => h('button', { class: 'shot-chip status-' + statusOf(s), style: s.mood ? `box-shadow:inset 0 -4px 0 ${S2.moodColour(s.mood)}` : null, 'aria-pressed': String(i === scene.active), title: `${shotName(s)}: ${(s.length / scene.fps).toFixed(1)} s, ${STATUS.find(x => x[0] === statusOf(s))[1]}. Click to edit, double-click to name, right-click for the next status.`,
     onclick: () => selectShot(i), ondblclick: () => labelShot(i), oncontextmenu: e => { e.preventDefault(); shotStatus(nextStatus(s), i); } }, shotName(s), h('small', {}, ` ${(s.length / scene.fps).toFixed(1)}s`), h('i', { class: 'status-tag' }, STATUS.find(x => x[0] === statusOf(s))[1])));
   const L = editLayer >= 0 ? project.layers?.[editLayer] : null;
@@ -2209,23 +2529,15 @@ function buildTimelineTools() {
         ib('next', 'Next frame (→ or .)', () => goto(frame + 1)), ib('nextkey', 'Next key (↓ or \')', () => stepKey(1)), ib('end', 'Last frame (End)', () => goto(project.length - 1)),
         ib('loop', 'Loop playback (L)', () => { loopPlay = !loopPlay; buildTimelineTools(); toast(loopPlay ? 'Playback loops' : 'Playback stops at the end'); }, 'loop-btn', loopPlay)),
       g('Frame', box, h('span', { class: 'of', id: 'clock' })),
-      g('Keys', ib('key', 'Key the whole pose and face (K). Shift+K keys the camera.', () => keyGroup(BUNNY_IDS.concat(FACE_IDS))),
-        ib('box', 'Box select: drag across empty timeline space. Shift adds, Ctrl toggles; Ctrl+A selects every key', () => toast('Drag across empty timeline space to box-select keys. Shift adds, Ctrl toggles, Ctrl+A selects all, Esc clears.', 4500)),
-        ib('copy', 'Copy the selected keys (Ctrl+C)', () => copySelectedKeys()), ib('paste', 'Paste keys at the playhead (Ctrl+V)', () => pasteSelectedKeys()), ib('trash', 'Delete the selected keys (Delete)', deleteSelected),
-        h('button', { onclick: clearAll, title: 'Clear every key in this shot (asks first; Ctrl+Z brings them back)' }, icon('key'), ' Clear all'), ease),
-      g('Edit', ib('undo', 'Undo (Ctrl+Z)', undo), ib('redo', 'Redo (Ctrl+Shift+Z)', redo), ib('cut', 'Split the shot at the playhead', () => splitHere()),
+      g('Edit', ib('key', 'Key the whole pose and face (K). Shift+K keys the camera.', () => keyGroup(BUNNY_IDS.concat(FACE_IDS))), ease,
+        ib('cut', 'Scissors: click a block to cut it in two', () => { cutMode = !cutMode; $('#tracks').classList.toggle('cutting', cutMode); buildTimelineTools(); }, 'scissors-btn', cutMode),
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),
         h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped')),
-      g('Voice', h('button', { onclick: () => importAudio(true), title: scene.audio?.path ? 'Voice: ' + (scene.audio.babble ? (scene.audio.base ? scene.audio.base + ' with babble mixed over it' : 'babble only') : scene.audio.path) + '. Click to replace the recorded voice.' : 'Import the voice or song for the scene: it plays and shows as a waveform' }, icon('mic'), scene.audio?.path && !(scene.audio.babble && !scene.audio.base) ? ' Replace voice' : ' Add voice'))),
-    h('div', { class: 'tl-row' },
-      g('Zoom', ib('minus', 'Zoom out', () => setZoom(tlZoom / 1.5)), zoom, ib('plus', 'Zoom in', () => setZoom(tlZoom * 1.5)), ib('fit', 'Fit the whole shot (\\). Shift-click: fit the selected keys', e => (e.shiftKey ? fitKeys() : setZoom(1)))),
+      g('Zoom', zoom, ib('fit', 'Fit the whole shot (\\). Shift-click: fit the selected keys', e => (e.shiftKey ? fitKeys() : setZoom(1)))),
       g('Rows', rows, filter),
-      g('Layers', layer, h('button', { onclick: () => newLayer(), title: 'Add an animation layer: its keys add on top of the base, so you can push a whole move without touching its keys' }, '+ Layer'),
-        ...(L ? [h('button', { 'aria-pressed': String(L.on === false), onclick: () => { pushUndo('Mute layer'); L.on = L.on === false; dirty = true; buildTimelineTools(); apply(); }, title: 'Mute this layer to compare with the base' }, 'Mute'), lw, h('span', {}, '%')] : [])),
-      g('Shots', ...chips, h('button', { onclick: () => addShot(false), title: 'Add a shot after this one (Ctrl+T)' }, '+ Shot'),
-        h('button', { onclick: () => addShot(true), title: 'Duplicate this shot (Ctrl+Shift+T)' }, 'Duplicate'),
-        ib('prev', 'Move this shot earlier (Alt+←)', () => moveShot(-1)), ib('next', 'Move this shot later (Alt+→)', () => moveShot(1)),
-        ib('trash', 'Delete this shot', () => deleteShot()))));
+      g('Shots', ...chips, h('button', { onclick: () => addShot(false), title: 'Add a shot after this one (Ctrl+T)' }, '+ Shot')),
+      g('Keys go to', layer, h('button', { onclick: () => newLayer(), title: 'Add an animation layer: its keys add on top of the base, so you can push a whole move without touching its keys' }, '+ Layer'),
+        ...(L ? [h('button', { 'aria-pressed': String(L.on === false), onclick: () => { pushUndo('Mute layer'); L.on = L.on === false; dirty = true; buildTimelineTools(); apply(); }, title: 'Mute this layer to compare with the base' }, 'Mute'), lw, h('span', {}, '%')] : []))));
 }
 
 function toggleCurves(on = !curves) { curves = on; buildTimelineTools(); drawTracks(); return { curves }; }
@@ -2251,6 +2563,7 @@ function drawTracks() {
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave])));
+  rows.push(...layerRows(ppf));
   const ret = S2.retentionLane(h, scene, sceneStart(), project.length, ppf);
   if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (story2 MCP tool, action retention). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));
   // what is placed in the shot: drag a piece along to change when it appears
@@ -2762,6 +3075,7 @@ function loop() {
   try { if (localStorage.getItem('ds3d.theme') === 'dark') document.body.dataset.theme = 'dark'; } catch {}
   data = charData.bunny = await (await fetch('bunny3d.json')).json();
   view = new Viewport($('#view'), data);
+  BU = bubbleUi(buCtx()); BU.bind();
   BUNNY_IDS = PARTS.flatMap(p => p[2]);
   stage = new ST.Stage(view, stageCtx());
   drawStage = new DrawingStage(view);
@@ -2775,7 +3089,6 @@ function loop() {
   $('#auto-key').addEventListener('click', e => { autoKey = !autoKey; e.currentTarget.setAttribute('aria-pressed', String(autoKey)); e.currentTarget.textContent = autoKey ? 'Keys: Auto' : 'Keys: Manual'; toast(autoKey ? 'Auto key: every change sets a key at the playhead' : 'Manual: changes are a preview until you press Key (K)'); });
   $('#render-btn').addEventListener('click', () => renderScene());
   $('#save-btn').addEventListener('click', () => saveShot(false));
-  $('#shot-select').addEventListener('change', e => selectShot(Number(e.target.value)));
   $('#shots-btn').addEventListener('click', e => ctxMenu(e, menus().find(m => m[0] === 'Shot')[1].map(it => (it === '-' ? '-' : [it[0] + (it[2] ? '   ' + it[2] : ''), () => runCommand({ group: 'Shot', label: it[0], run: it[1] })]))));
   new ResizeObserver(() => { const p = $('#panel'); p.classList.toggle('wide', p.clientWidth >= 900); }).observe($('#panel'));
   $('#shot-name').addEventListener('change', e => { scene.name = e.target.value; dirty = true; });
@@ -2875,17 +3188,46 @@ function loop() {
       return r;
     },
     setStage(patch, shotOnly) {
-      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet'].includes(k));
+      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'lighting', 'inks', 'outfit', 'accessories', 'mouthSet'].includes(k));
       if (bad.length) throw Error('Unknown stage keys: ' + bad.join(', '));
       const r = setStage(libCtx(), patch, !!shotOnly);
       if (tab === 'library') buildPanel();
       return r;
+    },
+    // shadows and the 3-point light: { shadows, halftone, preset (id or null), target, key, fill, back, turn, height, distance, soft, shade, shotOnly }
+    lighting(a = {}) {
+      const st = stageOf(scene, project), patch = {};
+      if (a.shadows != null) patch.shadows = !!a.shadows;
+      if (a.halftone != null) { patch.halftone = a.halftone ? true : null; if (a.halftone) patch.shadows = true; }
+      if (a.preset === null || a.preset === 'off') patch.lighting = null;
+      else {
+        if (a.preset && !LIGHT_PRESETS.some(p => p[0] === a.preset)) throw Error('preset is one of ' + LIGHT_PRESETS.map(p => p[0]).join(', '));
+        const base = a.preset ? makeLighting(a.preset, a.turn ?? st.lighting?.turn ?? view.cam.yaw, st.lighting?.target) : st.lighting;
+        const nums = Object.fromEntries(['key', 'fill', 'back', 'turn', 'height', 'distance', 'soft', 'shade'].filter(k => a[k] != null).map(k => [k, Number(a[k])]));
+        if (Object.keys(nums).length || a.target != null || a.preset) { if (!base) throw Error('Pick a preset first: ' + LIGHT_PRESETS.map(p => p[0]).join(', ')); patch.lighting = { ...base, ...nums, ...(a.target != null ? { target: String(a.target) } : {}) }; }
+      }
+      if (Object.keys(patch).length) setStage(libCtx(), patch, !!a.shotOnly);
+      if (tab === 'stage') buildPanel();
+      const now = stageOf(scene, project);
+      return { shadows: !!now.shadows, halftone: !!now.halftone, lighting: now.lighting || null, presets: LIGHT_PRESETS.map(p => ({ id: p[0], name: p[1], about: p[2] })) };
+    },
+    // one object's outline, percent of Bunny's line (0 takes it off, 100 is the default): piece id, '@lead', '@costar0', or item index
+    setInk(target, percent, shotOnly) {
+      const v = Math.max(0, Math.min(300, Math.round(Number(percent))));
+      if (typeof target === 'number') { if (!project.items?.[target]) throw Error('No item ' + target); editItem(target, { ink: v === 100 ? null : v }, 'Outline'); return { item: target, ink: v }; }
+      const inks = { ...(stageOf(scene, project).inks || {}), [target]: v };
+      if (v === 100) delete inks[target];
+      setStage(libCtx(), { inks: Object.keys(inks).length ? inks : null }, !!shotOnly);
+      return { inks: stageOf(scene, project).inks || {} };
     },
     storyboard: () => storyboard(),
     importAudio: p => importAudio(p ?? null),
     audioDrive: (id, a, b, opts) => driveFromAudio(id, a, b, opts),
     lipsync: (o = {}) => lipsyncFromAudio(o),
     babble: (a = {}) => babbleAct(a),
+    blocks: (a = {}) => blocksAct(a),
+    voiceFx: (a = {}) => voiceFxAct(a),
+    transcribe: (a = {}) => (a.action === 'captions' ? transcriptCaptions() : a.action === 'get' ? scene.transcript || null : transcribeAct(a)),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
     story(a = {}) {
       const out = { retention: () => retentionCheck(), chapters: () => exportChapters(), loop_back: () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); return r; },
@@ -2965,6 +3307,7 @@ function loop() {
     // cast.js (MCP tool "cast")
     async cast(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await castAct(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
     // drawings.js (MCP tool "drawings")
+    async bubbles(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.at_frame != null) goto(a.at_frame); return BU.act(a); },
     async drawings(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.at_frame != null) goto(a.at_frame); return dr(a); },
     // powers.js (MCP tool "powers")
     async powers(a = {}) { if (a.shot != null) selectShot(a.shot); if (a.frame != null) goto(a.frame); const r = await pw(a); if (r && typeof r === 'object' && !Array.isArray(r)) delete r.message; return r; },
