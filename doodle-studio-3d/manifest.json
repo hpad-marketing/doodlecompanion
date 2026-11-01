@@ -1,8 +1,8 @@
 {
- "version": "20261101-103107",
- "notes": "Audio and Draw workspaces, block timeline with layers, more voice effects, transcriber, every Babble voice. Animated speech bubbles and bursts in the Library. Thin or remove any object's outline. Shadows button for the whole scene. Stage Light tab with 14 lighting presets, Save preset, Tri-lighting add-on in Blender. Palettes paint models part by part, 16 palettes, your own palettes and palette import, Bunny and outfit colours, Outlines on/off in every look. Clear message if the port is busy.",
+ "version": "20261101-110032",
+ "notes": "Hear your audio while scrubbing. Voice and music each have a waveform row on the timeline, and the music bed now plays in the app. The playhead lets go when you release the mouse, and scrubbing no longer selects the time labels. Tools > Check for updates. Updates recover by themselves if the app is closed mid-download.",
  "runtime": "44.9.0",
- "published": "2026-11-01T05:01:08.740Z",
+ "published": "2026-11-01T05:30:32.689Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -60,9 +60,9 @@
    "gz": "files/35c28813d11c25bd3f44cd675e70bea55dda43a36e8c803701a7e24ab33d0d3f.gz"
   },
   "resources/app/updater.cjs": {
-   "sha256": "2756b158e092a4f5cc72dd4c76505db357ec9850b8a7308ba12dfcbe312f7c5f",
-   "size": 11738,
-   "gz": "files/2756b158e092a4f5cc72dd4c76505db357ec9850b8a7308ba12dfcbe312f7c5f.gz"
+   "sha256": "8748335e4668ee41bc4fd8ae839ba2e582658014694ac0f2568f396a7169c328",
+   "size": 12050,
+   "gz": "files/8748335e4668ee41bc4fd8ae839ba2e582658014694ac0f2568f396a7169c328.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
    "sha256": "60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8",
@@ -285,9 +285,9 @@
    "gz": "files/dcc28824fa4554f1fc0efcd9134a150f00e151426225d68f7e5dde605a5742ee.gz"
   },
   "resources/app/ui/src/audio.js": {
-   "sha256": "9af77c0ec61e7a111efc9d7b554f610114fa4edfdcbd61e661701b089e8047f2",
-   "size": 9995,
-   "gz": "files/9af77c0ec61e7a111efc9d7b554f610114fa4edfdcbd61e661701b089e8047f2.gz"
+   "sha256": "0d52fa821ee4bae24bfcc3287d67079dae56b9e90ca337cb9c8b43bc05de8c1a",
+   "size": 11882,
+   "gz": "files/0d52fa821ee4bae24bfcc3287d67079dae56b9e90ca337cb9c8b43bc05de8c1a.gz"
   },
   "resources/app/ui/src/babble.js": {
    "sha256": "bd019c3332906a5e52ffc98c151fce0028166c7ee5617fe631bf2c4f6e4854ea",
@@ -370,9 +370,9 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "d3ce1517fefa253c8d6e5f752709ade92f24b86dfb4ad3e99dfa29b9f394bce2",
-   "size": 295984,
-   "gz": "files/d3ce1517fefa253c8d6e5f752709ade92f24b86dfb4ad3e99dfa29b9f394bce2.gz"
+   "sha256": "02c9ca41f2f4c56fc91229f1a550e091cf8395a498f3643957819ca7a20f6100",
+   "size": 297281,
+   "gz": "files/02c9ca41f2f4c56fc91229f1a550e091cf8395a498f3643957819ca7a20f6100.gz"
   },
   "resources/app/ui/src/materials.js": {
    "sha256": "d123157692322985a2bd0a410cb27167e594f2fc46dbd301261e903c48c1ee71",
@@ -445,9 +445,9 @@
    "gz": "files/2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "4486dbf5a39fc8b6bb76db51d386aa716dde7d8d95a3a9881ea4a52eb6d9c1a1",
-   "size": 17112,
-   "gz": "files/4486dbf5a39fc8b6bb76db51d386aa716dde7d8d95a3a9881ea4a52eb6d9c1a1.gz"
+   "sha256": "4bc1ae1290c28d20d59d773289d992a267f04b77abaa594bf1ffa1c78b9d1a4c",
+   "size": 17450,
+   "gz": "files/4bc1ae1290c28d20d59d773289d992a267f04b77abaa594bf1ffa1c78b9d1a4c.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842",
