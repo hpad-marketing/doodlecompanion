@@ -629,3 +629,15 @@ Stage › Set & light › Shadows turns light and shadow on for the whole scene,
 Click anything in the Stage to get the Outline strip over the 3D view: 100% is Bunny's line, 40% thins it (the park's flowers read much better), 0 takes it off. It is saved with the scene and used in the render. Materials › Outlines: on / off does the same for a whole target in any look, and the colours stay. Face lines always stay.
 
 A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). Materials › Character colours sets Bunny and the outfit to a palette colour or any colour. Brand mustard and black stay the default.
+
+## Speech bubbles
+
+Library › Speech bubbles has 14 animated presets: Talk, Whisper, Think, Surprise and Shaky bubbles, Star burst, Letter slam, Boing, Zoom, Splat and Drift bursts, and Stepped, Name tab and Doodle dialogue boxes for subtitles. Every one pops in from small with an overshoot (Soft, Bouncy or Snap) and sizes to its text.
+
+- Add one: drag a card onto the timeline or the Stage, or double-click it to add it at the playhead. Each bubble is its own layer with one block you can move, trim, cut, hide and isolate.
+- Type: double-click the bubble on the Stage, or use the text box in the panel. Enter starts a new line. Esc or clicking away keeps it.
+- Place: a speech bubble sits above its speaker and the tail stays on them from every side. Drag it anywhere round them. Pull the round handle to make it wider or narrower, and the words reflow.
+- Time: set Seconds, or set Ends with to the Babble line or the voice. The Babble choice says the text as a Babble line, and moving the block moves the line. Speak it does the same.
+- Stay off the face keeps it inside the Instagram safe zone and off the eyes and mouth. Turn it off to place a bubble exactly. Follow the character off keeps it where it is.
+- Colours are mustard or ink, in Bunny's line weight, with no shadows. Bubbles show on the Stage and in the final render, not in Blender's live view.
+- MCP: `bubbles` action=presets|list|add|set|match|remove|clear. `blocks` lists them as layers `b:<id>`.
