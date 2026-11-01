@@ -142,7 +142,7 @@ export function place(d, view) {
 // ---------------------------------------------------------------- timing and boil
 // what part shows at frame t: null (not yet / gone), else { p: drawn fraction 0..1, v: boil variant 0..2 }
 export function stateAt(d, t) {
-  if (t < d.frame || (d.until != null && t >= d.until)) return null;
+  if (d.hidden || t < d.frame || (d.until != null && t >= d.until)) return null;
   const p = d.build > 0 ? Math.min(1, (t - d.frame + 1) / d.build) : 1;
   return { p, v: d.noise > 0 ? Math.floor((t - d.frame) / Math.max(1, d.boil)) % 3 : 0 };
 }
@@ -240,7 +240,7 @@ export function screenRuns(p, length) {
 }
 // what Blender gets: scene drawings only, placed in the world
 export function forBridge(p) {
-  const a = drawingsOf(p).filter(d => d.layer === 'scene' && d.world).map(d => ({ id: d.id, strokes: d.strokes, aspect: d.aspect, rot: d.rot || 0, world: d.world, frame: d.frame, build: d.build, until: d.until, noise: d.noise, boil: d.boil, colour: d.colour }));
+  const a = drawingsOf(p).filter(d => d.layer === 'scene' && d.world && !d.hidden).map(d => ({ id: d.id, strokes: d.strokes, aspect: d.aspect, rot: d.rot || 0, world: d.world, frame: d.frame, build: d.build, until: d.until, noise: d.noise, boil: d.boil, colour: d.colour }));
   return a.length ? a : null;
 }
 // a small picture of a drawing for lists (data URL), in its own colour on the background

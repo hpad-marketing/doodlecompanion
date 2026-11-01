@@ -3,6 +3,7 @@
 // metres turned `turn` degrees. Blender (lib/cast.py) appends their rigs into the lead's scene,
 // keeps their arms out of their own heads and pushes them apart so no two bodies ever touch.
 import { valueAt, setKey } from './project.js';
+import { hiddenSpans } from './blocks.js';
 
 export const MAX_COSTARS = 5;
 export const costarsOf = p => p.costars || [];
@@ -64,6 +65,6 @@ export const costarValues = (p, i, ids, f) => { const sp = costarProject(p, i); 
 // what Blender receives: per-frame values like the lead's (no camera; the shot has one camera)
 export function costarsForBridge(p, ids) {
   const own = ids.filter(id => !id.startsWith('cam.'));
-  return costarsOf(p).map((c, i) => ({ character: c.character, x: c.x, y: c.y, turn: c.turn,
-    frames: Array.from({ length: p.length }, (_, f) => costarValues(p, i, own, f)) }));
+  return costarsOf(p).map((c, i) => { const hide = hiddenSpans(c, p.length); return { character: c.character, x: c.x, y: c.y, turn: c.turn,
+    frames: Array.from({ length: p.length }, (_, f) => costarValues(p, i, own, f)), ...(hide ? { hide } : {}) }; });
 }

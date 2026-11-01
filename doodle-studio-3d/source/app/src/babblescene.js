@@ -1,5 +1,5 @@
 // Babble lines in a scene: typed dialogue that the characters "speak" as cute gibberish.
-// scene.babble = [{ id, shot (uid), f (frame in the shot), text, who ('lead' or co-star index), mood }]
+// scene.babble = [{ id, shot (uid), f (frame in the shot), text, who ('lead', co-star index or 'voice:<character>'), mood }]
 // scene.voices = { bunny: { style, pitch, speed, range, breath, croak }, ... } (the user's dials)
 // Rebuilding renders every line into one voice track (mixed over the recorded voice, if any),
 // keys the speaker's mouth from the syllables it made and writes timed captions.
@@ -12,6 +12,7 @@ let nextId = () => 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e
 // the character a line's speaker is ('lead' = the scene's character)
 export function speakerChar(scene, shot, who, leadChar) {
   if (who == null || who === 'lead') return leadChar;
+  if (String(who).startsWith('voice:')) return String(who).slice(6);   // off screen: heard, no mouth to move
   const c = (shot.costars || [])[Number(who)];
   if (!c) throw Error(`No co-star ${who} in shot ${shot.code}`);
   return c.character || 'bunny';

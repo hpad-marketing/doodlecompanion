@@ -103,9 +103,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await ev(() => localStorage.setItem('ds3d.keys', JSON.stringify({ 'Alt+Y': 'View › Snapping on / off' })));
   await p.keyboard.press('Alt+y');
   ok((await wf({ action: 'snap', on: undefined })).snap === false, 'custom Alt+Y ran the command (then toggled back)');
-  ok(await p.locator('#quickbar button').count() >= 1, 'recent command on the favourites bar');
-  await p.locator('#quickbar button').first().click({ button: 'right' });
-  ok(await p.locator('#quickbar button.fav').count() === 1, 'right-click pins it as a favourite');
+  ok(await p.locator('#quickbar button').count() === 0, 'a tool you ran leaves nothing on the menu bar');
   await p.click('#menubar .menu > button:has-text("Help")');
   await p.click('#menubar .menu-list button:has-text("Keyboard shortcuts")');
   ok(await p.locator('.ds-modal .hotkeys kbd.mine').count() === 1, 'shortcut editor shows your key');

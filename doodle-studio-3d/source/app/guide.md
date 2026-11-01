@@ -370,7 +370,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 
 ### 3.10 Drawing in 3D
 
-- **Drawings layer (Stage › Drawings, File › Import SVG drawing…, Post › Draw on the screen…):** import an SVG or draw by hand, and the lines sit on their own layer, apart from the characters, like the 2D studio's cutaways. Every line and shape outline becomes one ink line at Bunny's weight (fills, text and images are left out; convert text to outlines first). It draws on stroke by stroke over *Draws on over* frames from *Starts at frame*, boils like a hand-drawn line (*Noise*, a new wobble every *Boil every* frames), and can leave at *Gone at frame*. **On the screen** lays it over everything in the render; **In the 3D scene** stands it in the world at *Depth* metres behind the character, facing the camera, so the character can be in front of it. Ink or mustard only. `drawings action=import {svg | path, layer, x, y, size, frame, build, noise, colour}`, `draw {strokes}`, `set`, `place`, `remove`, `list`.
+- **Drawings layer (the Draw workspace, File › Import SVG drawing…, Post › Draw on the screen…):** import an SVG or draw by hand, and the lines sit on their own layer, apart from the characters, like the 2D studio's cutaways. Every line and shape outline becomes one ink line at Bunny's weight (fills, text and images are left out; convert text to outlines first). It draws on stroke by stroke over *Draws on over* frames from *Starts at frame*, boils like a hand-drawn line (*Noise*, a new wobble every *Boil every* frames), and can leave at *Gone at frame*. **On the screen** lays it over everything in the render; **In the 3D scene** stands it in the world at *Depth* metres behind the character, facing the camera, so the character can be in front of it. Ink or mustard only. `drawings action=import {svg | path, layer, x, y, size, frame, build, noise, colour}`, `draw {strokes}`, `set`, `place`, `remove`, `list`.
 - **Ink doodles in 3D space:** strokes in frame fractions at a depth, drawn on over N frames. `powers action=doodle {strokes, depth, draw}`.
 - **Auto-ink:** Line Art at Bunny's stroke weight on imported models. `powers action=autoink`.
 - **Headlines as 3D lettering**, and **story pieces:** time skip, journey map, chat, label and arrow, end screen. `library_use {id: story:…, text}`.
@@ -460,11 +460,22 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.17 Babble voice (typed lines, cute gibberish)
 
 Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
-- How: File › Babble voice (also in the Face tab's Voice section). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- How: the Audio workspace (File › Babble voice opens it). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at playhead**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
 - What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
 - Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
 - Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
 - Watch out: a line longer than the rest of its shot keeps playing into the next shot, but the mouth keys stop at the shot's end (the toast says so). Importing or removing the recorded voice rebuilds the babble on top of it.
+
+- Every character can be heard: pick Koala or Frog even if they are not in the shot, or press **Hear all voices**. A line given to a character who is not in the shot plays off screen, with no mouth keys. MCP: `who: "voice:frog"`.
+
+### 3.17b Voice effects and the transcriber (Audio workspace)
+
+- **Voice effects:** presets (Squeaky, Tiny, Deep, Giant, Robot, Radio, Phone call, Megaphone, Echo, Cave, Underwater, Alien) or your own pitch, effect and amount, over the whole scene voice. Your recording stays untouched and the timing does not change. MCP: `audio action=effect {preset, pitch, effect, mix, on, reset}`.
+- **Transcribe:** Whisper runs on this PC, so nothing leaves it. The model downloads once, about 90 MB. It gives timed words, then **Make timed captions** or **Split into shots**. MCP: `audio action=transcribe {language}`, `transcript`, `captions`.
+
+### 3.17c Timeline blocks and layers
+
+Every character and drawing on a shot is a layer with blocks above the keys, as in the 2D studio. Drag a block to move it with its keys, drag an end to trim, use the scissors (or right-click) to cut. A gap hides the character there, in the render too. Each layer has an eye (show or hide, render too) and S to isolate it while you work (never in the render). A drawing's menu sets where it sits: Over all, In front, Through or Behind the characters. Babble lines are blocks too: drag one to retime it. MCP: `blocks`.
 
 ### 3.18 Materials (looks, colours, look add-ons)
 
@@ -596,7 +607,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`babble`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
+`babble`, `blocks`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 
@@ -610,3 +621,23 @@ These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` f
 | Legs | `legL legLOut kneeL footL` (and R) |
 | Face | `expression gaze mouth blink` |
 | Camera | `cam.yaw cam.pitch cam.dist cam.lens cam.roll cam.tx cam.ty cam.tz cam.focus cam.fstop` |
+
+## Light, shadows and outlines
+
+Stage › Light › Shadows turns light and shadow on for the whole scene, characters included. It is off by default: the doodle look is flat. The lighting presets (Classic, Soft, Dramatic, Rim, Overhead, Rembrandt, Loop, Butterfly, Split, Clamshell, High key, Low key, Silhouette, Under light, plus any you save) put a key, a fill and a back light round whoever is selected, or whatever you pick under Centre on, and they follow it as it moves. The sliders show live in the 3D view. Blender builds the same lights in the render, using the Tri-lighting add-on's TriLamp lights if it is installed. A plain background has no floor to catch a shadow.
+
+Click anything in the Stage to get the Outline strip over the 3D view: 100% is Bunny's line, 40% thins it (the park's flowers read much better), 0 takes it off. It is saved with the scene and used in the render. Materials › Outlines: on / off does the same for a whole target in any look, and the colours stay. Face lines always stay.
+
+A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). Materials › Character colours sets Bunny and the outfit to a palette colour or any colour. Brand mustard and black stay the default.
+
+## Speech bubbles
+
+Library › Speech bubbles has 14 animated presets: Talk, Whisper, Think, Surprise and Shaky bubbles, Star burst, Letter slam, Boing, Zoom, Splat and Drift bursts, and Stepped, Name tab and Doodle dialogue boxes for subtitles. Every one pops in from small with an overshoot (Soft, Bouncy or Snap) and sizes to its text.
+
+- Add one: drag a card onto the timeline or the Stage, or double-click it to add it at the playhead. Each bubble is its own layer with one block you can move, trim, cut, hide and isolate.
+- Type: double-click the bubble on the Stage, or use the text box in the panel. Enter starts a new line. Esc or clicking away keeps it.
+- Place: a speech bubble sits above its speaker and the tail stays on them from every side. Drag it anywhere round them. Pull the round handle to make it wider or narrower, and the words reflow.
+- Time: set Seconds, or set Ends with to the Babble line or the voice. The Babble choice says the text as a Babble line, and moving the block moves the line. Speak it does the same.
+- Stay off the face keeps it inside the Instagram safe zone and off the eyes and mouth. Turn it off to place a bubble exactly. Follow the character off keeps it where it is.
+- Colours are mustard or ink, in Bunny's line weight, with no shadows. Bubbles show on the Stage and in the final render, not in Blender's live view.
+- MCP: `bubbles` action=presets|list|add|set|match|remove|clear. `blocks` lists them as layers `b:<id>`.

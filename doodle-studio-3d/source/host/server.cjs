@@ -1,7 +1,7 @@
 // Local server for Doodle Studio 3D: serves the editor and its /api (files, renders).
 // Bound to 127.0.0.1 only. The 2D Doodle Studio's ports (54183 etc.) are never touched.
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.mjs': 'text/javascript' };
 
 // reference videos the user picked: served by a random token, with Range requests so the
 // editor can seek them. Only files registered through ref-video are reachable.

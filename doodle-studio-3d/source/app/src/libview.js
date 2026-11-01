@@ -3,6 +3,7 @@
 // light, wardrobe) and the items in the shot are picked and edited from their pictures.
 import { libraryRows, loadLibrary, useItem, setStage, removeItem, search, CATEGORIES, CHARACTERS } from './library.js';
 import { stageOf } from './project.js';
+import { lightControls } from './lightpanel.js';
 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
 const TIMES = ['day', 'golden', 'night'];
@@ -178,12 +179,23 @@ export function setPanel(ctx) {
       h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { title: 'Put every moved piece back where the set has it', onclick: () => { setStage(ctx, { pieces: null }, ui.shotOnly); re(); } }, 'Reset moved pieces')));
   })() : h('p', { class: 'hint' }, 'Pick a set: it is built in the 3D view, and every piece can be clicked and moved.');
   const left = h('div', { class: 'col' }, h('h3', {}, 'Set'), h('div', { class: 'row', style: 'margin-bottom:6px' }, q, scope), grid);
-  const right = h('div', { class: 'col' }, h('h3', {}, 'Character'), chars, pieces, h('h3', {}, 'Light'),
-    sel('Time', 'time', [['', 'Default'], ...TIMES.map(t => [t, cap(t)])], st.time), sel('Sky', 'sky', [['', 'Default'], ...SKIES.map(t => [t, cap(t)])], st.sky),
-    check('Cel shadows', st.shadows, v => ({ shadows: v }), 'Flat cel shadows on the set. Off unless you turn it on.'),
-    check('Halftone dots in the shadows', st.halftone, v => (v ? { halftone: true, shadows: true } : { halftone: false }), 'Comic-book halftone: the cel shadows become ink dots. Turns cel shadows on.'),
-    h('p', { class: 'hint' }, 'Light, sky and shadows show in the Blender render; the 3D view keeps the flat Doodle look so posing stays readable.'));
+  const right = h('div', { class: 'col' }, h('h3', {}, 'Character'), chars, pieces);
   return h('div', { class: 'ws two' }, left, right);
+}
+
+// Stage › Light: time and sky, the Shadows button, the lighting presets and their sliders
+export function lightPanel(ctx) {
+  const { h } = ctx, re = () => ctx.rebuild(), st = stageOf(ctx.scene(), ctx.project());
+  const sel = (label, key, opts) => {
+    const s = h('select', { 'aria-label': label }, ...opts.map(([v, n]) => h('option', { value: v }, n)));
+    s.value = st[key] ?? '';
+    s.addEventListener('change', () => { setStage(ctx, { [key]: s.value || null }, ui.shotOnly); re(); });
+    return h('label', { class: 'lbl-row' }, h('span', { class: 'lbl' }, label), s);
+  };
+  const scope = h('div', { class: 'chips' }, h('button', { 'aria-pressed': String(!ui.shotOnly), onclick: () => { ui.shotOnly = false; re(); }, title: 'Changes apply to every shot' }, 'Whole scene'),
+    h('button', { 'aria-pressed': String(ui.shotOnly), onclick: () => { ui.shotOnly = true; re(); }, title: 'Changes apply to this shot only, on top of the scene' }, `${ctx.project().code} only`));
+  const { main, tune } = lightControls(ctx, ui.shotOnly);
+  return h('div', { class: 'ws two' }, h('div', { class: 'col' }, h('h3', {}, 'Time and sky'), scope, sel('Time', 'time', [['', 'Default'], ...TIMES.map(t => [t, cap(t)])]), sel('Sky', 'sky', [['', 'Default'], ...SKIES.map(t => [t, cap(t)])]), main), h('div', { class: 'col' }, tune));
 }
 
 export function wardrobePanel(ctx) {
@@ -206,7 +218,7 @@ export function wardrobePanel(ctx) {
       const mcard = (id, name, row, note) => h('button', { class: 'libx-card', 'aria-pressed': String((st.mouthSet || null) === id), onclick: () => pick(id), title: (note ? note + '. ' : '') + 'Speech mouth set for lip sync' },
         h('span', { class: 'pic' }, row ? picture(h, row) : h('span', { class: 'glyph' }, '◡')), h('span', {}, name));
       return h('div', { class: 'libx-grid', role: 'list' }, mcard(null, 'Doodle Studio\'s own', mrow('builtin')), ...(lib?.mouthSets || []).filter(m => bare(m.id) !== 'builtin').map(m => mcard(m.id, m.name, mrow(m.id), m.note)));
-    })(), h('p', { class: 'hint' }, 'Outfits, accessories and mouth sets render in Blender. Scope (whole scene or this shot) follows the Set & light section.')));
+    })(), h('p', { class: 'hint' }, 'Outfits, accessories and mouth sets render in Blender. Scope (whole scene or this shot) follows the Set tab.')));
 }
 
 // ---------------------------------------------------------------- items in the shot: pick, place, move, time

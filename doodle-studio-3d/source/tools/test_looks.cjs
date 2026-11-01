@@ -14,7 +14,7 @@ const wait = key => new Promise(r => { const t = setInterval(() => { const l = L
   const a = L.list();
   ok(a.looks.filter(l => l.source === 'built-in').length === 8, 'eight built-in looks (plush included)');
   ok(a.looks.every(l => l.source !== 'built-in' || l.preview?.startsWith('data:image/png')), 'built-in looks have pictures');
-  ok(a.palettes.length === 8, 'eight palettes');
+  ok(a.palettes.length === 16, 'sixteen palettes');
   const g = a.looks.find(l => l.key === 'test_look:glow');
   ok(g && g.status === 'untested' && g.source === 'library', 'an add-on dropped in the library looks folder is found, untested');
   ok(L.addonDirs().test_look === path.join(lib, 'looks'), 'the bridge learns where the add-on lives');
