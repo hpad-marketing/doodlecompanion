@@ -1,8 +1,8 @@
 {
- "version": "20261101-110032",
- "notes": "Hear your audio while scrubbing. Voice and music each have a waveform row on the timeline, and the music bed now plays in the app. The playhead lets go when you release the mouse, and scrubbing no longer selects the time labels. Tools > Check for updates. Updates recover by themselves if the app is closed mid-download.",
+ "version": "20261101-111154",
+ "notes": "The playhead now sits exactly under the mouse and starts at zero, with a handle on the ruler. Restart after an update reopens the app.",
  "runtime": "44.9.0",
- "published": "2026-11-01T05:30:32.689Z",
+ "published": "2026-11-01T05:41:54.938Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -60,9 +60,9 @@
    "gz": "files/35c28813d11c25bd3f44cd675e70bea55dda43a36e8c803701a7e24ab33d0d3f.gz"
   },
   "resources/app/updater.cjs": {
-   "sha256": "8748335e4668ee41bc4fd8ae839ba2e582658014694ac0f2568f396a7169c328",
-   "size": 12050,
-   "gz": "files/8748335e4668ee41bc4fd8ae839ba2e582658014694ac0f2568f396a7169c328.gz"
+   "sha256": "fbb69468944e81772e8188b6a0ebe5b233773d1839a50b2c74bee5f24e71f08c",
+   "size": 11712,
+   "gz": "files/fbb69468944e81772e8188b6a0ebe5b233773d1839a50b2c74bee5f24e71f08c.gz"
   },
   "resources/app/blender/Bunny3D_v2.blend": {
    "sha256": "60e2616a948ddbbfe7dfdcbdbfacbd2493c1c8cf44fcf76cd629e460782b2cb8",
@@ -370,9 +370,9 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "02c9ca41f2f4c56fc91229f1a550e091cf8395a498f3643957819ca7a20f6100",
-   "size": 297281,
-   "gz": "files/02c9ca41f2f4c56fc91229f1a550e091cf8395a498f3643957819ca7a20f6100.gz"
+   "sha256": "8e62f4765087fdf77e576f9eb144e499924cbbaa49d5f38689a3e30bf043caca",
+   "size": 293885,
+   "gz": "files/8e62f4765087fdf77e576f9eb144e499924cbbaa49d5f38689a3e30bf043caca.gz"
   },
   "resources/app/ui/src/materials.js": {
    "sha256": "d123157692322985a2bd0a410cb27167e594f2fc46dbd301261e903c48c1ee71",
@@ -445,9 +445,9 @@
    "gz": "files/2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "4bc1ae1290c28d20d59d773289d992a267f04b77abaa594bf1ffa1c78b9d1a4c",
-   "size": 17450,
-   "gz": "files/4bc1ae1290c28d20d59d773289d992a267f04b77abaa594bf1ffa1c78b9d1a4c.gz"
+   "sha256": "88c62b6046e4f3ca5a0d6a7681a1084c81b2b0bc9700059169dafe1a9d0b584e",
+   "size": 17631,
+   "gz": "files/88c62b6046e4f3ca5a0d6a7681a1084c81b2b0bc9700059169dafe1a9d0b584e.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842",
