@@ -1,8 +1,8 @@
 {
- "version": "20261101-135524",
- "notes": "New Music workspace: play your MiniLab 3 or any MIDI keyboard live, loop and layer, 24 instruments, mix, and bounce music to the scene.",
+ "version": "20261101-135902",
+ "notes": "Reel templates and script to first draft. Faster viewport. Co-star motions and picture pickers for wardrobe. Blender 5.x support. Library audit fixes. Everything from the Music release is kept.",
  "runtime": "44.9.0",
- "published": "2026-11-01T08:25:24.793Z",
+ "published": "2026-11-01T08:29:03.088Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -15,14 +15,14 @@
    "gz": "files/e4a7452a36c9940cd2ee26c97fcaed285a1dee1aa485a363e83aedcc4e8e2f47.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "32283b2b60b64e0f68905e63d555089a459c29b5210626f5a729569f77a0891e",
-   "size": 31218,
-   "gz": "files/32283b2b60b64e0f68905e63d555089a459c29b5210626f5a729569f77a0891e.gz"
+   "sha256": "24bd91651ee6ae4a74f5a5b57aa6026a64c3efe51ebd0ce9b7d4f496a8077c0e",
+   "size": 33214,
+   "gz": "files/24bd91651ee6ae4a74f5a5b57aa6026a64c3efe51ebd0ce9b7d4f496a8077c0e.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "9e0adb3649b733eb8dc80cde1ad64066f4046b5816e6861a0fcc97efccd60b89",
-   "size": 55063,
-   "gz": "files/9e0adb3649b733eb8dc80cde1ad64066f4046b5816e6861a0fcc97efccd60b89.gz"
+   "sha256": "d152d5fb3cfbd51022bd655f0e1020944ef7486303d1ebfe201d30aa49d49992",
+   "size": 64041,
+   "gz": "files/d152d5fb3cfbd51022bd655f0e1020944ef7486303d1ebfe201d30aa49d49992.gz"
   },
   "resources/app/mirror.cjs": {
    "sha256": "d1a7cb07b04fc14045abe8ab4bda992623796bcedb86165ee0adfbb10714604c",
@@ -45,14 +45,14 @@
    "gz": "files/0f8df1c1f71a2e5c3f826c39dc7ffcb910b588b58596feabaf1d9bd91a0c65db.gz"
   },
   "resources/app/render.cjs": {
-   "sha256": "0245443700f7fa51ea79f84ac948d8aa930f0c9db7aa0429f06f86d619d2c67d",
-   "size": 21423,
-   "gz": "files/0245443700f7fa51ea79f84ac948d8aa930f0c9db7aa0429f06f86d619d2c67d.gz"
+   "sha256": "e72846627be54debb162958a8e2f8c0d4c4483d0b6f8fdc7e04c6f9e16255c93",
+   "size": 22167,
+   "gz": "files/e72846627be54debb162958a8e2f8c0d4c4483d0b6f8fdc7e04c6f9e16255c93.gz"
   },
   "resources/app/server.cjs": {
-   "sha256": "f0ca61dfbe34efe7be8a855f2283c188df2e2542b36ed60a382ea0c742330b0a",
-   "size": 4650,
-   "gz": "files/f0ca61dfbe34efe7be8a855f2283c188df2e2542b36ed60a382ea0c742330b0a.gz"
+   "sha256": "28b99cf327f9b37e465fb5275b53523e8381925f302cd34fe1c51c84b870f5ce",
+   "size": 5297,
+   "gz": "files/28b99cf327f9b37e465fb5275b53523e8381925f302cd34fe1c51c84b870f5ce.gz"
   },
   "resources/app/spherical.cjs": {
    "sha256": "35c28813d11c25bd3f44cd675e70bea55dda43a36e8c803701a7e24ab33d0d3f",
@@ -100,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "e68e960d4c2a3e82ff23f20ed8affd68c607fa48f786668697abdf8a57d48a0b",
-   "size": 60846,
-   "gz": "files/e68e960d4c2a3e82ff23f20ed8affd68c607fa48f786668697abdf8a57d48a0b.gz"
+   "sha256": "64426e959df17256112cdc1a4b230c0685a6d56788f0a9fbf951f02b60efe74a",
+   "size": 66951,
+   "gz": "files/64426e959df17256112cdc1a4b230c0685a6d56788f0a9fbf951f02b60efe74a.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -130,14 +130,14 @@
    "gz": "files/76771784394df97d19d8aeb6a542c5b737afb1d758a1fece7edd7a97af4d9f98.gz"
   },
   "resources/app/blender/lib/collision.py": {
-   "sha256": "998d2f8ae973c22e37780f4b30e7780ec0eca6567c61843a3a3ec5d9a766978b",
-   "size": 25200,
-   "gz": "files/998d2f8ae973c22e37780f4b30e7780ec0eca6567c61843a3a3ec5d9a766978b.gz"
+   "sha256": "d66b76cb2cb186d0f50f395fc20faa55e26d489663cbf7a1bc4eb33f1b4ba89f",
+   "size": 25340,
+   "gz": "files/d66b76cb2cb186d0f50f395fc20faa55e26d489663cbf7a1bc4eb33f1b4ba89f.gz"
   },
   "resources/app/blender/lib/compat.py": {
-   "sha256": "867f9a047bc839b82be171743a6acf0c7ae9859bc9a959539a7b5ea0efb578d9",
-   "size": 987,
-   "gz": "files/867f9a047bc839b82be171743a6acf0c7ae9859bc9a959539a7b5ea0efb578d9.gz"
+   "sha256": "31075e13c70432708f8905fb733fe3022f52999e4cce5fdc5b94485e9adfbf56",
+   "size": 3760,
+   "gz": "files/31075e13c70432708f8905fb733fe3022f52999e4cce5fdc5b94485e9adfbf56.gz"
   },
   "resources/app/blender/lib/constraints.py": {
    "sha256": "99c6b7a9ecd929734cd1e4118426314dcf9d44555d5d43f91e6d7541acfe1bf6",
@@ -160,9 +160,9 @@
    "gz": "files/49f9fb179f0c02a647961bcc1cc4654173f887398d819f710187ec87bd7d17ff.gz"
   },
   "resources/app/blender/lib/face.py": {
-   "sha256": "3e0d63a138108722317d3f7c56ad54e519c3be01d2514683f25ece1f6a3060b5",
-   "size": 16019,
-   "gz": "files/3e0d63a138108722317d3f7c56ad54e519c3be01d2514683f25ece1f6a3060b5.gz"
+   "sha256": "61afb92f02a0d44938dd438e6e20b088a728108a01ce220d0746ebc48f95322d",
+   "size": 16288,
+   "gz": "files/61afb92f02a0d44938dd438e6e20b088a728108a01ce220d0746ebc48f95322d.gz"
   },
   "resources/app/blender/lib/garment.py": {
    "sha256": "eb75f909c8e906d0b7d1ea8e816c71f8034f79ea8f3bb5ba695f4dadec89268d",
@@ -180,14 +180,14 @@
    "gz": "files/2f7422fc7839e71a2ab7fbf6f19470a5919085bffc568a2719d6c9e1b43777e8.gz"
   },
   "resources/app/blender/lib/look.py": {
-   "sha256": "562dd970b01fda7c4766463cd0afa8da06137708d78c0cd44c88ebbd12c9c274",
-   "size": 13128,
-   "gz": "files/562dd970b01fda7c4766463cd0afa8da06137708d78c0cd44c88ebbd12c9c274.gz"
+   "sha256": "eab4f548bcc5a837df37cc4a756924fae83c5639aa974df75dca54abb7fb11e7",
+   "size": 13263,
+   "gz": "files/eab4f548bcc5a837df37cc4a756924fae83c5639aa974df75dca54abb7fb11e7.gz"
   },
   "resources/app/blender/lib/materials.py": {
-   "sha256": "7ba9d23bdd3f1ce63fc9de9dcffee362500d28fe07f9f4f80c02784c5a0bfc2a",
-   "size": 29049,
-   "gz": "files/7ba9d23bdd3f1ce63fc9de9dcffee362500d28fe07f9f4f80c02784c5a0bfc2a.gz"
+   "sha256": "f0eed8e8c39f875ee70a305dcde9dae12370f5c76a07db0f8c591d640fa54c08",
+   "size": 29880,
+   "gz": "files/f0eed8e8c39f875ee70a305dcde9dae12370f5c76a07db0f8c591d640fa54c08.gz"
   },
   "resources/app/blender/lib/palettes.json": {
    "sha256": "403455b3cb277176500f24f5d3618e507a1c94f633e1390a7a9cd0ad8e25e40b",
@@ -223,6 +223,11 @@
    "sha256": "1e0feabf3829befb540f494fa87efab84e73f83e5319d81200060c4f1c071846",
    "size": 5498,
    "gz": "files/1e0feabf3829befb540f494fa87efab84e73f83e5319d81200060c4f1c071846.gz"
+  },
+  "resources/app/ui/cards/index.json": {
+   "sha256": "b3ea5d93be72d30aa87d5a2633fb2fbeff2873aa1121409a47b246f03b67f102",
+   "size": 1133,
+   "gz": "files/b3ea5d93be72d30aa87d5a2633fb2fbeff2873aa1121409a47b246f03b67f102.gz"
   },
   "resources/app/ui/chars/bunny.png": {
    "sha256": "c6b9f583b6e87423505397d65ea925440f1ea88cf5d1a9b5de3923fe53c6ec81",
@@ -273,6 +278,31 @@
    "sha256": "cf4de751ada78ceac033dbe16a687742939995b77bc2a052ae17a4957958594d",
    "size": 153116,
    "gz": "files/cf4de751ada78ceac033dbe16a687742939995b77bc2a052ae17a4957958594d.gz"
+  },
+  "resources/app/ui/reels/reel-hot-take.png": {
+   "sha256": "b0d8690efa3b39e20f47cb16f58438b5e047b6d4944b0a077e92598ad7ee855a",
+   "size": 47974,
+   "gz": "files/b0d8690efa3b39e20f47cb16f58438b5e047b6d4944b0a077e92598ad7ee855a.gz"
+  },
+  "resources/app/ui/reels/reel-myth-fact.png": {
+   "sha256": "4295317e423b933217fe9429cab01666a6d077b2e3e40fffa1c71771b9b78711",
+   "size": 43204,
+   "gz": "files/4295317e423b933217fe9429cab01666a6d077b2e3e40fffa1c71771b9b78711.gz"
+  },
+  "resources/app/ui/reels/reel-pov-skit.png": {
+   "sha256": "13fb21b445949cb267e62c9440bb98cd828b71a8d3863bd725ab1342f1cab419",
+   "size": 57247,
+   "gz": "files/13fb21b445949cb267e62c9440bb98cd828b71a8d3863bd725ab1342f1cab419.gz"
+  },
+  "resources/app/ui/reels/reel-storytime.png": {
+   "sha256": "38fb5cc9e195aeb84ec639e8140a1366eb8d2d7efcdd3afe48ab8c0a85b01873",
+   "size": 49923,
+   "gz": "files/38fb5cc9e195aeb84ec639e8140a1366eb8d2d7efcdd3afe48ab8c0a85b01873.gz"
+  },
+  "resources/app/ui/reels/reel-three-things.png": {
+   "sha256": "7bf39a2e6a59b9a3afe8947b96206f36effe1d878f25bf2169d8aee440bb496d",
+   "size": 46415,
+   "gz": "files/7bf39a2e6a59b9a3afe8947b96206f36effe1d878f25bf2169d8aee440bb496d.gz"
   },
   "resources/app/ui/src/animtools.js": {
    "sha256": "704f5a404db33911975a97d5c33d492da0b06e49bf6cea740acdb8846dd78921",
@@ -350,14 +380,14 @@
    "gz": "files/39e154c051059c92175738ced98ee71884ead0bf3415fd885dae266fb53bbf48.gz"
   },
   "resources/app/ui/src/library.js": {
-   "sha256": "dadbde83ed7ad9b082deee36264a20f079a9b1dffe8f7ec008abbf4738c6c166",
-   "size": 17636,
-   "gz": "files/dadbde83ed7ad9b082deee36264a20f079a9b1dffe8f7ec008abbf4738c6c166.gz"
+   "sha256": "ed14bf425afed161185eb467986f4084e312965695edd9f300853a7bd8e52595",
+   "size": 18405,
+   "gz": "files/ed14bf425afed161185eb467986f4084e312965695edd9f300853a7bd8e52595.gz"
   },
   "resources/app/ui/src/libview.js": {
-   "sha256": "55a431cff73b728570465841642ce7a85c1eb4e47acc894412a1f424da5fabc1",
-   "size": 31441,
-   "gz": "files/55a431cff73b728570465841642ce7a85c1eb4e47acc894412a1f424da5fabc1.gz"
+   "sha256": "58b5b752101be49c5d973ce7bb19d136b51c3c3ead3ce70384f4062f5a8ea033",
+   "size": 35255,
+   "gz": "files/58b5b752101be49c5d973ce7bb19d136b51c3c3ead3ce70384f4062f5a8ea033.gz"
   },
   "resources/app/ui/src/lightpanel.js": {
    "sha256": "c474faba5d1c99bc7bff1bd3872b38efbaca8cbdd4f022d24e4f61ba4a034052",
@@ -370,9 +400,9 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "c0fb1a70591a961b5b880eda2352f64905826481ff91556f38bd8b42bc268e1b",
-   "size": 300511,
-   "gz": "files/c0fb1a70591a961b5b880eda2352f64905826481ff91556f38bd8b42bc268e1b.gz"
+   "sha256": "70d9a7ef43d5f92bdfb912c4d0dba0132ba8bbe48f9305b94c8499952220b02f",
+   "size": 320601,
+   "gz": "files/70d9a7ef43d5f92bdfb912c4d0dba0132ba8bbe48f9305b94c8499952220b02f.gz"
   },
   "resources/app/ui/src/materials.js": {
    "sha256": "614db7c2aa31cee525adbdb7acd60099da16111043a049e2971448fce38d7e5d",
@@ -390,14 +420,14 @@
    "gz": "files/71ec758d4c88d32d44d7da7779d1cffee067533d282b263b9f040001224e6b16.gz"
   },
   "resources/app/ui/src/polish.js": {
-   "sha256": "d38c3e7d2436314272f32b5bb52597282d3b513b834de6450abde79c5484f0ea",
-   "size": 9045,
-   "gz": "files/d38c3e7d2436314272f32b5bb52597282d3b513b834de6450abde79c5484f0ea.gz"
+   "sha256": "0f6ea5371fa19863fc9645525c519601478f04a0d697b302b9013ace41d1ab1c",
+   "size": 9274,
+   "gz": "files/0f6ea5371fa19863fc9645525c519601478f04a0d697b302b9013ace41d1ab1c.gz"
   },
   "resources/app/ui/src/post.js": {
-   "sha256": "14c63466418ff0940136fca5bd25c910027a171559c53d413e1e055b584964e9",
-   "size": 11410,
-   "gz": "files/14c63466418ff0940136fca5bd25c910027a171559c53d413e1e055b584964e9.gz"
+   "sha256": "587d3d5406944bd438251bf6cfed3a776f37ce6c118beb56904937c190c998e0",
+   "size": 13178,
+   "gz": "files/587d3d5406944bd438251bf6cfed3a776f37ce6c118beb56904937c190c998e0.gz"
   },
   "resources/app/ui/src/powers.js": {
    "sha256": "bec976c3f8ec703dbee2bfe538e390154e572699abf24405b73d3771f9893c9a",
@@ -414,10 +444,15 @@
    "size": 11004,
    "gz": "files/2e96df28eb88ad4f8be1c59234f261ef15e6f7bacd03d8bdf799c56359cbde59.gz"
   },
+  "resources/app/ui/src/reels.js": {
+   "sha256": "9ac719eaca475ae30fafa1063b59661c09935d5acd5d93aee601c46037cbea10",
+   "size": 24969,
+   "gz": "files/9ac719eaca475ae30fafa1063b59661c09935d5acd5d93aee601c46037cbea10.gz"
+  },
   "resources/app/ui/src/rig.js": {
-   "sha256": "0f6b23bcac9a1460d6ecf436a85393c7c48c9c1e3b012467eac28112694e1daa",
-   "size": 23495,
-   "gz": "files/0f6b23bcac9a1460d6ecf436a85393c7c48c9c1e3b012467eac28112694e1daa.gz"
+   "sha256": "e9e17b3004d5855ceff53059d0b6bbc1552824d27895f4118a6d54b375a8e5aa",
+   "size": 23609,
+   "gz": "files/e9e17b3004d5855ceff53059d0b6bbc1552824d27895f4118a6d54b375a8e5aa.gz"
   },
   "resources/app/ui/src/stage3d.js": {
    "sha256": "4b0dcab9bf4d2c9dac4fff0c5a35d6b77061be659bfa3f484ec4d9de75ebb51f",
@@ -445,14 +480,14 @@
    "gz": "files/2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "6cceefe7e6c14b9d8553d01d769e4eca5a5202cf0d2461d24120c2590a65478c",
+   "sha256": "437b2a17829ba632b0d66a4583f14785427e01dfed68ebe4ba53e1c7744a6a45",
    "size": 18024,
-   "gz": "files/6cceefe7e6c14b9d8553d01d769e4eca5a5202cf0d2461d24120c2590a65478c.gz"
+   "gz": "files/437b2a17829ba632b0d66a4583f14785427e01dfed68ebe4ba53e1c7744a6a45.gz"
   },
   "resources/app/ui/src/ux2d.css": {
-   "sha256": "01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842",
-   "size": 17091,
-   "gz": "files/01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842.gz"
+   "sha256": "6e32a107dd7ed4f1fc117f646d64bd64dd9d0a4613ee4883c4d82dbdce5379e4",
+   "size": 17621,
+   "gz": "files/6e32a107dd7ed4f1fc117f646d64bd64dd9d0a4613ee4883c4d82dbdce5379e4.gz"
   },
   "resources/app/ui/src/ux2d.js": {
    "sha256": "499c1d6e201e49634682dbb97be65a880d91f90b02c5596921b97eb0fff28359",
@@ -460,9 +495,9 @@
    "gz": "files/499c1d6e201e49634682dbb97be65a880d91f90b02c5596921b97eb0fff28359.gz"
   },
   "resources/app/ui/src/viewport.js": {
-   "sha256": "8b9257aabf398d71165b6666a571966f818882b59d47187e0b855760ba1e8d41",
-   "size": 20657,
-   "gz": "files/8b9257aabf398d71165b6666a571966f818882b59d47187e0b855760ba1e8d41.gz"
+   "sha256": "0321d1c79310deed88000baa70fe022f239cd567d8bce7cb935c20aeb55c52c3",
+   "size": 25735,
+   "gz": "files/0321d1c79310deed88000baa70fe022f239cd567d8bce7cb935c20aeb55c52c3.gz"
   },
   "resources/app/ui/src/vocals.js": {
    "sha256": "ecda2ee89b6a3faeea7d184b717378606cf5a7b80d4f71cd49cd8c6035448b54",
@@ -475,19 +510,14 @@
    "gz": "files/f857b55c61a024cef35f80813083bdc813f3c0ed0365578fccec148a80ea1f0d.gz"
   },
   "resources/app/ui/src/workflow.js": {
-   "sha256": "d9e032c8b8652a286235e2b403e2735a61a3a193fd0277e7b5d192b6c6dbd81d",
-   "size": 19471,
-   "gz": "files/d9e032c8b8652a286235e2b403e2735a61a3a193fd0277e7b5d192b6c6dbd81d.gz"
+   "sha256": "0671eb65f46abf4031743b50bfa51300d46f5ff41611a1a5f82a4e625514e07b",
+   "size": 19572,
+   "gz": "files/0671eb65f46abf4031743b50bfa51300d46f5ff41611a1a5f82a4e625514e07b.gz"
   },
   "resources/app/ui/vendor/three.module.js": {
    "sha256": "da7f8aecb0b1e4a55e820cce5dc5a5a8eb13dc379758f215e8fb07937be7a6a3",
    "size": 1369252,
    "gz": "files/da7f8aecb0b1e4a55e820cce5dc5a5a8eb13dc379758f215e8fb07937be7a6a3.gz"
-  },
-  "resources/app/blender/addons/doodle_library/__init__.py": {
-   "sha256": "6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192",
-   "size": 3406,
-   "gz": "files/6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192.gz"
   },
   "resources/app/blender/addons/doodle_library/api.py": {
    "sha256": "14d7529f71004e319998780b25cd0e31a975bf8acd074d9c40b8524201ffff91",
@@ -510,14 +540,19 @@
    "gz": "files/10b1f72c45b974e03bf84149ec7c887556b4d407081dd4b03207df2eeba36bf7.gz"
   },
   "resources/app/blender/addons/doodle_library/faces.py": {
-   "sha256": "2722f29729616b01b5dd63c3038597ceec5ebca2b4dd08283ebbcd2b061e5e8c",
-   "size": 14375,
-   "gz": "files/2722f29729616b01b5dd63c3038597ceec5ebca2b4dd08283ebbcd2b061e5e8c.gz"
+   "sha256": "6bc31a10a4d09b43dfbb61bc1c9d69e7c30cc5e0ac8618666a8d9ebfcbb05c93",
+   "size": 14470,
+   "gz": "files/6bc31a10a4d09b43dfbb61bc1c9d69e7c30cc5e0ac8618666a8d9ebfcbb05c93.gz"
   },
   "resources/app/blender/addons/doodle_library/fx.py": {
-   "sha256": "4774228a7ad0e6d4d35001c79b5f1c7d52698d17a1110e8b6c34543da6780325",
-   "size": 15261,
-   "gz": "files/4774228a7ad0e6d4d35001c79b5f1c7d52698d17a1110e8b6c34543da6780325.gz"
+   "sha256": "b20270c42886a690f04c36f7047dc856a3603103de617357e698ae4936e0367c",
+   "size": 15399,
+   "gz": "files/b20270c42886a690f04c36f7047dc856a3603103de617357e698ae4936e0367c.gz"
+  },
+  "resources/app/blender/addons/doodle_library/gnodes.py": {
+   "sha256": "684fd2ba7eda4d99d46df670137f3fc3622ab228f5bcb7c4330a7a48ab268f1b",
+   "size": 2869,
+   "gz": "files/684fd2ba7eda4d99d46df670137f3fc3622ab228f5bcb7c4330a7a48ab268f1b.gz"
   },
   "resources/app/blender/addons/doodle_library/gpu.py": {
    "sha256": "fa09be7001e7673c3aeae6541526d152c7d1390fcbe85718ba5d8fecb48ca5c0",
@@ -540,14 +575,14 @@
    "gz": "files/d06612dbdddd03627af027ae9826f3f50a3d906d1e99bbccce228a796fd0a336.gz"
   },
   "resources/app/blender/addons/doodle_library/lighting.py": {
-   "sha256": "5c281e2e5bd0752438719af32cbfc448c225b495fe5e3719aebd2a61d199dfdc",
-   "size": 7091,
-   "gz": "files/5c281e2e5bd0752438719af32cbfc448c225b495fe5e3719aebd2a61d199dfdc.gz"
+   "sha256": "5a9329e64ba2c88ab2532e7a15fb9e9226e370956b88a6ee7ee9e0425bdc9a2d",
+   "size": 7142,
+   "gz": "files/5a9329e64ba2c88ab2532e7a15fb9e9226e370956b88a6ee7ee9e0425bdc9a2d.gz"
   },
   "resources/app/blender/addons/doodle_library/motions.py": {
-   "sha256": "6b247bd66d547a018e8c1e3efb5048e8cfcfa31b7b1de21b510299928c7f25bb",
-   "size": 11332,
-   "gz": "files/6b247bd66d547a018e8c1e3efb5048e8cfcfa31b7b1de21b510299928c7f25bb.gz"
+   "sha256": "9891f871b92665e8fe055c3df8516e71ff4d56e2846179f8b1a24f5fa4cd9c90",
+   "size": 11291,
+   "gz": "files/9891f871b92665e8fe055c3df8516e71ff4d56e2846179f8b1a24f5fa4cd9c90.gz"
   },
   "resources/app/blender/addons/doodle_library/ops.py": {
    "sha256": "ed063b695474a765eee8f7c4827505cdb9fb66b21269072260aeb578066d7a05",
@@ -560,14 +595,14 @@
    "gz": "files/feeab7495bc41c44c200f9b5dae898fc7c1d7dcb5c9f47577885a7ae7f0269d6.gz"
   },
   "resources/app/blender/addons/doodle_library/outfits.py": {
-   "sha256": "d5c5f6125c522d76697349f79ece54cd0d7f26761e2f7f0a381d995f01de28b4",
-   "size": 1510,
-   "gz": "files/d5c5f6125c522d76697349f79ece54cd0d7f26761e2f7f0a381d995f01de28b4.gz"
+   "sha256": "afe7331faab05d24a3192d0573e2bc8745fe0ec5bdd1e42e1aef8726fb9b03ae",
+   "size": 2217,
+   "gz": "files/afe7331faab05d24a3192d0573e2bc8745fe0ec5bdd1e42e1aef8726fb9b03ae.gz"
   },
   "resources/app/blender/addons/doodle_library/packs.py": {
-   "sha256": "b15d0f7dd0de707ec7d3b6dca01bf349956118868a38c8b166c2800ab1d9208a",
-   "size": 12803,
-   "gz": "files/b15d0f7dd0de707ec7d3b6dca01bf349956118868a38c8b166c2800ab1d9208a.gz"
+   "sha256": "83a70b00b5875b9c86f61fdcaf46647a98daf2e245f591bb30c2258bee986762",
+   "size": 12853,
+   "gz": "files/83a70b00b5875b9c86f61fdcaf46647a98daf2e245f591bb30c2258bee986762.gz"
   },
   "resources/app/blender/addons/doodle_library/paths.py": {
    "sha256": "65eb7bf4fa6884f72a1a91e3de6c30557be2b116ea7c028afadb3e5b9e518031",
@@ -580,89 +615,184 @@
    "gz": "files/be16b1627f9bacf9641b9f4be51698ccbd3e106a9d02c9e2a893c59f502a3be2.gz"
   },
   "resources/app/blender/addons/doodle_library/sets.py": {
-   "sha256": "3eb5e6253f1d1bbada5b822c5fabfb315ae93d8c9253565275dd0500b99d0d2f",
-   "size": 8410,
-   "gz": "files/3eb5e6253f1d1bbada5b822c5fabfb315ae93d8c9253565275dd0500b99d0d2f.gz"
+   "sha256": "c77fe7a24a7f0090b5702c39066cdac3bf5fa836fc261ac48fea27af9fb892e2",
+   "size": 9935,
+   "gz": "files/c77fe7a24a7f0090b5702c39066cdac3bf5fa836fc261ac48fea27af9fb892e2.gz"
   },
   "resources/app/blender/addons/doodle_library/storytime.py": {
-   "sha256": "7f478bcf9e24b4e3f1f2d5e6a20add54efcc154578428fff34e8e378dbe22134",
-   "size": 20014,
-   "gz": "files/7f478bcf9e24b4e3f1f2d5e6a20add54efcc154578428fff34e8e378dbe22134.gz"
+   "sha256": "db02abbf4b3f8c6bef01e3cdfdd69309d6b2357c046ad946d3cfd59f25036260",
+   "size": 20124,
+   "gz": "files/db02abbf4b3f8c6bef01e3cdfdd69309d6b2357c046ad946d3cfd59f25036260.gz"
   },
   "resources/app/blender/addons/doodle_library/style.py": {
-   "sha256": "611803558b19a60cce318058f6af01998c832630769335c6910d6758a5007b3b",
-   "size": 18535,
-   "gz": "files/611803558b19a60cce318058f6af01998c832630769335c6910d6758a5007b3b.gz"
+   "sha256": "580173f2f616059716ff574284503ed5762b1237629623610ae2060fad8f22e1",
+   "size": 23576,
+   "gz": "files/580173f2f616059716ff574284503ed5762b1237629623610ae2060fad8f22e1.gz"
   },
   "resources/app/blender/addons/doodle_library/text3d.py": {
-   "sha256": "ef6790ddbb2f3c88df5a6c2f7d06791f98947afc6d6a7aa6c45f31d2ae4a394c",
-   "size": 6734,
-   "gz": "files/ef6790ddbb2f3c88df5a6c2f7d06791f98947afc6d6a7aa6c45f31d2ae4a394c.gz"
+   "sha256": "1da017473e73dbf51f7bae34879a3fd48da5dbaad4ad17cfb08953769702337c",
+   "size": 7130,
+   "gz": "files/1da017473e73dbf51f7bae34879a3fd48da5dbaad4ad17cfb08953769702337c.gz"
   },
   "resources/app/blender/addons/doodle_library/ui.py": {
    "sha256": "5ff40a0b1f17926fb7ac3db0bd1038739a6dafd72396a0d4fced6c5b83a78cd2",
    "size": 19417,
    "gz": "files/5ff40a0b1f17926fb7ac3db0bd1038739a6dafd72396a0d4fced6c5b83a78cd2.gz"
   },
+  "resources/app/blender/addons/doodle_library/__init__.py": {
+   "sha256": "6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192",
+   "size": 3406,
+   "gz": "files/6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192.gz"
+  },
   "resources/app/blender/addons/doodle_looks/CONTRACT.md": {
    "sha256": "4dce1795cb54035d92150f5769d88832865ade6995fb5796037b63a73f77ce14",
    "size": 4779,
    "gz": "files/4dce1795cb54035d92150f5769d88832865ade6995fb5796037b63a73f77ce14.gz"
-  },
-  "resources/app/blender/addons/doodle_looks/__init__.py": {
-   "sha256": "3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8",
-   "size": 13637,
-   "gz": "files/3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8.gz"
   },
   "resources/app/blender/addons/doodle_looks/doodle_look.json": {
    "sha256": "d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca",
    "size": 5608,
    "gz": "files/d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca.gz"
   },
+  "resources/app/blender/addons/doodle_looks/__init__.py": {
+   "sha256": "3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8",
+   "size": 13637,
+   "gz": "files/3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8.gz"
+  },
+  "resources/app/ui/cards/bunny/accessory-bowtie.png": {
+   "sha256": "b84dc0af00e14d764424b2a550a335f2c6cbe72fc798626e1f9286fea6d843fe",
+   "size": 54505,
+   "gz": "files/b84dc0af00e14d764424b2a550a335f2c6cbe72fc798626e1f9286fea6d843fe.gz"
+  },
+  "resources/app/ui/cards/bunny/accessory-glasses_square.png": {
+   "sha256": "b950a27699594303e41661063e952a7b739f223e6b6178e21cbe44bc5a077c67",
+   "size": 58844,
+   "gz": "files/b950a27699594303e41661063e952a7b739f223e6b6178e21cbe44bc5a077c67.gz"
+  },
+  "resources/app/ui/cards/bunny/accessory-necktie.png": {
+   "sha256": "bf0b1e4f89e16b8ccb8b2c718491d15dbde601cebb53841f3ff0e66bb270266c",
+   "size": 54127,
+   "gz": "files/bf0b1e4f89e16b8ccb8b2c718491d15dbde601cebb53841f3ff0e66bb270266c.gz"
+  },
+  "resources/app/ui/cards/bunny/outfit-raincoat.png": {
+   "sha256": "a31f6405e54a439be29a07aa2f0066a820fae29e1387ba7cb25840a1c742c0b2",
+   "size": 44490,
+   "gz": "files/a31f6405e54a439be29a07aa2f0066a820fae29e1387ba7cb25840a1c742c0b2.gz"
+  },
+  "resources/app/ui/cards/bunny/outfit-track.png": {
+   "sha256": "61dc37e6ad9e4c286f195a1e28ded2c625f2841bd2b48b490271156b1671cdfe",
+   "size": 45545,
+   "gz": "files/61dc37e6ad9e4c286f195a1e28ded2c625f2841bd2b48b490271156b1671cdfe.gz"
+  },
+  "resources/app/ui/cards/bunny/outfit-ziphoodie.png": {
+   "sha256": "3f5a029c1f1c9b42e7bf20d77332bec0eee1fcfe3c166c6d7d7b169e77d67aba",
+   "size": 47064,
+   "gz": "files/3f5a029c1f1c9b42e7bf20d77332bec0eee1fcfe3c166c6d7d7b169e77d67aba.gz"
+  },
+  "resources/app/ui/cards/frog/accessory-bowtie.png": {
+   "sha256": "9a1a04b6d0c05b0d866413cd58391fe8666dc4af2bef7993ab7fe677a7436afd",
+   "size": 37675,
+   "gz": "files/9a1a04b6d0c05b0d866413cd58391fe8666dc4af2bef7993ab7fe677a7436afd.gz"
+  },
+  "resources/app/ui/cards/frog/accessory-glasses_square.png": {
+   "sha256": "3064c9f771b9d15029b5099f191782672777f67fb94ba59aabc922ac722c3e24",
+   "size": 38367,
+   "gz": "files/3064c9f771b9d15029b5099f191782672777f67fb94ba59aabc922ac722c3e24.gz"
+  },
+  "resources/app/ui/cards/frog/accessory-necktie.png": {
+   "sha256": "ed579d3d228e5e8d40756cbd15378ff0a2daa47322bb4b3eeafcde967a25f4bb",
+   "size": 37295,
+   "gz": "files/ed579d3d228e5e8d40756cbd15378ff0a2daa47322bb4b3eeafcde967a25f4bb.gz"
+  },
+  "resources/app/ui/cards/frog/outfit-raincoat.png": {
+   "sha256": "a4040e6b22f598d114d4754af179ae07b8fce3c60903f9e59b5a19cff48a74a1",
+   "size": 32371,
+   "gz": "files/a4040e6b22f598d114d4754af179ae07b8fce3c60903f9e59b5a19cff48a74a1.gz"
+  },
+  "resources/app/ui/cards/frog/outfit-track.png": {
+   "sha256": "b6f33fa88181f8f8a8c509c47cef9b338311d62033f022e041850f09fe8267ab",
+   "size": 33169,
+   "gz": "files/b6f33fa88181f8f8a8c509c47cef9b338311d62033f022e041850f09fe8267ab.gz"
+  },
+  "resources/app/ui/cards/frog/outfit-ziphoodie.png": {
+   "sha256": "7a2c36375a6d0b65c81bbc8acedfa9fae32ae6250fb42c9dece60b1c56e0c162",
+   "size": 34422,
+   "gz": "files/7a2c36375a6d0b65c81bbc8acedfa9fae32ae6250fb42c9dece60b1c56e0c162.gz"
+  },
+  "resources/app/ui/cards/koala/accessory-bowtie.png": {
+   "sha256": "108478484cc20d11602d2a86ab556cb8b66830cad7eb32a1d52b24ab92f919ef",
+   "size": 51154,
+   "gz": "files/108478484cc20d11602d2a86ab556cb8b66830cad7eb32a1d52b24ab92f919ef.gz"
+  },
+  "resources/app/ui/cards/koala/accessory-glasses_square.png": {
+   "sha256": "dcb505d07df3fc41fec209526be48e2e2af4c8ae51d58961f349e2c1cadceb38",
+   "size": 55373,
+   "gz": "files/dcb505d07df3fc41fec209526be48e2e2af4c8ae51d58961f349e2c1cadceb38.gz"
+  },
+  "resources/app/ui/cards/koala/accessory-necktie.png": {
+   "sha256": "eb563840131e98c845fffda64611faaca0320427dd9e24514a776731ca13c90d",
+   "size": 50780,
+   "gz": "files/eb563840131e98c845fffda64611faaca0320427dd9e24514a776731ca13c90d.gz"
+  },
+  "resources/app/ui/cards/koala/outfit-raincoat.png": {
+   "sha256": "4bee14276debfcc297535dadd0bb46dba60d37a6e61695dcbdc64c7a9f8c3441",
+   "size": 41920,
+   "gz": "files/4bee14276debfcc297535dadd0bb46dba60d37a6e61695dcbdc64c7a9f8c3441.gz"
+  },
+  "resources/app/ui/cards/koala/outfit-track.png": {
+   "sha256": "a68c637d9a16ae7601c156693f1ceafb41b957b5c01c7a9f0ddf7ab804525435",
+   "size": 42944,
+   "gz": "files/a68c637d9a16ae7601c156693f1ceafb41b957b5c01c7a9f0ddf7ab804525435.gz"
+  },
+  "resources/app/ui/cards/koala/outfit-ziphoodie.png": {
+   "sha256": "38341486a9b188455c17715c28abfe5e63707141d84d823c99742eb5900d10aa",
+   "size": 44475,
+   "gz": "files/38341486a9b188455c17715c28abfe5e63707141d84d823c99742eb5900d10aa.gz"
+  },
   "resources/app/ui/src/music/anim.js": {
-   "sha256": "8db1f985f58ce1d0b6a1cdfc40ec5957577f70ad889643612e5baf63159bc600",
-   "size": 4342,
-   "gz": "files/8db1f985f58ce1d0b6a1cdfc40ec5957577f70ad889643612e5baf63159bc600.gz"
+   "sha256": "e5a0c6fff6bdea4d6012deecb8cada88bc9486dd9c8267a469f4397d2f7d58a0",
+   "size": 4414,
+   "gz": "files/e5a0c6fff6bdea4d6012deecb8cada88bc9486dd9c8267a469f4397d2f7d58a0.gz"
   },
   "resources/app/ui/src/music/engine.js": {
-   "sha256": "51e010423ee834a3214d1e139339e711017b1b9cb59a5637acb3285bc4f8ddba",
-   "size": 21350,
-   "gz": "files/51e010423ee834a3214d1e139339e711017b1b9cb59a5637acb3285bc4f8ddba.gz"
+   "sha256": "c634cd253b7c407d0b59ff9cfcc706d3a0265e304f74d7578a8bb82f2e59590e",
+   "size": 21692,
+   "gz": "files/c634cd253b7c407d0b59ff9cfcc706d3a0265e304f74d7578a8bb82f2e59590e.gz"
   },
   "resources/app/ui/src/music/instruments.js": {
-   "sha256": "e7dea011d1e90bda848001ddb9439f62145e70d0700a498e5d1f07da61e959b3",
-   "size": 19964,
-   "gz": "files/e7dea011d1e90bda848001ddb9439f62145e70d0700a498e5d1f07da61e959b3.gz"
+   "sha256": "2bb5848feeba96623d9ef1e75bfe774084ae8c35d15d61ba76fed133be2d3f39",
+   "size": 20193,
+   "gz": "files/2bb5848feeba96623d9ef1e75bfe774084ae8c35d15d61ba76fed133be2d3f39.gz"
   },
   "resources/app/ui/src/music/midi.js": {
-   "sha256": "b1773dbd5c7c0774448bcf929e8f3f0278dff43b55c190601817fb4f98744ec1",
-   "size": 8867,
-   "gz": "files/b1773dbd5c7c0774448bcf929e8f3f0278dff43b55c190601817fb4f98744ec1.gz"
+   "sha256": "a56ecfc8cf342b09c1bf51e16e5839fe9b6a321ae3c3c7475b96d5484de91431",
+   "size": 9005,
+   "gz": "files/a56ecfc8cf342b09c1bf51e16e5839fe9b6a321ae3c3c7475b96d5484de91431.gz"
   },
   "resources/app/ui/src/music/midifile.js": {
-   "sha256": "adf377372ab5e83970436405bcc1deca5689af31f04c4e202bb642fa1605aeec",
-   "size": 2996,
-   "gz": "files/adf377372ab5e83970436405bcc1deca5689af31f04c4e202bb642fa1605aeec.gz"
+   "sha256": "199864181a2764d5370aca17eb1d19541bf2e6d35e726760fe9895c551e19625",
+   "size": 3042,
+   "gz": "files/199864181a2764d5370aca17eb1d19541bf2e6d35e726760fe9895c551e19625.gz"
   },
   "resources/app/ui/src/music/music.css": {
-   "sha256": "a154836bec6815e5a864e59ff69faacef0288e78fc2179e204994725f0be7a8e",
-   "size": 8115,
-   "gz": "files/a154836bec6815e5a864e59ff69faacef0288e78fc2179e204994725f0be7a8e.gz"
+   "sha256": "022110c559e82bf5a8dab48a96ebfe9335ae24f5aebe00a5a4be18c8a5ecde37",
+   "size": 8312,
+   "gz": "files/022110c559e82bf5a8dab48a96ebfe9335ae24f5aebe00a5a4be18c8a5ecde37.gz"
   },
   "resources/app/ui/src/music/song.js": {
-   "sha256": "a2357c533458d4cac11bbafe446656ac2809400d4f87f3553aa2161e9eb3516a",
-   "size": 14829,
-   "gz": "files/a2357c533458d4cac11bbafe446656ac2809400d4f87f3553aa2161e9eb3516a.gz"
+   "sha256": "e3bce9b9a0b9b6a65e85e88c765d8705b555ae48a042b12f90090f7b2c724128",
+   "size": 15066,
+   "gz": "files/e3bce9b9a0b9b6a65e85e88c765d8705b555ae48a042b12f90090f7b2c724128.gz"
   },
   "resources/app/ui/src/music/tool.js": {
-   "sha256": "7c9b25ed2aef9be9616961bc2e52c54deced9fc9d2755cc1ab7b010cde0fb3c7",
-   "size": 9227,
-   "gz": "files/7c9b25ed2aef9be9616961bc2e52c54deced9fc9d2755cc1ab7b010cde0fb3c7.gz"
+   "sha256": "7c53235d626a22024fc1c903088bad2ba1649ef0fbc527476a8ca3d1a1140fe7",
+   "size": 9319,
+   "gz": "files/7c53235d626a22024fc1c903088bad2ba1649ef0fbc527476a8ca3d1a1140fe7.gz"
   },
   "resources/app/ui/src/music/ui.js": {
-   "sha256": "e7b4f13ba7276fec64eb1d179eb7b406e299e8078da48ab4a8f81383dc3cd420",
-   "size": 64437,
-   "gz": "files/e7b4f13ba7276fec64eb1d179eb7b406e299e8078da48ab4a8f81383dc3cd420.gz"
+   "sha256": "625f5f2ea9711d8699b176dfd49e6694cc0c057030bfba273d244ac49eef2981",
+   "size": 65125,
+   "gz": "files/625f5f2ea9711d8699b176dfd49e6694cc0c057030bfba273d244ac49eef2981.gz"
   },
   "resources/app/ui/vendor/hf/LICENSE": {
    "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
@@ -685,24 +815,44 @@
    "gz": "files/270fb352030b4800ee1223ef9fd55ad03124ef89ac6b7906bd04ca0d8eca3bf3.gz"
   },
   "resources/app/ui/vendor/tone/LICENSE.md": {
-   "sha256": "391ed5af60b7b5d1f74b31040c5fa645e6e238f3d9b4c971941a262a675bbdcd",
-   "size": 1072,
-   "gz": "files/391ed5af60b7b5d1f74b31040c5fa645e6e238f3d9b4c971941a262a675bbdcd.gz"
+   "sha256": "8146996604f3d2f373469d435aafb5f40a1e8b35f5d625ae2cdfbefb3c5619c6",
+   "size": 1093,
+   "gz": "files/8146996604f3d2f373469d435aafb5f40a1e8b35f5d625ae2cdfbefb3c5619c6.gz"
   },
   "resources/app/ui/vendor/tone/Tone.js": {
-   "sha256": "e290952fa43d9a7a780182a83c6fccf44d79cb7ae2cba102ef1f2b9d98124e22",
-   "size": 345500,
-   "gz": "files/e290952fa43d9a7a780182a83c6fccf44d79cb7ae2cba102ef1f2b9d98124e22.gz"
+   "sha256": "be009df2cc498450f2de4122c74a8b4a8f8f8a9a2108e2b99d8fdff1caba6d82",
+   "size": 345502,
+   "gz": "files/be009df2cc498450f2de4122c74a8b4a8f8f8a9a2108e2b99d8fdff1caba6d82.gz"
   },
   "resources/app/ui/vendor/tonejs-midi/LICENSE.md": {
-   "sha256": "6debbf1ddd278dcf5d8e7b6c42c7a827cb944943401fc37ee017e172bbccbaea",
-   "size": 1107,
-   "gz": "files/6debbf1ddd278dcf5d8e7b6c42c7a827cb944943401fc37ee017e172bbccbaea.gz"
+   "sha256": "744638442dc4acddd375926ca1445be304352561306b1e93e9ed9252490510e4",
+   "size": 1127,
+   "gz": "files/744638442dc4acddd375926ca1445be304352561306b1e93e9ed9252490510e4.gz"
   },
   "resources/app/ui/vendor/tonejs-midi/Midi.js": {
-   "sha256": "9165a2b3de9d378eca970b80618c3747c60ed8188b12b0f059ccf44fc6a07cc0",
-   "size": 32288,
-   "gz": "files/9165a2b3de9d378eca970b80618c3747c60ed8188b12b0f059ccf44fc6a07cc0.gz"
+   "sha256": "88d3c735622debb797d58c857562cd0e83550a00c2e1f4bb16d50c250419c7cd",
+   "size": 32289,
+   "gz": "files/88d3c735622debb797d58c857562cd0e83550a00c2e1f4bb16d50c250419c7cd.gz"
+  },
+  "resources/app/blender/addons/doodle_library/outfit_scripts/accessories.py": {
+   "sha256": "5490b9b9ae693530bca53f264b0e8be67fb23d4d0fe5e7947530727b50c5efe9",
+   "size": 16101,
+   "gz": "files/5490b9b9ae693530bca53f264b0e8be67fb23d4d0fe5e7947530727b50c5efe9.gz"
+  },
+  "resources/app/blender/addons/doodle_library/outfit_scripts/apply_accessory.py": {
+   "sha256": "f826081d8b21100c43d3a0e6af986ee7ff683c1da97f841ab37664e00a6ded38",
+   "size": 2983,
+   "gz": "files/f826081d8b21100c43d3a0e6af986ee7ff683c1da97f841ab37664e00a6ded38.gz"
+  },
+  "resources/app/blender/addons/doodle_library/outfit_scripts/apply_outfit.py": {
+   "sha256": "5f71592adb2a02ab40fd7d4769169a94db08201cab9ddc7b1aae6f2bd79d3075",
+   "size": 8509,
+   "gz": "files/5f71592adb2a02ab40fd7d4769169a94db08201cab9ddc7b1aae6f2bd79d3075.gz"
+  },
+  "resources/app/blender/addons/doodle_library/outfit_scripts/garmentlib.py": {
+   "sha256": "8f204d6f4b627b1cafbbcf118811d4110d4f7b48049c5d3a943f91f3b9abcd34",
+   "size": 17267,
+   "gz": "files/8f204d6f4b627b1cafbbcf118811d4110d4f7b48049c5d3a943f91f3b9abcd34.gz"
   },
   "resources/app/blender/addons/doodle_looks/previews/cel.png": {
    "sha256": "772425e5ec96bcd0a0853f8500c04c1f03eaac0d34f13cb08b33fc658d2b8c2d",
@@ -779,20 +929,20 @@
    "size": 33141,
    "gz": "files/5beb9dc7e9248a32f7b5e8cc0dd5fd4054d227d8e19a3a98b4715f6d2784c4ef.gz"
   },
-  "resources/app/ui/vendor/sounds/fluidr3/LICENSE.txt": {
-   "sha256": "fe92717f7f1abb2e6f5c635ab2e5b8c73544ea09cba864225ed27088b9908ffa",
-   "size": 379,
-   "gz": "files/fe92717f7f1abb2e6f5c635ab2e5b8c73544ea09cba864225ed27088b9908ffa.gz"
-  },
   "resources/app/ui/vendor/sounds/fluidr3/index.json": {
    "sha256": "039b8f31ae6f8af9b09314f93c454db2abc06fbaf9f4502695a9693a8c95ef37",
    "size": 4802,
    "gz": "files/039b8f31ae6f8af9b09314f93c454db2abc06fbaf9f4502695a9693a8c95ef37.gz"
   },
+  "resources/app/ui/vendor/sounds/fluidr3/LICENSE.txt": {
+   "sha256": "8aef0c5dd6f56a61adf548ba2709d24e7770cc64a9ee1d17e97d28889bf2f0a6",
+   "size": 384,
+   "gz": "files/8aef0c5dd6f56a61adf548ba2709d24e7770cc64a9ee1d17e97d28889bf2f0a6.gz"
+  },
   "resources/app/ui/vendor/sounds/fluidr3/names.json": {
-   "sha256": "da698edcfd5a211dcab42de273368c610b01bfec68d3fb69734c621860adb70d",
-   "size": 2257,
-   "gz": "files/da698edcfd5a211dcab42de273368c610b01bfec68d3fb69734c621860adb70d.gz"
+   "sha256": "4eda84f46c6fc68b78169b5729ced6c3f96fb513ac3c383c24ebbf0f53a776a0",
+   "size": 2387,
+   "gz": "files/4eda84f46c6fc68b78169b5729ced6c3f96fb513ac3c383c24ebbf0f53a776a0.gz"
   },
   "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A1.mp3": {
    "sha256": "6e9d3dee6b42b0cec224c630a710379398b96b53000e1b9cde6f9195840c0696",
