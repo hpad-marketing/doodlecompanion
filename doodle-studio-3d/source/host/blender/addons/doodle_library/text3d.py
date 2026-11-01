@@ -6,6 +6,7 @@ Type '|' (or a real line break from a script) to start a new line.
 import bpy
 
 from . import style
+from . import gnodes
 
 GROUP = 'DSL_Text'
 MOD = 'DSL Text'
@@ -40,8 +41,8 @@ def text_group():
     rep.inputs['Find'].default_value = '|'
     rep.inputs['Replace'].default_value = '\n'
     s2c = N.new('GeometryNodeStringToCurves')
-    s2c.align_x = 'CENTER'
-    s2c.align_y = 'MIDDLE'
+    gnodes.set_option(s2c, 'align_x', 'CENTER')   # a menu input from 5.1
+    gnodes.set_option(s2c, 'align_y', 'MIDDLE')
     Lk.new(rep.outputs[0], s2c.inputs['String'])
     Lk.new(gi.outputs['Size'], s2c.inputs['Size'])
     Lk.new(gi.outputs['Line Spacing'], s2c.inputs['Line Spacing'])
@@ -54,11 +55,11 @@ def text_group():
     neg.operation = 'MULTIPLY'
     neg.inputs[1].default_value = -1.0
     Lk.new(gi.outputs['Wobble'], neg.inputs[0])
-    Lk.new(neg.outputs[0], rnd.inputs[2])   # Min (float)
-    Lk.new(gi.outputs['Wobble'], rnd.inputs[3])  # Max (float)
+    Lk.new(neg.outputs[0], gnodes.sock(rnd.inputs, 'Min'))   # the float Min (5.2 shows only that one)
+    Lk.new(gi.outputs['Wobble'], gnodes.sock(rnd.inputs, 'Max'))
     rad = N.new('ShaderNodeMath')
     rad.operation = 'RADIANS'
-    Lk.new(rnd.outputs[1], rad.inputs[0])
+    Lk.new(gnodes.sock(rnd.outputs, 'Value'), rad.inputs[0])
     comb = N.new('ShaderNodeCombineXYZ')
     Lk.new(rad.outputs[0], comb.inputs['Z'])
     rot = N.new('GeometryNodeRotateInstances')
@@ -67,7 +68,7 @@ def text_group():
     real = N.new('GeometryNodeRealizeInstances')
     Lk.new(rot.outputs[0], real.inputs[0])
     fill = N.new('GeometryNodeFillCurve')
-    fill.mode = 'NGONS'
+    gnodes.set_option(fill, 'mode', 'NGONS')   # a menu input from 5.0
     Lk.new(real.outputs[0], fill.inputs['Curve'])
     ext = N.new('GeometryNodeExtrudeMesh')
     ext.mode = 'FACES'
@@ -78,8 +79,8 @@ def text_group():
     gt = N.new('FunctionNodeCompare')
     gt.data_type = 'FLOAT'
     gt.operation = 'GREATER_THAN'
-    Lk.new(ang.outputs['Unsigned Angle'], gt.inputs[0])
-    gt.inputs[1].default_value = 0.56
+    Lk.new(ang.outputs['Unsigned Angle'], gnodes.sock(gt.inputs, 'A'))
+    gnodes.sock(gt.inputs, 'B').default_value = 0.56
     store = N.new('GeometryNodeStoreNamedAttribute')
     store.data_type = 'BOOLEAN'
     store.domain = 'EDGE'
@@ -119,12 +120,12 @@ def add_text(text='Hello', kind='chunky', location=None, fill='mustard', name=No
     mod = ob.modifiers.new(MOD, 'NODES')
     mod.node_group = text_group()
     ids = _ids(mod)
-    mod[ids['Text']] = text
-    mod[ids['Size']] = size
-    mod[ids['Depth']] = depth
-    mod[ids['Wobble']] = wobble
-    mod[ids['Seed']] = hash(text) % 1000
-    mod[ids['Material']] = mats.get(fill) or mats.get('mustard')
+    gnodes.gn_set(mod, ids['Text'], text)
+    gnodes.gn_set(mod, ids['Size'], size)
+    gnodes.gn_set(mod, ids['Depth'], depth)
+    gnodes.gn_set(mod, ids['Wobble'], wobble)
+    gnodes.gn_set(mod, ids['Seed'], hash(text) % 1000)
+    gnodes.gn_set(mod, ids['Material'], mats.get(fill) or mats.get('mustard'))
     if font:
         set_font(ob, font)
     me.materials.append(mats.get(fill) or mats.get('mustard'))
@@ -140,14 +141,14 @@ def text_modifier(ob):
 
 def get_text(ob):
     mod = text_modifier(ob)
-    return mod[_ids(mod)['Text']] if mod else None
+    return gnodes.gn_get(mod, _ids(mod)['Text']) if mod else None
 
 
 def set_text(ob, text):
     mod = text_modifier(ob)
     if not mod:
         raise RuntimeError('%s is not a Doodle text object.' % ob.name)
-    mod[_ids(mod)['Text']] = text
+    gnodes.gn_set(mod, _ids(mod)['Text'], text)
     ob.update_tag()
     return ob
 
@@ -164,5 +165,5 @@ def set_font(ob, font_path_or_name):
         mod.node_group.name = GROUP + ' ' + f.name
     for n in mod.node_group.nodes:
         if n.bl_idname == 'GeometryNodeStringToCurves':
-            n.font = f
+            gnodes.set_option(n, 'font', f)   # an input socket from 5.1
     return f

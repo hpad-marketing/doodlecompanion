@@ -17,6 +17,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import index, paths, style, text3d
+from . import gnodes
 
 SCREEN_MAT = 'DSL screen'
 NEON_MAT = 'DSL_neon'
@@ -156,8 +157,8 @@ def add_label(ob, words, at=(0, -0.02, 0), size=0.1, kind='flat'):
     mod = text3d.text_modifier(t)
     ids = text3d._ids(mod)
     s = ob.matrix_world.to_scale()[0] or 1.0
-    mod[ids['Size']] = size
-    mod[ids['Depth']] = min(0.01, size * 0.12)
+    gnodes.gn_set(mod, ids['Size'], size)
+    gnodes.gn_set(mod, ids['Depth'], min(0.01, size * 0.12))
     t.parent = ob
     t.matrix_parent_inverse = Matrix.Identity(4)
     t.location = Vector(at) + Vector((0, -0.006, -size * 0.35))

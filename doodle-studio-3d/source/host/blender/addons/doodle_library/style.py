@@ -18,6 +18,7 @@ import bmesh
 from mathutils import Matrix, Vector
 
 from . import paths
+from . import gnodes
 
 MOD_NAME = 'DSL Ink'
 INK_HEX = '#1F1F1D'
@@ -106,7 +107,7 @@ def toon_material(name, hexcol, driven=True):
         n = N.new(kind)
         n.location = (x, y)
         for k, v in kw.items():
-            setattr(n, k, v)
+            gnodes.set_option(n, k, v)
         return n
 
     def math(op, a, b, x, y):
@@ -455,18 +456,18 @@ def apply_style(ob, cam=None, mats=None, outline=True, lines=True, seed=0.0):
     mod = ob.modifiers.new(MOD_NAME, 'NODES')
     mod.node_group = ink_group()
     ids = {s.name: s.identifier for s in mod.node_group.interface.items_tree if getattr(s, 'in_out', None) == 'INPUT'}
-    mod[ids['Outline Material']] = mats['shell']
-    mod[ids['Line Material']] = mats['ink']
-    mod[ids['Outline']] = outline
-    mod[ids['Lines']] = lines
-    mod[ids['Seed']] = seed
+    gnodes.gn_set(mod, ids['Outline Material'], mats['shell'])
+    gnodes.gn_set(mod, ids['Line Material'], mats['ink'])
+    gnodes.gn_set(mod, ids['Outline'], outline)
+    gnodes.gn_set(mod, ids['Lines'], lines)
+    gnodes.gn_set(mod, ids['Seed'], seed)
     ob['dsl_seed'] = seed
     bset = bunny_settings()
     if cam:
-        mod[ids['Camera']] = cam
-        lk._drive(mod, f'["{ids["Orthographic"]}"]', cam.data, 'type', expr="v == 1", id_type='CAMERA')
-        lk._drive(mod, f'["{ids["Ortho Scale"]}"]', cam.data, 'ortho_scale', id_type='CAMERA')
-        fc = mod.driver_add(f'["{ids["Sensor / Focal"]}"]')
+        gnodes.gn_set(mod, ids['Camera'], cam)
+        lk._drive(*gnodes.gn_socket(mod, ids["Orthographic"]), cam.data, 'type', expr="v == 1", id_type='CAMERA')
+        lk._drive(*gnodes.gn_socket(mod, ids["Ortho Scale"]), cam.data, 'ortho_scale', id_type='CAMERA')
+        fc = gnodes.gn_driver_add(mod, ids["Sensor / Focal"])
         d = fc.driver
         d.type = 'SCRIPTED'
         for nm, p in (('s', 'sensor_width'), ('f', 'lens')):
@@ -476,10 +477,10 @@ def apply_style(ob, cam=None, mats=None, outline=True, lines=True, seed=0.0):
             v.targets[0].id = cam.data
             v.targets[0].data_path = p
         d.expression = 's / f'
-    lk._drive(mod, f'["{ids["Ink Fraction"]}"]', bset, '["ink_px"]', expr='v / 1920')
-    lk._drive(mod, f'["{ids["Boil Amount"]}"]', bset, '["boil"]')
-    lk._drive(mod, f'["{ids["Boil Fraction"]}"]', bset, '["boil_px"]', expr='v / 1920')
-    lk._drive(mod, f'["{ids["Boil Step"]}"]', bset, '["boil_step"]')
+    lk._drive(*gnodes.gn_socket(mod, ids["Ink Fraction"]), bset, '["ink_px"]', expr='v / 1920')
+    lk._drive(*gnodes.gn_socket(mod, ids["Boil Amount"]), bset, '["boil"]')
+    lk._drive(*gnodes.gn_socket(mod, ids["Boil Fraction"]), bset, '["boil_px"]', expr='v / 1920')
+    lk._drive(*gnodes.gn_socket(mod, ids["Boil Step"]), bset, '["boil_step"]')
     return mod
 
 

@@ -19,6 +19,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import paths, style, text3d
+from . import gnodes
 
 FONTS = {'hand': 'PatrickHand-Regular.ttf', 'marker': 'GochiHand-Regular.ttf', 'headline': 'Bangers-Regular.ttf'}
 SOUNDS = ('pop', 'message', 'typing', 'whoosh', 'boing', 'click', 'bell', 'pin', 'draw', 'horror_drone', 'thunder',
@@ -39,7 +40,7 @@ def sound(name, frame, channel=None, volume=0.8):
         print('Doodle Library: no sound', p)
         return None
     se = sc.sequence_editor or sc.sequence_editor_create()
-    strips = getattr(se, 'strips', None) or se.sequences
+    strips = se.strips if hasattr(se, 'strips') else se.sequences  # an empty 5.x strips list is falsy
     ch = channel or (3 + len([s for s in strips if s.get(TAG)]) % 6)
     s = strips.new_sound('%s %d' % (name, int(frame)), p, ch, int(frame))
     s.volume = volume
@@ -94,9 +95,9 @@ def words(text, size=0.08, fill='ink', font='hand', name=None):
     t = text3d.add_text(text, kind='flat', name=name or ('Text ' + text[:16]), fill=fill, font=font_path(font))
     mod = text3d.text_modifier(t)
     ids = text3d._ids(mod)
-    mod[ids['Size']] = size
-    mod[ids['Depth']] = size * 0.08
-    mod[ids['Wobble']] = 0.0
+    gnodes.gn_set(mod, ids['Size'], size)
+    gnodes.gn_set(mod, ids['Depth'], size * 0.08)
+    gnodes.gn_set(mod, ids['Wobble'], 0.0)
     ink = t.modifiers.get(style.MOD_NAME)
     if ink:  # flat letters read cleaner without the ink shell (it fills small counters in)
         t.modifiers.remove(ink)

@@ -94,7 +94,8 @@ def set_time(kind='day', frame=None):
             st.keyframe_insert('["%s"]' % k, frame=frame)
         sun.data.keyframe_insert('energy', frame=frame)
         sun.keyframe_insert('rotation_euler', frame=frame)
-        for fc in (st.animation_data.action.fcurves if st.animation_data and st.animation_data.action else []):
+        from .motions import action_curves  # 5.x has no Action.fcurves
+        for fc in action_curves(st.animation_data.action if st.animation_data else None):
             for k in fc.keyframe_points:
                 k.interpolation = 'CONSTANT'
     bpy.context.scene['dsl_time'] = kind

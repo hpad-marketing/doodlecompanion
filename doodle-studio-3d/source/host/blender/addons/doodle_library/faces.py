@@ -11,6 +11,7 @@ import json
 import bpy
 
 from . import index, paths
+from . import gnodes
 
 FACE_PROPS = ('expression', 'gaze', 'speech_mouth', 'blink')
 SET_STRIDE = 100  # speech index = set * 100 + mouth key
@@ -129,7 +130,7 @@ def _library_meshes():
 
 
 def _drive_face_mod(mod, ids, arm, set_expr):
-    fc = mod.driver_add(f'["{ids["Speech Mouth"]}"]')
+    fc = gnodes.gn_driver_add(mod, ids["Speech Mouth"])
     d = fc.driver
     d.type = 'SCRIPTED'
     for v in list(d.variables):
@@ -167,12 +168,12 @@ def use_mouth_set(item):
         for s in bmod.node_group.interface.items_tree:
             if getattr(s, 'in_out', None) == 'INPUT' and s.socket_type != 'NodeSocketGeometry':
                 try:
-                    mod[s.identifier] = bmod[s.identifier]
+                    gnodes.gn_set(mod, s.identifier, gnodes.gn_get(bmod, s.identifier))
                 except Exception:
                     pass
-        mod[bids['Fills']] = fills
-        mod[bids['Strokes']] = strokes
-        mod[bids['Blink']] = 0
+        gnodes.gn_set(mod, bids['Fills'], fills)
+        gnodes.gn_set(mod, bids['Strokes'], strokes)
+        gnodes.gn_set(mod, bids['Blink'], 0)
         # copy every driver except Speech Mouth (that one is set-aware)
         if base.animation_data:
             for fc in base.animation_data.drivers:
