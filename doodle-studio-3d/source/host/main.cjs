@@ -211,8 +211,8 @@ const api = {
   async 'read-png'({ path: p }) { return { data: fs.readFileSync(insideRenders(p)).toString('base64') }; },
   async 'write-png'({ path: p, data }) { const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f }; },
   async 'write-file'({ path: p, data }) {
-    if (!/[.](webm|mp4|png|json|txt|wav|srt|csv)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
-    const f = insideRenders(p, ['.webm', '.mp4', '.png', '.json', '.txt', '.wav', '.srt', '.csv']); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
+    if (!/[.](webm|mp4|png|json|txt|wav|srt|csv|mid|mp3|ogg|flac|m4a|aac)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
+    const f = insideRenders(p, ['.webm', '.mp4', '.png', '.json', '.txt', '.wav', '.srt', '.csv', '.mid', '.mp3', '.ogg', '.flac', '.m4a', '.aac']); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
   },
   // scene audio: any voice or music file the user picks
   async 'pick-audio'() {
@@ -241,6 +241,26 @@ const api = {
     return { text: fs.readFileSync(p, 'utf8') };
   },
   async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
+  // Music workspace: the General MIDI instruments that do not come with the app download once
+  // (FluidR3 GM, CC-BY 3.0, rendered by gleitz/midi-js-soundfonts) into DoodleStudio3D\sounds
+  async 'music-sounds'() {
+    const root = path.join(dataDir, 'sounds', 'fluidr3'), sounds = {};
+    try { for (const n of fs.readdirSync(root)) { const d = path.join(root, n); if (fs.statSync(d).isDirectory()) { const notes = fs.readdirSync(d).filter(f => f.endsWith('.mp3')).map(f => f.slice(0, -4)); if (notes.length) sounds[n] = notes; } } } catch {}
+    return { sounds };
+  },
+  async 'music-get-sound'({ name }) {
+    const names = JSON.parse(fs.readFileSync(path.join(appDir, 'ui', 'vendor', 'sounds', 'fluidr3', 'names.json'), 'utf8'));
+    if (!/^[a-z0-9_]+$/.test(String(name)) || !names.includes(name)) throw Error('Unknown instrument ' + name);
+    const dir = path.join(dataDir, 'sounds', 'fluidr3', name); fs.mkdirSync(dir, { recursive: true });
+    let notes = 0;
+    for (let o = 1; o <= 7; o++) for (const n of ['C', 'Eb', 'Gb', 'A']) {
+      const f = path.join(dir, `${n}${o}.mp3`);
+      if (fs.existsSync(f) && fs.statSync(f).size > 0) { notes++; continue; }
+      try { const r = await net.fetch(`https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/${name}-mp3/${n}${o}.mp3`); if (r.ok) { fs.writeFileSync(f, Buffer.from(await r.arrayBuffer())); notes++; } } catch {}
+    }
+    if (!notes) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} throw Error('Could not download it. Check the internet connection and try again.'); }
+    return { name, notes };
+  },
   async 'read-audio'({ path: p }) {
     if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');
     if (fs.statSync(p).size > 300e6) throw Error('Audio file over 300 MB');
@@ -373,7 +393,7 @@ else {
     // the old copy may still be closing after an update restart: give the port a few seconds
     for (let tries = 0; ; tries++) {
       try {
-        await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models') } });
+        await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models'), sounds: () => path.join(dataDir, 'sounds') } });
         break;
       } catch (e) {
         if (e.code !== 'EADDRINUSE' || tries >= 8) {

@@ -34,6 +34,10 @@ import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
 import { updateLit, LIGHT_PRESETS } from './lit.js';
 import { inkBar, makeLighting } from './lightpanel.js';
+import * as MUS from './music/ui.js';
+import * as MUSE from './music/engine.js';
+import * as MUSS from './music/song.js';
+import { musicTool } from './music/tool.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, lightPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
@@ -158,6 +162,7 @@ function useScene(sc) {
   if ((scene.audio?.path || null) !== (audioInfo()?.path || null)) loadAudio(api, scene.audio?.path).then(drawTracks).catch(e => toast('Audio: ' + e.message, 5000));
   if (character() !== loadedChar) ensureCharacter().then(refreshAll).catch(e => toast(e.message, 5000));
   syncReferenceFile();
+  if (musicReady) MUS.sceneChanged();
 }
 
 // ---------------------------------------------------------------- characters (library.js)
@@ -705,6 +710,7 @@ const buCtx = () => ({ h, $, toast, pushUndo, headRadius: 0.2, scene: () => scen
 const pngOf = (W, H, draw) => { const c = document.createElement('canvas'); c.width = W; c.height = H; draw(c.getContext('2d')); return c.toDataURL('image/png').split(',')[1]; };
 // what one render lays on top: indices are the shots in it, in order; full adds the sound side
 async function buildPost(indices, full) {
+  if (full) await MUS.ensureBounced().catch(e => toast('Music bounce: ' + e.message, 5000));
   const shots = indices.map(i => scene.shots[i]), caps = scene.captions ? scene.captions.tracks[scene.captions.active] || [] : [];
   const markers = full ? (() => { const st = shotStarts(); return scene.shots.flatMap((s, i) => (s.markers || []).map(m => ({ F: st[i] + m.f, note: String(m.note || '') }))).sort((a, b) => a.F - b.F); })() : [];
   const spans = P.markerSpans(markers, scene.fps);
@@ -1560,8 +1566,8 @@ function refreshQuickbar() { const q = $('#quickbar'); if (q) q.replaceChildren(
 function closeMenus() { document.querySelectorAll('#menubar .menu.open').forEach(m => { m.classList.remove('open'); m.querySelector('button').setAttribute('aria-expanded', 'false'); }); }
 
 // ---------------------------------------------------------------- side panel: workspaces, each with a section row (as in the 2D app)
-const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render'], ['materials', 'Materials'], ['audio', 'Audio'], ['draw', 'Draw']];
-const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output', audio: 'babble' };
+const TABS = [['pose', 'Pose'], ['face', 'Face'], ['animate', 'Animate'], ['camera', 'Camera'], ['stage', 'Stage'], ['library', 'Library'], ['carousel', 'Carousel'], ['render', 'Render'], ['materials', 'Materials'], ['audio', 'Audio'], ['music', 'Music'], ['draw', 'Draw']];
+const sub = { face: 'expressions', animate: 'motions', camera: 'lens', stage: 'set', library: 'prop', render: 'output', audio: 'babble', music: 'studio' };
 const SUBS = {
   pose: () => shownParts().map(([id, n]) => [id, n]),
   face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life']],
@@ -1573,6 +1579,7 @@ const SUBS = {
   materials: () => [],
   audio: () => [['babble', 'Babble voice'], ['effects', 'Voice effects'], ['transcribe', 'Transcribe'], ['voice', 'Voice & lip sync'], ['music', 'Music & beats']],
   draw: () => [],
+  music: () => MUS.VIEWS,
   render: () => [['output', 'Shot & output'], ['post', 'Look & finish'], ['blender', 'Blender, autosave & cache']],
 };
 // menu commands shown as buttons in a section (same commands, same undo, also in Ctrl+K)
@@ -1674,6 +1681,8 @@ function buildPanel() {
     else if (s === 'effects') c.append(voiceFxPanel());
     else if (s === 'transcribe') c.append(transcribePanel());
     else c.append(h('div', { class: 'ws three' }, ...shelves('audio:' + s).map(x => h('div', { class: 'col' }, x))));
+  } else if (tab === 'music') {
+    c.append(MUS.panel(s));
   } else if (tab === 'draw') {
     c.append(drawingsPanel());
   } else if (tab === 'animate') {
@@ -2728,10 +2737,11 @@ function drawTracks() {
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   const fileName = p => String(p).split(/[\\/]/).pop();
   if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))])));
-  const wantMusic = scene.music?.path || null;
+  const wantMusic = scene.music?.fromSong ? null : scene.music?.path || null;
   if (wantMusic !== (musicInfo()?.path || null)) loadMusic(api, wantMusic, scene.music?.volume).then(() => drawTracks()).catch(() => {});
   const bed = musicInfo() && waveform(scene.fps, sceneStart(), project.length, ppf, true);
   if (bed) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: musicInfo().path }, 'Music'), lane([bed, h('span', { class: 'wave-name' }, fileName(musicInfo().path))])));
+  const songLane = musicLane(ppf); if (songLane) rows.push(songLane);
   rows.push(...layerRows(ppf));
   const ret = S2.retentionLane(h, scene, sceneStart(), project.length, ppf);
   if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (story2 MCP tool, action retention). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));
@@ -3025,17 +3035,77 @@ function clearAll() {
   toast(`Cleared ${n} keys`);
 }
 
+// ---------------------------------------------------------------- Music workspace (music/*.js)
+let musicReady = false, puppetRec = false;
+function songFollow() { if (scene.song && MUSS.hasNotes(scene.song)) MUSE.followStart(sceneStart() / scene.fps + frame / project.fps, (sceneStart() + project.length) / scene.fps); }
+function musicCtx() {
+  return {
+    h, api, toast, scene: () => scene, pushUndo, changed: () => { dirty = true; drawTracks(); }, changedQuiet: () => { dirty = true; },
+    visible: () => tab === 'music' && !!document.getElementById('mus-root'), rebuild: () => { if (tab === 'music') buildPanel(); }, section: s => setTab('music', s), resized: () => { layout(); drawTracks(); },
+    controls: () => window.ds3d.controls(), controlLabel: id => LABEL[id] || id, names: () => window.ds3d.names(),
+    // a control from a knob, strip or the puppet: x is 0..1 across the control's range, or the index itself with raw
+    setControl(id, x, { raw = false, record = true } = {}) {
+      if (!LABEL[id] && !BUNNY_IDS.includes(id) && !FACE_IDS.includes(id) && !CAM_IDS.includes(id)) return;
+      const c = window.ds3d.controls().find(k => k.id === id); if (!c) return;
+      const v = raw ? Math.max(c.min, Math.min(c.max, Math.round(x))) : DISCRETE.has(id) ? Math.round(c.min + x * (c.max - c.min)) : c.min + x * (c.max - c.min);
+      const was = autoKey; if (record === true && puppetRec && playing && MUS.puppetOn()) autoKey = true;
+      try { setValue(id, v, { record: record !== false }); } finally { autoKey = was; }
+    },
+    puppetRecord: () => puppetRec, setPuppetRecord: on => { puppetRec = !!on; },
+    anim(cmd) {
+      if (cmd === 'play') togglePlay();
+      else if (cmd === 'playFromStart') { if (playing) togglePlay(); goto(0); togglePlay(); }
+      else if (cmd === 'key') keyGroup(BUNNY_IDS.concat(FACE_IDS));
+      else if (cmd === 'prevShot') { if (scene.active > 0) selectShot(scene.active - 1); }
+      else if (cmd === 'nextShot') { if (scene.active < scene.shots.length - 1) selectShot(scene.active + 1); }
+      else if (cmd === 'prevFrame') goto(frame - 1);
+      else if (cmd === 'nextFrame') goto(frame + 1);
+      else if (cmd === 'undo') undo();
+      else if (cmd === 'redo') redo();
+    },
+    animEdit(label, fn) {
+      pushUndo(label);
+      const r = fn({ scene: () => scene, sceneSeconds: () => sceneFrames() / scene.fps, shotData: i => (i === scene.active ? project : bindShot(scene, scene.shots[i])), valueAt, setKey,
+        hasControl: id => BUNNY_IDS.includes(id) || FACE_IDS.includes(id) || CAM_IDS.includes(id), clamp: (id, v) => { const [lo, hi] = range(id); return Math.max(lo, Math.min(hi, v)); } });
+      dirty = true; apply(); drawTracks();
+      return r;
+    },
+    sceneSeconds: () => sceneFrames() / scene.fps,
+    safeName: () => safeName(scene.name).replace(/ /g, '_'),
+    async workDir(sub) { const root = (await api('settings', {})).rendersRoot; return `${root}/${safeName(scene.name)}/work/${sub}`; },
+    async setMusicBed(m) { scene.music = { ...m }; dirty = true; drawTracks(); drawPost?.(); },
+    playing: () => playing, frame: () => frame,
+  };
+}
+// the song on the animation timeline: its loops as blocks over this shot, one tick per bar
+function musicLane(ppf) {
+  const s = scene.song; if (!s || !MUSS.hasNotes(s)) return null;
+  const lane = h('div', { class: 'lane' }), t0 = sceneStart() / scene.fps, t1 = (sceneStart() + project.length) / scene.fps, spbS = 60 / s.bpm, parts = MUSS.layout(s), total = parts.reduce((a, x) => a + x.beats, 0) * spbS;
+  if (!total) return null;
+  for (let base = s.offset; base < t1; base += total) {
+    for (const p of parts) {
+      const a = base + p.start * spbS, b = a + p.beats * spbS;
+      if (b <= t0 || a >= t1) continue;
+      const x = Math.max(0, (a - t0) * scene.fps * ppf), w = (Math.min(b, t1) - Math.max(a, t0)) * scene.fps * ppf;
+      lane.append(h('div', { class: 'song-block', style: `left:${x}px;width:${Math.max(4, w - 2)}px`, title: `${p.sec.name}: ${p.sec.bars} bars at ${s.bpm} BPM. Click to open the Music workspace.`, onclick: () => setTab('music', 'studio') }, p.sec.name));
+      for (let bar = 0; bar < p.sec.bars; bar++) { const bt = a + bar * s.sig * spbS; if (bt >= t0 && bt < t1) lane.append(h('i', { class: 'song-bar', style: `left:${(bt - t0) * scene.fps * ppf}px` })); }
+    }
+    if (!s.fill) break;
+  }
+  return h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Music from the Music workspace. It plays with the animation; renders include it.' }, 'Song'), lane);
+}
+
 let last = 0, loopPlay = true;
 function togglePlay() {
   playing = !playing;
   $('#play-btn').replaceChildren(icon(playing ? 'pause' : 'play'));
-  if (playing) { last = performance.now(); playAudio(sceneStart() / scene.fps + frame / project.fps); requestAnimationFrame(tick); }
-  else stopAudio();
+  if (playing) { last = performance.now(); playAudio(sceneStart() / scene.fps + frame / project.fps); songFollow(); requestAnimationFrame(tick); }
+  else { stopAudio(); MUSE.followStop(); }
 }
 function tick(t) {
   if (!playing) return;
   const adv = (t - last) * project.fps / 1000;
-  if (adv >= 1) { last += Math.floor(adv) * 1000 / project.fps; const nf = frame + Math.floor(adv); if (nf >= project.length && !loopPlay) { frame = project.length - 1; apply(); togglePlay(); return; } if (nf >= project.length) playAudio(sceneStart() / scene.fps); frame = nf % project.length; for (const k of Object.keys(preview)) delete preview[k]; apply(); }
+  if (adv >= 1) { last += Math.floor(adv) * 1000 / project.fps; const nf = frame + Math.floor(adv); if (nf >= project.length && !loopPlay) { frame = project.length - 1; apply(); togglePlay(); return; } if (nf >= project.length) { playAudio(sceneStart() / scene.fps); frame = 0; songFollow(); } frame = nf % project.length; for (const k of Object.keys(preview)) delete preview[k]; apply(); }
   requestAnimationFrame(tick);
 }
 
@@ -3282,6 +3352,7 @@ function loop() {
   // "group": frames the lead and every co-star together
   window.ds3dCameraPresets.register({ id: 'group', label: 'Everyone', points: () => [...view.bodyPoints(null, 12), ...(view.actors || []).flatMap(a => view.bodyPoints(a, 12))], facing: () => current('turn') });
   overlayDraw = bindOverlay(carCtx());
+  MUS.init(musicCtx()); musicReady = true; MUS.sceneChanged();
   MR.init(mirrorCtx());
   MR.onChange(() => { buildCanvasTop(); updateHud(); });
   $('#auto-key').addEventListener('click', e => { autoKey = !autoKey; e.currentTarget.setAttribute('aria-pressed', String(autoKey)); e.currentTarget.textContent = autoKey ? 'Keys: Auto' : 'Keys: Manual'; toast(autoKey ? 'Auto key: every change sets a key at the playhead' : 'Manual: changes are a preview until you press Key (K)'); });
@@ -3304,6 +3375,7 @@ function loop() {
       return { id, label: LABEL[id] || id, min, max, group: id.startsWith('cam.') ? 'camera' : FACE_IDS.includes(id) ? 'face' : PARTS.find(p => p[2].includes(id))?.[1] };
     }),
     names: () => ({ expressions: data.face.faces, gazes: data.face.gazes, mouths: data.face.speech }),
+    music: a => musicTool(musicCtx(), a || {}),
     bridgeShot: () => bridge(project),   // the active shot as Blender receives it
     async blenderLive(action) { if (action === 'open') await openInBlender(); else if (action === 'close') await MR.close(); return MR.state(); },
     state: () => ({ scene: scene.name, character: character(), stage: stageOf(scene, project), items: project.items || [], markers: project.markers || [], shot: project.code, shotName: project.label, shots: scene.shots.map((s, i) => ({ index: i, code: s.code, name: s.label, length: s.length, active: i === scene.active })),
