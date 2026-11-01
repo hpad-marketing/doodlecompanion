@@ -1,0 +1,103 @@
+/* Music workspace: brand ink and mustard only (via --fg / --bg), rows over stacks, like the rest of the app */
+.mus{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mus-transport{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:6px 0;border-bottom:var(--line)}
+.mus-grp{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mus-grp-name{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.75;margin-right:2px}
+.mus-row{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.mus-row select{flex:0 0 auto}
+.mus-pos{font:800 13px system-ui;min-width:118px}
+.mus-midi{font:800 11px system-ui;padding:3px 8px;border:var(--line);border-radius:2px}
+.mus-midi.on{background:var(--fg);color:var(--bg)}
+.mus-rec.on{background:var(--fg);color:var(--bg)}
+.mus-rec.blink{animation:musblink .5s steps(2) infinite}
+@keyframes musblink{50%{opacity:.35}}
+.mus-body{display:flex;flex-direction:column;gap:10px;min-width:0}
+.mus-grid{display:flex;flex-direction:column;border:var(--line);overflow-x:auto}
+.mus-grid-row{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);min-width:max-content}
+.mus-grid-row:last-child{border-bottom:0}
+.mus-grid-row.sel .mus-tname{background:var(--fg);color:var(--bg)}
+.mus-grid-row.sel .mus-tname button:not([aria-pressed=true]){border-color:var(--bg);color:var(--bg);background:var(--fg)}
+.mus-tname{width:300px;flex:0 0 300px;padding:4px 6px;display:flex;flex-direction:column;gap:3px;border-right:var(--line);cursor:pointer}
+.mus-tname .row{flex-wrap:nowrap}
+.mus-tname button{min-height:24px;padding:0 6px;font-size:11px}
+.mus-sec{width:150px;flex:0 0 150px;padding:4px;border-right:1px solid var(--fg);display:flex;flex-direction:column;gap:3px}
+.mus-sec.cur{box-shadow:inset 0 -4px 0 var(--fg)}
+.mus-sec button,.mus-cell button{min-height:22px;min-width:22px;padding:0 5px;font-size:11px}
+.mus-sec select{min-height:22px;font-size:11px;padding:0 2px}
+.mus-sec.add,.mus-cell.add{width:90px;flex:0 0 90px;border-right:0;display:flex;gap:3px;align-items:center;padding:4px}
+.mus-cell{width:150px;flex:0 0 150px;border-right:1px solid var(--fg);padding:3px;cursor:pointer;display:flex;align-items:center}
+.mus-cell.cur{box-shadow:inset 0 -3px 0 var(--fg)}
+.mus-cell.sel{outline:3px solid var(--fg);outline-offset:-4px}
+.mus-mini{width:100%;height:30px;display:block}
+.mus-meter{display:inline-block;width:46px;height:8px;border:1px solid currentColor;position:relative;overflow:hidden}
+.mus-meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:currentColor}
+.mus-meter.tall{width:100%;height:10px}
+.mus-chip{display:inline-flex;align-items:center;gap:3px;border:var(--line);padding:1px 3px;border-radius:2px}
+.mus-chip button{min-height:20px;min-width:20px;padding:0 4px;font-size:11px;border-width:1px}
+.mus-editor{border:var(--line);padding:6px;display:flex;flex-direction:column;gap:6px}
+.mus-editor .mus-row button{min-height:26px;padding:0 7px;font-size:12px}
+.mus-rollwrap,.mus-stepwrap{position:relative;overflow-x:auto}
+.mus-roll{width:100%;display:block;cursor:crosshair;outline:none}
+.mus-playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);pointer-events:none;display:none}
+.mus-steps{display:grid;gap:1px;min-width:max-content}
+.mus-padname{min-height:20px;font-size:11px;padding:0 4px;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.mus-step{min-height:20px;min-width:16px;padding:0;border:1px solid var(--fg);opacity:.55}
+.mus-step.beat{opacity:.8}.mus-step.bar{border-left-width:3px}
+.mus-step.on{background:var(--fg);opacity:1}
+.mus-step.accent{box-shadow:inset 0 0 0 3px var(--bg)}
+.mus-kbd h3{margin:4px 0}
+.mus-keys{display:flex;gap:2px;align-items:flex-start;flex-wrap:wrap}
+.mus-key{width:30px;min-width:30px;height:90px;padding:0 0 4px;display:flex;align-items:flex-end;justify-content:center;font-size:9px}
+.mus-key.black{background:var(--fg);color:var(--bg);height:60px;width:24px;min-width:24px}
+.mus-key.lit,.mus-pad.lit{outline:4px solid var(--fg);outline-offset:-8px}
+.mus-key.black.lit{outline-color:var(--bg)}
+.mus-pad{width:84px;height:48px;font-size:11px;white-space:normal}
+.mus-mixer{display:flex;gap:8px;overflow-x:auto;align-items:flex-start}
+.mus-strip{flex:0 0 200px;border:var(--line);padding:6px;display:flex;flex-direction:column;gap:5px}
+.mus-strip.sel{box-shadow:inset 0 0 0 2px var(--fg)}
+.mus-strip label{display:flex;flex-direction:column;gap:2px}
+.mus-fx{border:1px solid var(--fg);padding:4px;display:flex;flex-direction:column;gap:3px}
+.mus-fx.off{opacity:.55}
+.mus-fx button{min-height:22px;padding:0 6px;font-size:11px}
+.mus-param{display:grid;grid-template-columns:70px 1fr;align-items:center;font-size:11px}
+.mus-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mus-card{border:var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.mus-card.on{background:var(--fg);color:var(--bg)}
+.mus-card.on button{border-color:var(--bg);color:var(--bg);background:var(--fg)}
+.mus-card.get{opacity:.85;border-style:dashed}
+.mus-card .pic svg{width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mus-card small{font-size:11px;opacity:.8}
+.mus-userpads{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.mus-userpad{border:2px dashed var(--fg);min-height:56px;padding:4px;display:flex;flex-direction:column;font-weight:800;font-size:12px}
+.mus-userpad small{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.mus-check{display:inline-flex;gap:4px;align-items:center}
+.mus-rules{display:flex;flex-direction:column;gap:4px}
+.mus-target{max-width:240px}
+.warn{text-decoration:underline}
+/* the MiniLab 3 on screen */
+.ml{border:var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:10px}
+.ml-top{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.ml-strips{display:flex;gap:6px}
+.ml-strip{width:34px;height:150px;border:var(--line);border-radius:6px;writing-mode:vertical-rl;display:flex;align-items:center;justify-content:center;font:800 11px system-ui}
+.ml-pads{display:flex;flex-direction:column;gap:6px}
+.ml-padgrid{display:grid;grid-template-columns:repeat(8,96px);gap:5px}
+.ml-pad{border:var(--line);border-radius:6px;min-height:66px;padding:4px;display:flex;flex-direction:column;gap:3px;cursor:pointer;user-select:none}
+.ml-pad select{font-size:10px;min-height:22px;padding:0 2px;max-width:100%}
+.ml-pad small{font-size:10px}
+.ml-knobs{display:grid;grid-template-columns:repeat(4,150px);gap:6px}
+.ml-knob,.ml-fader{display:flex;flex-direction:column;gap:3px;align-items:flex-start;font-size:11px}
+.ml-knob select,.ml-fader select{font-size:10px;min-height:22px;max-width:148px;padding:0 2px}
+.ml-knob button,.ml-fader button{min-height:20px;font-size:10px;padding:0 6px}
+.ml-knob .dial{--a:-135deg;width:30px;height:30px;border:var(--line);border-radius:50%;position:relative}
+.ml-knob .dial::after{content:'';position:absolute;left:50%;top:2px;width:3px;height:11px;background:var(--fg);transform-origin:50% 12px;transform:translateX(-50%) rotate(var(--a))}
+.ml-faders{display:grid;grid-template-columns:repeat(4,150px);gap:6px}
+.ml-fader .slot{width:14px;height:60px;border:var(--line);position:relative}
+.ml-fader .slot i{position:absolute;left:-6px;width:22px;height:8px;bottom:0;background:var(--fg)}
+.ml .hit,.ml-pad.hit,.ml-strip.hit{background:var(--fg);color:var(--bg)}
+/* big studio: the Tools dock fills the window */
+body.music-full #dock-tools{position:fixed;inset:30px 0 0 0;z-index:40;background:var(--bg)}
+/* the song on the animation timeline */
+#tracks .song-block{position:absolute;top:2px;bottom:2px;border:2px solid var(--fg);background:var(--bg);font:800 10px system-ui;padding:0 4px;overflow:hidden;white-space:nowrap;cursor:pointer}
+#tracks .song-bar{position:absolute;top:0;bottom:0;width:1px;background:var(--fg);opacity:.5;pointer-events:none}
+.mus-addrow{padding:5px 6px;gap:4px}
+.mus-addrow button{min-height:24px;padding:0 7px;font-size:11px}
