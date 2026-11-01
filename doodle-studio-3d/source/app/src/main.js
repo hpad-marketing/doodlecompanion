@@ -2958,9 +2958,27 @@ function toggleDark() {
   try { localStorage.setItem('ds3d.theme', dark ? 'dark' : 'light'); } catch {}
 }
 
+// the MCP tool reference at the end of Help › Guide, written from the app's own tool list so it
+// always matches this build (the same text get_guide gives an assistant)
+async function mcpToolReference() {
+  try {
+    const r = await fetch('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) });
+    const tools = (await r.json()).result.tools;
+    const type = sc => (sc.enum ? sc.enum.join(' / ') : [].concat(sc.type || 'any').join(' or '));
+    const out = ['## MCP tool reference', '', `Every tool this build answers (${tools.length}), written from the app's own tool list. Every tool also takes \`force: true\`, used only after the user said yes.`, ''];
+    for (const t of tools) {
+      out.push('### ' + t.name, '', t.description, '');
+      const req = t.inputSchema.required || [];
+      for (const [k, sc] of Object.entries(t.inputSchema.properties || {})) if (k !== 'force') out.push(`- \`${k}\`${req.includes(k) ? ' (required)' : ''}: ${type(sc)}${sc.minimum !== undefined ? ', from ' + sc.minimum : ''}${sc.description ? '. ' + sc.description : ''}`);
+      out.push('');
+    }
+    return out.join('\n');
+  } catch { return '## MCP tool reference\n\nThe tool list could not be read from the MCP just now. Ask the assistant to call tools/list, or reopen the guide.'; }
+}
+
 // Help › Guide: the full guide (app/guide.md), with a search box that jumps to matching sections
 async function guideDialog() {
-  const md = await fetch('guide.md').then(r => r.text()).catch(() => 'The guide could not be loaded.');
+  const md = (await fetch('guide.md').then(r => r.text()).catch(() => 'The guide could not be loaded.')) + '\n\n' + await mcpToolReference();
   const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const inline = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
   const html = [];

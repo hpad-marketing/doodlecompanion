@@ -1,6 +1,7 @@
 // Doodle Studio 3D's own MCP endpoint: http://127.0.0.1:54190/mcp (Streamable HTTP, JSON responses).
 // Separate from the 2D Doodle Studio MCP; nothing here reads or writes the 2D app's config.
 const VERSION = '2025-06-18';
+const MAX_BODY = 64 * 1024 * 1024;   // a pasted image or audio clip fits; a runaway request does not
 
 const TOOLS = [
   ['get_guide', 'Read the Doodle Studio 3D guide: what every feature does, recipes and known limits. Pass section (words from a heading, e.g. "camera" or "recipes") to get only matching sections.', { section: { type: 'string' } }],
@@ -100,19 +101,103 @@ const TOOLS = [
     { action: { enum: ['import', 'remove', 'drive', 'lipsync', 'effect', 'transcribe', 'transcript', 'captions'] }, preset: { type: 'string' }, pitch: { type: 'number' }, effect: { type: 'string' }, mix: { type: 'number' }, on: { type: 'boolean' }, reset: { type: 'boolean' }, language: { type: 'string' }, path: { type: 'string' }, id: { type: 'string' }, min: { type: 'number' }, max: { type: 'number' }, step: { type: 'integer', minimum: 1, maximum: 12 }, shot: { type: 'integer', minimum: 0 }, all: { type: 'boolean' }, gate: { type: 'number', minimum: 0, maximum: 1 }, hold: { type: 'integer', minimum: 1, maximum: 6 }, stem: { type: 'string' }, engine: { enum: ['syllables', 'classic'] } }, ['action']],
   ['story', 'Storytime helpers for the whole scene. action=retention: hook strength of the first 2 s and every 4+ s stretch with no visual change; chapters: writes YouTube chapters (0:00 Title lines) from markers whose note starts with "Chapter:" to work\\<scene>_chapters.txt; loop_back: keys the last frame of the last shot to the opening pose so a Reel replays seamlessly; gags: running gags from markers noted "gag: ..."; bible: read the story bible, or update it with bible {premise, characters, rules}.',
     { action: { enum: ['retention', 'chapters', 'loop_back', 'gags', 'bible'] }, bible: { type: 'object' } }, ['action']],
-  ['blender_live', 'Open in Blender, live: action=open opens the active shot in a full Blender window that stays in step with the app both ways (pose control bones, camera, playhead, props, set pieces, the sun; a new prop, set or shot rebuilds it there). action=status says whether Blender is live; action=close ends the link (the Blender window stays open with its own copy in work\\blender-live).', { action: { enum: ['open', 'status', 'close'] } }, ['action']],
+  ['blender_live', 'Open in Blender, live: action=open opens the active shot in a full Blender window that stays in step with the app both ways (pose control bones, camera, playhead, props, set pieces, the sun; a new prop, set or shot rebuilds it there). action=status says whether Blender is live; action=close ends the link (the Blender window stays open with its own copy in work\\blender-live).', { action: { enum: ['open', 'status', 'close'], description: 'Default status.' } }],
   ['babble', 'Babble voice: typed dialogue spoken as cute gibberish, synthesised in the app (no recorded or sampled audio). Each line is placed at a frame of a shot; the scene voice is rebuilt as one file (mixed over the recorded voice if any), the speaker\'s mouth is keyed on every syllable and the line becomes timed captions. action=add (text, shot code/index default active, frame default playhead, who "lead" or a co-star index, mood neutral|happy|sad|angry|sleepy|shocked, style override); list; remove (id); clear; voice (character bunny|koala|frog, style syllables|letters|tones, pitch Hz 80-900, speed 0.4-2, range semitones 0-12, breath 0-0.5, croak 0-1, reset true) changes that character\'s voice for every line; preview (text, who, mood) plays it once; rebuild.',
     { action: { enum: ['add', 'list', 'remove', 'clear', 'voice', 'preview', 'rebuild'] }, text: { type: 'string' }, shot: { type: ['string', 'integer'] }, frame: { type: 'integer', minimum: 0 }, who: { type: ['string', 'integer'] }, mood: { enum: ['neutral', 'happy', 'sad', 'angry', 'sleepy', 'shocked'] }, style: { enum: ['syllables', 'letters', 'tones'] }, id: { type: 'string' }, character: { enum: ['bunny', 'koala', 'frog'] }, pitch: { type: 'number' }, speed: { type: 'number' }, range: { type: 'number' }, breath: { type: 'number' }, croak: { type: 'number' }, reset: { type: 'boolean' } }, ['action']],
   ['remove_item', 'Remove a placed library item from the active shot by its index in get_state items.', { index: { type: 'integer', minimum: 0 } }, ['index']],
 ];
 
+// ---- crash-proofing: every tool call is checked against its schema before it reaches the editor,
+// and editor errors come back as plain sentences an assistant can act on.
+const typeName = t => (Array.isArray(t) ? t.join(' or ') : t);
+const describeArg = (k, sc) => k + ' (' + (sc.enum ? 'one of ' + sc.enum.join(', ') : typeName(sc.type) || 'any') + ')';
+// lenient where it is safe (a number sent as "12", a boolean sent as "true", an enum in another case),
+// strict where the editor would otherwise get undefined, NaN or the wrong kind of value
+function coerce(v, sc) {
+  const types = sc.type ? [].concat(sc.type) : [];
+  if (sc.enum) {
+    if (sc.enum.includes(v)) return { v };
+    const hit = typeof v === 'string' && sc.enum.find(e => typeof e === 'string' && e.toLowerCase() === v.trim().toLowerCase());
+    return hit ? { v: hit } : { err: 'must be one of ' + sc.enum.join(', ') };
+  }
+  if (!types.length) return { v };
+  if (v === null) return types.includes('null') ? { v } : { err: 'must be ' + typeName(sc.type) + ', not null' };
+  for (const t of types) {
+    if (t === 'string' && typeof v === 'string') return { v };
+    if ((t === 'number' || t === 'integer') && typeof v === 'number' && Number.isFinite(v)) return { v: t === 'integer' ? Math.round(v) : v };
+    if (t === 'boolean' && typeof v === 'boolean') return { v };
+    if (t === 'object' && v && typeof v === 'object' && !Array.isArray(v)) return { v };
+    if (t === 'array' && Array.isArray(v)) return { v };
+  }
+  // second pass: safe conversions from text
+  for (const t of types) {
+    if ((t === 'number' || t === 'integer') && typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return { v: t === 'integer' ? Math.round(Number(v)) : Number(v) };
+    if (t === 'boolean' && (v === 'true' || v === 'false')) return { v: v === 'true' };
+  }
+  return { err: 'must be ' + typeName(sc.type) };
+}
+function checkArgs(name, args, schema) {
+  if (args === undefined || args === null) args = {};
+  if (typeof args !== 'object' || Array.isArray(args)) throw Error(`${name}: arguments must be a JSON object such as {"frame": 0}, not ${Array.isArray(args) ? 'a list' : typeof args}.`);
+  const props = schema.properties || {}, out = { ...args };
+  const missing = (schema.required || []).filter(k => out[k] === undefined || out[k] === null);
+  if (missing.length) throw Error(`${name} needs ${schema.required.map(k => describeArg(k, props[k] || {})).join(', ')}. Missing: ${missing.join(', ')}.`);
+  const bad = [];
+  for (const [k, sc] of Object.entries(props)) {
+    if (out[k] === undefined) continue;
+    const r = coerce(out[k], sc);
+    if (r.err) { bad.push(`${k} ${r.err} (got ${JSON.stringify(out[k]).slice(0, 60)})`); continue; }
+    if (typeof r.v === 'number' && sc.minimum !== undefined && r.v < sc.minimum) bad.push(`${k} must be ${sc.minimum} or more (got ${r.v})`);
+    else if (typeof r.v === 'number' && sc.maximum !== undefined && r.v > sc.maximum) bad.push(`${k} must be ${sc.maximum} or less (got ${r.v})`);
+    else out[k] = r.v;
+  }
+  if (bad.length) throw Error(`${name}: ${bad.join('; ')}.`);
+  return out;
+}
+// editor-side failures in words: what happened and what to do next
+function explain(name, e) {
+  const m = String((e && e.message) || e || 'unknown error');
+  if (/window is closed|Object has been destroyed|webContents.*destroyed/i.test(m)) return `${name} could not run: the Doodle Studio 3D window is closed. Open the app and try again.`;
+  if (/ds3d\w* is not defined|Cannot read properties of undefined \(reading '(setValues|state|controls|names)'\)/.test(m)) return `${name} could not run: the editor is still loading. Try again in a few seconds.`;
+  if (/Script failed to execute|Render frame was disposed|navigated|reload/i.test(m)) return `${name} could not run: the editor was reloading or busy. Call get_state to see what was applied, then try again.`;
+  if (/^(TypeError|ReferenceError|RangeError)|Cannot read properties|is not a function|is not iterable/.test(m)) return `${name} hit an internal error in the editor: ${m}. Check the arguments against tools/list; if they are right, this is a Doodle Studio 3D bug, so tell the user. Call get_state to see what changed.`;
+  return m;
+}
+// closest tool names for a typo ("set_value" -> set_values)
+function nearest(name, names) {
+  const d = (a, b) => { const r = Array.from({ length: b.length + 1 }, (_, i) => i); for (let i = 1; i <= a.length; i++) { let p = r[0]; r[0] = i; for (let j = 1; j <= b.length; j++) { const t = r[j]; r[j] = Math.min(r[j] + 1, r[j - 1] + 1, p + (a[i - 1] === b[j - 1] ? 0 : 1)); p = t; } } return r[b.length]; };
+  const n = String(name || '');
+  return names.map(x => [x, d(n, x) - (x.includes(n) || n.includes(x) ? 2 : 0)]).sort((a, b) => a[1] - b[1]).filter(x => x[1] <= Math.max(3, n.length / 3)).slice(0, 3).map(x => x[0]);
+}
+// the tool reference in Help › Guide and get_guide, written from the live tool list so it never drifts
+function toolReference(tools) {
+  const lines = ['## MCP tool reference', '', `Every tool this build answers (${tools.length}), written from the app's own tool list. Every tool also takes \`force: true\`, used only after the user said yes.`, ''];
+  for (const t of tools) {
+    lines.push('### ' + t.name, '', t.description, '');
+    const req = t.inputSchema.required || [];
+    for (const [k, sc] of Object.entries(t.inputSchema.properties || {})) {
+      if (k === 'force') continue;
+      lines.push(`- \`${k}\`${req.includes(k) ? ' (required)' : ''}: ${sc.enum ? sc.enum.join(' / ') : typeName(sc.type) || 'any'}${sc.minimum !== undefined ? ', from ' + sc.minimum : ''}${sc.description ? '. ' + sc.description : ''}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
 module.exports = ({ call, api }) => {
   const handlers = {
     get_guide: async a => {
       const md = await call("fetch('guide.md').then(r => r.text())");
-      if (!a.section) return { guide: md };
-      const q = String(a.section).toLowerCase(), parts = md.split(/\n(?=#{2,3} )/);
-      const hits = parts.filter(p => p.split('\n')[0].toLowerCase().includes(q));
+      const full = md + '\n\n' + toolReference(tools);
+      if (!a.section) return { guide: full };
+      const q = String(a.section).toLowerCase(), parts = full.split(/\n(?=#{2,3} )/);
+      // a matching ## section brings its ### subsections with it
+      const hits = []; let inHit = false;
+      for (const p of parts) {
+        const head = p.split('\n')[0], level = (head.match(/^#+/) || [''])[0].length;
+        if (level === 2) inHit = head.toLowerCase().includes(q);
+        if (inHit || head.toLowerCase().includes(q)) hits.push(p);
+      }
       return hits.length ? { guide: hits.join('\n\n') } : { guide: '', headings: parts.map(p => p.split('\n')[0]).filter(t => t.startsWith('#')) };
     },
     get_state: () => call('ds3d.state()'),
@@ -192,7 +277,9 @@ module.exports = ({ call, api }) => {
   const FORCE = { type: 'boolean', description: 'Only after the user said yes: goes ahead where the app would ask first.' };
   const tools = TOOLS.map(([name, description, props, required]) => ({ name, description, inputSchema: { type: 'object', properties: { ...props, force: props.force || FORCE }, ...(required ? { required } : {}) } }));
 
+  const schemas = Object.fromEntries(tools.map(t => [t.name, t.inputSchema]));
   async function rpc(msg) {
+    if (!msg || typeof msg !== 'object' || Array.isArray(msg)) return { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid request: send a JSON-RPC object such as {"jsonrpc":"2.0","id":1,"method":"tools/list"}' } };
     const { id, method, params } = msg;
     const ok = result => ({ jsonrpc: '2.0', id, result });
     try {
@@ -202,17 +289,20 @@ module.exports = ({ call, api }) => {
       if (method === 'tools/list') return ok({ tools });
       if (method === 'tools/call') {
         const fn = handlers[params?.name];
-        if (!fn) return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Unknown tool ' + params?.name } };
+        if (!fn) { const near = nearest(params?.name, Object.keys(handlers)); return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Unknown tool ' + params?.name + (near.length ? '. Did you mean ' + near.join(', ') + '?' : '') + ' Call tools/list for every tool.' } }; }
+        let args;
+        try { args = checkArgs(params.name, params.arguments, schemas[params.name]); }
+        catch (e) { return ok({ isError: true, content: [{ type: 'text', text: e.message }] }); }
         try {
           // the app logs each call (Claude change log, per-change undo, token meter)
-          await call(`window.ds3dClaude && ds3dClaude.begin(${JSON.stringify(params.name)}, ${JSON.stringify(params.arguments || {}).length}, ${!!params.arguments?.force}, ${JSON.stringify(params.arguments || {})})`).catch(() => {});
-          const out = await fn(params.arguments || {});
+          await call(`window.ds3dClaude && ds3dClaude.begin(${JSON.stringify(params.name)}, ${JSON.stringify(args).length}, ${!!args.force}, ${JSON.stringify(args)})`).catch(() => {});
+          const out = await fn(args);
           const text = JSON.stringify(out ?? { ok: true });
           await call(`window.ds3dClaude && ds3dClaude.end(${text.length}, false)`).catch(() => {});
           return ok({ content: [{ type: 'text', text }] });
         } catch (e) {
           await call(`window.ds3dClaude && ds3dClaude.end(0, true)`).catch(() => {});
-          return ok({ isError: true, content: [{ type: 'text', text: String(e && e.message || e) }] });
+          return ok({ isError: true, content: [{ type: 'text', text: explain(params.name, e) }] });
         }
       }
       if (id === undefined) return null;   // notifications
@@ -221,20 +311,25 @@ module.exports = ({ call, api }) => {
   }
 
   // macro playback replays recorded tool calls through the same handlers
-  const replay = async (name, args) => { const fn = handlers[name]; if (!fn) throw Error('Unknown tool ' + name); return fn(args || {}); };
+  const replay = async (name, args) => { const fn = handlers[name]; if (!fn) throw Error('Unknown tool ' + name); return fn(checkArgs(name, args, schemas[name])); };
   const handle = async function handle(req, res, body) {
     if (req.method === 'GET') { res.writeHead(405, { allow: 'POST' }); return res.end(); }
     if (req.method === 'DELETE') { res.writeHead(200); return res.end(); }
     // only local callers; refuse browser pages from other origins
     const origin = req.headers.origin;
     if (origin && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) { res.writeHead(403); return res.end('Forbidden origin'); }
+    if (body.length > MAX_BODY) { res.writeHead(413); return res.end('Request too large'); }
     let msg;
-    try { msg = JSON.parse(body); } catch { res.writeHead(400); return res.end('Bad JSON'); }
+    try { msg = JSON.parse(body); } catch { res.writeHead(400, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error: the request body is not valid JSON' } })); }
     const out = Array.isArray(msg) ? (await Promise.all(msg.map(rpc))).filter(Boolean) : await rpc(msg);
     if (!out || (Array.isArray(out) && !out.length)) { res.writeHead(202); return res.end(); }
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(out));
   };
   handle.replay = replay;
+  handle.reference = () => toolReference(tools);
   return handle;
 };
+module.exports.checkArgs = checkArgs;
+module.exports.explain = explain;
+module.exports.toolReference = toolReference;

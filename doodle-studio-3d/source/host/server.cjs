@@ -47,7 +47,9 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null, stat
         if (!fn) { res.writeHead(404); return res.end('No such action: ' + name); }
         let body = '';
         for await (const chunk of req) body += chunk;
-        const out = await fn(body ? JSON.parse(body) : {}, req);
+        let args = {};
+        try { args = body ? JSON.parse(body) : {}; } catch { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('Bad JSON for ' + name); }
+        const out = await fn(args, req);
         res.writeHead(200, { 'content-type': 'application/json' });
         return res.end(JSON.stringify(out ?? {}));
       }
@@ -62,10 +64,14 @@ module.exports = function start({ root, port = 54190, api = {}, mcp = null, stat
       res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
       res.end(data);
     } catch (e) {
-      res.writeHead(e.code === 'ENOENT' ? 404 : 500, { 'content-type': 'text/plain' });
-      res.end(String(e.message || e));
+      // an error after the reply started (a dropped connection mid-stream) must not throw again
+      if (res.headersSent) { try { res.end(); } catch {} return; }
+      try { res.writeHead(e.code === 'ENOENT' ? 404 : 500, { 'content-type': 'text/plain' }); res.end(String((e && e.message) || e)); } catch {}
     }
   });
-  return new Promise((ok, fail) => { server.once('error', fail); server.listen(port, '127.0.0.1', () => ok(server)); });
+  return new Promise((ok, fail) => {
+    server.once('error', e => fail(e.code === 'EADDRINUSE' ? Object.assign(Error(`Port ${port} on this PC is already in use, so Doodle Studio 3D and its MCP can't start. Another copy may still be closing: wait a few seconds and open it again, or restart the PC.`), { code: e.code }) : e));
+    server.listen(port, '127.0.0.1', () => { server.on('error', () => {}); ok(server); });
+  });
 };
 module.exports.registerRef = registerRef;

@@ -344,14 +344,26 @@ const api = {
   },
 };
 
+// crash-proofing: a stray error in the main process is logged (crash.log next to settings.json)
+// instead of stopping the app, so the window, the autosave and the MCP keep running
+const crashLog = what => e => { try { fs.appendFileSync(path.join(dataDir, 'crash.log'), `${new Date().toISOString()} ${what}: ${(e && e.stack) || e}\n`); } catch {} };
+process.on('uncaughtException', crashLog('uncaught'));
+process.on('unhandledRejection', crashLog('unhandled rejection'));
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { if (main) { if (main.isMinimized()) main.restore(); main.focus(); } });
   ipcMain.handle('ds3d:check-updates', () => updates ? updates.check(true) : 'unavailable');
   ipcMain.on('ds3d:close-window', () => { allowClose = true; main?.close(); });
   app.whenReady().then(async () => {
+    // calls waiting on the editor page; if the page dies they are answered at once instead of hanging
+    const pending = new Set();
     const call = js => new Promise((ok, fail) => {
       if (!main || main.isDestroyed()) return fail(Error('The Doodle Studio 3D window is closed'));
+      if (main.webContents.isCrashed() || main.webContents.isLoading()) return fail(Error('ds3d is not defined (the editor page is reloading)'));
+      const entry = {}; pending.add(entry);
+      const done = f => v => { pending.delete(entry); f(v); };
+      ok = done(ok); fail = done(fail); entry.fail = fail;
       // the renderer's own error message comes back (Electron otherwise reports only 'Script failed to execute')
       main.webContents.executeJavaScript(`Promise.resolve().then(() => (${js})).then(v => ({ ok: v }), e => ({ err: String((e && e.message) || e) }))`)
         .then(r => (r && 'err' in r ? fail(Error(r.err)) : ok(r && r.ok)), fail);
@@ -396,6 +408,19 @@ else {
       const wa = (other || primary).workArea, w = Math.min(1100, wa.width), hh = Math.min(1300, wa.height);
       return { action: 'allow', overrideBrowserWindowOptions: { x: wa.x + Math.round((wa.width - w) / 2), y: wa.y + Math.round((wa.height - hh) / 2), width: w, height: hh, title: 'Doodle Studio 3D: viewport', icon, backgroundColor: '#E0A64B', autoHideMenuBar: true,
         webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } } };
+    });
+    // the editor page crashed or was killed: log it and reload, so the MCP answers again and the
+    // autosave's recovery file brings the scene back. At most 3 reloads in 5 minutes, so a page that
+    // crashes on load can't loop forever.
+    const reloads = [];
+    main.webContents.on('render-process-gone', (e, d) => {
+      crashLog('editor page gone')(d && d.reason);
+      for (const p of [...pending]) p.fail(Error('Render frame was disposed: the editor page stopped and is reloading'));
+      if (!d || d.reason === 'clean-exit' || main.isDestroyed()) return;
+      const now = Date.now(); while (reloads.length && now - reloads[0] > 5 * 60000) reloads.shift();
+      if (reloads.length >= 3) return void dialog.showErrorBox('Doodle Studio 3D', 'The editor keeps crashing. Your scene is in the recovery file: close and reopen the app. Details are in crash.log in ' + dataDir);
+      reloads.push(now);
+      setTimeout(() => { if (!main.isDestroyed()) main.loadURL(`http://127.0.0.1:${PORT}/`).catch(crashLog('reload')); }, 1000);
     });
     main.webContents.on('did-create-window', w => { w.removeMenu(); w.webContents.on('will-navigate', e => e.preventDefault()); });
     main.on('close', e => {
