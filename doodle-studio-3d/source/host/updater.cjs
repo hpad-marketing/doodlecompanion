@@ -93,11 +93,10 @@ module.exports=({app,dialog,net,window,logDir})=>{
   finally{release();}
  }
  // The window's close runs the unsaved-project prompt. Relaunch only when the
- // quit really follows a Restart click, once the native host has exited.
+ // quit really follows a Restart click.
  app.on('will-quit',()=>{
   if(!restartAsked||Date.now()-restartAsked>120000)return;
-  const exe=path.join(root,'Doodle Studio 3D.exe').replace(/'/g,"''");
-  spawn('powershell.exe',['-NoProfile','-WindowStyle','Hidden','-Command',`$i=0;while((Get-Process -Id ${process.pid} -ErrorAction SilentlyContinue) -and $i -lt 60){Start-Sleep -Milliseconds 500;$i++};Start-Sleep -Milliseconds 800;Start-Process -FilePath '${exe}'`],{detached:true,stdio:'ignore',windowsHide:true}).unref();
+  app.relaunch();   // a detached PowerShell waiting on this process never reopened the app
  });
  setTimeout(check,45000);setInterval(check,60*60000);
  return {check,verify,rollback};
