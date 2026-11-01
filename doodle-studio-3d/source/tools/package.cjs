@@ -18,6 +18,7 @@ for (const f of fs.readdirSync(path.join(__dirname, '..', 'app', 'fonts'))) copy
 copy('app/guide.md', 'ui/guide.md');
 for (const c of ['koala', 'frog']) copy(`app/chars/${c}.json`, `ui/chars/${c}.json`);
 for (const c of ['bunny', 'koala', 'frog']) copy(`app/chars/${c}.png`, `ui/chars/${c}.png`);
+copy('app/reels', 'ui/reels');   // picture cards for File › New reel from a template
 if (fs.existsSync(path.join(here, 'app/icon.png'))) copy('app/icon.png', 'ui/icon.png');
 const files = [];
 const walk = d => { for (const n of fs.readdirSync(d)) { const p = path.join(d, n); fs.statSync(p).isDirectory() ? walk(p) : files.push(path.relative(out, p)); } };

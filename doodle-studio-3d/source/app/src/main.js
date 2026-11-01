@@ -29,6 +29,7 @@ import * as BK from './blocks.js';
 import { bubbleUi } from './bubbleui.js';
 import * as VF from './voicefx.js';
 import * as STT from './transcribe.js';
+import * as RL from './reels.js';
 import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
 import { updateLit, LIGHT_PRESETS } from './lit.js';
@@ -678,9 +679,9 @@ function drawingsPanel() {
     h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { title: `Remove ${d.name} (Ctrl+Z brings it back)`, onclick: () => drRun({ action: 'remove', index: i }) }, 'Remove')));
 }
 function drawPost() {
-  const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame);
+  const fr = $('#frame'), s = project, cap = P.captionAt(scene, s, frame), cuts = cutsAt(s, frame), head = P.headlineAt(scene, s, frame);
   let c = document.getElementById('post-layer');
-  if (!s.look && !cuts.length && !cap) { c?.remove(); return; }
+  if (!s.look && !cuts.length && !cap && !head) { c?.remove(); return; }
   if (!c) { c = h('canvas', { id: 'post-layer' }); fr.insertBefore(c, $('#hud')); }
   const W = c.width = fr.clientWidth, H = c.height = fr.clientHeight, g = c.getContext('2d');
   if (s.look) P.drawLook(g, W, H, s.look);
@@ -691,6 +692,7 @@ function drawPost() {
     else P.drawBubble(g, W, H, r);
     if (k.kind !== 'photo') { g.font = `${Math.round(H * 0.025)}px system-ui`; g.textAlign = 'center'; g.fillStyle = '#1F1F1D'; g.fillText(k.shotRef || (k.path || '').split(/[\\/]/).pop(), r.cx * W, r.cy * H); }
   }
+  if (head) P.drawHeadline(g, W, H, head.text);
   if (cap) P.drawCaption(g, W, H, cap.text, P.captionY(scene, cap.text, liveHeadY()), scene.captions.highlight ? captionWord(cap, frame) : -1, scene.captions.snap !== false);
 }
 let BU = null;
@@ -707,7 +709,7 @@ async function buildPost(indices, full) {
   const markers = full ? (() => { const st = shotStarts(); return scene.shots.flatMap((s, i) => (s.markers || []).map(m => ({ F: st[i] + m.f, note: String(m.note || '') }))).sort((a, b) => a.F - b.F); })() : [];
   const spans = P.markerSpans(markers, scene.fps);
   const trans = full ? PW.transitionsOf(scene.shots) : [];
-  const any = shots.some(s => s.look || s.cuts?.length || s.bubbles?.length || s.drawings?.some(d => d.layer === 'screen') || caps.some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
+  const any = shots.some(s => s.look || s.cuts?.length || s.bubbles?.length || s.drawings?.some(d => d.layer === 'screen') || caps.some(l => l.shot === s.uid) || (scene.headlines || []).some(l => l.shot === s.uid)) || (full && (scene.music?.path || spans.bleeps.length || spans.voices.length || scene.paper || trans.length));
   if (!any) return null;
   await P.loadFont();
   const W = scene.width, H = scene.height, safe = safeName(scene.name), dir = `${(await api('settings', {})).rendersRoot}/${safe}/work/post`;
@@ -738,6 +740,7 @@ async function buildPost(indices, full) {
       post.movies.push({ path: c.path || null, shotRef: c.shotRef || undefined, start, length: len, rect: { cx: r.cx, cy: r.cy, w: r.w } });
       post.overlays.push({ path: await write(g => (c.kind === 'pip' ? P.drawOutline : P.drawBubble)(g, W, H, r), c.kind), start, length: len });
     }
+    for (const l of (scene.headlines || []).filter(x => x.shot === s.uid)) post.overlays.push({ path: await write(g => P.drawHeadline(g, W, H, l.text), 'headline'), start: at + l.f, length: l.to - l.f });
     for (const l of caps.filter(x => x.shot === s.uid)) {
       const fit = scene.captions.snap !== false, words = P.captionLines(l.text).flat().length;
       let headY = null;
@@ -915,6 +918,158 @@ async function scriptToBlocking(text, { captions = false } = {}) {
   }
   dirty = true; useScene(scene);
   return { shots: made, missed, message: `${made.length} shot${made.length > 1 ? 's' : ''} blocked from the script${missed.length ? `; no library match for: ${missed.slice(0, 4).join(', ')}` : ''}` };
+}
+// ---------------------------------------------------------------- reels.js: five reel templates and script to first-draft scene
+// A plan (reels.js) becomes a new scene: one shot per beat with a camera framing and move, the
+// beat's face and gesture keyed (anticipation, hit, hold, settle), co-stars for other speakers,
+// babble voice with lip sync and captions (or captions alone), key-word headlines and markers.
+async function faceIndex(ch, name) {
+  charData[ch] ||= await (await fetch(ch === 'bunny' ? 'bunny3d.json' : `chars/${ch}.json`)).json();
+  const faces = charData[ch].face.faces, i = faces.indexOf(name);
+  return i >= 0 ? i : Math.max(0, faces.findIndex(f => / neutral$/i.test(f)));
+}
+function gestureKeys(tracksOf, g, from, f0, f1, len) {
+  // anticipation at the cut, the gesture lands on the first word, holds with a little drift, settles
+  const p = tracksOf, G = RL.GESTURES[g] || RL.GESTURES.open, R = RL.GESTURES[from] || RL.GESTURES.rest;
+  const hit = Math.min(len - 1, f0 + 7), hold = Math.max(hit + 1, Math.min(len - 1, f1 - 4)), end = len - 1;
+  for (const id of RL.GESTURE_IDS) {
+    const a = R[id] ?? 0, b = G[id] ?? 0, drift = /^arm|^elbow/.test(id) ? -2 : 0;   // the hold drifts down, away from the head
+    setKey(p, id, 0, a + (b - a) * 0.25, 'ease');
+    setKey(p, id, hit, b, 'ease');
+    if (hold > hit) setKey(p, id, hold, b + drift, 'ease');
+    if (end > hold + 3) setKey(p, id, end, b + (a - b) * 0.35, 'ease');
+  }
+}
+async function reelBuild(pl, { voice = 'babble', force = false } = {}) {
+  if (!pl.beats.length) throw Error('Nothing to build: the script has no lines');
+  if (voice !== 'babble' && voice !== 'captions' && voice !== 'none') throw Error('voice must be babble, captions or none');
+  if (dirty && !force && !confirm('Start a new scene for this reel? Unsaved changes are lost (the autosave keeps a copy).')) return null;
+  const fps = scene.fps || 30, lead = pl.lead || 'bunny';
+  // shot lengths fit the spoken line: the babble voice is measured before any shot is made
+  const lens = await Promise.all(pl.beats.map(async b => {
+    if (voice !== 'babble' || !b.text) return b.frames;
+    const ch = b.speaker === 'lead' ? lead : pl.costars[b.speaker].character;
+    const sec = bbSpeak(b.text, bbVoiceFor(ch, {}, b.voice)).seconds;
+    return Math.max(b.frames, 6 + Math.ceil(sec * fps) + Math.round(fps * 0.5));
+  }));
+  filePath = null; undoStack = []; redoStack = []; frame = 0;
+  const sc = newScene(pl.name);
+  sc.fps = fps; sc.width = 1080; sc.height = 1920; sc.character = lead; sc.shots = [];
+  if (pl.template) sc.template = pl.template;
+  sc.captions = { active: 'en', highlight: false, y: RL.CAPTION_Y, tracks: { en: [], hi: [] } };   // below Bunny's face, inside the safe zone
+  pl.beats.forEach((b, i) => { const s = newShotData(nextCode(sc), lens[i]); s.label = b.label; s.idle = { ...IDLE_DEFAULT, blink: true, twitch: true }; sc.shots.push(s); });
+  sc.active = 0;
+  useScene(sc);
+  dirty = true;
+  await ensureCharacter();
+  const was = autoKey, made = [];
+  autoKey = true;
+  try {
+    let prevGesture = 'rest';
+    for (const [i, b] of pl.beats.entries()) {
+      scene.active = i; frame = 0; useScene(scene);
+      const sh = project, len = sh.length, talk0 = 6, talk1 = Math.min(len - 1, talk0 + Math.max(b.talkFrames, Math.round(fps)));
+      for (const c of pl.costars) CS.addCostar(sh, c.character, {});
+      apply();
+      // co-stars load their character in the background: wait for them before framing anyone
+      for (let w = 0; pl.costars.length && (view.actors || []).length < pl.costars.length && w < 100; w++) { await new Promise(r => setTimeout(r, 50)); apply(); }
+      // camera: the Full preset backed off to the beat's framing (a key at frame 0), then the move
+      // co-stars are camera targets too, so a co-star's line is framed on them
+      pl.costars.forEach((c, k) => window.ds3dCameraPresets.register({ id: 'costar' + k, label: castName(c.character), points: () => view.bodyPoints((view.actors || [])[k] || null, 12), facing: () => current('turn') }));
+      const tgt = /^costar\d$/.test(b.cam.target) && !(view.actors || [])[+b.cam.target.slice(6)] ? 'bunny' : b.cam.target;
+      // Bunny stays centred; a co-star's single puts them on the third away from the lead, so the lead leaves the frame
+      const cx = /^costar\d$/.test(tgt) ? (CS.costarsOf(sh)[+tgt.slice(6)]?.x ?? 0) : 0;
+      window.ds3dCameraPresets.apply({ target: tgt, size: 'fs', angle: b.cam.angle || 'eye', placement: cx > 0 ? 'left' : cx < 0 ? 'right' : 'center' });
+      const D = valueAt(sh, 'cam.dist', 0) * (RL.FRAMINGS[b.cam.size] || RL.FRAMINGS.full) * (tgt === 'group' ? 0.72 : 1);
+      setKey(sh, 'cam.dist', 0, +D.toFixed(3), 'ease');
+      // a key-word headline gets clear sky: the camera rises (level, no tilt) so the ears sit below it
+      if (b.headline) { const vis = 2 * D * Math.tan((view.camera.fov * Math.PI / 180) / 2); setKey(sh, 'cam.tz', 0, +(valueAt(sh, 'cam.tz', 0) + vis * 0.04).toFixed(3), 'ease'); }
+      const M = RL.MOVES[b.cam.move];
+      if (M) {
+        const quick = M.frames != null, at = quick ? (i === 0 ? 2 : Math.min(len - M.frames - 2, talk0 + Math.round((talk1 - talk0) * 0.35))) : 0;
+        const v0 = valueAt(sh, M.id, 0), to = quick ? at + M.frames : len - 1;
+        if (at > 0) setKey(sh, M.id, at, v0, M.ease);
+        else sh.tracks[M.id].find(k => k.f === 0).ease = M.ease;
+        setKey(sh, M.id, to, +(v0 * M.to).toFixed(3), 'ease');
+      }
+      // the speaker acts the line; whoever listens reacts with a smaller version of the beat
+      const leadSpeaks = b.speaker === 'lead';
+      setKey(sh, 'expression', 0, await faceIndex(lead, leadSpeaks ? b.face : (b.mood === 'shocked' ? RL.MOODS.shocked.face : RL.MOODS.neutral.face)), 'hold');
+      setKey(sh, 'gaze', 0, 0, 'hold');
+      gestureKeys(sh, leadSpeaks ? b.gesture : 'rest', leadSpeaks ? prevGesture : 'rest', talk0, talk1, len);
+      for (const [k, c] of pl.costars.entries()) {
+        const speaks = b.speaker === k, cp = CS.costarProject ? CS.costarProject(sh, k) : null;
+        CS.keyCostar(sh, k, { expression: await faceIndex(c.character, speaks ? b.face : RL.MOODS.neutral.face) }, 0);
+        if (cp) gestureKeys(cp, speaks ? b.gesture : 'rest', 'rest', talk0, talk1, len);
+      }
+      if (leadSpeaks) prevGesture = b.gesture;
+      // words: babble line (lip sync + captions come from its syllables) or plain timed captions
+      if (b.text && voice === 'babble') BB.addLine(scene, sh, talk0, b.text, { who: leadSpeaks ? 'lead' : b.speaker, mood: b.voice });
+      else if (b.text && voice === 'captions') {
+        const n = b.captions.length, span = talk1 - talk0;
+        b.captions.forEach((c, k) => P.addCaption(scene, sh, talk0 + Math.round(k * span / n), talk0 + Math.round((k + 1) * span / n) + 4, c, 'en'));
+      }
+      if (b.headline) P.addHeadline(scene, sh, 0, len, b.headline);
+      sh.markers ||= [];
+      sh.markers.push({ f: 0, note: `Beat: ${b.label}${b.who ? ' (' + b.who + ')' : ''}` });
+      if (b.fill) sh.markers.push({ f: Math.min(len - 1, 2), note: 'Fill: ' + b.fill });
+      if (b.text && voice !== 'babble') sh.markers.push({ f: talk0, note: (voice === 'none' ? 'Record: ' : 'Say: ') + b.text });
+      sh.markers.sort((x, y) => x.f - y.f);
+      made.push({ shot: sh.code, label: b.label, seconds: +(len / fps).toFixed(1), speaker: leadSpeaks ? lead : pl.costars[b.speaker].character, face: b.face, gesture: b.gesture, camera: [b.cam.size, b.cam.angle, b.cam.move].filter(Boolean).join(' '), headline: b.headline });
+    }
+  } finally { autoKey = was; }
+  scene.active = 0; frame = 0; useScene(scene);
+  let babble = null;
+  if (voice === 'babble') babble = await rebuildBabble({ quiet: true });
+  // the last frame returns to the opening pose, so the reel replays seamlessly
+  // (the pose only: each shot keeps its own camera)
+  const last = scene.shots[scene.shots.length - 1], cams = Object.fromEntries(Object.entries(last.tracks).filter(([k]) => k.startsWith('cam.')).map(([k, v]) => [k, JSON.parse(JSON.stringify(v))]));
+  try { loopBack(scene); } catch {}
+  for (const k of Object.keys(last.tracks)) if (k.startsWith('cam.')) { if (cams[k]) last.tracks[k] = cams[k]; else delete last.tracks[k]; }
+  dirty = true; apply(); drawTracks(); drawPost(); refreshAll();
+  const secs = +(scene.shots.reduce((a, s) => a + s.length, 0) / fps).toFixed(1);
+  toast(`Reel draft: ${made.length} shots, ${secs} s${voice === 'babble' ? ', babble voice with lip sync' : ''}${pl.unfilled?.length ? `. ${pl.unfilled.length} slot${pl.unfilled.length > 1 ? 's' : ''} still show the example line (see the Fill: markers)` : ''}`, 6000);
+  return { scene: scene.name, seconds: secs, lead, costars: pl.costars.map(c => c.character), shots: made, voice, unfilled: pl.unfilled || [], babbleLines: babble?.lines?.length || 0,
+    next: voice === 'babble' ? 'Play it through, then import the real voice (audio import) and run lip sync when it is recorded.' : 'Import the recorded voice (audio import), then audio lipsync so the mouth follows it.' };
+}
+async function reelsAct(a = {}) {
+  switch (a.action || 'templates') {
+    case 'templates': return { templates: RL.REELS.map(t => ({ id: t.id, name: t.name, about: t.blurb, seconds: RL.fromTemplate(t.id).seconds, slots: t.slots.map(s => ({ key: s.key, label: s.label, hint: s.hint, example: RL.plainText(s.example) })) })) };
+    case 'plan': return a.text != null ? RL.fromScript(a.text, { lead: a.lead || character(), fps: scene.fps, headlines: a.headlines }) : RL.fromTemplate(a.template, a.fills || {}, { lead: a.lead || character(), fps: scene.fps });
+    case 'fill': return reelBuild(RL.fromTemplate(a.template, a.fills || {}, { lead: a.lead || 'bunny', fps: scene.fps, name: a.name }), a);
+    case 'script': return reelBuild(RL.fromScript(a.text || '', { lead: a.lead || 'bunny', fps: scene.fps, headlines: a.headlines || 'marked', name: a.name }), a);
+    case 'headline': { pushUndo('Headline'); const l = P.addHeadline(scene, project, a.frame ?? frame, (a.frame ?? frame) + Math.round((a.seconds ?? 2) * scene.fps), a.text || ''); dirty = true; drawPost(); return { line: l }; }
+    case 'headlines': return { headlines: P.headlinesOf(scene).map(l => ({ ...l, shot: scene.shots.find(s => s.uid === l.shot)?.code })) };
+    case 'clear_headlines': { pushUndo('Clear headlines'); scene.headlines = []; dirty = true; drawPost(); return { headlines: [] }; }
+    default: throw Error('action must be templates, plan, fill, script, headline, headlines or clear_headlines');
+  }
+}
+function reelDialog(id) {
+  const t = RL.REELS.find(x => x.id === id) || RL.REELS[0];
+  const fields = {};
+  modal({ h }, t.name, close => [
+    h('img', { src: `reels/${t.id}.png`, alt: '', style: 'width:100%;max-height:220px;object-fit:contain;border-radius:8px' }),
+    h('p', { class: 'hint' }, t.blurb + ' Fill any line; an empty one keeps the example. "KOALA: ..." gives a line to a co-star, [directions] pick the acting, *word* marks the headline.'),
+    ...t.slots.map(s => { const i = h('input', { type: 'text', placeholder: RL.plainText(s.example), 'aria-label': s.label, style: 'width:100%' }); fields[s.key] = i; return h('label', { class: 'ctl', style: 'grid-template-columns:8em 1fr', title: s.hint }, s.label, i); }),
+    h('div', { class: 'row', style: 'margin-top:10px' }, h('span', { style: 'flex:1' }),
+      h('button', { class: 'primary', onclick: async () => { close(); try { await reelBuild(RL.fromTemplate(t.id, Object.fromEntries(Object.entries(fields).map(([k, i]) => [k, i.value])), { fps: scene.fps })); } catch (e) { toast(e.message, 5000); } } }, 'Make the reel'),
+      h('button', { onclick: close }, 'Cancel'))]);
+}
+function reelPickerDialog() {
+  modal({ h }, 'New reel from a template', close => [
+    h('p', { class: 'hint' }, 'Five ready-to-fill reels: each shot is framed, acted and captioned. Pick one, then type your lines.'),
+    h('div', { class: 'libx-grid', style: 'grid-template-columns:repeat(auto-fill,minmax(150px,1fr))' }, ...RL.REELS.map(t => h('button', { class: 'libx-card', title: t.blurb, onclick: () => { close(); reelDialog(t.id); } },
+      h('span', { class: 'pic', style: 'aspect-ratio:3/4' }, h('img', { src: `reels/${t.id}.png`, alt: '', draggable: 'false' })), h('span', {}, t.name)))),
+    h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { onclick: close }, 'Cancel'))]);
+}
+function reelScriptDialog() {
+  const ta = h('textarea', { rows: 10, style: 'width:100%;font:inherit', 'aria-label': 'Script', placeholder: 'BUNNY: You will not believe what my *toaster* did. [points]\nKOALA: Did it burn the bread again?\nBUNNY: No. It started talking.' });
+  const v = h('select', { 'aria-label': 'Voice' }, h('option', { value: 'babble' }, 'Babble voice with lip sync'), h('option', { value: 'captions' }, 'Captions only (I will record)'));
+  modal({ h }, 'Script to scene', close => [
+    h('p', { class: 'hint' }, 'One line per shot. "KOALA:" or "FROG:" gives a line to a co-star, [directions] pick the acting and camera (e.g. [shrug], [close-up], [push in]), *word* puts a key-word headline on screen, # starts a section.'),
+    ta, h('div', { class: 'row', style: 'margin-top:10px' }, v, h('span', { style: 'flex:1' }),
+      h('button', { class: 'primary', onclick: async () => { close(); try { await reelBuild(RL.fromScript(ta.value, { fps: scene.fps }), { voice: v.value }); } catch (e) { toast(e.message, 5000); } } }, 'Make the scene'),
+      h('button', { onclick: close }, 'Cancel'))]);
 }
 // ---------------------------------------------------------------- Blender powers (powers.js; rendered by powers.py)
 const macroRec = PW.recorder();
@@ -1318,7 +1473,7 @@ const carCtx = () => ({
 
 // ---------------------------------------------------------------- menu bar
 const MENUS = [
-  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => openBabble()], ['Import SVG drawing…', () => importSvg()], '-',
+  ['File', [['New scene', newShot, 'Ctrl+N'], ['New from template…', () => templateDialog(wfCtx())], ['New reel from a template…', () => reelPickerDialog()], ['Script to scene…', () => reelScriptDialog()], ['Open…', openShot, 'Ctrl+O'], ['Save', () => saveShot(false), 'Ctrl+S'], ['Save as…', () => saveShot(true), 'Ctrl+Shift+S'], ['Save version…', () => saveVersion(polCtx())], ['Versions…', () => versionsDialog(polCtx())], '-', ['Import audio for the scene…', () => importAudio()], ['Remove scene audio', () => importAudio(null)], ['Babble voice (type a line)…', () => openBabble()], ['Import SVG drawing…', () => importSvg()], '-',
     ['Render scene (all shots)', () => renderScene(), 'Ctrl+Shift+E'], ['Render this shot', () => render(), 'Ctrl+R'], ['Render this frame', () => render(true), 'Ctrl+Shift+R'], '-', ['Export Blender shot file…', exportBridge]]],
   ['Shot', [['Storyboard sheet (PNG)', () => storyboard()], '-', ...STATUS.map(([id, n]) => [`Status: ${n}`, () => shotStatus(id)]), ['Split shot at the playhead', () => splitHere()], '-', ['Add shot after this one', () => addShot(false), 'Ctrl+T'], ['Duplicate this shot', () => addShot(true), 'Ctrl+Shift+T'], ['Name this shot…', () => labelShot()], ['Co-stars (more characters)…', () => castDialog()],
     '-', ['Move earlier', () => moveShot(-1), 'Alt+←'], ['Move later', () => moveShot(1), 'Alt+→'], '-', ['Previous shot', () => selectShot(Math.max(0, scene.active - 1)), 'PgUp'],
@@ -3266,6 +3421,7 @@ function loop() {
     blocks: (a = {}) => blocksAct(a),
     voiceFx: (a = {}) => voiceFxAct(a),
     transcribe: (a = {}) => (a.action === 'captions' ? transcriptCaptions() : a.action === 'get' ? scene.transcript || null : transcribeAct(a)),
+    reels: (a = {}) => reelsAct(a),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
     story(a = {}) {
       const out = { retention: () => retentionCheck(), chapters: () => exportChapters(), loop_back: () => { pushUndo(); const r = loopBack(scene); dirty = true; apply(); drawTracks(); return r; },

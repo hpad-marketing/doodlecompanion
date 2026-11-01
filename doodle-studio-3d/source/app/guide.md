@@ -490,6 +490,29 @@ The Materials tab (the last tab) dresses the shot in a material instead of the f
 
 ---
 
+### Reel templates and script to scene
+
+Two ways to get a first-draft reel in one step. Both make a **new 9:16 scene** you can then change like any other.
+
+- **File › New reel from a template…** shows five picture cards: *Storytime: hook to twist*, *3 things you did not know*, *Myth vs fact*, *POV skit with a co-star* and *Hot take*. Pick one and type your lines. Leave a line empty and its example plays instead, with a **Fill:** marker on that shot telling you what to write there.
+- **File › Script to scene…** takes a pasted script, with one line per shot:
+  - `KOALA: line` or `FROG: line` gives the line to a co-star, who joins every shot.
+  - `[shrug]`, `[points]`, `[cheer]`, `[lean in]` or `[sigh]` picks the gesture. `[shocked]`, `[proud]` or any other mood name picks the face and the voice mood.
+  - `[wide]`, `[close-up]`, `[push in]`, `[snap zoom]` and `[low angle]` steer the camera.
+  - `*word*` puts that word on screen as a key-word headline.
+  - `# Section` starts a section, and `HEADLINE: text` gives the next shot a headline of its own.
+  - A long line with several sentences is cut into shots of up to 16 words each.
+- **What each shot gets:**
+  - The camera frames whoever is speaking (Everyone on a two-hander's opening shot) at eye level. A slow push in, a quick push on the hook or a snap zoom on a shock gives each shot its energy. A low angle appears only on a hero ending, and there is never any roll.
+  - The face, read from the words, and a gesture that lands on the first word, holds and then settles. Every gesture passes the arm-in-head check on Bunny, the Koala and the Frog.
+  - Blinks and ear twitches.
+  - Babble voice with lip sync and captions. Each shot is made long enough for its line.
+  - A key-word headline in Impact capitals at the top of the safe zone. The camera rises, staying level, so the ears sit below the headline.
+  - Captions low in the safe zone, below the face.
+  - The last frame loops back to the opening pose.
+- **Voice choice:** *Babble voice with lip sync* (the default), or *Captions only*, which leaves **Say:** markers on each shot. When the real voice is recorded, import it (File › Import audio) and run lip sync so the mouth follows it.
+- MCP: `reels action=templates`, `reels action=fill {template, fills: {slot: line}, voice}`, `reels action=script {text, voice, headlines: marked|hook|all|off}`, `reels action=plan` (shows the plan and builds nothing), `reels action=headline {text, frame, seconds}`, `reels action=headlines`, `reels action=clear_headlines`. A new scene asks for a yes when there are unsaved changes (`force: true`).
+
 ## 4. Cross-uses: made for one thing, great for another
 
 This list is meant to grow. Add to it whenever a feature surprises you.
@@ -606,6 +629,9 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 ## 8. Appendix: every MCP tool
 
 The full reference, with every tool's arguments, is the **MCP tool reference** at the end of this guide. The app writes it from its own tool list when the guide opens (and `get_guide` adds it for assistants; `get_guide section="tool reference"` returns only that part), so it always matches the build you have. A call with a missing or wrong argument comes back with a plain sentence that names the argument and what it should be.
+These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
+
+`babble`, `reels`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 

@@ -99,6 +99,33 @@ export function drawCaption(g, W, H, text, y, hi = -1, fit = true) {
   });
 }
 
+// ---------------------------------------------------------------- key-word headlines
+// scene.headlines = [{ shot (uid), f, to, text }]: the key word of a beat, big, in caps, at the top of
+// the Instagram safe zone (y 0.19), in the headline face (Impact) with Bunny's ink and a mustard rim.
+export const HEADLINE = { y: 0.185, font: 'Impact, "Haettenschweiler", "Arial Narrow Bold", sans-serif' };
+export const headlinesOf = scene => (scene.headlines ||= []);
+export function headlineAt(scene, shot, f) { return (scene.headlines || []).find(l => l.shot === shot.uid && f >= l.f && f < l.to) || null; }
+export function addHeadline(scene, shot, f, to, text) {
+  const line = { shot: shot.uid, f: Math.max(0, f), to: Math.min(shot.length, Math.max(f + 1, to)), text: String(text).trim().toUpperCase() };
+  if (!line.text) throw Error('Type the headline first');
+  headlinesOf(scene).push(line);
+  return line;
+}
+export function drawHeadline(g, W, H, text, y = HEADLINE.y) {
+  const rows = captionLines(text), lw = inkPx(W, H);
+  let size = Math.round(H * (rows.length > 1 ? 0.05 : 0.064));
+  g.font = `${size}px ${HEADLINE.font}`;
+  const widest = Math.max(...rows.map(r => g.measureText(r.join(' ')).width));
+  if (widest > SAFE.width * W) size = Math.floor(size * SAFE.width * W / widest);
+  g.font = `${size}px ${HEADLINE.font}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  const top = Math.max(SAFE.top + rows.length * size * 0.55 / H, y);
+  rows.forEach((words, r) => {
+    const yy = top * H + (r - (rows.length - 1) / 2) * size * 1.05, line = words.join(' ');
+    g.lineWidth = lw * 2; g.strokeStyle = MUSTARD; g.strokeText(line, W / 2, yy);
+    g.fillStyle = INK; g.fillText(line, W / 2, yy);
+  });
+}
+
 // ---------------------------------------------------------------- cut-ins: photo, picture-in-picture, bubble
 function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 export function drawPhoto(g, W, H, img, it) {
