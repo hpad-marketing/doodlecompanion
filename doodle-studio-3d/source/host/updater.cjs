@@ -46,8 +46,9 @@ module.exports=({app,dialog,net,window,logDir})=>{
  }
  const sha=file=>new Promise(done=>{const hash=crypto.createHash('sha256');fs.createReadStream(file).on('error',()=>done('')).on('data',d=>hash.update(d)).on('end',()=>done(hash.digest('hex')));});
  async function get(url){let error;for(let i=0;i<3;i++){try{const r=await net.fetch(url,{cache:'no-store'});if(r.ok)return r;error=Error(url+' '+r.status);}catch(e){error=e;}await new Promise(r=>setTimeout(r,1000*(i+1)));}throw error;}
- // One updater at a time, even with several Doodle Studio windows open.
- const lock=()=>{const file=path.join(work,'lock');fs.mkdirSync(work,{recursive:true});try{if(Date.now()-fs.statSync(file).mtimeMs>30*60000)fs.unlinkSync(file);}catch{}try{fs.closeSync(fs.openSync(file,'wx'));return ()=>{try{fs.unlinkSync(file);}catch{}};}catch{return null;}};
+ // One updater at a time, even with several Doodle Studio windows open. The lock names its process:
+ // an app closed mid-download leaves it behind, and the next launch must not wait for it to age out.
+ const lock=()=>{const file=path.join(work,'lock');fs.mkdirSync(work,{recursive:true});try{const holder=Number(fs.readFileSync(file,'utf8'))||0;let alive=false;try{if(holder)process.kill(holder,0),alive=true;}catch{}if(!alive||Date.now()-fs.statSync(file).mtimeMs>30*60000)fs.unlinkSync(file);}catch{}try{const fd=fs.openSync(file,'wx');fs.writeSync(fd,String(process.pid));fs.closeSync(fd);return ()=>{try{fs.unlinkSync(file);}catch{}};}catch{return null;}};
  let busy=false,asking=false,restartAsked=0,runtimeWarned=false;
  // Tools › Check for updates passes manual, so a check that finds nothing still answers.
  const tell=(message,detail)=>{const win=window();if(win&&!win.isDestroyed())return dialog.showMessageBox(win,{type:'info',title:'Doodle Studio 3D update',message,detail:detail||''});};
