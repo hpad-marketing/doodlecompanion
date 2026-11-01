@@ -9,7 +9,7 @@ shot['materials'] = {
 shot['items'][i]['material'] = L        # one prop on its own (wins over the props layer)
 
 L = {'look': 'clay', 'addon': 'doodle_looks', 'params': {...}, 'palette': 'teal-coral' | {...},
-     'ink': True, 'keepCharacter': True, 'color': '#hex' (optional: every fill in one colour)}
+     'ink': True, 'bunny': '#hex', 'outfit': '#hex' (optional: instead of the palette's own), 'color': '#hex' (optional: the main colour)}
 
 Nothing here runs unless the shot has a layer, so older shots render exactly as before.
 The ink outline is the studio's own (a geometry-nodes hull with its own material), so a
@@ -570,8 +570,9 @@ def apply(shot, cam, log, out_dir=None):
         p = painter(lay, 'character')
         if p:
             pal = p.pal
-            fill = lay.get('bunny') or (MUSTARD if lay.get('keepCharacter', True) else pal['character'])
-            fit = lay.get('outfit')
+            # the palette dresses the characters too; Materials › Character colours overrides it
+            fill = lay.get('bunny') or pal['character']
+            fit = lay.get('outfit') or (pal.get('outfit') if pal.get('outfit') != pal.get('ink') else None)
             # the outfit: Bunny's own hoodie is ink-coloured fills, a library outfit is any other mesh on the rig
             worn = lambda ob: bool(OUTFIT.search(ob.name)) or not ob.name.startswith('BUNNY_')
             n = sum(p.paint(ob, fit if fit and worn(ob) else fill, fit if worn(ob) else None) for ob in groups['character'])

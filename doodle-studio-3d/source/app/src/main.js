@@ -2502,6 +2502,11 @@ function buildTimelineTools() {
   const ib = (n, title, fn, id, on) => h('button', { class: 'icon' + (on ? ' on' : ''), title, 'aria-label': title, onclick: fn, id, 'aria-pressed': on == null ? null : String(!!on) }, icon(n));
   const box = h('input', { id: 'frame-box', type: 'number', min: 0, title: 'Current frame: type a number to jump there' });
   box.addEventListener('change', () => goto(Number(box.value)));
+  // how long this shot runs: type frames or seconds, each follows the other
+  const lenFrames = h('input', { id: 'len-frames', type: 'number', min: 1, max: 36000, step: 1, value: project.length, title: 'Shot length in frames', 'aria-label': 'Shot length in frames' });
+  const lenSecs = h('input', { id: 'len-secs', type: 'number', min: 0.04, step: 0.1, value: +(project.length / project.fps).toFixed(2), title: 'Shot length in seconds', 'aria-label': 'Shot length in seconds' });
+  lenFrames.addEventListener('change', () => setLength(Number(lenFrames.value)));
+  lenSecs.addEventListener('change', () => setLength(Number(lenSecs.value) * project.fps));
   const ease = h('select', { id: 'ease-select', title: 'Easing from the selected key(s) to the next one' }, ...Object.entries(EASES).map(([k, n]) => h('option', { value: k }, n)));
   ease.addEventListener('change', () => {
     const list = multi.length ? multi.map(m => m.k) : selected ? [T().tracks[selected.id]?.find(k => k.f === selected.f)].filter(Boolean) : [];
@@ -2528,6 +2533,7 @@ function buildTimelineTools() {
         ib('next', 'Next frame (→ or .)', () => goto(frame + 1)), ib('nextkey', 'Next key (↓ or \')', () => stepKey(1)), ib('end', 'Last frame (End)', () => goto(project.length - 1)),
         ib('loop', 'Loop playback (L)', () => { loopPlay = !loopPlay; buildTimelineTools(); toast(loopPlay ? 'Playback loops' : 'Playback stops at the end'); }, 'loop-btn', loopPlay)),
       g('Frame', box, h('span', { class: 'of', id: 'clock' })),
+      g('Length', lenFrames, h('span', { class: 'of' }, 'frames'), lenSecs, h('span', { class: 'of' }, 's')),
       g('Edit', ib('key', 'Key the whole pose and face (K). Shift+K keys the camera.', () => keyGroup(BUNNY_IDS.concat(FACE_IDS))), ease,
         ib('cut', 'Scissors: click a block to cut it in two', () => { cutMode = !cutMode; $('#tracks').classList.toggle('cutting', cutMode); buildTimelineTools(); }, 'scissors-btn', cutMode),
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),
@@ -2818,10 +2824,21 @@ function drawPlayhead() {
   const box = $('#frame-box');
   if (box && box.ownerDocument.activeElement !== box) box.value = frame;
   const clk = $('#clock');
-  if (clk) clk.textContent = `of ${project.length} · ${(frame / project.fps).toFixed(2)} s`;
+  for (const [id, v] of [['#len-frames', project.length], ['#len-secs', +(project.length / project.fps).toFixed(2)]]) { const e = $(id); if (e && document.activeElement !== e) e.value = v; }
+  if (clk) clk.textContent = `· ${(frame / project.fps).toFixed(2)} s`;
   if (playing) centreOn(frame);
 }
 
+// keys and blocks past the new end stay in the shot, so lengthening it brings them back
+function setLength(n) {
+  const len = Math.max(1, Math.min(36000, Math.round(Number(n) || 0)));
+  if (!len || len === project.length) { updateHud(); return; }
+  pushUndo('Shot length');
+  project.length = len;
+  frame = Math.min(frame, len - 1);
+  dirty = true;
+  apply(); drawTracks(); buildTimelineTools(); updateHud();
+}
 function goto(f) {
   frame = Math.max(0, Math.min(project.length - 1, Math.round(f)));
   for (const k of Object.keys(preview)) delete preview[k];

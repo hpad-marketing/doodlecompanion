@@ -70,11 +70,12 @@ export function fromColours(name, colours) {
   const by = [...colours].sort((a, b) => light(a) - light(b)), n = by.length;
   const accent = [...colours].sort((a, b) => vivid(b) - vivid(a))[0];
   const rest = colours.filter(c => c !== by[0] && c !== by[n - 1] && c !== accent);
-  return { id: 'my-' + Date.now().toString(36), name, theory: 'Your palette', character: '#E0A64B', ink: '#1F1F1D', wall: by[Math.floor(n * 0.6)], floor: by[0], ceiling: by[n - 1],
-    pieces: (rest.length >= 2 ? rest : colours).slice(0, 8), accent, ambient: '#FFFFFF' };
+  const pieces = (rest.length >= 2 ? rest : colours).slice(0, 8);
+  return { id: 'my-' + Date.now().toString(36), name, theory: 'Your palette', character: pieces[0], outfit: accent, ink: '#1F1F1D', wall: by[Math.floor(n * 0.6)], floor: by[0], ceiling: by[n - 1],
+    pieces, accent, ambient: '#FFFFFF' };
 }
 
-const ROLES = [['wall', 'Walls'], ['floor', 'Ground'], ['ceiling', 'Sky'], ['accent', 'Accent']];
+const ROLES = [['character', 'Character'], ['outfit', 'Outfit'], ['wall', 'Walls'], ['floor', 'Ground'], ['ceiling', 'Sky'], ['accent', 'Accent']];
 // the maker: a starting palette, a colour picker for each role, paste or import
 export function paletteMaker(ctx, start, use) {
   const { h } = ctx;

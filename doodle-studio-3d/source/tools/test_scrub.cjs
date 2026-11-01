@@ -48,6 +48,13 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === 0, 'the start of the ruler is frame 0');
   ok(Math.abs(await line() - box.x) <= 1, 'and the line sits on the 0s tick');
   await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'scrub.png') });
+  // shot length: type seconds or frames
+  await p.fill('#len-secs', '2'); await p.press('#len-secs', 'Tab');
+  ok(await p.inputValue('#len-frames') === String(await p.evaluate(() => ds3d.scene.fps * 2)), 'typing 2 s sets the frames');
+  await p.fill('#len-frames', '45'); await p.press('#len-frames', 'Tab');
+  ok(await p.inputValue('#len-secs') === String(+(45 / await p.evaluate(() => ds3d.scene.fps)).toFixed(2)), 'typing frames sets the seconds');
+  await p.keyboard.press('Control+z'); await new Promise(r => setTimeout(r, 200));
+  await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'length.png') });
   ok(!errs.length, 'no page errors ' + errs.slice(0, 3).join(' | '));
   await b.close(); dev.kill();
 })().catch(e => { console.log('FAIL', e.message); dev.kill(); process.exit(1); });

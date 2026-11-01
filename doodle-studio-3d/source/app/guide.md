@@ -628,7 +628,7 @@ Stage › Light › Shadows turns light and shadow on for the whole scene, chara
 
 Click anything in the Stage to get the Outline strip over the 3D view: 100% is Bunny's line, 40% thins it (the park's flowers read much better), 0 takes it off. It is saved with the scene and used in the render. Materials › Outlines: on / off does the same for a whole target in any look, and the colours stay. Face lines always stay.
 
-A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). Materials › Character colours sets Bunny and the outfit to a palette colour or any colour. Brand mustard and black stay the default.
+A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). A palette dresses the characters too: Whole scene recolours everything. Materials › Character colours overrides Bunny or the outfit by hand, and Palette goes back. Timeline › Length sets how long the shot runs, in frames or seconds.
 
 ## Speech bubbles
 

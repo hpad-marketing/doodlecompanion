@@ -233,3 +233,4 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 .pal-maker input[type=color]{width:36px;height:30px;padding:0}
 .pal-maker input[type=text]{min-width:170px;flex:1}
 .toast{pointer-events:none;user-select:none}
+#len-frames,#len-secs{width:68px}

@@ -17,7 +17,7 @@ const names = (process.argv[3] || Object.keys(cases).join(',')).split(',');
   for (const n of names) {
     const shot = { fps: 30, width: 720, height: 1280, character: 'bunny', frames: [{ expression: 1, earLScale: 100, earRScale: 100, cam: cases[n].cam ? { ...cam, tx: -0.2, dist: 1.5, tz: 0.2, pitch: 10 } : cam }], stage: cases[n] };
     const addons = { doodle_looks: path.join(appDir, 'blender', 'addons') }, L = o => ({ layers: { scene: { palette: 'dusk', addon: 'doodle_looks', ...o } }, addons });
-    shot.materials = { dusk: L({ look: 'ink-mustard' }), felt: L({ look: 'felt', ink: false }), feltlit: L({ look: 'felt', ink: false }), flatnoink: L({ look: 'ink-mustard', ink: false }), costume: L({ look: 'ink-mustard', bunny: '#B9A9E6', outfit: '#D9744F' }) }[n];
+    shot.materials = { dusk: L({ look: 'ink-mustard' }), felt: L({ look: 'felt', ink: false }), feltlit: L({ look: 'felt', ink: false }), flatnoink: L({ look: 'ink-mustard', ink: false }), costume: L({ look: 'ink-mustard' }) }[n];
     r.render({ name: 'Lights ' + n, shot, preview: true, still: 1 });
     await new Promise(res => { const t = setInterval(() => { if (r.status().state === 'idle') { clearInterval(t); res(); } }, 1500); });
   }
