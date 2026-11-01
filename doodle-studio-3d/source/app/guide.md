@@ -605,9 +605,7 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 
 ## 8. Appendix: every MCP tool
 
-These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
-
-`babble`, `blocks`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
+The full reference, with every tool's arguments, is the **MCP tool reference** at the end of this guide. The app writes it from its own tool list when the guide opens (and `get_guide` adds it for assistants; `get_guide section="tool reference"` returns only that part), so it always matches the build you have. A call with a missing or wrong argument comes back with a plain sentence that names the argument and what it should be.
 
 ### Control ids
 

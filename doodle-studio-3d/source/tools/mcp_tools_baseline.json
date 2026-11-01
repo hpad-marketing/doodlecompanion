@@ -1,0 +1,129 @@
+{
+ "note": "Tools an assistant may rely on. test_mcp_survival fails if one disappears or gains a required argument. Add new tools here when they ship.",
+ "tools": {
+  "get_guide": [],
+  "get_state": [],
+  "list_controls": [],
+  "set_values": [
+   "values"
+  ],
+  "key": [],
+  "delete_key": [
+   "id",
+   "frame"
+  ],
+  "set_ease": [
+   "id",
+   "frame",
+   "ease"
+  ],
+  "goto": [
+   "frame"
+  ],
+  "set_shot": [],
+  "add_shot": [],
+  "select_shot": [
+   "shot"
+  ],
+  "move_shot": [
+   "shot",
+   "to"
+  ],
+  "delete_shot": [
+   "shot"
+  ],
+  "new_scene": [],
+  "open_scene": [
+   "path"
+  ],
+  "save_as": [],
+  "undo": [],
+  "redo": [],
+  "save": [],
+  "render": [],
+  "render_scene": [],
+  "apply_camera_preset": [],
+  "carousel": [
+   "action"
+  ],
+  "set_idle": [],
+  "production": [
+   "action"
+  ],
+  "workflow": [
+   "action"
+  ],
+  "anim2": [
+   "action"
+  ],
+  "story2": [
+   "action"
+  ],
+  "post": [
+   "action"
+  ],
+  "cast": [
+   "action"
+  ],
+  "drawings": [
+   "action"
+  ],
+  "powers": [
+   "action"
+  ],
+  "features": [
+   "action"
+  ],
+  "render_status": [],
+  "set_character": [
+   "character"
+  ],
+  "library_list": [],
+  "library_use": [
+   "id"
+  ],
+  "set_stage": [
+   "stage"
+  ],
+  "lighting": [],
+  "set_ink": [
+   "target",
+   "percent"
+  ],
+  "storyboard": [],
+  "mirror_pose": [],
+  "blend_poses": [
+   "a",
+   "b",
+   "t"
+  ],
+  "materials": [],
+  "set_shot_look": [],
+  "add_marker": [
+   "note"
+  ],
+  "save_version": [
+   "label"
+  ],
+  "set_autosave": [],
+  "anim_tool": [
+   "action"
+  ],
+  "blocks": [
+   "action"
+  ],
+  "audio": [
+   "action"
+  ],
+  "story": [
+   "action"
+  ],
+  "blender_live": [],
+  "babble": [
+   "action"
+  ],
+  "remove_item": [
+   "index"
+  ]
+ }
+}
