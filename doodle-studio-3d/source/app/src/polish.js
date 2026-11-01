@@ -148,12 +148,13 @@ export async function diskOk(ctx, needGB = 5) {
 }
 
 // ---------------------------------------------------------------- fps meter
-let fpsOn = false, frames = 0, since = performance.now(), fps = 0;
+// fps = app frames a second; "drawn" = how many of them the 3D view actually redrew (it draws on demand)
+let fpsOn = false, frames = 0, drawn = 0, since = performance.now(), fps = 0, dps = 0;
 export const toggleFps = () => (fpsOn = !fpsOn);
-export function fpsTick() {
-  frames++;
+export function fpsTick(drew = true) {
+  frames++; if (drew) drawn++;
   const now = performance.now();
-  if (now - since >= 1000) { fps = Math.round(frames * 1000 / (now - since)); frames = 0; since = now; return true; }
+  if (now - since >= 1000) { fps = Math.round(frames * 1000 / (now - since)); dps = Math.round(drawn * 1000 / (now - since)); frames = drawn = 0; since = now; return true; }
   return false;
 }
-export const fpsText = () => (fpsOn ? `${fps} fps` : null);
+export const fpsText = () => (fpsOn ? `${fps} fps · ${dps} drawn` : null);
