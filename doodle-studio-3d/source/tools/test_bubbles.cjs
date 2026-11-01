@@ -122,7 +122,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
     const co = await ev(async () => { await ds3d.cast({ action: 'add', character: 'bunny', x: 0.6 }); await new Promise(r => setTimeout(r, 800)); ds3d.goto(20); const a = await ds3d.bubbles({ action: 'add', preset: 'talk', frame: 10, seconds: 3, speaker: 'c0' }), b = await ds3d.bubbles({ action: 'add', preset: 'think', frame: 10, seconds: 3 }); return [a.placed, b.placed]; });
     ok(co[0].tip && co[1].tip && Math.abs(co[0].tip.x - co[1].tip.x) > 0.05, 'each tail goes to its own speaker: ' + co[0].tip?.x?.toFixed(2) + ' and ' + co[1].tip?.x?.toFixed(2));
     await pg.waitForTimeout(300); await still('two');
-    const follow = await ev(async () => { ds3d.setValues({ headPitch: 0, rootZ: 0, 'cam.yaw': 0 }, 0, true); ds3d.setValues({ 'cam.yaw': 25 }, 30, true); ds3d.goto(12); const a = (await ds3d.bubbles({ action: 'list' })).bubbles[1].placed.tip.x; ds3d.goto(30); const b = (await ds3d.bubbles({ action: 'list' })).bubbles[1].placed.tip.x; return [a, b]; });
+    const follow = await ev(async () => { ds3d.setValues({ bodyTilt: 0 }, 12, true); ds3d.setValues({ bodyTilt: 25 }, 30, true); ds3d.goto(12); const a = (await ds3d.bubbles({ action: 'list' })).bubbles[1].placed.tip.x; ds3d.goto(30); const b = (await ds3d.bubbles({ action: 'list' })).bubbles[1].placed.tip.x; return [a, b]; });
     ok(Math.abs(follow[0] - follow[1]) > 0.02, 'the tail stays on a head that moves across the frame: ' + follow.map(v => v.toFixed(2)).join(' to '));
     await ev(() => ds3d.bubbles({ action: 'add', preset: 'star', frame: 20, seconds: 1 }));
     ok(await ev(() => ds3d.goto(30) === undefined), 'two at once is fine');
