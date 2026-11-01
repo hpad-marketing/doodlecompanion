@@ -11,6 +11,7 @@ const BLENDER_GUESSES = [
   'C:\\Program Files\\Blender Foundation\\Blender 4.4\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 5.0\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe',
+  'C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe',
 ];
 
 module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {

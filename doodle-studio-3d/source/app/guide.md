@@ -82,7 +82,7 @@ House preferences that apply to every animation:
 
 Doodle Studio 3D updates itself every hour from GitHub and keeps the previous version for rollback. Tools › Check for updates runs a check now. An update that would break either MCP (2D or 3D) rolls itself back.
 
-When a new Blender version is picked, the app renders a test frame first. It only switches if that frame passes. Blender 4.5 LTS, 5.0 and 5.1 all work: the render, scene, stage, looks and version tests pass on each (bpy 4.5.15, 5.0.1 and 5.1.2, 1 Nov). The app finds 4.4, 4.5, 5.0 and 5.1 in the usual install folder, and 4.5 LTS stays the safe default. If you installed the Doodle Library add-on in Blender itself, renders use that copy, so update it along with the app.
+When a new Blender version is picked, the app renders a test frame first. It only switches if that frame passes. Blender 4.5 LTS, 5.0, 5.1 and 5.2 all work: shot and stage renders and the version test pass on each (bpy 4.5.15, 5.0.1, 5.1.2 and 5.2.3, 1 Nov). On 5.2, outfits need the library's updated outfit scripts. The app finds 4.4, 4.5, 5.0, 5.1 and 5.2 in the usual install folder, and 4.5 LTS stays the safe default. If you installed the Doodle Library add-on in Blender itself, renders use that copy, so update it along with the app.
 
 ### The screen
 
