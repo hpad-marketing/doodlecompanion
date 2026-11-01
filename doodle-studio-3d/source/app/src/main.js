@@ -7,7 +7,7 @@ import { TRACK_IDS } from './rig.js';
 import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
-import { loadAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
+import { loadAudio, loadMusic, musicInfo, scrub as scrubAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
 import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js';
 import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, CHARACTERS, CATEGORIES, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
@@ -2552,16 +2552,24 @@ function drawTracks() {
   for (let f = 0; f <= project.length; f += step) ruler.append(h('div', { class: 'tick', style: `left:${f * ppf}px` }, `${f / project.fps}s`));
   if (fine) for (let f = 0; f <= project.length; f += fine) if (f % project.fps) ruler.append(h('div', { class: 'tick', style: `left:${f * ppf}px;opacity:.3;font-size:9px` }, String(f)));
   ruler.addEventListener('pointerdown', e => {
+    e.preventDefault();   // no text selection: a selection's native drag swallows the pointerup and the playhead sticks to the mouse
     const r = ruler.getBoundingClientRect(), w = DOCK.winOf(ruler);
-    const go = ev => goto(Math.round((ev.clientX - r.left) / ppf));
+    let at = -1;
+    const go = ev => { const f = Math.round((ev.clientX - r.left) / ppf); if (f === at) return; at = f; goto(f); if (!playing) scrubAudio(sceneStart() / scene.fps + frame / project.fps); };
+    const up = () => { w.removeEventListener('pointermove', mv); w.removeEventListener('pointerup', up); w.removeEventListener('pointercancel', up); w.removeEventListener('blur', up); };
+    const mv = ev => { if (ev.buttons) go(ev); else up(); };   // released outside the window
     go(e);
-    const mv = ev => go(ev), up = () => { w.removeEventListener('pointermove', mv); w.removeEventListener('pointerup', up); };
-    w.addEventListener('pointermove', mv); w.addEventListener('pointerup', up);
+    w.addEventListener('pointermove', mv); w.addEventListener('pointerup', up); w.addEventListener('pointercancel', up); w.addEventListener('blur', up);
   });
   ruler.append(...markerEls(polCtx(), ppf));
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
-  if (wave) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave])));
+  const fileName = p => String(p).split(/[\\/]/).pop();
+  if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))])));
+  const wantMusic = scene.music?.path || null;
+  if (wantMusic !== (musicInfo()?.path || null)) loadMusic(api, wantMusic, scene.music?.volume).then(() => drawTracks()).catch(() => {});
+  const bed = musicInfo() && waveform(scene.fps, sceneStart(), project.length, ppf, true);
+  if (bed) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: musicInfo().path }, 'Music'), lane([bed, h('span', { class: 'wave-name' }, fileName(musicInfo().path))])));
   rows.push(...layerRows(ppf));
   const ret = S2.retentionLane(h, scene, sceneStart(), project.length, ppf);
   if (ret) rows.push(h('div', { class: 'trow' }, h('div', { class: 'tname', title: 'Audience retention from YouTube Studio (story2 MCP tool, action retention). Mustard bars are the biggest drops.' }, 'Retention'), lane([ret])));

@@ -88,7 +88,7 @@ body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
 #frame-box{width:60px}
 .shot-chip small{font-weight:600;opacity:.75;margin-left:2px}
 .clock{font:800 12px system-ui;min-width:96px;text-align:right}
-#tracks{position:relative;overflow:auto;min-height:0}
+#tracks{position:relative;overflow:auto;min-height:0;user-select:none;-webkit-user-select:none}
 #tracks .ruler,#tracks .trow{display:grid;grid-template-columns:170px minmax(0,1fr)}
 #tracks .ruler{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--fg);height:22px}
 #tracks .ruler .lane,#tracks .trow .lane{position:relative}
@@ -140,7 +140,9 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 /* animator tools */
 #onion-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #frame.mirrored #view,#frame.mirrored #onion-layer{transform:scaleX(-1)}
-#tracks canvas.wave{position:absolute;left:0;top:0;height:22px;opacity:.75;pointer-events:none}
+#tracks .trow.audio{height:42px}
+#tracks canvas.wave{position:absolute;left:0;top:1px;height:40px;opacity:.75;pointer-events:none}
+#tracks .wave-name{position:absolute;left:4px;top:1px;font-size:10px;font-weight:700;pointer-events:none;background:var(--bg);padding:0 3px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* preflight and health check rows */
 .preflight { align-items: flex-start; gap: 8px; padding: 4px 0; }
@@ -229,3 +231,4 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 .pal-maker{margin-top:8px;padding:8px;border:var(--line);display:flex;flex-direction:column;gap:6px}
 .pal-maker input[type=color]{width:36px;height:30px;padding:0}
 .pal-maker input[type=text]{min-width:170px;flex:1}
+.toast{pointer-events:none;user-select:none}
