@@ -84,6 +84,17 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.click('#tabs button:has-text("Stage")');
   const off = await ev(() => { const v = ds3d.view || null; return v ? v.objects.filter(o => o.outline).every(o => !o.outline.visible) : true; });
   ok(off, 'outlines off reaches the Stage ' + JSON.stringify(await ev(() => [ds3d.scene.materials, ds3d.project?.materials, ds3d.view?.objects?.filter(o => o.outline).map(o => o.outline.visible).slice(0, 3)])));
+  // pieces and parts: the flowers from the Materials list
+  await p.click('#tabs button:has-text("Materials")'); await wait(300);
+  await p.waitForSelector('.part-row:has-text("Flowers")');
+  ok(await p.locator('.part-row:has-text("Flowers") .part').count() === 3, 'the flowers list petals, stems and centres');
+  await ev(() => { const c = document.querySelector('[aria-label="Flowers Stems"]'); c.value = '#2E8B57'; c.dispatchEvent(new Event('change', { bubbles: true })); });
+  ok((await ev(() => ds3d.scene.materials.parts?.flowers?.['1'])) === '#2E8B57', 'picking a colour saves that part');
+  await wait(400); await shot('9-flower-stems');
+  if (stills) await p.screenshot({ path: path.join(stills, '10-parts.png') });
+  await p.locator('.part-row:has-text("Flowers") button:has-text("Reset")').click();
+  ok(!(await ev(() => ds3d.scene.materials.parts)), 'Reset goes back to the palette');
+  await p.click('#tabs button:has-text("Stage")');
   await call('materials', { action: 'clear', target: 'scene' });
   ok(!(await ev(() => ds3d.scene.stage.inks)), '100% clears it');
   await call('lighting', { preset: 'off', shadows: false });

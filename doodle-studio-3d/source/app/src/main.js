@@ -194,7 +194,7 @@ const libCtx = () => ({
   defaultSpot, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem, editItem, itemTransform, dropItem, duplicateItem,
 });
 // Materials tab (materials.js): looks on the scene, characters, set or props, drawn by Blender
-const matCtx = () => ({ h, api, toast, pushUndo, scene: () => scene, project: () => project, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem,
+const matCtx = () => ({ h, api, toast, pushUndo, pieces: () => stage?.pieceList() || [], scene: () => scene, project: () => project, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem,
   changed: () => { dirty = true; apply(); updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
 // ---------------------------------------------------------------- live stage (stage3d.js): pick, place and move what is in the shot
 let stage = null;

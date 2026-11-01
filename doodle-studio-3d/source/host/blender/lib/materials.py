@@ -34,6 +34,7 @@ MUSTARD = '#E0A64B'
 INK_MODS = ('DS Ink', 'DSL Ink')
 FLOWER_HEAD = 0.06   # metres: a fill part this close to a flower's centre is a petal
 LUMP = 0.3
+PARTS = 8    # part numbers wrap here, as in app/src/stage3d.js
 SHAPE_STEP, MAX_PARTS = 2.0, 4000   # parts within this size ratio share a colour; past MAX_PARTS a model keeps one
 OUTFIT = re.compile(r'_(shirt|sleeve|cuff|hood|pelvis)')
 
@@ -300,8 +301,8 @@ class _Painter:
         if not isinstance(probe, bpy.types.Material):
             raise TypeError('the look returned %r, not a material' % (probe,))
         self.lit = self.make is not _flat and not self._flat_emission(probe)
-        # body outline: textured looks go without it unless it is switched on (face lines always stay)
-        self.ink = layer.get('ink') if layer.get('ink') is not None else self.make is _flat
+        # body outline: only Ink & Mustard starts with it, the rest go without unless it is switched on (face lines always stay)
+        self.ink = layer.get('ink') if layer.get('ink') is not None else (layer.get('look') or 'ink-mustard') == 'ink-mustard'
         self.fur = _fur_of(layer, addons) if self.make is not _flat else None
 
     @staticmethod
@@ -322,7 +323,7 @@ class _Painter:
             self.cache[hexcol] = self.make(rgb(hexcol))
         return self.cache[hexcol]
 
-    def paint(self, ob, fill_hex, ink_hex=None):
+    def paint(self, ob, fill_hex, ink_hex=None, over=None):
         """fill slots get fill_hex, ink slots the palette's ink. The swap happens on the object's
         own copy of its mesh data: the ink modifier joins its line geometry onto the mesh, so
         object-linked slots would land on the wrong faces."""
@@ -346,7 +347,7 @@ class _Painter:
             if not ink:
                 fill_mat = new
         if ob.type == 'MESH' and _rig_of(ob) is None:
-            self.segment(ob, fill_hex)
+            self.segment(ob, fill_hex, over)
         if self.fur and ob.type == 'MESH' and _rig_of(ob) is not None:   # characters only: a furry room would be millions of strands
             _grow_fur(ob, fill_mat, self.fur)
         if not self.ink:
@@ -362,13 +363,13 @@ class _Painter:
             self.cache[k] = self.make(rgb(hexcol))
         return self.cache[k]
 
-    def segment(self, ob, fill_hex):
+    def segment(self, ob, fill_hex, over=None):
         """a model is many separate parts in one mesh: parts of the same shape share a colour, and
         each shape takes the palette's next one, so a repaint never turns a whole tree one colour.
         Flowers: stems and leaves are told from petals by being away from a centre, and the centres
         take the accent. app/src/stage3d.js does the same, so the Stage matches."""
-        pieces = self.pal.get('pieces') or []
-        if len(pieces) < 2:
+        pieces, over = self.pal.get('pieces') or [], over or {}   # over: {'0': '#hex', '1': ..., 'c': centres}, chosen by hand
+        if len(pieces) < 2 and not over:
             return
         import bmesh
         me = ob.data
@@ -394,10 +395,10 @@ class _Painter:
             parts.append({'faces': faces, 'verts': vs, 'ink': f.material_index in ink_slots, 'mid': sum(vs, type(vs[0])()) / len(vs)})
         bm.free()
         fills = [p for p in parts if not p['ink']]
-        if not 2 <= len(parts) <= MAX_PARTS or not fills:
+        if len(parts) > MAX_PARTS or not fills or (len(parts) < 2 and not over):
             return
         s = pieces.index(fill_hex) if fill_hex in pieces else 0
-        colours = [pieces[(s + i) % len(pieces)] for i in range(len(pieces))]
+        colours = [pieces[(s + i) % len(pieces)] for i in range(len(pieces))] if len(pieces) > 1 else [fill_hex]
         centres = [p['mid'] for p in parts if p['ink']] if 'flower' in (str(ob.get('dsl_model') or '') + ob.name).lower() else []
         if centres:
             for p in fills:
@@ -414,22 +415,22 @@ class _Painter:
                 key = tuple(math.floor(math.log(max(d / span, 1e-3)) / math.log(SHAPE_STEP)) for d in dims)
                 groups.setdefault(key, []).extend(lump)
             order = sorted(groups, key=lambda k: (-sum(len(p['verts']) for p in groups[k]), k))
-            if len(order) < 2:
+            if len(order) < 2 and not over:
                 return
             for i, k in enumerate(order):
                 for p in groups[k]:
-                    p['part'] = i % len(colours)
+                    p['part'] = i % PARTS
         slots = {}
         for p in fills:
             i = p['part']
-            if i:
+            if i or str(i) in over:
                 if i not in slots:
-                    me.materials.append(self.raw(colours[i]))
+                    me.materials.append(self.raw(over.get(str(i)) or colours[i % len(colours)]))
                     slots[i] = len(me.materials) - 1
                 for n in p['faces']:
                     me.polygons[n].material_index = slots[i]
-        if centres:
-            me.materials.append(self.raw(self.pal['accent']))
+        if centres and (len(pieces) > 1 or 'c' in over):
+            me.materials.append(self.raw(over.get('c') or self.pal['accent']))
             for p in parts:
                 if p['ink']:
                     for n in p['faces']:
@@ -541,8 +542,11 @@ def apply(shot, cam, log, out_dir=None):
     spec = shot.get('materials') or {}
     layers = spec.get('layers') or {}
     per_item = {i: it['material'] for i, it in enumerate(shot.get('items') or []) if isinstance(it, dict) and it.get('material')}
-    if not any(layers.values()) and not per_item:
+    hand = spec.get('parts') or {}
+    if not any(layers.values()) and not per_item and not hand and not any(isinstance(it, dict) and it.get('parts') for it in shot.get('items') or []):
         return None
+    if not layers.get('scene'):
+        layers = {**layers, 'scene': {'look': 'ink-mustard', 'addon': 'doodle_looks', 'palette': 'brand'}}
     addons = spec.get('addons') or {}
     groups = classify()
     painters, report, lit = {}, {'targets': {}, 'failed': []}, []
@@ -589,7 +593,7 @@ def apply(shot, cam, log, out_dir=None):
                     p.paint_shell(ob)
                     n += 1
                 else:
-                    n += p.paint(ob, _piece_colour(p.pal, ob.get('dsl_prop') or ob.name, ob.get('dsl_prop') or ob.name))
+                    n += p.paint(ob, _piece_colour(p.pal, ob.get('dsl_prop') or ob.name, ob.get('dsl_prop') or ob.name), over=hand.get(ob.get('dsl_prop')))
             report['targets']['set'] = {'look': lay.get('look'), 'from': src, 'slots': n}
             lit.append(p)
     # props: each its own (from the Materials tab's Selected props), else the props layer, else the scene
@@ -599,7 +603,8 @@ def apply(shot, cam, log, out_dir=None):
             continue
         p = painter(lay, f'prop {idx}')
         if p:
-            n = sum(p.paint(ob, _piece_colour(p.pal, (shot['items'][idx] or {}).get('id', idx) if idx < len(shot.get('items') or []) else idx, ob.name)) for ob in obs)
+            it = (shot.get('items') or [{}] * (idx + 1))[idx] if idx < len(shot.get('items') or []) else {}
+            n = sum(p.paint(ob, _piece_colour(p.pal, it.get('id', idx), ob.name), over=it.get('parts')) for ob in obs)
             report['targets'][f'prop {idx}'] = {'look': lay.get('look'), 'from': src, 'slots': n}
             lit.append(p)
     if any(p.lit for p in lit):

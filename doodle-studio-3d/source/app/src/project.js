@@ -162,7 +162,8 @@ export function materialsOf(scene, shot) {
     if (v && v.look) layers[k] = v;
   }
   const light = { ...(S.light || {}), ...(T.light || {}) };
-  return Object.keys(layers).length ? { layers, ...(Object.keys(light).length ? { light } : {}) } : null;
+  const parts = { ...(S.parts || {}), ...(T.parts || {}) }, has = Object.keys(parts).length;   // one piece's parts in colours of your own
+  return Object.keys(layers).length || has ? { layers, ...(Object.keys(light).length ? { light } : {}), ...(has ? { parts } : {}) } : null;
 }
 
 // Blender bridge shot: one entry per frame, cam block per frame
