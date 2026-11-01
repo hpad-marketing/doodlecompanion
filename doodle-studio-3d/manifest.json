@@ -1,8 +1,8 @@
 {
- "version": "20261101-115548",
- "notes": "Set a shot's length on the timeline, in frames or seconds. A palette on the whole scene now colours Bunny and the outfit too; Character colours override it by hand.",
+ "version": "20261101-121317",
+ "notes": "New Flat colour look: pure palette colours with no light. Materials > Pieces and parts lists everything in the shot, so you can recolour any part, like the flowers' petals, stems and centres.",
  "runtime": "44.9.0",
- "published": "2026-11-01T06:25:48.953Z",
+ "published": "2026-11-01T06:43:17.376Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -100,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "ab8ecced173256b74664c9e1bdf3ae961a2e04a15539091062a10fe323b63c50",
-   "size": 55445,
-   "gz": "files/ab8ecced173256b74664c9e1bdf3ae961a2e04a15539091062a10fe323b63c50.gz"
+   "sha256": "d6640b82dc4808e1796a2b7f28c76be99def318d107a97585b7c6a7afec75a15",
+   "size": 55603,
+   "gz": "files/d6640b82dc4808e1796a2b7f28c76be99def318d107a97585b7c6a7afec75a15.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -185,9 +185,9 @@
    "gz": "files/562dd970b01fda7c4766463cd0afa8da06137708d78c0cd44c88ebbd12c9c274.gz"
   },
   "resources/app/blender/lib/materials.py": {
-   "sha256": "2622cbfd980a6c42ec1fb78c4d63429d947f52f4ea97157739880a2a79702a42",
-   "size": 28261,
-   "gz": "files/2622cbfd980a6c42ec1fb78c4d63429d947f52f4ea97157739880a2a79702a42.gz"
+   "sha256": "7ba9d23bdd3f1ce63fc9de9dcffee362500d28fe07f9f4f80c02784c5a0bfc2a",
+   "size": 29049,
+   "gz": "files/7ba9d23bdd3f1ce63fc9de9dcffee362500d28fe07f9f4f80c02784c5a0bfc2a.gz"
   },
   "resources/app/blender/lib/palettes.json": {
    "sha256": "403455b3cb277176500f24f5d3618e507a1c94f633e1390a7a9cd0ad8e25e40b",
@@ -370,14 +370,14 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "c8415bffbf53e56fd07adce038b412762a839cad631f2780f453807d3c623453",
-   "size": 295234,
-   "gz": "files/c8415bffbf53e56fd07adce038b412762a839cad631f2780f453807d3c623453.gz"
+   "sha256": "e4cd9648f8ac9a2fe71d6110ccf0fc6f9e94f7c47c67a5790d63e455cbce000c",
+   "size": 295274,
+   "gz": "files/e4cd9648f8ac9a2fe71d6110ccf0fc6f9e94f7c47c67a5790d63e455cbce000c.gz"
   },
   "resources/app/ui/src/materials.js": {
-   "sha256": "deb0ceaff3287546753086abf7a8516431ee9a646d9b7717e95bde8e8c732e5f",
-   "size": 22994,
-   "gz": "files/deb0ceaff3287546753086abf7a8516431ee9a646d9b7717e95bde8e8c732e5f.gz"
+   "sha256": "614db7c2aa31cee525adbdb7acd60099da16111043a049e2971448fce38d7e5d",
+   "size": 24874,
+   "gz": "files/614db7c2aa31cee525adbdb7acd60099da16111043a049e2971448fce38d7e5d.gz"
   },
   "resources/app/ui/src/mirror.js": {
    "sha256": "e1409676671560ed814a746253340c6851a16df1d3cf5d2aa3ff7101e13c265b",
@@ -410,9 +410,9 @@
    "gz": "files/6a5b12c145a89e893ae8fea5b5e80e797f44a2bfc8b237929391617ef90902bb.gz"
   },
   "resources/app/ui/src/project.js": {
-   "sha256": "b062f43b4cbed94a5f7f48fa63ad90aabf177cecc2ddad3c653d8c5b3dee9a52",
-   "size": 10830,
-   "gz": "files/b062f43b4cbed94a5f7f48fa63ad90aabf177cecc2ddad3c653d8c5b3dee9a52.gz"
+   "sha256": "2e96df28eb88ad4f8be1c59234f261ef15e6f7bacd03d8bdf799c56359cbde59",
+   "size": 11004,
+   "gz": "files/2e96df28eb88ad4f8be1c59234f261ef15e6f7bacd03d8bdf799c56359cbde59.gz"
   },
   "resources/app/ui/src/rig.js": {
    "sha256": "0f6b23bcac9a1460d6ecf436a85393c7c48c9c1e3b012467eac28112694e1daa",
@@ -420,9 +420,9 @@
    "gz": "files/0f6b23bcac9a1460d6ecf436a85393c7c48c9c1e3b012467eac28112694e1daa.gz"
   },
   "resources/app/ui/src/stage3d.js": {
-   "sha256": "c94b37cd5d98678d5b8aa18be37f73cc820bdec88298738a479b85fd2d28f464",
-   "size": 35735,
-   "gz": "files/c94b37cd5d98678d5b8aa18be37f73cc820bdec88298738a479b85fd2d28f464.gz"
+   "sha256": "4b0dcab9bf4d2c9dac4fff0c5a35d6b77061be659bfa3f484ec4d9de75ebb51f",
+   "size": 37476,
+   "gz": "files/4b0dcab9bf4d2c9dac4fff0c5a35d6b77061be659bfa3f484ec4d9de75ebb51f.gz"
   },
   "resources/app/ui/src/storytime.js": {
    "sha256": "6066cf498998a1b39acccc3eb4e418b770b7ca977ac1a0bcf83ab291ba5c9cef",
@@ -445,9 +445,9 @@
    "gz": "files/2a1c7e061fef35f14ea5af37e3545c019019b80891edf162ea2bee03fdafcc43.gz"
   },
   "resources/app/ui/src/ui.css": {
-   "sha256": "f19ebcee00f29b98bfe11a238def96a20aee88f330cfea2f9f60e5fbfdc2d403",
-   "size": 17666,
-   "gz": "files/f19ebcee00f29b98bfe11a238def96a20aee88f330cfea2f9f60e5fbfdc2d403.gz"
+   "sha256": "6cceefe7e6c14b9d8553d01d769e4eca5a5202cf0d2461d24120c2590a65478c",
+   "size": 18024,
+   "gz": "files/6cceefe7e6c14b9d8553d01d769e4eca5a5202cf0d2461d24120c2590a65478c.gz"
   },
   "resources/app/ui/src/ux2d.css": {
    "sha256": "01fd644ee0fe26ed9720d76234260cbb2978232e5e5b9b548e920d2f02395842",
@@ -610,9 +610,9 @@
    "gz": "files/4dce1795cb54035d92150f5769d88832865ade6995fb5796037b63a73f77ce14.gz"
   },
   "resources/app/blender/addons/doodle_looks/doodle_look.json": {
-   "sha256": "77e01d408397c2c1c35efe833bb12fe2645c3947a5eb2236d74ac1d8cd75f28f",
-   "size": 6484,
-   "gz": "files/77e01d408397c2c1c35efe833bb12fe2645c3947a5eb2236d74ac1d8cd75f28f.gz"
+   "sha256": "d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca",
+   "size": 5608,
+   "gz": "files/d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca.gz"
   },
   "resources/app/blender/addons/doodle_looks/__init__.py": {
    "sha256": "3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8",
@@ -658,6 +658,11 @@
    "sha256": "1149ff963957d122b9e5a178b775b7f12749bcfa7439c26ca68909c66fdf3f33",
    "size": 71940,
    "gz": "files/1149ff963957d122b9e5a178b775b7f12749bcfa7439c26ca68909c66fdf3f33.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/flat-colour.png": {
+   "sha256": "a02dca2d68da2fd5a56d20cb83e6ea98ce20ee4faf9405fd09e48b2245b263ee",
+   "size": 35807,
+   "gz": "files/a02dca2d68da2fd5a56d20cb83e6ea98ce20ee4faf9405fd09e48b2245b263ee.gz"
   },
   "resources/app/blender/addons/doodle_looks/previews/ink-mustard.png": {
    "sha256": "3042633a85a89007b4e20380d5425c5064ec17e4571ce00abc35035e2019cd1b",
