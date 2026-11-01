@@ -259,7 +259,8 @@ if cast:
 
 # gaps between a character's timeline blocks: everything on that rig is hidden there
 def key_hidden(rig, spans):
-    obs = [o for o in bpy.data.objects if o.type != 'ARMATURE' and (rig in o.parent_recursive or any(m.type == 'ARMATURE' and m.object == rig for m in getattr(o, 'modifiers', [])))]
+    kids = set(rig.children_recursive)
+    obs = [o for o in bpy.data.objects if o.type != 'ARMATURE' and (o in kids or any(m.type == 'ARMATURE' and m.object == rig for m in o.modifiers))]
     marks = {1: False}
     for a, b in spans:
         marks[b + 1] = False

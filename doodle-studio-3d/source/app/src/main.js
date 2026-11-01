@@ -612,7 +612,7 @@ function drawingsPanel() {
     h('img', { src: DR.thumb(d, 64), alt: '', width: 64, height: 64 }), h('span', {}, d.name))));
   const d = all[drawSel], i = drawSel;
   const setv = (k, v) => drRun({ action: 'set', index: i, [k]: v });
-  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(3), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'dr-f', title: tip }, label, inp); };
+  const num = (label, k, v, min, max, step, tip, scale = 1) => { const inp = h('input', { type: 'number', min, max, step, value: v == null ? '' : +(v * scale).toFixed(1), style: 'width:64px', 'aria-label': label, title: tip }); inp.addEventListener('change', () => setv(k, inp.value === '' ? null : Number(inp.value) / scale)); return h('label', { class: 'dr-f', title: tip }, label, inp); };
   const sel = (label, k, opts, tip) => { const s = h('select', { 'aria-label': label, title: tip }, ...opts.map(([v, n]) => h('option', { value: v, selected: d[k] === v }, n))); s.addEventListener('change', () => setv(k, s.value)); return h('label', { class: 'dr-f', title: tip }, label, s); };
   const grp = (name, ...kids) => h('div', { class: 'row dr-row' }, h('b', { class: 'dr-grp' }, name), ...kids.filter(Boolean));
   // the slider moves the line as it goes; letting go keeps it as one undo step
@@ -2471,8 +2471,7 @@ function buildTimelineTools() {
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),
         h('button', { 'aria-pressed': String(!!project.stepped), onclick: toggleStepped, title: 'Stepped blocking: every key holds until the next one, in the viewport and the render. Turn it off for smooth in-betweens.' }, 'Stepped')),
       g('Zoom', zoom, ib('fit', 'Fit the whole shot (\\). Shift-click: fit the selected keys', e => (e.shiftKey ? fitKeys() : setZoom(1)))),
-      g('Rows', rows, filter)),
-    h('div', { class: 'tl-row' },
+      g('Rows', rows, filter),
       g('Shots', ...chips, h('button', { onclick: () => addShot(false), title: 'Add a shot after this one (Ctrl+T)' }, '+ Shot')),
       g('Keys go to', layer, h('button', { onclick: () => newLayer(), title: 'Add an animation layer: its keys add on top of the base, so you can push a whole move without touching its keys' }, '+ Layer'),
         ...(L ? [h('button', { 'aria-pressed': String(L.on === false), onclick: () => { pushUndo('Mute layer'); L.on = L.on === false; dirty = true; buildTimelineTools(); apply(); }, title: 'Mute this layer to compare with the base' }, 'Mute'), lw, h('span', {}, '%')] : []))));

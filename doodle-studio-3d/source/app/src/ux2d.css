@@ -32,8 +32,6 @@ body.dock-dragging *{cursor:grabbing!important}
 /* canvas dock: format row, the frame, the tool rail on its right edge (as in the 2D app) */
 .canvas-top{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--fg) 35%,transparent);flex-wrap:wrap}
 .canvas-top select{height:30px}
-.canvas-top .seg{display:flex;gap:2px}
-.canvas-top .seg button{min-height:26px;height:26px;padding:0 7px;font-size:12px}
 .canvas-top #blender-live{height:30px;display:inline-flex;align-items:center;gap:6px}
 .canvas-top #blender-live svg{width:16px;height:16px}
 .canvas-top #blender-live.live{background:var(--fg);color:var(--bg)}
@@ -212,3 +210,9 @@ body.ux2d #timeline-tools{gap:4px;padding:6px 10px}
 #tracks .layer-name .lb{flex:none;min-height:20px;height:20px;min-width:20px;width:20px;padding:0;font-size:10px;line-height:1;border:1px solid var(--fg);background:transparent;color:var(--fg)}
 #tracks .layer-name .lb[aria-pressed=true]{background:var(--fg);color:var(--bg)}
 #tracks .layer-name .lsel{flex:none;width:68px;height:22px;min-height:22px;font-size:10px;padding:0 2px}
+
+.ux-group-name{display:none}
+#ease-select{width:124px}
+.ux-group .zoom{width:90px}
+#canvas-top select{min-width:0;flex:0 1 auto}
+#canvas-top{flex-wrap:nowrap}
