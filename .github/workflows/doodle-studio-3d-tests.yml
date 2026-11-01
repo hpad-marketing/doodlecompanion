@@ -54,13 +54,17 @@ jobs:
       - name: Install bpy, ffmpeg and Playwright
         run: |
           python -m pip install 'bpy==4.5.*'
-          sudo apt-get update -q && sudo apt-get install -yq ffmpeg
+          # ffmpeg for audio; EGL/GL (Mesa) so bpy can render on a machine with no GPU
+          sudo apt-get update -q && sudo apt-get install -yq ffmpeg libegl1 libgl1 libgl1-mesa-dri
           npm install --no-save --no-package-lock playwright@1.63.0
           npx playwright install --with-deps chromium
       - name: Test suites (shard ${{ matrix.shard }})
         env:
           DS3D_BPY: python
         run: node tools/run_tests.cjs --shard=${{ matrix.shard }} --json=results.json
+      - name: Blender logs of failed renders
+        if: failure()
+        run: find devout -name blender.log -newer tools/run_tests.cjs -exec sh -c 'echo "== $1"; tail -n 25 "$1"' _ {} \; 2>/dev/null || true
       - if: always()
         uses: actions/upload-artifact@v4
         with:
