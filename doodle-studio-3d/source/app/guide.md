@@ -159,7 +159,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - How: Shot › Co-stars…; `cast action=add|place|key|copy|motion|remove|list`.
 - Fits: dialogue, reactions, a chorus, a crowd of named characters.
 - Also try: `cast action=copy {mirror:true}` makes an instant mirror dance partner. Two Bunnies make an inner-voice or angel-and-devil argument.
-- Watch out: camera presets and Look at camera follow the lead. For OTS shots, place the co-star first, then pick `view: ots-l` or `ots-r`.
+- Watch out: camera presets and Look at camera follow the lead. For OTS shots, place the co-star first, then pick `view: ots-l` or `ots-r`. The default side-by-side spot gives a poor OTS (his back at the frame edge, and a "0% in frame" warning). A tested start: put the co-star across from the lead (`cast action=place {index: 0, x: -0.4, y: -1.4, turn: 180}`), then `apply_camera_preset {view: "ots-l", target: "group"}`, and check a still.
 
 ### 3.2 Posing and acting
 
@@ -224,6 +224,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - 233 mocap clips (CMU and Mesh2Motion: walks, runs, everyday actions, sports, idles, dance, gestures).
 - 37 performance moves made for Bunny: rapper, talker, singer, storyteller gestures (air quotes, counting, "anyway" wave, thumb over the shoulder, "this small"), and low- and high-angle staging.
 - How: Library tab › Motions; `library_list {category: motion, query}`, then `library_use {id, frame, mirror, blend}`.
+- Watch out: a motion longer than the shot makes the shot longer (a 108-frame clip turns a 40-frame shot into 108). Set the length back with `set_shot {length}` afterwards, or pick a shorter clip (each row lists its frames). The 757 count is the PC library; a library without the mocap and performance packs (like the cloud copy) lists 408.
 - Fits: start every shot from a motion and then adjust it. It's faster and cheaper than hand-keying.
 - Also try: mocap walks with a different face per stretch. The performance moves work for any confident talker, not just rap.
 - Watch out: clips with lots of arm movement were filtered out, because his head blocks raised arms. That's why walks dominate the mocap set.
@@ -284,6 +285,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 - Placement on the thirds: center, left, right
 - 44 eased moves: push-in, pull-out, pans, whips, crane, arcs, orbit, vertigo, handheld, follow…
 - How: Camera menu; `apply_camera_preset {target, size, angle, view, placement, move, seconds, frame}`; `{list:true}` returns every id.
+- Watch out (MCP): a size, angle or view sets the camera **at the playhead**; `frame` only says where a `move` starts. To frame a shot at frame 30, `goto {frame: 30}` first. Target, size, angle and placement stay from the last call, so send all of them every time.
 - Fits: fast coverage. Wide to set the place, mid for talk, close for the punchline.
 - With co-stars on stage, frame the wide with `target: group`. A preset that cuts a co-star off returns a warning, and the render blocks a co-star under 60% in frame (over-the-shoulder views are exempt).
 - Watch out: from a medium shot inward, Bunny's head is wider than a 9:16 frame and crops slightly at the sides. Eyes stay in frame except in the extreme close-up.
@@ -320,7 +322,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 - plus more
 
 **Stage controls.**
-- How: Library tab › Stage; `set_stage {stage: {set, setProps, time, sky, shadows, halftone, outfit, accessories, mouthSet}, shotOnly}`.
+- How: Library tab › Stage; `set_stage {stage: {set, setProps, time, sky, shadows, halftone, outfit, accessories, mouthSet}, shotOnly}`. `set` takes the room name (`bedroom`) or the library id (`set-bedroom`); a name that isn't a set is refused with a pointer to `library_list {category: "set"}`. `library_use {id: "set-…"}` does the same job.
 - Time of day: day, golden, night (lamps switch on).
 - Sky: day, sunset, stars, storm. The storm sky darkens everything under it, so mustard reads brown. Check a still before committing to it on a bright, happy beat.
 - `setProps {"rug": false}` hides pieces. Declutter by default.
@@ -341,7 +343,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 
 ### 3.8 Props
 
-**90 props modelled in 3D with real grips, plus 124 asset-pack pieces.** The packs include:
+**90 props modelled in 3D with real grips, plus 124 asset-pack pieces.** `library_list {category: "prop"}` returns 106: the 90 plus the 16 pack pieces you hold in a hand. The packs include:
 - reveal props that open
 - explainer boards
 - signs and placards with typed words
@@ -399,7 +401,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.13 Words on screen
 
 - **Captions** in EN and HI, word-by-word highlight (opt-in), SRT import and export.
-  - How: `post action=caption|captions|caption_lang|highlight|srt_import|srt_export|clear_captions`.
+  - How: `post action=caption|captions|caption_lang|highlight|srt_import|srt_export|clear_captions`. A caption's `frame` counts from the start of its shot, not the scene.
 - **Freeze-frame name labels** in ink text, with no box: `story2 action=freeze_label {text, frame, seconds}`.
 - **Chapter cards** from "Chapter:" markers: `story2 action=chapter_cards`. **YouTube chapters file:** `story action=chapters`.
 
@@ -436,7 +438,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 | One frame | `render {still}` | a PNG |
 | The whole scene, joined | `render_scene` | Unchanged shots are reused |
 | Half-size preview without cloth | add `preview:true` to either | |
-| Progress | `render_status` | |
+| Progress | `render_status` | `frame`/`frames`, `eta` in seconds and `etaMin` in minutes; once idle, `last` says how the last job ended (`state: "failed"` with `detail` and its checks folder). Always read `last` after a render: a failed one is not an error from `render`, which only queues the job |
 | Presets (Reel, Short, YouTube 16:9, draft) | `production action=preset` | |
 | Time estimate | `production action=estimate` | |
 | Overnight batch (sleeps the PC when done) | `production action=batch` | |
@@ -460,7 +462,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.17 Babble voice (typed lines, cute gibberish)
 
 Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
-- How: File › Babble voice (also in the Face tab's Voice section). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- How: File › Babble voice (also in the Face tab's Voice section). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at frame N**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`. `who` is `"lead"` for the lead character, or a co-star. Over MCP the styles are `syllables`, `letters` and `tones` (Chirps on the card is `tones`).
 - What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
 - Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
 - Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
@@ -475,7 +477,7 @@ The Materials tab (the last tab) dresses the shot in a material instead of the f
 - **Brand guards, all switchable:** Keep Bunny mustard (on), outfits take the palette's ink (near-black), the body outline is off for textured looks and on for Ink & Mustard (the Ink outline button switches it; face lines always stay), and lit looks cast no shadows unless you turn on Cast shadows.
 - **Light for lit looks** (every shot): key, fill, ambient, height, side and softness. Defaults: key 3.2, fill 0.3, ambient 0.5, height 28°, side 40°, softness 0.5, no shadows.
 - **Look add-ons** (for example ClayDoh): drop the add-on's folder or .zip into the Doodle Library's `looks` folder, or install it in Blender. It shows up as cards; the first click renders one test frame of Bunny wearing it, and only a look that passes can be picked. If it is later missing on a PC, that target renders Ink & Mustard and the log says so. The recipe an add-on needs is in `blender/addons/doodle_looks/CONTRACT.md`.
-- MCP: `materials action=list`, `materials action=apply {target, look, addon, params, palette, ink, keepCharacter, color, scope, item}`, `materials action=clear {target}`, `materials action=light {key, fill, ambient, height, angle, softness, shadows}`.
+- MCP: `materials action=list` (use each look's and palette's `id`, such as `clay` or `teal-coral`, not the card title or the add-on `key`), `materials action=apply {target, look, addon, params, palette, ink, keepCharacter, color, scope, item}`, `materials action=clear {target}`, `materials action=light {key, fill, ambient, height, angle, softness, shadows}`.
 
 ---
 
@@ -589,6 +591,8 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 - **"Blender was not found":** set it under Render › Blender location, or run `production action=fix {fix: pick-blender}`.
 - **Open in Blender: the button stays on "Blender opening…"** Blender is still building the shot (long shots take longer). If it never goes live, read `work\blender-live\<Scene>_<shot>\blender.log`.
 - **"Needs a yes first":** the call would replace unsaved work. Ask the user, then repeat it with `force: true`.
+- **A render "finished" but there is no video:** read `render_status` → `last`. A failed job shows `state: "failed"` and the checks folder; the cause is at the end of its `blender.log`.
+- **`production action=moderator_pass`** is left over from the retired moderator gate. Don't use it; preflight and the built-in rules replace it.
 
 ---
 

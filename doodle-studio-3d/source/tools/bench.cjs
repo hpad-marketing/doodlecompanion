@@ -18,7 +18,7 @@ const settings = { get: () => settingsData, set: p => Object.assign(settingsData
 const renders = require('../host/render.cjs')({ appDir: path.join(__dirname, '..', 'host'), settings,
   notify: j => {
     console.log('render', j.id, j.state, j.rules || '', j.video || j.detail || '');
-    if (page) page.evaluate(`window.ds3dRenderDone && window.ds3dRenderDone(${JSON.stringify({ id: j.id, kind: j.scene === 'carousel' ? 'carousel' : j.scene ? 'scene' : 'shot', state: j.state, rules: j.rules, detail: j.detail || null, video: j.video })})`).catch(() => {});
+    if (page) page.evaluate(`window.ds3dRenderDone && window.ds3dRenderDone(${JSON.stringify({ id: j.id, kind: j.scene === 'carousel' ? 'carousel' : j.scene ? 'scene' : 'shot', state: j.state, rules: j.rules, detail: j.detail || null, video: j.video, out: j.out, shots: j.shots, slides: j.slides || null })})`).catch(() => {});
   } });
 
 function benchStart(opts) {

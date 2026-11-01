@@ -143,6 +143,16 @@ function useFace(ctx, row, f) {
 export function setStage(ctx, patch, shotOnly = false) {
   const scene = ctx.scene(), project = ctx.project();
   const target = shotOnly ? (project.stage ||= {}) : (scene.stage ||= {});
+  if (typeof patch.set === 'string' && patch.set) {
+    // the stage wants the room ("bedroom"); a library id ("set-bedroom") is mapped, and an unknown
+    // room is refused here instead of failing later in Blender
+    const sets = libraryRows().filter(r => r.category === 'set');
+    const room = r => r.data?.room || r.id.replace(/^set-/, '');
+    const hit = sets.find(r => r.id === patch.set || room(r) === patch.set || room(r) === patch.set.replace(/^set-/, ''));
+    if (hit) patch = { ...patch, set: room(hit) };
+    else if (sets.length) throw Error(`No set "${patch.set}". library_list {category: "set"} lists them; pass the id or its room name.`);
+    else patch = { ...patch, set: patch.set.replace(/^set-/, '') };   // library not loaded yet
+  }
   ctx.pushUndo();
   for (const [k, v] of Object.entries(patch)) {
     if (k === 'set' && v !== target.set) delete target.setProps;   // pieces belong to their room
