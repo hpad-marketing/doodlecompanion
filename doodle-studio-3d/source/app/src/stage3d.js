@@ -29,15 +29,53 @@ const FX = {
 };
 const STAGE_BIAS = 1.2;            // outline push behind a set piece, in ink widths
 const CREASE_DEG = 32;            // edges sharper than this get a line, as the library's crease lines in Blender
+const LUMP = 0.3, SHAPE_STEP = 2, MAX_PARTS = 4000, PARTS = 8;   // as lib/materials.py
 // Fills read the scene's light and shadow when they are on (lit.js), flat mustard otherwise.
-const fillVS = `varying vec3 vN; varying vec3 vP; void main(){ vN = normalize(mat3(modelMatrix) * normal); vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
-const fillFS = `uniform vec3 base; uniform vec3 floorC; uniform vec3 roofC; uniform float room; varying vec3 vN; varying vec3 vP;
+const fillVS = `attribute float part; varying float vPart; varying vec3 vN; varying vec3 vP; void main(){ vPart = part; vN = normalize(mat3(modelMatrix) * normal); vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
+const fillFS = `uniform vec3 base; uniform vec3 partC[${PARTS}]; uniform vec3 floorC; uniform vec3 roofC; uniform float room; varying float vPart; varying vec3 vN; varying vec3 vP;
 ${litPars}
 void main(){
-  vec3 c = room > 0.5 && abs(vN.z) > 0.7 ? (vP.z < 1.0 ? floorC : roofC) : base;   // a room shell: walls, floor and ceiling
+  int k = int(vPart + 0.5);
+  vec3 c = k > 0 ? partC[k] : room > 0.5 && abs(vN.z) > 0.7 ? (vP.z < 1.0 ? floorC : roofC) : base;   // a room shell: walls, floor and ceiling
   gl_FragColor = vec4(mix(c, litInk, litBand(normalize(gl_FrontFacing ? vN : -vN), vP)), 1.0);
 #include <colorspace_fragment>
 }`;
+const FLOWER_HEAD = 0.06;         // metres: a fill part this close to a flower's centre is a petal
+// the separate parts of a model, cached on its geometry: { verts, mid }
+function islands(g) {
+  if (g.userData.islands) return g.userData.islands;
+  const P = g.attributes.position, n = P.count, id = new Int32Array(n).map((_, i) => i), weld = new Map();
+  const root = i => { while (id[i] !== i) i = id[i] = id[id[i]]; return i; };
+  for (let i = 0; i < n; i++) { const k = [P.getX(i), P.getY(i), P.getZ(i)].map(v => Math.round(v * 1e4)).join(); if (weld.has(k)) id[root(i)] = root(weld.get(k)); else weld.set(k, i); }
+  const I = g.index;
+  if (I) for (let t = 0; t < I.count; t += 3) { const a = root(I.getX(t)); id[root(I.getX(t + 1))] = a; id[root(I.getX(t + 2))] = root(a); }
+  const by = new Map();
+  for (let i = 0; i < n; i++) { const r = root(i); if (!by.has(r)) by.set(r, { verts: [], mid: new THREE.Vector3() }); const b = by.get(r); b.verts.push(i); b.mid.add(new THREE.Vector3().fromBufferAttribute(P, i)); }
+  const out = [...by.values()];
+  for (const b of out) {
+    b.mid.divideScalar(b.verts.length);
+    const v = new THREE.Vector3();
+    b.box = new THREE.Box3();
+    for (const i of b.verts) b.box.expandByPoint(v.fromBufferAttribute(P, i));
+    b.count = b.verts.filter(i => weld.get([P.getX(i), P.getY(i), P.getZ(i)].map(x => Math.round(x * 1e4)).join()) === i).length;
+  }
+  return (g.userData.islands = out);
+}
+// parts that sit inside each other are one form (Lumps in lib/materials.py)
+function lumps(all) {
+  if (all.length > 600) return all.map(p => [p]);
+  const top = all.map((_, i) => i), find = i => { while (top[i] !== i) i = top[i] = top[top[i]]; return i; };
+  const vol = all.map(p => { const s = p.box.getSize(new THREE.Vector3()); return Math.max(1e-12, s.x * s.y * s.z); });
+  all.forEach((p, i) => { for (let j = 0; j < i; j++) {
+    const c = p.box.clone().intersect(all[j].box);
+    if (c.isEmpty()) continue;
+    const s = c.getSize(new THREE.Vector3());
+    if (s.x * s.y * s.z > LUMP * Math.min(vol[i], vol[j])) top[find(i)] = find(j);
+  } });
+  const out = new Map();
+  all.forEach((p, i) => { const r = find(i); if (!out.has(r)) out.set(r, []); out.get(r).push(p); });
+  return [...out.values()];
+}
 const rnd = s => { let x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
 
 export class Stage {
@@ -55,7 +93,7 @@ export class Stage {
     // set pieces sit on the floor: a smaller push behind keeps their outline above the ground (Bunny's own stays as it is)
     this.outline = new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: { ...view.outlineUniforms, bias: { value: STAGE_BIAS } }, side: THREE.BackSide });
     this.fill = new THREE.ShaderMaterial({ vertexShader: fillVS, fragmentShader: fillFS, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-      uniforms: { ...LIT, base: { value: MUSTARD.clone() }, floorC: { value: MUSTARD.clone() }, roofC: { value: MUSTARD.clone() }, room: { value: 0 } } });
+      uniforms: { ...LIT, base: { value: MUSTARD.clone() }, partC: { value: Array.from({ length: PARTS }, () => MUSTARD.clone()) }, floorC: { value: MUSTARD.clone() }, roofC: { value: MUSTARD.clone() }, room: { value: 0 } } });
     this.fills = new Map();       // palette colour -> fill
     // crease and border lines: one ink width on screen, the same width as Bunny's outline
     this.lineMat = new LineMaterial({ color: INK.getHex(), linewidth: 4, worldUnits: false });
@@ -176,16 +214,50 @@ export class Stage {
     return l;
   }
   // a fill in a palette colour; shell = a room, with its own floor and ceiling
-  fillFor(hex, shell) {
+  fillFor(hex, shell, colours) {
     if (!hex) return this.fill;
-    const k = shell ? shell.wall + shell.floor + shell.ceiling : hex;
+    const k = shell ? shell.wall + shell.floor + shell.ceiling : hex + (colours || []).join();
     let m = this.fills.get(k);
     if (!m) {
       m = this.fill.clone();
-      m.uniforms = { ...LIT, base: { value: new THREE.Color(hex) }, floorC: { value: new THREE.Color(shell?.floor || hex) }, roofC: { value: new THREE.Color(shell?.ceiling || hex) }, room: { value: shell ? 1 : 0 } };
+      m.uniforms = { ...LIT, base: { value: new THREE.Color(hex) }, partC: { value: Array.from({ length: PARTS }, (_, i) => new THREE.Color(colours?.[i % colours.length] || hex)) }, floorC: { value: new THREE.Color(shell?.floor || hex) }, roofC: { value: new THREE.Color(shell?.ceiling || hex) }, room: { value: shell ? 1 : 0 } };
       this.fills.set(k, m);
     }
     return m;
+  }
+  // a model is many parts in one mesh: parts of a shape share a colour (Painter.segment in lib/materials.py)
+  segment(root, flower) {
+    const fills = [], inks = [];
+    root.traverse(o => { if (o.isMesh && !o.userData.isInk) (o.userData.isFill ? fills : inks).push(o); });
+    const mids = flower ? inks.flatMap(o => islands(o.geometry).map(i => i.mid)) : [];
+    for (const o of fills) {
+      const g = o.geometry;
+      if (g.getAttribute('part')) continue;
+      const a = new Float32Array(g.attributes.position.count), all = islands(g);
+      const inkParts = inks.reduce((n, x) => n + islands(x.geometry).length, 0);
+      if (all.length + inkParts >= 2 && all.length + inkParts <= MAX_PARTS) {
+        if (mids.length) { for (const i of all) if (Math.min(...mids.map(m => m.distanceTo(i.mid))) >= FLOWER_HEAD) for (const v of i.verts) a[v] = 1; }
+        else {
+          const box = new THREE.Box3().setFromBufferAttribute(g.attributes.position).getSize(new THREE.Vector3()), span = Math.max(box.x, box.y, box.z) || 1, groups = new Map();
+          for (const lump of lumps(all)) {
+            const B = lump.reduce((b, i) => b.union(i.box), new THREE.Box3()), s3 = B.getSize(new THREE.Vector3());
+            const key = [s3.x, s3.y, s3.z].sort((x, y) => x - y).map(d => Math.floor(Math.log(Math.max(d / span, 1e-3)) / Math.log(SHAPE_STEP)));
+            const s = key.join(); if (!groups.has(s)) groups.set(s, { key, list: [], n: 0 });
+            const b = groups.get(s); b.list.push(...lump); b.n += lump.reduce((n, i) => n + i.count, 0);
+          }
+          const order = [...groups.values()].sort((p, q) => q.n - p.n || p.key[0] - q.key[0] || p.key[1] - q.key[1] || p.key[2] - q.key[2]);
+          if (order.length > 1) order.forEach((b, n) => { for (const i of b.list) for (const v of i.verts) a[v] = n % PARTS; });
+        }
+      }
+      g.setAttribute('part', new THREE.BufferAttribute(a, 1));
+    }
+    return inks;
+  }
+  // hex and colours from the palette, nothing for plain mustard
+  paintParts(root, hex, colours, accent, flower) {
+    const inks = this.segment(root, flower);
+    this.setFill(root, this.fillFor(hex, null, colours));
+    if (flower) for (const c of inks) c.material = accent ? this.fillFor(accent) : this.inkMats.ink;
   }
   setFill(root, m) { root.traverse(o => { if (o.userData.isFill) o.material = m; }); }
   // one object's outline as a percent of Bunny's line; 0 takes it off
@@ -253,9 +325,10 @@ export class Stage {
     if (paintSig !== this.paintSig && this.setGroup) {
       this.paintSig = paintSig;
       const set = paint?.set;
-      this.setGroup.traverse(o => { const u = o.userData; if (u.ds_prop) this.setFill(o, !set ? this.fill : u.ds_shell ? this.fillFor(set.wall, set) : this.fillFor(set.piece(u.ds_prop))); });
+      this.setGroup.traverse(o => { const u = o.userData; if (!u.ds_prop) return; if (u.ds_shell) this.setFill(o, set ? this.fillFor(set.wall, set) : this.fill); else { const hex = set?.piece(u.ds_prop); this.paintParts(o, hex, hex && set.colours(hex), set?.accent, /flower/.test(u.dsl_model || u.ds_prop)); } });
       this.view.scene.background.set(set ? set.ceiling : MUSTARD);
     }
+    for (const who of [this.view, ...(this.view.actors || [])]) who.setColours(paint?.char?.body, paint?.char?.outfit);
     // items
     const want = [];
     items.forEach((it, i) => {
@@ -271,7 +344,7 @@ export class Stage {
         this.root.add(rec.obj);
       }
       const fill = paint?.item(it) || null;
-      if (rec.fill !== fill) { rec.fill = fill; this.setFill(rec.obj, this.fillFor(fill)); }
+      if (rec.fill !== fill) { rec.fill = fill; const c = paint?.itemParts(it); this.paintParts(rec.obj, fill, c?.colours, c?.accent, /flower/.test(it.id)); }
       const ink = noInk.item?.(it) ? 0 : it.ink ?? 100;
       if (rec.ink !== ink) { rec.ink = ink; this.setInk(rec.obj, ink); }
       const end = it.until ?? (kind === 'react' ? it.frame + REACT_FRAMES : kind === 'story' && STORY_FRAMES[it.id.split(':')[1]] ? it.frame + STORY_FRAMES[it.id.split(':')[1]] : length);

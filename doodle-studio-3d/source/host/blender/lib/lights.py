@@ -5,7 +5,7 @@ shot['stage'] = {
   'halftone': True,         # the shadows print as ink dots
   'lighting': {'preset': 'classic', 'target': 'lead' | 'costar:0' | 'item:2', 'turn': 0, 'height': 1.9,
                'distance': 2.6, 'key': 1.1, 'fill': 0.4, 'back': 0.9, 'keyA': -35, 'fillA': 45, 'backA': 145,
-               'soft': 0.5, 'shade': 0.32, 'amb': 0.15},
+               'keyZ': 1, 'fillZ': 1, 'backZ': 1, 'soft': 0.5, 'shade': 0.32, 'amb': 0.15},   # keyZ: of height
   'inks': {'flowers': 40, '@lead': 100, '@costar0': 80},    # percent of Bunny's line, by set piece or character
 }
 shot['items'][i]['ink'] = 40                                 # one prop
@@ -302,16 +302,16 @@ def rig(L, shot, arm, shadows, log):
     source = 'Tri-lighting add-on' if lamps else 'built in'
     lamps = lamps or _built_lamps(target)
     d, h = float(L.get('distance', 2.6)), float(L.get('height', 1.9))
-    r2 = d * d + (h - 0.5) ** 2
     size = 0.2 + 0.8 * float(L.get('soft', 0.5))   # a big lamp wraps round a form and the bands go
     for k, ob in lamps.items():
         a = math.radians(float(L.get('turn', 0)) + float(L.get(k + 'A', 0)))
         ob.parent = target
-        ob.location = (d * math.sin(a), -d * math.cos(a), h - 0.5)
+        z = h * float(L.get(k + 'Z', 1)) - 0.5
+        ob.location = (d * math.sin(a), -d * math.cos(a), z)
         ob.data.type = 'AREA'
         ob.data.shape = 'SQUARE'
         ob.data.size = size
-        ob.data.energy = float(L.get(k, 1.0)) * r2 * AREA_WATTS
+        ob.data.energy = float(L.get(k, 1.0)) * (d * d + z * z) * AREA_WATTS
         ob.data.color = (1, 1, 1)
         if hasattr(ob.data, 'use_shadow'):
             ob.data.use_shadow = shadows and k == 'key'

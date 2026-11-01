@@ -9,6 +9,11 @@ const SLIDERS = [['key', 'Key', 0, 3, 0.05], ['fill', 'Fill', 0, 2, 0.05], ['bac
   ['height', 'Height (m)', 0.3, 5, 0.05], ['distance', 'Distance (m)', 0.5, 6, 0.05], ['soft', 'Softness', 0, 1, 0.05], ['shade', 'Shadow depth', 0.05, 0.8, 0.01]];
 
 export const makeLighting = (id, turn, target = 'lead') => ({ preset: id, target, turn: Math.round(turn), ...LIGHT_PRESETS.find(p => p[0] === id)[3] });
+// your own setups, on this PC: [{ name, light }]
+const KEY = 'ds3d.lightPresets';
+export const myLights = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+const storeLights = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {} };
+export function saveLight(name, L) { const { target, ...light } = L; storeLights([...myLights().filter(x => x.name !== name), { name, light: { ...light, preset: 'mine:' + name } }]); }
 
 // who the light can centre on: the character(s), then the props and text in the shot
 function targets(ctx, project) {
@@ -27,7 +32,10 @@ export function lightControls(ctx, shotOnly) {
       toggle('Halftone dots', st.halftone, v => (v ? { halftone: true, shadows: true } : { halftone: null }), 'Comic-book halftone: the shadows print as ink dots in the render. Turns Shadows on.')),
     h('h3', {}, '3-point light'),
     h('div', { class: 'chips' }, h('button', { 'aria-pressed': String(!L), title: 'No 3-point light', onclick: () => put({ lighting: null }) }, 'Off'),
-      ...LIGHT_PRESETS.map(([id, name, tip]) => h('button', { 'aria-pressed': String(L?.preset === id), title: tip, onclick: () => put({ lighting: makeLighting(id, L?.turn ?? ctx.cameraYaw(), ctx.selectedTarget() ?? L?.target) }) }, name))));
+      ...LIGHT_PRESETS.map(([id, name, tip]) => h('button', { 'aria-pressed': String(L?.preset === id), title: tip, onclick: () => put({ lighting: makeLighting(id, L?.turn ?? ctx.cameraYaw(), ctx.selectedTarget() ?? L?.target) }) }, name)),
+      ...myLights().map(({ name, light }) => h('span', { class: 'my-light' },
+        h('button', { 'aria-pressed': String(L?.preset === light.preset), title: 'Your saved setup', onclick: () => put({ lighting: { ...light, target: ctx.selectedTarget() ?? L?.target ?? 'lead' } }) }, name),
+        h('button', { title: 'Delete this saved setup', 'aria-label': 'Delete ' + name, onclick: () => { storeLights(myLights().filter(x => x.name !== name)); ctx.rebuild(); } }, '×')))));
   if (L) {
     const pick = h('select', { 'aria-label': 'Centre the light on' }, ...targets(ctx, project).map(([v, n]) => h('option', { value: v }, n)));
     pick.value = L.target || 'lead';
@@ -41,6 +49,10 @@ export function lightControls(ctx, shotOnly) {
       r.addEventListener('change', () => { ctx.previewLighting(null); put({ lighting: { ...live } }); });
       box.append(h('label', { class: 'ctl' }, h('span', {}, label), r, out));
     }
+  }
+  if (L) {
+    const name = h('input', { type: 'text', placeholder: 'Name this setup', 'aria-label': 'Name this lighting setup' });
+    box.append(h('div', { class: 'row', style: 'margin-top:6px' }, name, h('button', { title: 'Keep these lights as your own preset', onclick: () => { if (name.value.trim()) { saveLight(name.value.trim(), L); ctx.rebuild(); } } }, 'Save preset')));
   }
   box.append(h('p', { class: 'hint' }, 'The Stage shows the light and shadow live. Blender builds the same lights in the render: with the Tri-lighting add-on, its TriLamp lights. A plain background has no floor to catch a shadow: pick a set to see it land.'));
   return box;

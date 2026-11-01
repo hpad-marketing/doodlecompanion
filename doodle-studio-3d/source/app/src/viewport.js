@@ -129,6 +129,23 @@ export class Viewport {
     }
   }
 
+  // a palette's colours for the body and the outfit; nothing for the brand mustard and black
+  setColours(body, outfit) {
+    const key = (body || '') + '|' + (outfit || '');
+    if (key === (this.colKey || '|')) return;
+    this.colKey = key;
+    const B = body ? new THREE.Color(body) : MUSTARD, F = outfit ? new THREE.Color(outfit) : INK;
+    for (const o of this.objects) {
+      const worn = /_(shirt|sleeve|cuff|hood|pelvis)/.test(o.m.name), col = o.g.attributes.color;
+      for (let i = 0; i < o.m.count; i++) {
+        const c = (o.m.materials[o.m.material[i]] || o.m.materials[0] || '').includes('ink') ? (worn ? F : INK) : B;
+        col.setXYZ(i, c.r, c.g, c.b);
+      }
+      col.needsUpdate = true;
+      o.mesh.material.uniforms?.base?.value.copy(B);
+    }
+  }
+
   // Bunny, the Koala or the Frog: same rig code, their own rest data, meshes and faces
   setCharacter(data) {
     this.skull = null;
@@ -140,7 +157,7 @@ export class Viewport {
     this.rig = new BunnyRig(data);
     this.meshes = data.meshes.map(decodeMesh);
     this.objects = [];
-    this._faceInk = 0;
+    this._faceInk = 0; this.colKey = null;
     this.faceState = { expression: 0, gaze: 0, mouth: 0, blink: 0 };
     this.buildFace();
     this.buildBunny();

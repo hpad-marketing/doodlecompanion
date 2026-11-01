@@ -21,8 +21,26 @@ export const LIGHT_PRESETS = [
     { key: 1.3, fill: 0.08, back: 0.4, keyA: -70, fillA: 60, backA: 150, height: 1.6, distance: 2.4, soft: 0.15, shade: 0.5 }],
   ['rim', 'Rim', 'The light is behind: dark in the middle, bright round the edges',
     { key: 0.3, fill: 0.15, back: 1.8, keyA: -30, fillA: 40, backA: 165, height: 1.8, distance: 2.4, soft: 0.3, shade: 0.5 }],
-  ['top', 'Top', 'From above, like a street lamp or a stage spot',
+  ['top', 'Overhead', 'Straight down from above, like a street lamp or a stage spot',
     { key: 1.2, fill: 0.12, back: 0.3, keyA: -10, fillA: 90, backA: 170, height: 3.4, distance: 0.9, soft: 0.3, shade: 0.45 }],
+  ['rembrandt', 'Rembrandt', 'High, 45° to one side: the far cheek falls dark with a small triangle of light',
+    { key: 0.95, fill: 0.05, back: 0.2, keyA: -48, fillA: 40, backA: 150, height: 2.5, distance: 2.2, soft: 0.15, shade: 0.5, fillZ: 0.5 }],
+  ['loop', 'Loop', 'A little off the nose and above: a small shadow loops down from the nose',
+    { key: 1.1, fill: 0.18, back: 0.3, keyA: -28, fillA: 35, backA: 150, height: 2.3, distance: 2.4, soft: 0.25, shade: 0.35, fillZ: 0.6 }],
+  ['butterfly', 'Butterfly', 'High and straight on, the glamour light: shadow under the nose and chin',
+    { key: 1.2, fill: 0.2, back: 0.3, keyA: 0, fillA: 0, backA: 170, height: 2.7, distance: 2, soft: 0.3, shade: 0.4, fillZ: 0.2 }],
+  ['split', 'Split', 'Straight from the side: exactly half lit, half dark',
+    { key: 1.3, fill: 0.02, back: 0.15, keyA: -90, fillA: 60, backA: 160, height: 1.1, distance: 2.4, soft: 0.1, shade: 0.55 }],
+  ['clamshell', 'Clamshell', 'One light above the lens, one below: bright, even, beauty look',
+    { key: 1, fill: 0.5, back: 0.3, keyA: 0, fillA: 0, backA: 170, height: 2.4, distance: 2.2, soft: 0.6, shade: 0.25, fillZ: 0.12 }],
+  ['highkey', 'High key', 'Bright and nearly shadowless, for comedy and adverts',
+    { key: 0.9, fill: 0.7, back: 0.5, keyA: -20, fillA: 30, backA: 160, height: 1.8, distance: 3, soft: 1, shade: 0.15 }],
+  ['lowkey', 'Low key', 'Mostly dark, one hard pool of light: noir and tension',
+    { key: 1.1, fill: 0.03, back: 0.15, keyA: -50, fillA: 50, backA: 150, height: 2.2, distance: 2, soft: 0.1, shade: 0.65, amb: 0.05 }],
+  ['silhouette', 'Silhouette', 'Only from behind: the character is a dark shape',
+    { key: 0.02, fill: 0, back: 2, keyA: -20, fillA: 20, backA: 180, height: 1.5, distance: 2.4, soft: 0.2, shade: 0.8, amb: 0.05 }],
+  ['horror', 'Under light', 'From below: the campfire ghost-story face',
+    { key: 1.1, fill: 0.05, back: 0.1, keyA: -12, fillA: 40, backA: 160, height: 1.6, distance: 1.8, soft: 0.2, shade: 0.55, keyZ: 0.08 }],
 ];
 
 export const LIT = {
@@ -74,7 +92,7 @@ export function lightTarget(view, stage, st) {
   return who.headPoint().setZ(0.5);
 }
 
-export const lightPos = (T, L, a) => new THREE.Vector3(T.x + L.distance * Math.sin((L.turn + a) * D2R), T.y - L.distance * Math.cos((L.turn + a) * D2R), L.height);
+export const lightPos = (T, L, a, z = 1) => new THREE.Vector3(T.x + L.distance * Math.sin((L.turn + a) * D2R), T.y - L.distance * Math.cos((L.turn + a) * D2R), L.height * z);
 
 // every frame: the bands and the light positions from the stage
 export function updateLit(view, stage, st) {
@@ -85,8 +103,8 @@ export function updateLit(view, stage, st) {
   LIT.litAmb.value = L?.amb ?? AMBIENT;
   if (L) {
     const T = lightTarget(view, stage, st);
-    [[L.keyA, L.key], [L.fillA, L.fill], [L.backA, L.back]].forEach(([a, level], i) => {
-      const p = lightPos(T, L, a); LIT.litP.value[i].copy(p); LIT.litI.value[i] = level; LIT.litR.value[i] = p.distanceTo(T);
+    [[L.keyA, L.key, L.keyZ], [L.fillA, L.fill, L.fillZ], [L.backA, L.back, L.backZ]].forEach(([a, level, z], i) => {
+      const p = lightPos(T, L, a, z ?? 1); LIT.litP.value[i].copy(p); LIT.litI.value[i] = level; LIT.litR.value[i] = p.distanceTo(T);
     });
     view.litAim = T;
   } else {

@@ -41,6 +41,12 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.click('.light-ctl button:has-text("Dramatic")');
   ok(await ev(() => ds3d.scene.stage.lighting?.preset === 'dramatic' && document.querySelectorAll('.light-ctl input[type=range]').length === 8), 'a preset saves on the scene and shows its eight sliders');
   await shot('3-dramatic');
+  ok(await ev(() => document.querySelectorAll('.light-ctl .chips button').length) >= 16, 'all the film lighting presets are there');
+  await p.click('.light-ctl button:has-text("Rembrandt")');
+  await ev(() => { const i = document.querySelector('.light-ctl input[type=text]'); i.value = 'My noir'; });
+  await p.click('.light-ctl button:has-text("Save preset")');
+  ok(await ev(() => !![...document.querySelectorAll('.my-light button')].find(b => b.textContent === 'My noir')), 'a setup saves as your own preset');
+  await shot('3b-rembrandt');
   await p.click('.light-ctl button:has-text("Classic")');
   await shot('4-classic');
   // a slider drag previews and saves only on release
@@ -69,7 +75,12 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await call('setInk', 'flowers', 100, false);
   // outlines off in a look: the Stage follows, the colours stay
   await call('materials', { action: 'apply', target: 'scene', look: 'felt', palette: 'dusk', ink: false });
+  await call('materials', { action: 'apply', target: 'scene', look: 'felt', palette: 'dusk', ink: false, bunny: '#B9A9E6', outfit: '#D9744F' });
   await wait(500); await shot('7-felt-no-outlines');
+  await p.click('#tabs button:has-text("Materials")'); await wait(400);
+  if (stills) await p.screenshot({ path: path.join(stills, '8-materials.png') });
+  ok(await ev(() => [...document.querySelectorAll('.mat-row .sub-label')].some(x => x.textContent === 'Outfit')), 'Bunny and Outfit colour rows show in Materials');
+  await p.click('#tabs button:has-text("Stage")');
   const off = await ev(() => { const v = ds3d.view || null; return v ? v.objects.filter(o => o.outline).every(o => !o.outline.visible) : true; });
   ok(off, 'outlines off reaches the Stage ' + JSON.stringify(await ev(() => [ds3d.scene.materials, ds3d.project?.materials, ds3d.view?.objects?.filter(o => o.outline).map(o => o.outline.visible).slice(0, 3)])));
   await call('materials', { action: 'clear', target: 'scene' });
