@@ -10,6 +10,7 @@ const BLENDER_GUESSES = [
   'C:\\Program Files\\Blender Foundation\\Blender 4.5\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 4.4\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 5.0\\blender.exe',
+  'C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe',
 ];
 
 module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
@@ -283,6 +284,8 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
 
   // ---- Blender versions: a new Blender is used only after it renders a test frame
   const ROOT = 'C:\\Program Files\\Blender Foundation';
+  // '5.10' sorts after '5.9' (parseFloat would put it before 5.2)
+  const vnum = v => { const m = String(v).match(/(\d+)\.(\d+)/); return m ? Number(m[1]) * 1000 + Number(m[2]) : -1; };
   function findBlenders() {
     const found = [];
     try {
@@ -296,7 +299,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     if (custom && fs.existsSync(custom) && !found.some(f => f.path === custom)) found.push({ path: custom, version: '?' });
     const verified = settings.get().blenderVerified || {};
     return found.map(f => ({ ...f, verified: verified[f.path] || null, inUse: f.path === blender() }))
-      .sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
+      .sort((a, b) => vnum(b.version) - vnum(a.version));
   }
 
   function verify(exe, dataDir) {

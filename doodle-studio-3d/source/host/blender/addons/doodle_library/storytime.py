@@ -39,7 +39,7 @@ def sound(name, frame, channel=None, volume=0.8):
         print('Doodle Library: no sound', p)
         return None
     se = sc.sequence_editor or sc.sequence_editor_create()
-    strips = getattr(se, 'strips', None) or se.sequences
+    strips = se.strips if hasattr(se, 'strips') else se.sequences  # an empty 5.x strips list is falsy
     ch = channel or (3 + len([s for s in strips if s.get(TAG)]) % 6)
     s = strips.new_sound('%s %d' % (name, int(frame)), p, ch, int(frame))
     s.volume = volume
