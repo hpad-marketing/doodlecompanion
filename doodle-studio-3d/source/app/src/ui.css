@@ -102,7 +102,8 @@ body[data-theme=dark] #menubar{border-bottom:1px solid #E0A64B}
 #tracks .idle-mark.blink{top:3px}
 #tracks .idle-mark.twitch{top:12px;border-radius:1px}
 #tracks .key.sel{background:var(--bg);border:2px solid var(--fg)}
-#playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);pointer-events:none;z-index:3}
+#playhead{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--fg);pointer-events:none;z-index:3}
+#playhead::before{content:'';position:absolute;top:0;left:-5px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--fg)}
 
 /* dialogs */
 dialog{border:var(--line);background:var(--bg);color:var(--fg);padding:16px;max-width:560px}

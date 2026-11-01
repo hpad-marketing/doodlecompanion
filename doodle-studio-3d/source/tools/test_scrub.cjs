@@ -41,6 +41,12 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   const g = await p.evaluate(() => +document.querySelector('#frame-box').value);
   await p.mouse.move(box.x + 700, y); await new Promise(r => setTimeout(r, 150));
   ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === g, 'a plain click on the ruler lets go too');
+  // the line sits under the mouse, at every zoom, and the first pixel is frame 0
+  const line = () => p.evaluate(() => { const r = document.querySelector('#playhead').getBoundingClientRect(); return r.left + r.width / 2; });
+  for (const x of [240, 700]) { await p.mouse.move(box.x + x, y); await p.mouse.down(); await p.mouse.up(); await new Promise(r => setTimeout(r, 80)); const gap = Math.abs(await line() - (box.x + x)); const ppf = box.width / 120; ok(gap <= ppf / 2 + 1, 'the playhead is under the mouse: ' + gap.toFixed(1) + ' px off'); }
+  await p.mouse.move(box.x + 1, y); await p.mouse.down(); await p.mouse.up(); await new Promise(r => setTimeout(r, 80));
+  ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === 0, 'the start of the ruler is frame 0');
+  ok(Math.abs(await line() - box.x) <= 1, 'and the line sits on the 0s tick');
   await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'scrub.png') });
   ok(!errs.length, 'no page errors ' + errs.slice(0, 3).join(' | '));
   await b.close(); dev.kill();

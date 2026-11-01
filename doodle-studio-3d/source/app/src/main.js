@@ -2467,7 +2467,7 @@ function updateHud() {
 let tlZoom = (() => { try { return Math.max(1, Number(localStorage.getItem('ds3d.tlzoom')) || 1); } catch { return 1; } })();
 let rowsMode = (() => { try { return localStorage.getItem('ds3d.rows') || 'keyed'; } catch { return 'keyed'; } })();
 let rowSel = new Set(), keyClip = null, lastCopy = null, lastZone = 'canvas';
-const NAME_W = 200;
+const NAME_W = 170;   // the name column: #tracks .ruler, .trow in ui.css
 const hiddenRows = () => new Set(scene.hiddenTracks || []);
 const folded = g => !!scene.folded?.[g];
 function setZoom(z) { tlZoom = Math.max(1, Math.min(40, z)); try { localStorage.setItem('ds3d.tlzoom', String(tlZoom)); } catch {} const zs = $('#tl-zoom'); if (zs) zs.value = String(Math.log2(tlZoom)); drawTracks(); centreOn(frame); return tlZoom; }
@@ -2814,7 +2814,7 @@ function keyEl(id, k, ppf) {
 
 function drawPlayhead() {
   const ph = $('#playhead');
-  if (ph) ph.style.left = `${NAME_W + frame * pxPerFrame() + 2}px`;
+  if (ph) ph.style.left = `${NAME_W + frame * pxPerFrame()}px`;
   const box = $('#frame-box');
   if (box && box.ownerDocument.activeElement !== box) box.value = frame;
   const clk = $('#clock');
