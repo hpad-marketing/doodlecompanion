@@ -16,7 +16,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 60000 });
   const ev = (fn, ...a) => p.evaluate(fn, ...a);
   const tabs = await ev(() => [...document.querySelectorAll('#tabs button')].map(b => b.textContent));
-  ok(tabs.at(-1) === 'Materials' && tabs.slice(0, 8).join() === 'Pose,Face,Animate,Camera,Stage,Library,Carousel,Render', 'Materials tab added after Render; the other tabs keep their places');
+  ok(tabs[8] === 'Materials' && tabs.slice(0, 8).join() === 'Pose,Face,Animate,Camera,Stage,Library,Carousel,Render', 'Materials tab added after Render; the other tabs keep their places');
   await p.click('#tabs button:has-text("Materials")');
   await p.waitForSelector('.mat-card');
   const cards = await ev(() => [...document.querySelectorAll('.mat-card')].map(c => [c.textContent, !!c.querySelector('img')]));

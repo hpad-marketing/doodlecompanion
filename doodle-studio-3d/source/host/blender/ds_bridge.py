@@ -257,6 +257,25 @@ if cast:
         if c['pushes']:
             print(f"cast: {c['name']} kept clear on {len(c['pushes'])} frames (up to {max(p['cm'] for p in c['pushes'])} cm)", flush=True)
 
+# gaps between a character's timeline blocks: everything on that rig is hidden there
+def key_hidden(rig, spans):
+    obs = [o for o in bpy.data.objects if o.type != 'ARMATURE' and (rig in o.parent_recursive or any(m.type == 'ARMATURE' and m.object == rig for m in getattr(o, 'modifiers', [])))]
+    marks = {1: False}
+    for a, b in spans:
+        marks[b + 1] = False
+    for a, b in spans:
+        marks[a + 1] = True
+    for o in obs:
+        for f, off in sorted(marks.items()):
+            o.hide_render = off
+            o.keyframe_insert('hide_render', frame=f)
+        o.hide_render = False
+if shot.get('hide'):
+    key_hidden(arm, shot['hide'])
+for c in cast:
+    if c.get('hide'):
+        key_hidden(c['rig'], c['hide'])
+
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
 

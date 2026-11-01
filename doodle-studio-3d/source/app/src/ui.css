@@ -158,7 +158,6 @@ dialog::backdrop{background:rgba(31,31,29,.45)}
 /* favourites and recents bar: one horizontal row in the header */
 #quickbar{display:flex;gap:4px;flex:0 1 auto;min-width:0;overflow:hidden}
 #quickbar button{min-height:28px;font-size:12px;padding:0 8px}
-#quickbar button.recent{border-style:dashed}
 
 /* live rule lights in the HUD */
 #hud span.rule.ok{background:#1F1F1D;color:#E0A64B}

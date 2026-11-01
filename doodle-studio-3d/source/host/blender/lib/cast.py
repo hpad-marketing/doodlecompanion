@@ -77,7 +77,7 @@ def setup(shot, cam, here, log):
         objs = _objs(new)
         c = {'name': entry.get('character', 'bunny'), 'rig': rig, 'settings': settings, 'meta': meta, 'S': meta['S'], 'root': root,
              'objs': objs, 'ears': collision.ear_vertex_sets(objs['head']), 'frames': entry.get('frames') or [], 'home': root.location.copy(),
-             'pose_bones': [b for b in rig.pose.bones if not b.name.startswith(('MCH-', 'DEF-'))], 'hint': None, 'pushes': []}
+             'pose_bones': [b for b in rig.pose.bones if not b.name.startswith(('MCH-', 'DEF-'))], 'hint': None, 'pushes': [], 'hide': entry.get('hide')}
         out.append(c)
         log(f'cast: {c["name"]} at ({root.location.x:.2f}, {root.location.y:.2f}) turned {entry.get("turn", 0)}°')
     return out

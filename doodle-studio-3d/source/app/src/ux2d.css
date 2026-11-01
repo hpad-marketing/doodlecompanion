@@ -179,3 +179,36 @@ body.ux2d #timeline-tools{gap:6px 12px;padding:5px 8px}
 .dr-f{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .dr-f input[type=number]{width:60px;height:28px;min-height:28px;padding:0 4px}
 .dr-f select{height:28px}
+
+/* room to breathe: one compact header, more air inside the panels */
+body.ux2d .topbar{min-height:44px;padding:5px 12px;gap:8px}
+body.ux2d .topbar #shot-name{flex:1 1 auto;width:auto;min-width:120px}
+body.ux2d #tabs button{min-height:38px;font-size:13.5px}
+#subtabs{padding:6px 12px;min-height:42px}
+#subtabs .sub-chips{gap:6px}
+body.ux2d #panel-content{padding:14px 16px}
+.ws{gap:14px 28px}
+.shelf{gap:6px}
+.chips{gap:6px}
+.dr-row{gap:8px 12px}
+.char-cards{margin:12px 0}
+.ws h3{margin:14px 0 6px}
+.stt-text{max-height:180px;overflow:auto;line-height:1.5;padding:8px 10px;border:1px solid var(--fg);user-select:text;white-space:pre-wrap}
+#workspace{--timeline-height:clamp(250px,36vh,380px)}
+.dock-title{cursor:grab}
+/* timeline toolbar */
+body.ux2d #timeline-tools{gap:4px;padding:6px 10px}
+.tl-row{gap:6px 16px}
+/* layer rows and blocks */
+#tracks .trow.block-row{height:32px;min-height:32px}
+#tracks .block-row .lane{position:relative;height:100%}
+#tracks .block{position:absolute;top:3px;bottom:3px;display:flex;align-items:center;background:var(--fg);color:var(--bg);font-size:11px;font-weight:700;cursor:grab;user-select:none;overflow:hidden;border-radius:2px;touch-action:none}
+#tracks .block>span{flex:1;min-width:0;padding:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none}
+#tracks .block>i{flex:none;width:9px;height:100%;cursor:ew-resize;background:color-mix(in srgb,var(--bg) 35%,transparent)}
+#tracks .block.draw,#tracks .block.voice{background:var(--bg);color:var(--fg);box-shadow:inset 0 0 0 2px var(--fg)}
+#tracks .block.draw>i{background:var(--fg)}
+#tracks .block.draw.sel{background:var(--fg);color:var(--bg)}
+#tracks.cutting .block{cursor:crosshair}
+#tracks .layer-name .lb{flex:none;min-height:20px;height:20px;min-width:20px;width:20px;padding:0;font-size:10px;line-height:1;border:1px solid var(--fg);background:transparent;color:var(--fg)}
+#tracks .layer-name .lb[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+#tracks .layer-name .lsel{flex:none;width:68px;height:22px;min-height:22px;font-size:10px;padding:0 2px}
