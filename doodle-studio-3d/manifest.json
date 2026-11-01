@@ -1,8 +1,8 @@
 {
- "version": "20261031-224154",
- "notes": "Materials tab looks now read clearly apart: lumpy clay with thumb dents, fuzzy wool felt, crumpled-paper facets, rich satin vinyl and crackle-glaze ceramic (stronger defaults, new look pictures). Also includes the Materials tab from 20261031-205914.",
+ "version": "20261101-022937",
+ "notes": "Materials: new Plush look with real fur strands on characters (face kept clear). Textured looks now drop the body outline by default and keep the face lines; the Ink outline button turns it back on.",
  "runtime": "44.9.0",
- "published": "2026-10-31T22:41:55.000Z",
+ "published": "2026-11-01T02:29:52.455Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "527c2fbbc82307c087b83f641482212abbd22f581301fc8549ebb9014bb8ee29",
@@ -100,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "88cc4cedeacbb5d5808c2b31e4e0b7828d5889c6289d1b59caa8e50b309b89eb",
-   "size": 50119,
-   "gz": "files/88cc4cedeacbb5d5808c2b31e4e0b7828d5889c6289d1b59caa8e50b309b89eb.gz"
+   "sha256": "07353b8afd422e3d766c0033efa07730b69dd7d1ee2f72e5a8914be5f4aa1ec4",
+   "size": 50303,
+   "gz": "files/07353b8afd422e3d766c0033efa07730b69dd7d1ee2f72e5a8914be5f4aa1ec4.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -180,9 +180,9 @@
    "gz": "files/c41cf43204e2635f0338ba8f9c5537bc2184f51b8d910d769586c99da97f2ddb.gz"
   },
   "resources/app/blender/lib/materials.py": {
-   "sha256": "b452569f4ec623e2b2f9ad099a9f58025cd77fad6762a706dc28a6cbe948371a",
-   "size": 16857,
-   "gz": "files/b452569f4ec623e2b2f9ad099a9f58025cd77fad6762a706dc28a6cbe948371a.gz"
+   "sha256": "be9d075963df001afe23e0582a41ed78f5ee46fbfc829281bbee865f989bd2d4",
+   "size": 22505,
+   "gz": "files/be9d075963df001afe23e0582a41ed78f5ee46fbfc829281bbee865f989bd2d4.gz"
   },
   "resources/app/blender/lib/palettes.json": {
    "sha256": "bd1867b2621ff93db83ee1ecad64bd655f0c93fbbcaa832f0d750530059d0891",
@@ -320,9 +320,9 @@
    "gz": "files/14cb8f523044af6245f91405f01fac4a5309b0dafd32dee248e8cfb85fb49ddd.gz"
   },
   "resources/app/ui/src/materials.js": {
-   "sha256": "545c13e24637729615301236dbfeb592949336a5122883fbb5c32190cf511051",
-   "size": 17474,
-   "gz": "files/545c13e24637729615301236dbfeb592949336a5122883fbb5c32190cf511051.gz"
+   "sha256": "182c199014c98e1805c5f83375777ccc195967bb1429875af9ff891258bb6ee5",
+   "size": 17731,
+   "gz": "files/182c199014c98e1805c5f83375777ccc195967bb1429875af9ff891258bb6ee5.gz"
   },
   "resources/app/ui/src/mirror.js": {
    "sha256": "af066be4a65593a51273e49a427e8ac8c43eeadd625cb80cd7efc0a0984fa994",
@@ -530,19 +530,19 @@
    "gz": "files/291d5451e15d2a5ab3d7b75f47332f9f544f46eb0f7945f103c1d97d850bfba5.gz"
   },
   "resources/app/blender/addons/doodle_looks/CONTRACT.md": {
-   "sha256": "632c2b950234c015ddb6f0855ad6de60ec4f9947d153bdd0ef7def3c651843c9",
-   "size": 4435,
-   "gz": "files/632c2b950234c015ddb6f0855ad6de60ec4f9947d153bdd0ef7def3c651843c9.gz"
+   "sha256": "09307afd21cab6ebd1b2ed5580381f7031b8ac03e5247f6d3d19b1cd04fcf75c",
+   "size": 4682,
+   "gz": "files/09307afd21cab6ebd1b2ed5580381f7031b8ac03e5247f6d3d19b1cd04fcf75c.gz"
   },
   "resources/app/blender/addons/doodle_looks/__init__.py": {
-   "sha256": "e12d11c5064e1a1594e327d0c61e55befbcf22d372ef7e821dd02d0d1b916f6c",
-   "size": 12768,
-   "gz": "files/e12d11c5064e1a1594e327d0c61e55befbcf22d372ef7e821dd02d0d1b916f6c.gz"
+   "sha256": "9c77a79fefedc614e5553a8985670f4354ab73ebcc8dcf7c0860c2eb6e52c86b",
+   "size": 13331,
+   "gz": "files/9c77a79fefedc614e5553a8985670f4354ab73ebcc8dcf7c0860c2eb6e52c86b.gz"
   },
   "resources/app/blender/addons/doodle_looks/doodle_look.json": {
-   "sha256": "f8b2e7eb19c8964bb16108980a1685d0d518126be34a8b878d017b19696f994f",
-   "size": 5267,
-   "gz": "files/f8b2e7eb19c8964bb16108980a1685d0d518126be34a8b878d017b19696f994f.gz"
+   "sha256": "135bb6941ca945a7472c0a8ba168b5890b930a80c41e2296c4bd565423bde697",
+   "size": 6210,
+   "gz": "files/135bb6941ca945a7472c0a8ba168b5890b930a80c41e2296c4bd565423bde697.gz"
   },
   "resources/app/blender/addons/doodle_looks/previews/cel.png": {
    "sha256": "772425e5ec96bcd0a0853f8500c04c1f03eaac0d34f13cb08b33fc658d2b8c2d",
@@ -573,6 +573,11 @@
    "sha256": "297be73d361f19bfb06a39ca67a7a8573bda8f7e9b081a1311fcf4509cc42a1f",
    "size": 51620,
    "gz": "files/297be73d361f19bfb06a39ca67a7a8573bda8f7e9b081a1311fcf4509cc42a1f.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/previews/plush.png": {
+   "sha256": "843d73cb90dd9a2e5e15095d57c3ffd190b049ed4e5c6bd46e858ba32ef7b0b5",
+   "size": 71447,
+   "gz": "files/843d73cb90dd9a2e5e15095d57c3ffd190b049ed4e5c6bd46e858ba32ef7b0b5.gz"
   },
   "resources/app/blender/addons/doodle_looks/previews/vinyl.png": {
    "sha256": "daadac7366debad900b95f20798a9275801489d3338f60b22e8732ae30a8a598",

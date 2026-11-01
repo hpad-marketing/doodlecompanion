@@ -38,6 +38,7 @@ Everything else in the add-on (panels, operators, its own UI in Blender) keeps w
 | `material` | the name of the function to call (default `material`) |
 | `looks[].id` | stable id, saved in projects. Don't rename it once shipped |
 | `looks[].flat` | `true` = unlit flat repaint (the studio paints it itself and never calls you) |
+| `looks[].fur` | `true` = the studio grows short fur strands on characters wearing this look, kept clear of the face. The params `furLength` (cm), `furDensity` (0..1) and `furTilt` (0..1) steer it when present |
 | `looks[].preview` | optional picture for the look card (png/jpg/webp, under 1.5 MB; 200×300 looks best). With no picture, the card shows the test frame instead |
 | `params[].type` | `float`, `int`, `bool` or `color` (`"#RRGGBB"`). Each one becomes a slider, a switch or a swatch in the tab |
 
@@ -87,8 +88,9 @@ manifest has none.
 
 ## 5. What the studio keeps for itself
 
-- The ink outline (the DS Ink / DSL Ink hull and lines) stays brand ink unless the palette
-  says otherwise. Fill slots get your material, and slots that are already near-black ink stay ink.
+- The body outline (the DS Ink / DSL Ink hull and lines) is off for textured looks unless the
+  user switches it on. Face lines always stay. Fill slots get your material, and slots that are
+  already near-black ink stay ink.
 - Faces (eyes, mouth) are never repainted.
 - Lights: one soft key sun and one fill. Cast shadows are off unless the shot turns them on.
 - A look only changes what Blender renders. The live 3D view keeps the ink style, so editing
