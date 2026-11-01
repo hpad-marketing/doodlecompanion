@@ -2698,7 +2698,7 @@ function buildTimelineTools() {
         ib('next', 'Next frame (→ or .)', () => goto(frame + 1)), ib('nextkey', 'Next key (↓ or \')', () => stepKey(1)), ib('end', 'Last frame (End)', () => goto(project.length - 1)),
         ib('loop', 'Loop playback (L)', () => { loopPlay = !loopPlay; buildTimelineTools(); toast(loopPlay ? 'Playback loops' : 'Playback stops at the end'); }, 'loop-btn', loopPlay)),
       g('Frame', box, h('span', { class: 'of', id: 'clock' })),
-      g('Length', lenFrames, h('span', { class: 'of' }, 'frames'), lenSecs, h('span', { class: 'of' }, 's')),
+      g('Length', lenFrames, h('span', { class: 'of' }, 'f'), lenSecs, h('span', { class: 'of' }, 's')),
       g('Edit', ib('key', 'Key the whole pose and face (K). Shift+K keys the camera.', () => keyGroup(BUNNY_IDS.concat(FACE_IDS))), ease,
         ib('cut', 'Scissors: click a block to cut it in two', () => { cutMode = !cutMode; $('#tracks').classList.toggle('cutting', cutMode); buildTimelineTools(); }, 'scissors-btn', cutMode),
         h('button', { id: 'curves-btn', 'aria-pressed': String(curves), onclick: () => toggleCurves(), title: 'Graph editor: the curves of this part\'s keys, with a spacing chart for the selected key' }, 'Curves'),

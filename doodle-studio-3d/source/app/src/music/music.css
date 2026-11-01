@@ -101,3 +101,4 @@ body.music-full #dock-tools{position:fixed;inset:30px 0 0 0;z-index:40;backgroun
 #tracks .song-bar{position:absolute;top:0;bottom:0;width:1px;background:var(--fg);opacity:.5;pointer-events:none}
 .mus-addrow{padding:5px 6px;gap:4px}
 .mus-addrow button{min-height:24px;padding:0 7px;font-size:11px}
+.mus-tname button{max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

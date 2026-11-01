@@ -16,7 +16,7 @@ const mirror = require('../host/mirror.cjs')({ appDir: path.join(__dirname, '..'
   withMaster: s => s, folders: n => { const work = path.join(out, 'DeepInDoodles', String(n || 'scene'), 'work'); fs.mkdirSync(work, { recursive: true }); return { work }; },
   env: () => ({ DSL_LIBRARY: libDir(), DSL_BUNNY: path.join(__dirname, '..', 'host', 'blender') }) });
 start({ root: path.join(__dirname, '..', 'app'), statics: { lib: libDir, models: () => path.join(out, 'models') }, port: PORT, mcp: require('../host/mcp.cjs')({ call: async () => { throw Error('dev server: no app window to drive'); }, api: {} }), api: { ...mirror.api,
-  ...require('../host/looks.cjs')({ appDir: path.join(__dirname, '..', 'host'), settings: { get: () => ({ libraryDir: libDir() }) }, dataDir: out, blender: () => (process.env.DS3D_BPY ? path.join(__dirname, 'fakeblender.sh') : null) }).api,
+  'music-sounds': async () => ({ sounds: {} }), ...require('../host/looks.cjs')({ appDir: path.join(__dirname, '..', 'host'), settings: { get: () => ({ libraryDir: libDir() }) }, dataDir: out, blender: () => (process.env.DS3D_BPY ? path.join(__dirname, 'fakeblender.sh') : null) }).api,
   save: ({ project, path: p }) => { const f = p || path.join(out, (project.name || 'shot') + '.ds3d.json'); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
   open: () => ({}),
   'save-at': ({ project, path: p }) => { const f = p.endsWith('.ds3d') ? p : p + '.ds3d'; fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(project, null, 1)); return { path: f }; },
