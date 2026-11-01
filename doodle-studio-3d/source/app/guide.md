@@ -624,7 +624,7 @@ These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` f
 
 ## Light, shadows and outlines
 
-Stage › Set & light › Shadows turns light and shadow on for the whole scene, characters included. It is off by default: the doodle look is flat. The lighting presets (Classic, Soft, Dramatic, Rim, Overhead, Rembrandt, Loop, Butterfly, Split, Clamshell, High key, Low key, Silhouette, Under light, plus any you save) put a key, a fill and a back light round whoever is selected, or whatever you pick under Centre on, and they follow it as it moves. The sliders show live in the 3D view. Blender builds the same lights in the render, using the Tri-lighting add-on's TriLamp lights if it is installed. A plain background has no floor to catch a shadow.
+Stage › Light › Shadows turns light and shadow on for the whole scene, characters included. It is off by default: the doodle look is flat. The lighting presets (Classic, Soft, Dramatic, Rim, Overhead, Rembrandt, Loop, Butterfly, Split, Clamshell, High key, Low key, Silhouette, Under light, plus any you save) put a key, a fill and a back light round whoever is selected, or whatever you pick under Centre on, and they follow it as it moves. The sliders show live in the 3D view. Blender builds the same lights in the render, using the Tri-lighting add-on's TriLamp lights if it is installed. A plain background has no floor to catch a shadow.
 
 Click anything in the Stage to get the Outline strip over the 3D view: 100% is Bunny's line, 40% thins it (the park's flowers read much better), 0 takes it off. It is saved with the scene and used in the render. Materials › Outlines: on / off does the same for a whole target in any look, and the colours stay. Face lines always stay.
 

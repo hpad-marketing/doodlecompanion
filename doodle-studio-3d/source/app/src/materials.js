@@ -188,8 +188,7 @@ export function materialsPanel(ctx) {
       h('button', { 'aria-pressed': String(inkOn(layer, cur)), title: 'The ink outline around bodies, set and props on this target, in any look: the colours stay. Face lines always stay. Textured looks start without it. The 3D view follows.', onclick: () => set({ ink: !inkOn(layer, cur), look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, 'Outlines') }, inkOn(layer, cur) ? 'Outlines: on' : 'Outlines: off'),      h('label', { class: 'row', title: 'Paint this target\'s main colour; its other parts keep the palette' }, 'One colour', colour),
       layer.color ? h('button', { onclick: () => { const q = { ...layer }; delete q.color; set({ ...q, color: undefined }, 'Palette colours'); } }, 'Use palette colours') : null,
       h('button', { title: 'Back to Ink & Mustard for this target', onclick: () => set(null, 'Ink & Mustard') }, 'Reset'),
-      h('button', { class: 'primary', title: 'Render the frame at the playhead in Blender to see the material for real (Ctrl+Shift+R)', onclick: () => ctx.renderFrame() }, 'Preview this frame'),
-      h('button', { title: 'Open the shot in Blender, live: the material shows in Blender\'s own view', onclick: () => ctx.openBlender() }, 'Open in Blender')));
+      h('button', { class: 'primary', title: 'Render the frame at the playhead in Blender to see the material for real (Ctrl+Shift+R)', onclick: () => ctx.renderFrame() }, 'Preview this frame'),));
 
   // Bunny and the outfit: palette swatches, any colour, or the brand mustard and black
   if (ui.target === 'scene' || ui.target === 'character') {
@@ -217,7 +216,7 @@ export function materialsPanel(ctx) {
     return h('label', { class: 'ctl' }, h('span', { class: 'name' }, label), r, n);
   };
   root.append(h('h3', {}, 'Light for lit looks (every shot)'), h('div', { class: 'mat-ctls' }, ...LIGHT.map(lightCtl)),
-  h('p', { class: 'hint' }, 'For clay, vinyl, felt, paper and ceramic. A lighting preset in Stage › Set & light replaces these lights.'));
+  h('p', { class: 'hint' }, 'For clay, vinyl, felt, paper and ceramic. A lighting preset in Stage › Light replaces these lights.'));
 
   // 6. look add-ons
   const extra = cache.looks.filter(l => l.source !== 'built-in');

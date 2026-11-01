@@ -1,4 +1,4 @@
-// Stage › Set & light: the Shadows button, the 3-point presets with their sliders, and the Outline
+// Stage › Light: the Shadows button, the 3-point presets with their sliders, and the Outline
 // strip that shows over the 3D view for whatever is selected. Every change shows in the Stage at
 // once; the shot only saves (and Blender only rebuilds) when a slider is let go.
 import { LIGHT_PRESETS } from './lit.js';
@@ -26,11 +26,13 @@ export function lightControls(ctx, shotOnly) {
   const { h } = ctx, scene = ctx.scene(), project = ctx.project(), st = stageOf(scene, project), L = st.lighting;
   const put = patch => { setStage(ctx, patch, shotOnly); ctx.rebuild(); };
   const toggle = (label, on, patch, title) => h('button', { 'aria-pressed': String(!!on), title, onclick: () => put(patch(!on)) }, label);
+  const tune = h('div', { class: 'light-ctl' });
   const box = h('div', { class: 'light-ctl' },
+    h('h3', {}, 'Shadows'),
     h('div', { class: 'chips' },
       toggle('Shadows', st.shadows, v => (v ? { shadows: true } : { shadows: false, halftone: null }), 'Light and shadow on the whole scene, characters included. Off by default.'),
       toggle('Halftone dots', st.halftone, v => (v ? { halftone: true, shadows: true } : { halftone: null }), 'Comic-book halftone: the shadows print as ink dots in the render. Turns Shadows on.')),
-    h('h3', {}, '3-point light'),
+    h('h3', {}, 'Lighting preset'),
     h('div', { class: 'chips' }, h('button', { 'aria-pressed': String(!L), title: 'No 3-point light', onclick: () => put({ lighting: null }) }, 'Off'),
       ...LIGHT_PRESETS.map(([id, name, tip]) => h('button', { 'aria-pressed': String(L?.preset === id), title: tip, onclick: () => put({ lighting: makeLighting(id, L?.turn ?? ctx.cameraYaw(), ctx.selectedTarget() ?? L?.target) }) }, name)),
       ...myLights().map(({ name, light }) => h('span', { class: 'my-light' },
@@ -40,22 +42,22 @@ export function lightControls(ctx, shotOnly) {
     const pick = h('select', { 'aria-label': 'Centre the light on' }, ...targets(ctx, project).map(([v, n]) => h('option', { value: v }, n)));
     pick.value = L.target || 'lead';
     pick.addEventListener('change', () => put({ lighting: { ...L, target: pick.value } }));
-    box.append(h('label', { class: 'lbl-row', title: 'The three lights stay centred on this, and follow it as it moves' }, h('span', { class: 'lbl' }, 'Centre on'), pick));
+    tune.append(h('h3', {}, 'This light'), h('label', { class: 'lbl-row', title: 'The three lights stay centred on this, and follow it as it moves' }, h('span', { class: 'lbl' }, 'Centre on'), pick));
     const live = { ...L };
     for (const [k, label, lo, hi, step] of SLIDERS) {
       const r = h('input', { type: 'range', min: lo, max: hi, step, 'aria-label': label }), out = h('span', { class: 'val' }, String(L[k]));
       r.value = L[k];
       r.addEventListener('input', () => { live[k] = Number(r.value); out.textContent = r.value; ctx.previewLighting(live, shotOnly); });
       r.addEventListener('change', () => { ctx.previewLighting(null); put({ lighting: { ...live } }); });
-      box.append(h('label', { class: 'ctl' }, h('span', {}, label), r, out));
+      tune.append(h('label', { class: 'ctl' }, h('span', {}, label), r, out));
     }
   }
   if (L) {
     const name = h('input', { type: 'text', placeholder: 'Name this setup', 'aria-label': 'Name this lighting setup' });
-    box.append(h('div', { class: 'row', style: 'margin-top:6px' }, name, h('button', { title: 'Keep these lights as your own preset', onclick: () => { if (name.value.trim()) { saveLight(name.value.trim(), L); ctx.rebuild(); } } }, 'Save preset')));
+    tune.append(h('div', { class: 'row', style: 'margin-top:6px' }, name, h('button', { title: 'Keep these lights as your own preset', onclick: () => { if (name.value.trim()) { saveLight(name.value.trim(), L); ctx.rebuild(); } } }, 'Save preset')));
   }
   box.append(h('p', { class: 'hint' }, 'The Stage shows the light and shadow live. Blender builds the same lights in the render: with the Tri-lighting add-on, its TriLamp lights. A plain background has no floor to catch a shadow: pick a set to see it land.'));
-  return box;
+  return { main: box, tune };
 }
 
 // the strip over the 3D view: what is selected and how thick its outline is

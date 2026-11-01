@@ -28,6 +28,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   const call = (fn, ...a) => p.evaluate(([f, x]) => window.ds3d[f](...x), [fn, a]);
   const flat = await bunnyColours();
   await p.click('#tabs button:has-text("Stage")');
+  await p.click('#subtabs button:text-is("Light")');
   await wait(200);
   await call('setStage', { set: 'park' }, false);
   await p.waitForFunction(() => { const s = ds3d.stageInfo?.(); return s ? s.ready : true; }, null, { timeout: 90000 }).catch(() => {});

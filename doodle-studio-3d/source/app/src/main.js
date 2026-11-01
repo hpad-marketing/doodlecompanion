@@ -33,7 +33,7 @@ import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
 import { updateLit, LIGHT_PRESETS } from './lit.js';
 import { inkBar, makeLighting } from './lightpanel.js';
-import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
+import { libraryBrowser, faceGrid, mouthGrid, setPanel, lightPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -1411,7 +1411,7 @@ const SUBS = {
   face: () => [['expressions', 'Expressions'], ['eyes', 'Gaze, blink & mouth'], ['idle', 'Idle life']],
   animate: () => [['motions', 'Motion library'], ['keys', 'Keys & timing'], ['body', 'IK, paths & contact'], ['layers', 'Layers & copy'], ['loops', 'Loops & beats'], ['reference', 'Reference']],
   camera: () => [['lens', 'Lens & angle'], ['presets', 'Shot presets'], ['moves', 'Camera moves'], ['view', 'View & checks']],
-  stage: () => [['set', 'Set & light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['cast', 'Co-stars']],
+  stage: () => [['set', 'Set'], ['light', 'Light'], ['wardrobe', 'Wardrobe'], ['items', 'In this shot'], ['cast', 'Co-stars']],
   library: () => CATEGORIES.filter(c => !['motion', 'outfit', 'accessory'].includes(c[0])),
   carousel: () => [],
   materials: () => [],
@@ -1538,6 +1538,7 @@ function buildPanel() {
     else c.append(h('div', { class: 'ws three' }, ...shelves('camera:' + s).map(x => h('div', { class: 'col' }, x))));
   } else if (tab === 'stage') {
     if (s === 'set') c.append(setPanel(libCtx()));
+    if (s === 'light') c.append(lightPanel(libCtx()));
     else if (s === 'wardrobe') c.append(wardrobePanel(libCtx()));
     else if (s === 'items') c.append(itemsPanel(libCtx()));
     else c.append(cols('two', [h('h3', {}, 'Co-stars'), h('p', { class: 'hint' }, 'More characters in this shot, each on the same rig with its own keys. They collide with the lead in the render.'), h('div', { class: 'row' }, h('button', { onclick: () => castDialog() }, 'Co-stars…'))],
@@ -2076,7 +2077,6 @@ function voiceFxPanel() {
     h('h3', {}, 'Voice'), h('div', { class: 'chips' }, ...Object.entries(VF.PRESETS).map(([k, [n]]) => h('button', { 'aria-pressed': String(cur === k), onclick: () => fxRun({ preset: k }) }, n))),
     h('p', { class: 'hint' }, 'The effect goes over the whole scene voice, Babble lines included. Your recording stays as it is, and lip sync and captions keep their timing.')],
   [ h('h3', {}, 'Fine tune'), slider('Pitch', 'pitch', -12, 12, 1, fx.pitch, v => `${v > 0 ? '+' : ''}${v} st`), slider('Amount', 'mix', 0, 1, 0.05, fx.mix, v => `${Math.round(v * 100)}%`),
-    h('h3', {}, 'Effect'), h('div', { class: 'chips' }, ...Object.entries(VF.EFFECTS).map(([k, n]) => h('button', { 'aria-pressed': String(fx.effect === k), onclick: () => fxRun({ effect: k }) }, n))),
     h('div', { class: 'row', style: 'gap:6px;margin-top:10px' }, h('button', { 'aria-pressed': String(fx.on), title: 'Compare with the dry voice', onclick: () => fxRun({ on: !fx.on }) }, fx.on ? 'Effect on' : 'Effect off'), h('button', { onclick: () => fxRun({ action: 'reset' }) }, 'Reset'))]);
 }
 // ---------------------------------------------------------------- transcribe.js: the scene voice to timed words and captions
