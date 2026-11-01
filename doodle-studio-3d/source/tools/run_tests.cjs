@@ -8,7 +8,8 @@
 //   node tools/run_tests.cjs --no-skip          run even the suites whose needs look missing
 //   node tools/run_tests.cjs --list             the suites, what each one needs, and whether it would run
 //
-// A suite passes when it exits 0 and prints no line starting with FAIL. Suites run one at a
+// A suite passes when it exits 0, prints no line starting with FAIL and reports no failed render
+// (a NOTIFY line with state failed). Suites run one at a
 // time because several share fixed local ports; each runs in its own process group, which is
 // killed afterwards, so a dev server a suite left behind can't poison the next one.
 //
@@ -69,7 +70,8 @@ function runOne(file) {
     child.on('close', code => {
       clearTimeout(timer);
       try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-      const fails = out.split('\n').filter(l => /^FAIL\b/.test(l));
+      // older render suites print NOTIFY <job> <state> instead of ok/FAIL: a failed render is a failure
+      const fails = out.split('\n').filter(l => /^FAIL\b/.test(l) || /^NOTIFY .* failed\b/.test(l));
       const passed = code === 0 && !fails.length && !timedOut;
       resolve({ name, passed, code, timedOut, seconds: Math.round((Date.now() - t0) / 1000), fails, tail: out.split('\n').slice(-25).join('\n'), oks: out.split('\n').filter(l => /^ok\b/.test(l)).length });
     });
@@ -87,7 +89,7 @@ function runOne(file) {
     }
     const r = await runOne(f);
     results.push(r);
-    console.log((r.passed ? 'pass ' : 'FAIL ') + name.padEnd(16) + `${r.seconds}s, ${r.oks} checks` + (r.timedOut ? ', timed out' : '') + (r.passed ? '' : `, exit ${r.code}`));
+    console.log((r.passed ? 'pass ' : 'FAIL ') + name.padEnd(16) + `${r.seconds}s, ${r.oks ? r.oks + ' checks' : 'output only'}` + (r.timedOut ? ', timed out' : '') + (r.passed ? '' : `, exit ${r.code}`));
     if (!r.passed) console.log('     ' + (r.fails.length ? r.fails.slice(0, 8).join('\n     ') : r.tail.split('\n').join('\n     ')));
   }
   const pass = results.filter(r => r.passed).length, fail = results.filter(r => !r.skipped && !r.passed), skip = results.filter(r => r.skipped);
