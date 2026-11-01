@@ -26,7 +26,7 @@ export const EXTRA = [
   ...['pop', 'message', 'typing', 'whoosh', 'boing', 'click', 'bell', 'pin', 'draw', 'horror_drone', 'thunder', 'sting']
     .map(k => ({ id: 'sound:' + k, name: cap(k), category: 'sound', sub: 'Story sounds' })),
 ];
-export const CATEGORIES = [['motion', 'Motions'], ['expression', 'Faces'], ['outfit', 'Outfits'], ['accessory', 'Accessories'], ['prop', 'Props'], ['scenery', 'Scenery'], ['effect', 'Effects'], ['reaction', 'Reactions'], ['story', 'Storytime'], ['sound', 'Sounds']];
+export const CATEGORIES = [['motion', 'Motions'], ['expression', 'Faces'], ['outfit', 'Outfits'], ['accessory', 'Accessories'], ['prop', 'Props'], ['scenery', 'Scenery'], ['effect', 'Effects'], ['reaction', 'Reactions'], ['bubble', 'Speech bubbles'], ['story', 'Storytime'], ['sound', 'Sounds']];
 
 let lib = null, loading = null;
 const ui = { cat: 'motion', q: '', mirror: false, blend: 0, hold: '', shotOnly: false };

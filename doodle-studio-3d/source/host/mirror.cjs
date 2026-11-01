@@ -78,7 +78,7 @@ module.exports = ({ appDir, port, blender, blendFor, folders, withMaster, env = 
         if (sig !== link.sig || (msg.code && msg.code !== link.code)) {
           link.sig = sig; if (msg.code) link.code = msg.code;
           writeShot(link.dir, msg.shot);
-          return toBlender({ ...msg, shot: withMaster(msg.shot), t: 'rebuild' }), { ...status(), rebuild: true };
+          return toBlender({ ...msg, shot: withMaster(msg.shot), t: 'rebuild', blend: blendFor(msg.shot) }), { ...status(), rebuild: true };   // another character is another .blend
         }
       }
       toBlender(msg);

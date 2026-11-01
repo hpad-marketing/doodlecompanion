@@ -2,6 +2,7 @@
 // Track ids are Doodle Studio's own (armL, headYaw, ...) plus cam.* for the 3D camera,
 // so a shot exports straight to the Blender bridge.
 
+import { hiddenSpans } from './blocks.js';
 import { idleLayer, idleOn } from './idle.js';
 import { costarsForBridge } from './cast.js';
 import { forBridge as drawingsForBridge } from './drawings.js';
@@ -142,7 +143,7 @@ export function idleFor(project, faceNames = [], character = 'bunny') {
 
 // The stage a shot renders on: the scene's set, light, outfit and so on, with this
 // shot's own overrides on top. Library items placed in the shot ride along.
-export const STAGE_KEYS = ['set', 'setProps', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet'];
+export const STAGE_KEYS = ['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'lighting', 'inks', 'outfit', 'accessories', 'mouthSet'];
 export function stageOf(scene, shot) {
   const st = { ...(scene.stage || {}), ...(shot.stage || {}) };
   for (const k of Object.keys(st)) if (st[k] == null || st[k] === '' || (Array.isArray(st[k]) && !st[k].length)) delete st[k];
@@ -161,7 +162,8 @@ export function materialsOf(scene, shot) {
     if (v && v.look) layers[k] = v;
   }
   const light = { ...(S.light || {}), ...(T.light || {}) };
-  return Object.keys(layers).length ? { layers, ...(Object.keys(light).length ? { light } : {}) } : null;
+  const parts = { ...(S.parts || {}), ...(T.parts || {}) }, has = Object.keys(parts).length;   // one piece's parts in colours of your own
+  return Object.keys(layers).length || has ? { layers, ...(Object.keys(light).length ? { light } : {}), ...(has ? { parts } : {}) } : null;
 }
 
 // Blender bridge shot: one entry per frame, cam block per frame
@@ -188,6 +190,8 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}, 
   // scene drawings stand in the 3D world (drawings.py); screen drawings are laid on top as PNGs
   const dr = drawingsForBridge(project);
   if (dr) out.drawings = dr;
+  const gaps = hiddenSpans(project, project.length);
+  if (gaps) out.hide = gaps;   // gaps between the lead's timeline blocks
   if (project.costars?.length) out.costars = costarsForBridge(project, allIds);   // co-stars (cast.py)   // Blender powers (powers.py)
   // the built-in rule defaults (arm in front, face clear, props on the floor, eye size) are on
   // unless this shot turns one off; only the switches that are off travel, so caches hold

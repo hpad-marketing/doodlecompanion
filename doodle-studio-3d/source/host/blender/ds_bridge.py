@@ -52,6 +52,7 @@ import cast as costars  # noqa: E402
 import rules_scene  # noqa: E402
 import constraints  # noqa: E402
 import materials  # noqa: E402
+import lights  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -257,6 +258,26 @@ if cast:
         if c['pushes']:
             print(f"cast: {c['name']} kept clear on {len(c['pushes'])} frames (up to {max(p['cm'] for p in c['pushes'])} cm)", flush=True)
 
+# gaps between a character's timeline blocks: everything on that rig is hidden there
+def key_hidden(rig, spans):
+    kids = set(rig.children_recursive)
+    obs = [o for o in bpy.data.objects if o.type != 'ARMATURE' and (o in kids or any(m.type == 'ARMATURE' and m.object == rig for m in o.modifiers))]
+    marks = {1: False}
+    for a, b in spans:
+        marks[b + 1] = False
+    for a, b in spans:
+        marks[a + 1] = True
+    for o in obs:
+        for f, off in sorted(marks.items()):
+            o.hide_render = off
+            o.keyframe_insert('hide_render', frame=f)
+        o.hide_render = False
+if shot.get('hide'):
+    key_hidden(arm, shot['hide'])
+for c in cast:
+    if c.get('hide'):
+        key_hidden(c['rig'], c['hide'])
+
 # props in hand, scenery, effects and storytime pieces, keyed at their frames
 stage.place(stage_items, lambda m: print(m, flush=True))
 
@@ -311,6 +332,11 @@ try:
     materials.apply(shot, cam, lambda m: print(m, flush=True), out_dir)
 except Exception as e:   # a material never stops a render: the shot stays Ink & Mustard
     print('materials: skipped:', e, flush=True)
+# shadows, 3-point light and each object's own outline, on whatever the looks left
+try:
+    lights.apply(shot, cam, arm, lambda m: print(m, flush=True), out_dir)
+except Exception as e:   # nor does a light
+    print('lights: skipped:', e, flush=True)
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}

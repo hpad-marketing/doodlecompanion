@@ -3,6 +3,7 @@
 // view, timeline key filters and a playblast with a frame counter.
 import { valueAt, setKey, DISCRETE } from './project.js';
 import { MUSTARD, INK } from './viewport.js';
+import { LIT } from './lit.js';
 
 // ---------------------------------------------------------------- breakdown: in-between of the keys either side
 export function breakdown(ctx, t, ids = ctx.poseIds()) {
@@ -117,6 +118,7 @@ export function drawOnion(ctx) {
   } else around = [f - view3.onionStep, f + view3.onionStep];
   const now = v.values, grid = v.grid.visible;
   v.grid.visible = false;
+  const shade = LIT.litShade.value; LIT.litShade.value = 0;   // ghosts are keyed off flat mustard
   const W = L.width, H = L.height, mr = 0xE0, mg = 0xA6, mb = 0x4B;   // brand mustard / ink as drawn (sRGB)
   around.forEach((gf, i) => {
     if (gf == null || gf < 0 || gf >= p.length) return;
@@ -136,7 +138,7 @@ export function drawOnion(ctx) {
     tg.putImageData(img, 0, 0);
     g.drawImage(tmp, 0, 0);
   });
-  v.grid.visible = grid;
+  v.grid.visible = grid; LIT.litShade.value = shade;
   v.pose(now);
 }
 export function setSilhouette(view, on) {

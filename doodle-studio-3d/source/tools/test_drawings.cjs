@@ -63,9 +63,19 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   r = await ev(() => ds3d.drawings({ action: 'list' }));
   const hd = r.drawings[1];
   ok(Math.abs(hd.y - 0.41) < 0.02 && Math.abs(hd.size - 0.42) < 0.02, `the hand drawing stays where it was drawn (y ${hd.y.toFixed(3)}, size ${hd.size.toFixed(3)})`);
-  await p.click('#tabs button:has-text("Stage")');
-  await p.click('#subtabs button:has-text("Drawings")');
-  ok(await p.locator('img[src^="data:image/png"]').count() >= 2, 'Stage › Drawings shows a picture of each drawing');
+  await p.click('#tabs button:text-is("Stage")');
+  ok(await p.locator('#subtabs button:has-text("Drawings")').count() === 0, 'Stage no longer has a second Drawings section');
+  await p.click('#tabs button:text-is("Draw")');
+  ok(await p.locator('img[src^="data:image/png"]').count() >= 2, 'Draw workspace shows a picture of each drawing');
+  const lastNoise = () => ev(() => ds3d.project.drawings.at(-1).noise);
+  const noiseStart = await lastNoise();
+  await p.locator('input[aria-label="Noise"]').evaluate(el => { el.dispatchEvent(new Event('pointerdown')); el.value = 80; el.dispatchEvent(new Event('input', { bubbles: true })); });
+  ok(await lastNoise() === 0.8, 'the Noise slider moves the line live');
+  await p.locator('input[aria-label="Noise"]').evaluate(el => el.dispatchEvent(new Event('change', { bubbles: true })));
+  await p.click('.dr-row button:text-is("Shaky")');
+  ok(await lastNoise() === 1 && await ev(() => ds3d.project.drawings.at(-1).boil) === 2, 'Shaky sets noise 100%, on twos');
+  await ev(() => ds3d.undo()); ok(await lastNoise() === 0.8, 'Undo steps back to the slider value');
+  await ev(() => ds3d.undo()); ok(await lastNoise() === noiseStart, 'the whole slider drag is one undo step');
   await p.screenshot({ path: path.join(shots, '4-panel.png') });
   // undo
   await ev(() => ds3d.undo && ds3d.undo());

@@ -1,0 +1,60 @@
+// Scrubbing the timeline: the playhead lets go on release, nothing selects, audio is heard under
+// it, and the voice and music each have a waveform row. Run: node tools/test_scrub.cjs
+const { spawn } = require('child_process'), path = require('path'), fs = require('fs');
+const { chromium } = require('playwright');
+const port = 54395, wav = path.join(__dirname, '..', 'devout', 'scrub.wav');
+fs.mkdirSync(path.dirname(wav), { recursive: true });
+{ // two seconds of a falling tone
+  const n = 88200, b = Buffer.alloc(44 + n * 2);
+  b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(44100, 24); b.writeUInt32LE(88200, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(12000 * Math.sin(i * 0.05) * (1 - i / n)), 44 + i * 2);
+  fs.writeFileSync(wav, b);
+}
+const dev = spawn('node', [path.join(__dirname, 'dev.cjs'), String(port)], { stdio: 'ignore' });
+const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
+(async () => {
+  await new Promise(r => setTimeout(r, 900));
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p = await (await b.newContext({ viewport: { width: 1920, height: 1032 } })).newPage();
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto(`http://127.0.0.1:${port}/`);
+  await p.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 90000 });
+  await p.evaluate(() => { window._sliced = 0; const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (a[2]) window._sliced++; return st.apply(this, a); }; });
+  await p.evaluate(f => ds3d.importAudio(f), wav);
+  await p.waitForSelector('#tracks .trow.audio canvas.wave', { timeout: 8000 });
+  ok(await p.locator('#tracks .trow.audio .tname:has-text("Voice")').count() === 1, 'imported audio has its own waveform row');
+  await p.evaluate(f => ds3d.post({ action: 'music', path: f }), wav);
+  await p.waitForSelector('#tracks .trow.audio .tname:has-text("Music")', { timeout: 6000 });
+  ok(true, 'a music bed gets its own row too');
+  await new Promise(r => setTimeout(r, 4500));
+  const box = await p.locator('#tracks .ruler .lane').boundingBox(), y = box.y + box.height / 2;
+  await p.mouse.move(box.x + 60, y); await p.mouse.down();
+  for (let x = 60; x < 400; x += 12) { await p.mouse.move(box.x + x, y); await new Promise(r => setTimeout(r, 20)); }
+  ok(await p.evaluate(() => window._sliced) > 3, 'audio is heard while scrubbing: ' + await p.evaluate(() => window._sliced) + ' slices');
+  const sel = await p.evaluate(() => getSelection().toString()); ok(sel === '', 'scrubbing selects nothing: ' + JSON.stringify(sel.slice(0, 60)));
+  ok(await p.evaluate(() => +document.querySelector('#frame-box').value) > 10, 'the playhead follows the drag');
+  await p.mouse.up();
+  const f = await p.evaluate(() => +document.querySelector('#frame-box').value);
+  await p.mouse.move(box.x + 900, y); await new Promise(r => setTimeout(r, 150));
+  ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === f, 'the playhead lets go on release');
+  await p.mouse.move(box.x + 100, y); await p.mouse.down(); await p.mouse.up();
+  const g = await p.evaluate(() => +document.querySelector('#frame-box').value);
+  await p.mouse.move(box.x + 700, y); await new Promise(r => setTimeout(r, 150));
+  ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === g, 'a plain click on the ruler lets go too');
+  // the line sits under the mouse, at every zoom, and the first pixel is frame 0
+  const line = () => p.evaluate(() => { const r = document.querySelector('#playhead').getBoundingClientRect(); return r.left + r.width / 2; });
+  for (const x of [240, 700]) { await p.mouse.move(box.x + x, y); await p.mouse.down(); await p.mouse.up(); await new Promise(r => setTimeout(r, 80)); const gap = Math.abs(await line() - (box.x + x)); const ppf = box.width / 120; ok(gap <= ppf / 2 + 1, 'the playhead is under the mouse: ' + gap.toFixed(1) + ' px off'); }
+  await p.mouse.move(box.x + 1, y); await p.mouse.down(); await p.mouse.up(); await new Promise(r => setTimeout(r, 80));
+  ok(await p.evaluate(() => +document.querySelector('#frame-box').value) === 0, 'the start of the ruler is frame 0');
+  ok(Math.abs(await line() - box.x) <= 1, 'and the line sits on the 0s tick');
+  await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'scrub.png') });
+  // shot length: type seconds or frames
+  await p.fill('#len-secs', '2'); await p.press('#len-secs', 'Tab');
+  ok(await p.inputValue('#len-frames') === String(await p.evaluate(() => ds3d.scene.fps * 2)), 'typing 2 s sets the frames');
+  await p.fill('#len-frames', '45'); await p.press('#len-frames', 'Tab');
+  ok(await p.inputValue('#len-secs') === String(+(45 / await p.evaluate(() => ds3d.scene.fps)).toFixed(2)), 'typing frames sets the seconds');
+  await p.keyboard.press('Control+z'); await new Promise(r => setTimeout(r, 200));
+  await p.screenshot({ path: path.join(__dirname, '..', 'devout', 'length.png') });
+  ok(!errs.length, 'no page errors ' + errs.slice(0, 3).join(' | '));
+  await b.close(); dev.kill();
+})().catch(e => { console.log('FAIL', e.message); dev.kill(); process.exit(1); });

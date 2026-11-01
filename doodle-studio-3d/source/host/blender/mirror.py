@@ -629,6 +629,8 @@ def rebuild(m):
     ctx = S['ctx']
     with open(ctx['shot_path'], 'w') as f:
         json.dump(m['shot'], f)
+    if m.get('blend'):
+        ctx['source_blend'] = m['blend']   # the character may have changed: each has its own file
     S['rebuild'] = {'frame': m.get('f')}
     S['status'] = 'rebuilding'
     log('rebuilding the shot')

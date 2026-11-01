@@ -1,29 +1,306 @@
 {
-  "about": "Colour palettes for Doodle Studio 3D's Materials tab. Each names the colour-theory idea behind it. Roles: character (the lead's fill), ink (outfits and drawn details), wall, floor, ceiling, pieces (furniture and props, picked per piece), accent (rugs and small things), ambient (the light that fills the shadows).",
-  "palettes": [
-    {"id": "brand", "name": "Brand mustard", "theory": "One hue: the Doodle Studio mustard and ink",
-     "character": "#E0A64B", "ink": "#1F1F1D", "wall": "#E0A64B", "floor": "#E0A64B", "ceiling": "#E0A64B",
-     "pieces": ["#E0A64B"], "accent": "#E0A64B", "ambient": "#FFF1D6"},
-    {"id": "sunbaked", "name": "Sunbaked", "theory": "Analogous warm: sand, apricot and terracotta, neighbours on the wheel",
-     "character": "#E0A64B", "ink": "#2A1A14", "wall": "#F0D3A0", "floor": "#C0704A", "ceiling": "#F6E2BE",
-     "pieces": ["#E39A5A", "#B4573A", "#E7B866", "#D9855B"], "accent": "#8E3B2E", "ambient": "#FFE8CC"},
-    {"id": "teal-coral", "name": "Teal & coral", "theory": "Complementary: teal walls against warm coral and mustard",
-     "character": "#E0A64B", "ink": "#1C2B2B", "wall": "#3F8A87", "floor": "#EFE0C8", "ceiling": "#F3E9DA",
-     "pieces": ["#F07F64", "#F4B183", "#2D6766", "#F2D3B3"], "accent": "#F25C45", "ambient": "#E4FFFB"},
-    {"id": "playroom", "name": "Playroom", "theory": "Triadic: mustard, cobalt and berry, evenly spaced",
-     "character": "#E0A64B", "ink": "#1F1F2A", "wall": "#F3E6C8", "floor": "#3D5A98", "ceiling": "#F7EEDA",
-     "pieces": ["#C43C6B", "#3D5A98", "#E0A64B", "#7C93C9"], "accent": "#C43C6B", "ambient": "#F2F0FF"},
-    {"id": "dusk", "name": "Dusk", "theory": "Split-complementary: mustard against violet and blue-violet",
-     "character": "#E0A64B", "ink": "#15121F", "wall": "#5B4B8A", "floor": "#2E2A4F", "ceiling": "#6E5E9C",
-     "pieces": ["#8C7BC2", "#D9744F", "#3F3770", "#B9A9E6"], "accent": "#F2C14E", "ambient": "#CFC6FF"},
-    {"id": "sage", "name": "Sage", "theory": "Monochrome: one green in light, mid and deep values",
-     "character": "#E0A64B", "ink": "#1E2A1C", "wall": "#A9BFA0", "floor": "#6F8A68", "ceiling": "#C6D6BE",
-     "pieces": ["#8BA582", "#5E7757", "#CFDDC8", "#7A9671"], "accent": "#3F5A3B", "ambient": "#F0FFEA"},
-    {"id": "nursery", "name": "Nursery", "theory": "Pastel tetradic: pink, mint, butter and periwinkle at high value",
-     "character": "#E0A64B", "ink": "#3A3340", "wall": "#F6D6DE", "floor": "#BFE3D8", "ceiling": "#FBEDEF",
-     "pieces": ["#C9D7F2", "#F9E2AE", "#F4B8C5", "#BFE3D8"], "accent": "#9BB7E6", "ambient": "#FFF6F8"},
-    {"id": "midnight", "name": "Midnight", "theory": "Analogous cool with a warm accent: navy blues and one lamp of mustard",
-     "character": "#E0A64B", "ink": "#0B1220", "wall": "#1F3550", "floor": "#14233A", "ceiling": "#2A4466",
-     "pieces": ["#2F5D80", "#4B7FA8", "#E0A64B", "#3A6B91"], "accent": "#F2C14E", "ambient": "#9DB7FF"}
-  ]
+ "about": "Colour palettes for Doodle Studio 3D's Materials tab. Each names the colour-theory idea behind it. Roles: character (the lead's fill), ink (outfits and drawn details), wall, floor, ceiling, pieces (furniture and props, picked per piece), accent (rugs and small things), ambient (the light that fills the shadows).",
+ "palettes": [
+  {
+   "id": "brand",
+   "name": "Brand mustard",
+   "theory": "One hue: the Doodle Studio mustard and ink",
+   "character": "#E0A64B",
+   "ink": "#1F1F1D",
+   "wall": "#E0A64B",
+   "floor": "#E0A64B",
+   "ceiling": "#E0A64B",
+   "pieces": [
+    "#E0A64B"
+   ],
+   "accent": "#E0A64B",
+   "ambient": "#FFF1D6",
+   "outfit": "#1F1F1D"
+  },
+  {
+   "id": "sunbaked",
+   "name": "Sunbaked",
+   "theory": "Analogous warm: sand, apricot and terracotta, neighbours on the wheel",
+   "character": "#E39A5A",
+   "ink": "#2A1A14",
+   "wall": "#F0D3A0",
+   "floor": "#C0704A",
+   "ceiling": "#F6E2BE",
+   "pieces": [
+    "#E39A5A",
+    "#B4573A",
+    "#E7B866",
+    "#D9855B"
+   ],
+   "accent": "#8E3B2E",
+   "ambient": "#FFE8CC",
+   "outfit": "#8E3B2E"
+  },
+  {
+   "id": "teal-coral",
+   "name": "Teal & coral",
+   "theory": "Complementary: teal walls against warm coral and mustard",
+   "character": "#2D6766",
+   "ink": "#1C2B2B",
+   "wall": "#3F8A87",
+   "floor": "#EFE0C8",
+   "ceiling": "#F3E9DA",
+   "pieces": [
+    "#F07F64",
+    "#F4B183",
+    "#2D6766",
+    "#F2D3B3"
+   ],
+   "accent": "#F25C45",
+   "ambient": "#E4FFFB",
+   "outfit": "#F07F64"
+  },
+  {
+   "id": "playroom",
+   "name": "Playroom",
+   "theory": "Triadic: mustard, cobalt and berry, evenly spaced",
+   "character": "#7C93C9",
+   "ink": "#1F1F2A",
+   "wall": "#F3E6C8",
+   "floor": "#3D5A98",
+   "ceiling": "#F7EEDA",
+   "pieces": [
+    "#C43C6B",
+    "#3D5A98",
+    "#E0A64B",
+    "#7C93C9"
+   ],
+   "accent": "#C43C6B",
+   "ambient": "#F2F0FF",
+   "outfit": "#E0A64B"
+  },
+  {
+   "id": "dusk",
+   "name": "Dusk",
+   "theory": "Split-complementary: mustard against violet and blue-violet",
+   "character": "#B9A9E6",
+   "ink": "#15121F",
+   "wall": "#5B4B8A",
+   "floor": "#2E2A4F",
+   "ceiling": "#6E5E9C",
+   "pieces": [
+    "#8C7BC2",
+    "#D9744F",
+    "#3F3770",
+    "#B9A9E6"
+   ],
+   "accent": "#F2C14E",
+   "ambient": "#CFC6FF",
+   "outfit": "#D9744F"
+  },
+  {
+   "id": "sage",
+   "name": "Sage",
+   "theory": "Monochrome: one green in light, mid and deep values",
+   "character": "#3F5A3B",
+   "ink": "#1E2A1C",
+   "wall": "#A9BFA0",
+   "floor": "#6F8A68",
+   "ceiling": "#C6D6BE",
+   "pieces": [
+    "#8BA582",
+    "#5E7757",
+    "#CFDDC8",
+    "#7A9671"
+   ],
+   "accent": "#3F5A3B",
+   "ambient": "#F0FFEA",
+   "outfit": "#CFDDC8"
+  },
+  {
+   "id": "nursery",
+   "name": "Nursery",
+   "theory": "Pastel tetradic: pink, mint, butter and periwinkle at high value",
+   "character": "#9BB7E6",
+   "ink": "#3A3340",
+   "wall": "#F6D6DE",
+   "floor": "#BFE3D8",
+   "ceiling": "#FBEDEF",
+   "pieces": [
+    "#C9D7F2",
+    "#F9E2AE",
+    "#F4B8C5",
+    "#BFE3D8"
+   ],
+   "accent": "#9BB7E6",
+   "ambient": "#FFF6F8",
+   "outfit": "#F4B8C5"
+  },
+  {
+   "id": "midnight",
+   "name": "Midnight",
+   "theory": "Analogous cool with a warm accent: navy blues and one lamp of mustard",
+   "character": "#E0A64B",
+   "ink": "#0B1220",
+   "wall": "#1F3550",
+   "floor": "#14233A",
+   "ceiling": "#2A4466",
+   "pieces": [
+    "#2F5D80",
+    "#4B7FA8",
+    "#E0A64B",
+    "#3A6B91"
+   ],
+   "accent": "#F2C14E",
+   "ambient": "#9DB7FF",
+   "outfit": "#3A6B91"
+  },
+  {
+   "id": "forest",
+   "name": "Forest",
+   "theory": "Analogous greens with bark",
+   "character": "#CFE1B9",
+   "ink": "#1F1F1D",
+   "wall": "#2F5D50",
+   "floor": "#1E2F23",
+   "ceiling": "#9CC5A1",
+   "pieces": [
+    "#3F7D58",
+    "#6A994E",
+    "#A47148",
+    "#CFE1B9"
+   ],
+   "accent": "#F2C14E",
+   "ambient": "#EAF5E0",
+   "outfit": "#6A994E"
+  },
+  {
+   "id": "ocean",
+   "name": "Ocean",
+   "theory": "Analogous blues with a coral pop",
+   "character": "#BFE7EE",
+   "ink": "#1F1F1D",
+   "wall": "#1F6F8B",
+   "floor": "#0B2F4A",
+   "ceiling": "#99D6EA",
+   "pieces": [
+    "#2A9DB5",
+    "#57C4C4",
+    "#0E4D6E",
+    "#BFE7EE"
+   ],
+   "accent": "#FF7F6E",
+   "ambient": "#E0F6FB",
+   "outfit": "#FF7F6E"
+  },
+  {
+   "id": "candy",
+   "name": "Candy",
+   "theory": "Triadic pastels turned up",
+   "character": "#FF6FA8",
+   "ink": "#1F1F1D",
+   "wall": "#FFC2D9",
+   "floor": "#7A4EAB",
+   "ceiling": "#FFF0F6",
+   "pieces": [
+    "#FF6FA8",
+    "#6EC6FF",
+    "#FFD166",
+    "#B98CFF"
+   ],
+   "accent": "#FF3E86",
+   "ambient": "#FFF3F8",
+   "outfit": "#FF3E86"
+  },
+  {
+   "id": "retro",
+   "name": "Retro 70s",
+   "theory": "Warm complementary, orange and teal",
+   "character": "#D9622B",
+   "ink": "#1F1F1D",
+   "wall": "#E8C39E",
+   "floor": "#5B3A29",
+   "ceiling": "#F6E3C5",
+   "pieces": [
+    "#D9622B",
+    "#2B7A78",
+    "#E2A33D",
+    "#8C4A2F"
+   ],
+   "accent": "#D9622B",
+   "ambient": "#FFF1DC",
+   "outfit": "#8C4A2F"
+  },
+  {
+   "id": "neon",
+   "name": "Neon night",
+   "theory": "Dark base with electric accents",
+   "character": "#FFE53B",
+   "ink": "#1F1F1D",
+   "wall": "#1A1033",
+   "floor": "#0B0620",
+   "ceiling": "#2B1B57",
+   "pieces": [
+    "#FF2BD6",
+    "#21E6C1",
+    "#FFE53B",
+    "#5C7CFA"
+   ],
+   "accent": "#21E6C1",
+   "ambient": "#C7B8FF",
+   "outfit": "#5C7CFA"
+  },
+  {
+   "id": "earth",
+   "name": "Earth",
+   "theory": "Muted clay, ochre and olive",
+   "character": "#B5651D",
+   "ink": "#1F1F1D",
+   "wall": "#C9A27C",
+   "floor": "#5A4634",
+   "ceiling": "#EADBC8",
+   "pieces": [
+    "#B5651D",
+    "#8A9A5B",
+    "#A0522D",
+    "#D2B48C"
+   ],
+   "accent": "#C1440E",
+   "ambient": "#FBEFE0",
+   "outfit": "#8A9A5B"
+  },
+  {
+   "id": "ice",
+   "name": "Ice",
+   "theory": "Cool monochrome with a pink spark",
+   "character": "#5F7FA3",
+   "ink": "#1F1F1D",
+   "wall": "#CFE3F2",
+   "floor": "#8FA9C4",
+   "ceiling": "#F2F8FC",
+   "pieces": [
+    "#A9C7E0",
+    "#7F9FBF",
+    "#E3EEF7",
+    "#5F7FA3"
+   ],
+   "accent": "#F27A9B",
+   "ambient": "#F5FAFF",
+   "outfit": "#A9C7E0"
+  },
+  {
+   "id": "mono",
+   "name": "Mono grey",
+   "theory": "Greys only: the shapes do the work",
+   "character": "#F2F2F2",
+   "ink": "#1F1F1D",
+   "wall": "#BDBDBD",
+   "floor": "#6E6E6E",
+   "ceiling": "#E8E8E8",
+   "pieces": [
+    "#9A9A9A",
+    "#D0D0D0",
+    "#7A7A7A",
+    "#F2F2F2"
+   ],
+   "accent": "#3C3C3C",
+   "ambient": "#FFFFFF",
+   "outfit": "#3C3C3C"
+  }
+ ]
 }
