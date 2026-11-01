@@ -6,6 +6,7 @@
 // Data: scene.materials = { layers: { scene, character, set, props }, light } for every shot;
 // shot.materials.layers[k] overrides one target for one shot (null = clear it for this shot);
 // item.material = a layer for one prop. A layer: { look, addon, params, palette, ink, keepCharacter, color }.
+import { myPalettes, dropPalette, paletteMaker } from './palettes.js';
 import { MATERIAL_TARGETS, materialsOf } from './project.js';
 
 export const TARGETS = [['scene', 'Whole scene', 'Every character, the set and every prop'], ['character', 'Characters', 'The lead and co-stars, outfits included'],
@@ -153,9 +154,14 @@ export function materialsPanel(ctx) {
   root.append(h('h3', {}, 'Look'), h('div', { class: 'mat-cards', role: 'list' }, ...cache.looks.map(lookCard)));
 
   // 3. colour palettes
-  const palId = typeof layer.palette === 'string' ? layer.palette : 'brand';
-  root.append(h('h3', {}, 'Colours'), h('div', { class: 'mat-pals', role: 'list' }, ...cache.palettes.map(p => h('button', { class: 'mat-pal', role: 'listitem', 'aria-pressed': String(palId === p.id),
-    title: `${p.name}: ${p.theory}`, onclick: () => set({ palette: p.id, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, `Colours: ${p.name}`) }, swatches(h, p), h('span', {}, p.name), h('small', {}, p.theory.split(':')[0])))));
+  const palId = typeof layer.palette === 'string' ? layer.palette : layer.palette?.id || 'brand';
+  const usePal = p => set({ palette: p, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, 'Colours: ' + (p.name || p));
+  const yours = myPalettes(), inUse = typeof layer.palette === 'object' && layer.palette && !yours.some(p => p.id === layer.palette.id) ? [layer.palette] : [];
+  const palCard = (p, click, del) => h('div', { class: 'mat-pal-wrap' }, h('button', { class: 'mat-pal', role: 'listitem', 'aria-pressed': String(palId === p.id), title: p.name + ': ' + p.theory, onclick: click }, swatches(h, p), h('span', {}, p.name), h('small', {}, p.theory.split(':')[0])), del ? h('button', { class: 'pal-x', title: 'Delete ' + p.name, 'aria-label': 'Delete ' + p.name, onclick: del }, '×') : null);
+  root.append(h('h3', {}, 'Colours'), h('div', { class: 'mat-pals', role: 'list' }, ...cache.palettes.map(p => palCard(p, () => usePal(p.id))),
+    ...[...yours, ...inUse].map(p => palCard(p, () => usePal(p), yours.includes(p) ? () => { dropPalette(p.id); ctx.rebuild(); } : null)),
+    h('button', { class: 'mat-pal mat-pal-new', 'aria-expanded': String(!!ui.makePal), title: 'Pick your own colours, paste hex codes, or import a palette file', onclick: () => { ui.makePal = !ui.makePal; ctx.rebuild(); } }, h('span', {}, '+ Your palette'), h('small', {}, 'Picker, hex or file'))),
+    ui.makePal ? paletteMaker(ctx, cache.palettes.find(p => p.id === palId) || (typeof layer.palette === 'object' && layer.palette) || cache.palettes[0], p => { ui.makePal = false; usePal(p); }) : '');
 
   // 4. this look's settings, and the switches every look has
   const params = cur?.params || [];
@@ -187,14 +193,14 @@ export function materialsPanel(ctx) {
 
   // Bunny and the outfit: palette swatches, any colour, or the brand mustard and black
   if (ui.target === 'scene' || ui.target === 'character') {
-    const pal = cache.palettes.find(p => p.id === palId) || cache.palettes[0];
-    const swatches = [...new Set([pal.character, pal.accent, ...(pal.pieces || []), pal.wall, pal.ink])];
+    const pal = cache.palettes.find(p => p.id === palId) || (typeof layer.palette === 'object' && layer.palette) || cache.palettes[0];
+    const colours = [...new Set([pal.character, pal.accent, ...(pal.pieces || []), pal.wall, pal.ink])];
     const picker = (label, key, brand) => {
       const any = h('input', { type: 'color', value: layer[key] || brand, 'aria-label': label + ': any colour' });
       any.addEventListener('change', () => set({ [key]: any.value, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, label));
       return h('div', { class: 'row mat-row' }, h('span', { class: 'sub-label', style: 'min-width:64px' }, label),
         h('button', { 'aria-pressed': String(!layer[key]), title: 'The brand colour', onclick: () => { const q = { ...layer }; delete q[key]; set({ ...q, [key]: undefined }, label); } }, 'Brand'),
-        ...swatches.map(c => h('button', { class: 'swatch', 'aria-pressed': String(layer[key] === c), title: c, 'aria-label': label + ' ' + c, style: 'background:' + c + ';width:30px', onclick: () => set({ [key]: c, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, label) })), any);
+        ...colours.map(c => h('button', { class: 'swatch', 'aria-pressed': String(layer[key] === c), title: c, 'aria-label': label + ' ' + c, style: 'background:' + c + ';width:30px', onclick: () => set({ [key]: c, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, label) })), any);
     };
     root.append(h('h3', {}, 'Character colours'), picker('Bunny', 'bunny', '#E0A64B'), picker('Outfit', 'outfit', '#1F1F1D'));
   }

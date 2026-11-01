@@ -21,7 +21,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.waitForSelector('.mat-card');
   const cards = await ev(() => [...document.querySelectorAll('.mat-card')].map(c => [c.textContent, !!c.querySelector('img')]));
   ok(cards.length >= 8 && cards.every(c => c[1]), 'every look is a picture card: ' + cards.map(c => c[0]).join(' | '));
-  ok(await ev(() => document.querySelectorAll('.mat-pal').length) === 8, 'eight palette cards with swatches');
+  ok(await ev(() => document.querySelectorAll('.mat-pal:not(.mat-pal-new)').length) === 16, 'sixteen palette cards with swatches');
   await p.click('.mat-card:has-text("Clay")');
   await p.click('.mat-pal:has-text("Teal & coral")');
   let sc = await ev(() => ds3d.scene.materials);
@@ -47,7 +47,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(!Object.keys(await ev(() => ds3d.project.materials?.layers?.character?.params || {})).length, 'undo takes the slider change back');
   // MCP tool
   const list = await ev(() => ds3d.materials({ action: 'list' }));
-  ok(list.looks.length >= 8 && list.palettes.length === 8 && list.now.layers.set.look === 'cel', 'materials action=list reports looks, palettes and what is on now');
+  ok(list.looks.length >= 8 && list.palettes.length === 16 && list.now.layers.set.look === 'cel', 'materials action=list reports looks, palettes and what is on now');
   const ap = await ev(() => ds3d.materials({ action: 'apply', target: 'props', look: 'ceramic', palette: 'dusk' }));
   ok(ap.ok && ap.now.layers.props.look === 'ceramic', 'materials action=apply puts ceramic on all props');
   const bad = await ev(() => ds3d.materials({ action: 'apply', look: 'nope' }).then(() => null, e => e.message));
