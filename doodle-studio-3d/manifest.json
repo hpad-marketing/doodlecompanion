@@ -1,8 +1,8 @@
 {
- "version": "20261101-122757",
- "notes": "Switching character now updates the open Blender window.",
+ "version": "20261101-135524",
+ "notes": "New Music workspace: play your MiniLab 3 or any MIDI keyboard live, loop and layer, 24 instruments, mix, and bounce music to the scene.",
  "runtime": "44.9.0",
- "published": "2026-11-01T06:57:57.944Z",
+ "published": "2026-11-01T08:25:24.793Z",
  "files": {
   "resources/app/library.cjs": {
    "sha256": "a3825c07d750ff2581707aaef63a3bb7c7cee2701e1d6f085127a0511c36b472",
@@ -15,14 +15,14 @@
    "gz": "files/e4a7452a36c9940cd2ee26c97fcaed285a1dee1aa485a363e83aedcc4e8e2f47.gz"
   },
   "resources/app/main.cjs": {
-   "sha256": "e0f6296a0fd8cd1f5635365e26153321592d47134257d2a637af6befc6e91c2c",
-   "size": 29485,
-   "gz": "files/e0f6296a0fd8cd1f5635365e26153321592d47134257d2a637af6befc6e91c2c.gz"
+   "sha256": "32283b2b60b64e0f68905e63d555089a459c29b5210626f5a729569f77a0891e",
+   "size": 31218,
+   "gz": "files/32283b2b60b64e0f68905e63d555089a459c29b5210626f5a729569f77a0891e.gz"
   },
   "resources/app/mcp.cjs": {
-   "sha256": "d7cb5bad3fbc5ef9977600ddd192609af71f4c8222e0ad9c92c277af258b1e50",
-   "size": 51548,
-   "gz": "files/d7cb5bad3fbc5ef9977600ddd192609af71f4c8222e0ad9c92c277af258b1e50.gz"
+   "sha256": "9e0adb3649b733eb8dc80cde1ad64066f4046b5816e6861a0fcc97efccd60b89",
+   "size": 55063,
+   "gz": "files/9e0adb3649b733eb8dc80cde1ad64066f4046b5816e6861a0fcc97efccd60b89.gz"
   },
   "resources/app/mirror.cjs": {
    "sha256": "d1a7cb07b04fc14045abe8ab4bda992623796bcedb86165ee0adfbb10714604c",
@@ -50,9 +50,9 @@
    "gz": "files/0245443700f7fa51ea79f84ac948d8aa930f0c9db7aa0429f06f86d619d2c67d.gz"
   },
   "resources/app/server.cjs": {
-   "sha256": "7386c64a4af16f80ae16de64d324e472baeede2dc9e6b35304541804fcf59c5f",
-   "size": 4603,
-   "gz": "files/7386c64a4af16f80ae16de64d324e472baeede2dc9e6b35304541804fcf59c5f.gz"
+   "sha256": "f0ca61dfbe34efe7be8a855f2283c188df2e2542b36ed60a382ea0c742330b0a",
+   "size": 4650,
+   "gz": "files/f0ca61dfbe34efe7be8a855f2283c188df2e2542b36ed60a382ea0c742330b0a.gz"
   },
   "resources/app/spherical.cjs": {
    "sha256": "35c28813d11c25bd3f44cd675e70bea55dda43a36e8c803701a7e24ab33d0d3f",
@@ -100,9 +100,9 @@
    "gz": "files/2c99b6225ed3fff1dc511d6f750b9b267d1caae9272877198bc9eb2212639746.gz"
   },
   "resources/app/ui/guide.md": {
-   "sha256": "d6640b82dc4808e1796a2b7f28c76be99def318d107a97585b7c6a7afec75a15",
-   "size": 55603,
-   "gz": "files/d6640b82dc4808e1796a2b7f28c76be99def318d107a97585b7c6a7afec75a15.gz"
+   "sha256": "e68e960d4c2a3e82ff23f20ed8affd68c607fa48f786668697abdf8a57d48a0b",
+   "size": 60846,
+   "gz": "files/e68e960d4c2a3e82ff23f20ed8affd68c607fa48f786668697abdf8a57d48a0b.gz"
   },
   "resources/app/ui/icon.png": {
    "sha256": "c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd",
@@ -110,9 +110,9 @@
    "gz": "files/c9c19e0ae83734bcd6f3a41f77f9401a24c0a1b4d448814a20bd10cc085be2dd.gz"
   },
   "resources/app/ui/index.html": {
-   "sha256": "625341926fb24d61d7284c3bf583fa20372c3bc8bff81895598419649d073c27",
-   "size": 2659,
-   "gz": "files/625341926fb24d61d7284c3bf583fa20372c3bc8bff81895598419649d073c27.gz"
+   "sha256": "d96928b1eb30abd44bf3e41de08c12d96a7f9bd7d7160f00b714413a6f51bebf",
+   "size": 2808,
+   "gz": "files/d96928b1eb30abd44bf3e41de08c12d96a7f9bd7d7160f00b714413a6f51bebf.gz"
   },
   "resources/app/blender/chars/frog.blend": {
    "sha256": "9bf82cf15eb2653ab5551fc70c55b0272094a70f73a8bd096b2628e66e3be07f",
@@ -370,9 +370,9 @@
    "gz": "files/69e54ceeca183255c5bac609d160228c95c6323a20e5181c8fff5b2f8a2ea49a.gz"
   },
   "resources/app/ui/src/main.js": {
-   "sha256": "e4cd9648f8ac9a2fe71d6110ccf0fc6f9e94f7c47c67a5790d63e455cbce000c",
-   "size": 295274,
-   "gz": "files/e4cd9648f8ac9a2fe71d6110ccf0fc6f9e94f7c47c67a5790d63e455cbce000c.gz"
+   "sha256": "c0fb1a70591a961b5b880eda2352f64905826481ff91556f38bd8b42bc268e1b",
+   "size": 300511,
+   "gz": "files/c0fb1a70591a961b5b880eda2352f64905826481ff91556f38bd8b42bc268e1b.gz"
   },
   "resources/app/ui/src/materials.js": {
    "sha256": "614db7c2aa31cee525adbdb7acd60099da16111043a049e2971448fce38d7e5d",
@@ -483,6 +483,11 @@
    "sha256": "da7f8aecb0b1e4a55e820cce5dc5a5a8eb13dc379758f215e8fb07937be7a6a3",
    "size": 1369252,
    "gz": "files/da7f8aecb0b1e4a55e820cce5dc5a5a8eb13dc379758f215e8fb07937be7a6a3.gz"
+  },
+  "resources/app/blender/addons/doodle_library/__init__.py": {
+   "sha256": "6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192",
+   "size": 3406,
+   "gz": "files/6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192.gz"
   },
   "resources/app/blender/addons/doodle_library/api.py": {
    "sha256": "14d7529f71004e319998780b25cd0e31a975bf8acd074d9c40b8524201ffff91",
@@ -599,25 +604,65 @@
    "size": 19417,
    "gz": "files/5ff40a0b1f17926fb7ac3db0bd1038739a6dafd72396a0d4fced6c5b83a78cd2.gz"
   },
-  "resources/app/blender/addons/doodle_library/__init__.py": {
-   "sha256": "6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192",
-   "size": 3406,
-   "gz": "files/6b0ff0e00a48819f7441f22b894ebcfe154e68497ddc15adbc3906c66167f192.gz"
-  },
   "resources/app/blender/addons/doodle_looks/CONTRACT.md": {
    "sha256": "4dce1795cb54035d92150f5769d88832865ade6995fb5796037b63a73f77ce14",
    "size": 4779,
    "gz": "files/4dce1795cb54035d92150f5769d88832865ade6995fb5796037b63a73f77ce14.gz"
+  },
+  "resources/app/blender/addons/doodle_looks/__init__.py": {
+   "sha256": "3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8",
+   "size": 13637,
+   "gz": "files/3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8.gz"
   },
   "resources/app/blender/addons/doodle_looks/doodle_look.json": {
    "sha256": "d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca",
    "size": 5608,
    "gz": "files/d64d22af3c95579c13a40f90ac1d03ed2548c8fe78b1ba8ae7990065d80e9fca.gz"
   },
-  "resources/app/blender/addons/doodle_looks/__init__.py": {
-   "sha256": "3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8",
-   "size": 13637,
-   "gz": "files/3c4af162fe10e49d6e917941b07c53c1266e2ece32a8a203fa19c259cd4f28a8.gz"
+  "resources/app/ui/src/music/anim.js": {
+   "sha256": "8db1f985f58ce1d0b6a1cdfc40ec5957577f70ad889643612e5baf63159bc600",
+   "size": 4342,
+   "gz": "files/8db1f985f58ce1d0b6a1cdfc40ec5957577f70ad889643612e5baf63159bc600.gz"
+  },
+  "resources/app/ui/src/music/engine.js": {
+   "sha256": "51e010423ee834a3214d1e139339e711017b1b9cb59a5637acb3285bc4f8ddba",
+   "size": 21350,
+   "gz": "files/51e010423ee834a3214d1e139339e711017b1b9cb59a5637acb3285bc4f8ddba.gz"
+  },
+  "resources/app/ui/src/music/instruments.js": {
+   "sha256": "e7dea011d1e90bda848001ddb9439f62145e70d0700a498e5d1f07da61e959b3",
+   "size": 19964,
+   "gz": "files/e7dea011d1e90bda848001ddb9439f62145e70d0700a498e5d1f07da61e959b3.gz"
+  },
+  "resources/app/ui/src/music/midi.js": {
+   "sha256": "b1773dbd5c7c0774448bcf929e8f3f0278dff43b55c190601817fb4f98744ec1",
+   "size": 8867,
+   "gz": "files/b1773dbd5c7c0774448bcf929e8f3f0278dff43b55c190601817fb4f98744ec1.gz"
+  },
+  "resources/app/ui/src/music/midifile.js": {
+   "sha256": "adf377372ab5e83970436405bcc1deca5689af31f04c4e202bb642fa1605aeec",
+   "size": 2996,
+   "gz": "files/adf377372ab5e83970436405bcc1deca5689af31f04c4e202bb642fa1605aeec.gz"
+  },
+  "resources/app/ui/src/music/music.css": {
+   "sha256": "a154836bec6815e5a864e59ff69faacef0288e78fc2179e204994725f0be7a8e",
+   "size": 8115,
+   "gz": "files/a154836bec6815e5a864e59ff69faacef0288e78fc2179e204994725f0be7a8e.gz"
+  },
+  "resources/app/ui/src/music/song.js": {
+   "sha256": "a2357c533458d4cac11bbafe446656ac2809400d4f87f3553aa2161e9eb3516a",
+   "size": 14829,
+   "gz": "files/a2357c533458d4cac11bbafe446656ac2809400d4f87f3553aa2161e9eb3516a.gz"
+  },
+  "resources/app/ui/src/music/tool.js": {
+   "sha256": "7c9b25ed2aef9be9616961bc2e52c54deced9fc9d2755cc1ab7b010cde0fb3c7",
+   "size": 9227,
+   "gz": "files/7c9b25ed2aef9be9616961bc2e52c54deced9fc9d2755cc1ab7b010cde0fb3c7.gz"
+  },
+  "resources/app/ui/src/music/ui.js": {
+   "sha256": "e7b4f13ba7276fec64eb1d179eb7b406e299e8078da48ab4a8f81383dc3cd420",
+   "size": 64437,
+   "gz": "files/e7b4f13ba7276fec64eb1d179eb7b406e299e8078da48ab4a8f81383dc3cd420.gz"
   },
   "resources/app/ui/vendor/hf/LICENSE": {
    "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
@@ -638,6 +683,26 @@
    "sha256": "270fb352030b4800ee1223ef9fd55ad03124ef89ac6b7906bd04ca0d8eca3bf3",
    "size": 873308,
    "gz": "files/270fb352030b4800ee1223ef9fd55ad03124ef89ac6b7906bd04ca0d8eca3bf3.gz"
+  },
+  "resources/app/ui/vendor/tone/LICENSE.md": {
+   "sha256": "391ed5af60b7b5d1f74b31040c5fa645e6e238f3d9b4c971941a262a675bbdcd",
+   "size": 1072,
+   "gz": "files/391ed5af60b7b5d1f74b31040c5fa645e6e238f3d9b4c971941a262a675bbdcd.gz"
+  },
+  "resources/app/ui/vendor/tone/Tone.js": {
+   "sha256": "e290952fa43d9a7a780182a83c6fccf44d79cb7ae2cba102ef1f2b9d98124e22",
+   "size": 345500,
+   "gz": "files/e290952fa43d9a7a780182a83c6fccf44d79cb7ae2cba102ef1f2b9d98124e22.gz"
+  },
+  "resources/app/ui/vendor/tonejs-midi/LICENSE.md": {
+   "sha256": "6debbf1ddd278dcf5d8e7b6c42c7a827cb944943401fc37ee017e172bbccbaea",
+   "size": 1107,
+   "gz": "files/6debbf1ddd278dcf5d8e7b6c42c7a827cb944943401fc37ee017e172bbccbaea.gz"
+  },
+  "resources/app/ui/vendor/tonejs-midi/Midi.js": {
+   "sha256": "9165a2b3de9d378eca970b80618c3747c60ed8188b12b0f059ccf44fc6a07cc0",
+   "size": 32288,
+   "gz": "files/9165a2b3de9d378eca970b80618c3747c60ed8188b12b0f059ccf44fc6a07cc0.gz"
   },
   "resources/app/blender/addons/doodle_looks/previews/cel.png": {
    "sha256": "772425e5ec96bcd0a0853f8500c04c1f03eaac0d34f13cb08b33fc658d2b8c2d",
@@ -713,6 +778,3381 @@
    "sha256": "5beb9dc7e9248a32f7b5e8cc0dd5fd4054d227d8e19a3a98b4715f6d2784c4ef",
    "size": 33141,
    "gz": "files/5beb9dc7e9248a32f7b5e8cc0dd5fd4054d227d8e19a3a98b4715f6d2784c4ef.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/LICENSE.txt": {
+   "sha256": "fe92717f7f1abb2e6f5c635ab2e5b8c73544ea09cba864225ed27088b9908ffa",
+   "size": 379,
+   "gz": "files/fe92717f7f1abb2e6f5c635ab2e5b8c73544ea09cba864225ed27088b9908ffa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/index.json": {
+   "sha256": "039b8f31ae6f8af9b09314f93c454db2abc06fbaf9f4502695a9693a8c95ef37",
+   "size": 4802,
+   "gz": "files/039b8f31ae6f8af9b09314f93c454db2abc06fbaf9f4502695a9693a8c95ef37.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/names.json": {
+   "sha256": "da698edcfd5a211dcab42de273368c610b01bfec68d3fb69734c621860adb70d",
+   "size": 2257,
+   "gz": "files/da698edcfd5a211dcab42de273368c610b01bfec68d3fb69734c621860adb70d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A1.mp3": {
+   "sha256": "6e9d3dee6b42b0cec224c630a710379398b96b53000e1b9cde6f9195840c0696",
+   "size": 14327,
+   "gz": "files/6e9d3dee6b42b0cec224c630a710379398b96b53000e1b9cde6f9195840c0696.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A2.mp3": {
+   "sha256": "6c3d61e43e46b29a030d534ae1ad789cfe13a5173900144a830de13c44e8777b",
+   "size": 14379,
+   "gz": "files/6c3d61e43e46b29a030d534ae1ad789cfe13a5173900144a830de13c44e8777b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A3.mp3": {
+   "sha256": "23c17526ae1edab78777b730df4a8ef0f140c53f08a5f6b4958805bcda1658d3",
+   "size": 16199,
+   "gz": "files/23c17526ae1edab78777b730df4a8ef0f140c53f08a5f6b4958805bcda1658d3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A4.mp3": {
+   "sha256": "23dd3ebc53cce3e647e90ec70275ed03726cab1552181e3a7d2a62b746565f07",
+   "size": 17837,
+   "gz": "files/23dd3ebc53cce3e647e90ec70275ed03726cab1552181e3a7d2a62b746565f07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A5.mp3": {
+   "sha256": "3ca2539ef3c1c95d00cf83350a11aaf16cce9690812a73e5a2543272d5f0da99",
+   "size": 17187,
+   "gz": "files/3ca2539ef3c1c95d00cf83350a11aaf16cce9690812a73e5a2543272d5f0da99.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A6.mp3": {
+   "sha256": "8e47bd3c165d099c3873a5486d0f0bb6ec565ffa232293e817baea1956cbeac8",
+   "size": 17551,
+   "gz": "files/8e47bd3c165d099c3873a5486d0f0bb6ec565ffa232293e817baea1956cbeac8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/A7.mp3": {
+   "sha256": "44124e4656328d07f963bd8c2a2fed8360125755beffa7b27bb27f9d84895757",
+   "size": 16667,
+   "gz": "files/44124e4656328d07f963bd8c2a2fed8360125755beffa7b27bb27f9d84895757.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C1.mp3": {
+   "sha256": "12a8bf4fac2eba98c9050dda17107ece65e33f0d8270c59ef46cc8c6f9552013",
+   "size": 14951,
+   "gz": "files/12a8bf4fac2eba98c9050dda17107ece65e33f0d8270c59ef46cc8c6f9552013.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C2.mp3": {
+   "sha256": "eed6669bde073a1faecd69e26799765db2bfe7747557afa6381ff4a3f2b1f9fa",
+   "size": 14119,
+   "gz": "files/eed6669bde073a1faecd69e26799765db2bfe7747557afa6381ff4a3f2b1f9fa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C3.mp3": {
+   "sha256": "decea7714f2c8831cf9b3fc16f4779b63413c64317921d901c7fb52e097b88b4",
+   "size": 16485,
+   "gz": "files/decea7714f2c8831cf9b3fc16f4779b63413c64317921d901c7fb52e097b88b4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C4.mp3": {
+   "sha256": "5c16ecb3b935747d5348fa2977214ea402e01d89394a06d4a0ccb2f9a96e3a42",
+   "size": 16251,
+   "gz": "files/5c16ecb3b935747d5348fa2977214ea402e01d89394a06d4a0ccb2f9a96e3a42.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C5.mp3": {
+   "sha256": "17d5aed0b2d13d4b00f3c9eb132a942a8e6059fafd63a6c24f44437177a28166",
+   "size": 18305,
+   "gz": "files/17d5aed0b2d13d4b00f3c9eb132a942a8e6059fafd63a6c24f44437177a28166.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C6.mp3": {
+   "sha256": "526069660783be1e1e745f46ddd00a1333ac8cf1c52bbe178f0f137233545338",
+   "size": 18877,
+   "gz": "files/526069660783be1e1e745f46ddd00a1333ac8cf1c52bbe178f0f137233545338.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/C7.mp3": {
+   "sha256": "4956cdcdba00058c95fdede53467a2d6e4659622b3987dc8a3f9a820be4a584a",
+   "size": 18383,
+   "gz": "files/4956cdcdba00058c95fdede53467a2d6e4659622b3987dc8a3f9a820be4a584a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb1.mp3": {
+   "sha256": "6d124b8237ef1b99de1d660e093b49889a63cd671fe6142403bd4a118f1388ae",
+   "size": 15003,
+   "gz": "files/6d124b8237ef1b99de1d660e093b49889a63cd671fe6142403bd4a118f1388ae.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb2.mp3": {
+   "sha256": "5eaf71d6ecbb36cf1b779a06a37dc9b02b87acedc9539d6c0b24827ddbffc080",
+   "size": 15601,
+   "gz": "files/5eaf71d6ecbb36cf1b779a06a37dc9b02b87acedc9539d6c0b24827ddbffc080.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb3.mp3": {
+   "sha256": "e4380fbe3b00e84a0ee0d2c4fd695afcd932fed2393e7e3960a0cf124e61987b",
+   "size": 16381,
+   "gz": "files/e4380fbe3b00e84a0ee0d2c4fd695afcd932fed2393e7e3960a0cf124e61987b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb4.mp3": {
+   "sha256": "53bc5221927ddad8daa581f20f93fdcf7e41a59ecdcf3c28b93f5733bb52a20a",
+   "size": 16927,
+   "gz": "files/53bc5221927ddad8daa581f20f93fdcf7e41a59ecdcf3c28b93f5733bb52a20a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb5.mp3": {
+   "sha256": "fa7cc650e3168cf131739ce10f8442821e093a2fad7dd93ce7a1333db012e76d",
+   "size": 18331,
+   "gz": "files/fa7cc650e3168cf131739ce10f8442821e093a2fad7dd93ce7a1333db012e76d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb6.mp3": {
+   "sha256": "7f7ed36e08c734c697f9079f6d37a2125b09f2888a1994c815e4004756fba0bf",
+   "size": 17551,
+   "gz": "files/7f7ed36e08c734c697f9079f6d37a2125b09f2888a1994c815e4004756fba0bf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Eb7.mp3": {
+   "sha256": "77025c3f14612fa202cc8afc62c449621cd32c866bf0a8bfe76861be1b8bde35",
+   "size": 16511,
+   "gz": "files/77025c3f14612fa202cc8afc62c449621cd32c866bf0a8bfe76861be1b8bde35.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb1.mp3": {
+   "sha256": "79df0b61953d9c517d16e6d559696660b583080fdf06cbbe0de4cadecd10df32",
+   "size": 14483,
+   "gz": "files/79df0b61953d9c517d16e6d559696660b583080fdf06cbbe0de4cadecd10df32.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb2.mp3": {
+   "sha256": "642e5335cd25d111e66eeb4c49d13100b5b7aed6883e940151a24cfb5f159968",
+   "size": 14535,
+   "gz": "files/642e5335cd25d111e66eeb4c49d13100b5b7aed6883e940151a24cfb5f159968.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb3.mp3": {
+   "sha256": "6a4f6d3f6be794e537be203518fa606d20dd2d0daa0eba627ac0b149ac997402",
+   "size": 16797,
+   "gz": "files/6a4f6d3f6be794e537be203518fa606d20dd2d0daa0eba627ac0b149ac997402.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb4.mp3": {
+   "sha256": "1691b239afc7c209c26de05615e8b9c2f464d1cddb045b6f2de99bb5dd07db5f",
+   "size": 16849,
+   "gz": "files/1691b239afc7c209c26de05615e8b9c2f464d1cddb045b6f2de99bb5dd07db5f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb5.mp3": {
+   "sha256": "93b753ee7588b1cbd6bb4007a0217d21642927fb1eb25087773ab101bc711877",
+   "size": 18123,
+   "gz": "files/93b753ee7588b1cbd6bb4007a0217d21642927fb1eb25087773ab101bc711877.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb6.mp3": {
+   "sha256": "f3830c98407cba13950c57dc0d085af877ae66aa15968510c56182b0863f04fb",
+   "size": 18253,
+   "gz": "files/f3830c98407cba13950c57dc0d085af877ae66aa15968510c56182b0863f04fb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_bass/Gb7.mp3": {
+   "sha256": "89724900faa124de8feccc994b916451037ada5954e145c0c3fb5e2d9f6346be",
+   "size": 16537,
+   "gz": "files/89724900faa124de8feccc994b916451037ada5954e145c0c3fb5e2d9f6346be.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A1.mp3": {
+   "sha256": "abab379d4d0557abb93856f816b7bb395872e656533c3fe7f02048fc993834b7",
+   "size": 25585,
+   "gz": "files/abab379d4d0557abb93856f816b7bb395872e656533c3fe7f02048fc993834b7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A2.mp3": {
+   "sha256": "e21d9ab9b30c73c0aea921c2cd0dd59fece4cc021619927c9ff3dee71f0a9679",
+   "size": 25585,
+   "gz": "files/e21d9ab9b30c73c0aea921c2cd0dd59fece4cc021619927c9ff3dee71f0a9679.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A3.mp3": {
+   "sha256": "02dee2fa184b9b94a5f72886c2370bd076103ebb76fc179982fa503e549dcc10",
+   "size": 25585,
+   "gz": "files/02dee2fa184b9b94a5f72886c2370bd076103ebb76fc179982fa503e549dcc10.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A4.mp3": {
+   "sha256": "4f1671ac831bc41c845e67b18e6c9ea200fc9b753bdffe124703b7141aa928c3",
+   "size": 25585,
+   "gz": "files/4f1671ac831bc41c845e67b18e6c9ea200fc9b753bdffe124703b7141aa928c3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A5.mp3": {
+   "sha256": "2cccfe0aa8077bfd20bcbba470012faa0328ae97d5bd2297147c01f2b255e574",
+   "size": 18929,
+   "gz": "files/2cccfe0aa8077bfd20bcbba470012faa0328ae97d5bd2297147c01f2b255e574.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A6.mp3": {
+   "sha256": "87dab2b5bfdd8bafa575fc24b99591e87e5a0c991a8bbdc8aeb8a1e517b576d2",
+   "size": 15315,
+   "gz": "files/87dab2b5bfdd8bafa575fc24b99591e87e5a0c991a8bbdc8aeb8a1e517b576d2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/A7.mp3": {
+   "sha256": "ace76663dac4610a93259655f069835e6eb397b76aedf85c1f48a5036cf25687",
+   "size": 14535,
+   "gz": "files/ace76663dac4610a93259655f069835e6eb397b76aedf85c1f48a5036cf25687.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C1.mp3": {
+   "sha256": "eb3b985e3b692cfe0c48550a26843fc3da44c7630c0b7bcfd820e87c5122cccc",
+   "size": 25585,
+   "gz": "files/eb3b985e3b692cfe0c48550a26843fc3da44c7630c0b7bcfd820e87c5122cccc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C2.mp3": {
+   "sha256": "e02c5a80c03871e1889a3bb371d853f92294c1e8538ac06f70df0fd045540207",
+   "size": 25585,
+   "gz": "files/e02c5a80c03871e1889a3bb371d853f92294c1e8538ac06f70df0fd045540207.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C3.mp3": {
+   "sha256": "7d0409ea3c40af25c6d3d606f12890f88f896d93c381b6eb8c58497f308b30d3",
+   "size": 25585,
+   "gz": "files/7d0409ea3c40af25c6d3d606f12890f88f896d93c381b6eb8c58497f308b30d3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C4.mp3": {
+   "sha256": "b6d32e0d9d0c2e4b88165a2ec27b8787a970f131a03d96d065f28f158640af96",
+   "size": 25585,
+   "gz": "files/b6d32e0d9d0c2e4b88165a2ec27b8787a970f131a03d96d065f28f158640af96.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C5.mp3": {
+   "sha256": "7a4be6dae323ac5564ad1a617b554fd595e5e0a63f19c3581e3ee94c33ae2e4b",
+   "size": 25585,
+   "gz": "files/7a4be6dae323ac5564ad1a617b554fd595e5e0a63f19c3581e3ee94c33ae2e4b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C6.mp3": {
+   "sha256": "6a0030c071ccd6c9a722455851d65b18cb86cbfe515772a6ded4c747eda339a0",
+   "size": 19371,
+   "gz": "files/6a0030c071ccd6c9a722455851d65b18cb86cbfe515772a6ded4c747eda339a0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/C7.mp3": {
+   "sha256": "5e4cadc06eb25e2302dcc5bf1af76fe85ed258759d02c46e9169376ade83845e",
+   "size": 14977,
+   "gz": "files/5e4cadc06eb25e2302dcc5bf1af76fe85ed258759d02c46e9169376ade83845e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb1.mp3": {
+   "sha256": "694e89cd30008f47411336ea1b76675503bbc5383c3849df676b2cf6b51eee67",
+   "size": 25585,
+   "gz": "files/694e89cd30008f47411336ea1b76675503bbc5383c3849df676b2cf6b51eee67.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb2.mp3": {
+   "sha256": "708ff787e5ae2bfa45fe386e5fadc90a9339817dd245ed6e6f62532e42fad8d2",
+   "size": 25585,
+   "gz": "files/708ff787e5ae2bfa45fe386e5fadc90a9339817dd245ed6e6f62532e42fad8d2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb3.mp3": {
+   "sha256": "bec9944789ef9e7ec3dd7f9fcdf63ed1e5e82e29447c81be3578df9b1269b4b6",
+   "size": 25585,
+   "gz": "files/bec9944789ef9e7ec3dd7f9fcdf63ed1e5e82e29447c81be3578df9b1269b4b6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb4.mp3": {
+   "sha256": "96586e2865651cfa0469e762f3bd40821f6e45eecf4761a86a37bc59cfebfb2c",
+   "size": 25585,
+   "gz": "files/96586e2865651cfa0469e762f3bd40821f6e45eecf4761a86a37bc59cfebfb2c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb5.mp3": {
+   "sha256": "aad99b852c20c2aee66143dd103513523566716cb2f4c6ef6ac478ef84f282b0",
+   "size": 24753,
+   "gz": "files/aad99b852c20c2aee66143dd103513523566716cb2f4c6ef6ac478ef84f282b0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb6.mp3": {
+   "sha256": "c0f4c45d7930ed90edebfd93321807cdb7346e364ba1933867c4b49ba18d5368",
+   "size": 17915,
+   "gz": "files/c0f4c45d7930ed90edebfd93321807cdb7346e364ba1933867c4b49ba18d5368.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Eb7.mp3": {
+   "sha256": "c23b9b43ca8ece152e59ef04832b2290e96db54f9539af3162df4054c23271c7",
+   "size": 14925,
+   "gz": "files/c23b9b43ca8ece152e59ef04832b2290e96db54f9539af3162df4054c23271c7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb1.mp3": {
+   "sha256": "6ff97bc16a3020037f46ebe4196ce2602eed8af243b567768d4cb5d47a8ba0bc",
+   "size": 25585,
+   "gz": "files/6ff97bc16a3020037f46ebe4196ce2602eed8af243b567768d4cb5d47a8ba0bc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb2.mp3": {
+   "sha256": "95ab26a90d088fdc938673005ba2b2a4b166ee188ffbad0c7f75fb746334b043",
+   "size": 25585,
+   "gz": "files/95ab26a90d088fdc938673005ba2b2a4b166ee188ffbad0c7f75fb746334b043.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb3.mp3": {
+   "sha256": "91605f55bf0265c1e526b966a3901f9c2813473ac890f4b7330ee08874c5d30f",
+   "size": 25585,
+   "gz": "files/91605f55bf0265c1e526b966a3901f9c2813473ac890f4b7330ee08874c5d30f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb4.mp3": {
+   "sha256": "f0db7ee32b9175907ca60cf53e6c7a129ea8e7c8f6562dc7ebe6e5c81dcbdf99",
+   "size": 25585,
+   "gz": "files/f0db7ee32b9175907ca60cf53e6c7a129ea8e7c8f6562dc7ebe6e5c81dcbdf99.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb5.mp3": {
+   "sha256": "bd1d81203f5338ab62372f88c0b4eb5b4a3133ef58518a8770f3dfdf34f74124",
+   "size": 24493,
+   "gz": "files/bd1d81203f5338ab62372f88c0b4eb5b4a3133ef58518a8770f3dfdf34f74124.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb6.mp3": {
+   "sha256": "c5f87e3bf666919bd1e230f6945ee4af752761faa54dc1814f854e8e9d8a7920",
+   "size": 17239,
+   "gz": "files/c5f87e3bf666919bd1e230f6945ee4af752761faa54dc1814f854e8e9d8a7920.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_grand_piano/Gb7.mp3": {
+   "sha256": "8615b92d93fa16b4051bdc8800a6430642bdcff17e26d020ec5fd83bf89db759",
+   "size": 14665,
+   "gz": "files/8615b92d93fa16b4051bdc8800a6430642bdcff17e26d020ec5fd83bf89db759.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A1.mp3": {
+   "sha256": "7e8cd5cb1c8387592195efd84af2c032f59a1957f253079801f8c7404f4f1eea",
+   "size": 15237,
+   "gz": "files/7e8cd5cb1c8387592195efd84af2c032f59a1957f253079801f8c7404f4f1eea.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A2.mp3": {
+   "sha256": "8833e0949a7e8597b84872530af06942913d73f0dc789aafa65103873f798f1e",
+   "size": 15835,
+   "gz": "files/8833e0949a7e8597b84872530af06942913d73f0dc789aafa65103873f798f1e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A3.mp3": {
+   "sha256": "9e9d4205495c6db126e0107ce862cb5d372b013293b8cace1d78694a42361132",
+   "size": 15367,
+   "gz": "files/9e9d4205495c6db126e0107ce862cb5d372b013293b8cace1d78694a42361132.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A4.mp3": {
+   "sha256": "efcc55881a4e8789b1f501b76296161954ba1ca77e5e2300012bfce429b619b3",
+   "size": 18669,
+   "gz": "files/efcc55881a4e8789b1f501b76296161954ba1ca77e5e2300012bfce429b619b3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A5.mp3": {
+   "sha256": "de316e2bea201d564e4ce8f52c7e1ad647e03e7764fcf01096bc97d828a14a1f",
+   "size": 14925,
+   "gz": "files/de316e2bea201d564e4ce8f52c7e1ad647e03e7764fcf01096bc97d828a14a1f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A6.mp3": {
+   "sha256": "cd152b59005cbd27b18cf27fae9039ca692dc80365afce14745a07f09110d080",
+   "size": 14171,
+   "gz": "files/cd152b59005cbd27b18cf27fae9039ca692dc80365afce14745a07f09110d080.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/A7.mp3": {
+   "sha256": "09253a0e6e22cacf01343df01683070e3c2f16aed96b3b580005e720da1d3b9a",
+   "size": 13781,
+   "gz": "files/09253a0e6e22cacf01343df01683070e3c2f16aed96b3b580005e720da1d3b9a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C1.mp3": {
+   "sha256": "862de75c8b482571edebf69a8714ea87f1b6b7c75e1ee63758b1492507cb96a7",
+   "size": 15679,
+   "gz": "files/862de75c8b482571edebf69a8714ea87f1b6b7c75e1ee63758b1492507cb96a7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C2.mp3": {
+   "sha256": "a21e4780b219df5beb886d89ba42c7bc699d417a969911e5f07c50286e285455",
+   "size": 15237,
+   "gz": "files/a21e4780b219df5beb886d89ba42c7bc699d417a969911e5f07c50286e285455.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C3.mp3": {
+   "sha256": "7a30b518b874f7740034977710aa0efab70d215a3a828e6924717eeb2c244906",
+   "size": 16095,
+   "gz": "files/7a30b518b874f7740034977710aa0efab70d215a3a828e6924717eeb2c244906.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C4.mp3": {
+   "sha256": "55c2808ac0fd3f722645f6bffe0f90313e1f3a1b325d56507639f1430b4e010a",
+   "size": 15809,
+   "gz": "files/55c2808ac0fd3f722645f6bffe0f90313e1f3a1b325d56507639f1430b4e010a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C5.mp3": {
+   "sha256": "feed1eec8636d4329da5b3d1d84963e0f5d6c29411d057c8442ca3b4b9e33981",
+   "size": 18331,
+   "gz": "files/feed1eec8636d4329da5b3d1d84963e0f5d6c29411d057c8442ca3b4b9e33981.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C6.mp3": {
+   "sha256": "71e68e4a562ca8b4b370f1dfa2770243cea8c8a19c413336dc82806c646ac8a5",
+   "size": 14847,
+   "gz": "files/71e68e4a562ca8b4b370f1dfa2770243cea8c8a19c413336dc82806c646ac8a5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/C7.mp3": {
+   "sha256": "9aefde853ed121ad5d8423ec02ceb7c6cd0d076a1553b444b14e6032b433b607",
+   "size": 14405,
+   "gz": "files/9aefde853ed121ad5d8423ec02ceb7c6cd0d076a1553b444b14e6032b433b607.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb1.mp3": {
+   "sha256": "781c53df9e1069f6cc1b693c467465e9ac71a5ba6f5f2614531c5153495bcdc9",
+   "size": 15445,
+   "gz": "files/781c53df9e1069f6cc1b693c467465e9ac71a5ba6f5f2614531c5153495bcdc9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb2.mp3": {
+   "sha256": "dfedfcaa411744fd24e0461847e783f98ac43301e2e5c5a5097a61f59647a064",
+   "size": 15263,
+   "gz": "files/dfedfcaa411744fd24e0461847e783f98ac43301e2e5c5a5097a61f59647a064.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb3.mp3": {
+   "sha256": "760b4c41e6cb29086ef5449a79fc077dbceeabbbd89365efd55e33ec3a20993a",
+   "size": 16927,
+   "gz": "files/760b4c41e6cb29086ef5449a79fc077dbceeabbbd89365efd55e33ec3a20993a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb4.mp3": {
+   "sha256": "259fc4fa113076c6df6207815821089a0e99e40899e8e9c60e34d437caa04897",
+   "size": 18305,
+   "gz": "files/259fc4fa113076c6df6207815821089a0e99e40899e8e9c60e34d437caa04897.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb5.mp3": {
+   "sha256": "cd290df61e00e7b65f19fd6316f135220f549801164712f568b81597fd4b08fe",
+   "size": 17811,
+   "gz": "files/cd290df61e00e7b65f19fd6316f135220f549801164712f568b81597fd4b08fe.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb6.mp3": {
+   "sha256": "d5bcc59faf36582b58620fe927bb9c96312247ae28c9d408272c3f85ccc220eb",
+   "size": 14587,
+   "gz": "files/d5bcc59faf36582b58620fe927bb9c96312247ae28c9d408272c3f85ccc220eb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Eb7.mp3": {
+   "sha256": "f4df0a202809be8f976104a2ba7478767271e45daae1f8f4ef8521738e08371b",
+   "size": 14041,
+   "gz": "files/f4df0a202809be8f976104a2ba7478767271e45daae1f8f4ef8521738e08371b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb1.mp3": {
+   "sha256": "e8aba65150ce4b18646e99975aadff5a5ad7be67bf2ec564aa827e5045094635",
+   "size": 15445,
+   "gz": "files/e8aba65150ce4b18646e99975aadff5a5ad7be67bf2ec564aa827e5045094635.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb2.mp3": {
+   "sha256": "d2b42009a964644f5b1171a07d90c24c407cbd06d05a766b12bf1d62bb47d43d",
+   "size": 15601,
+   "gz": "files/d2b42009a964644f5b1171a07d90c24c407cbd06d05a766b12bf1d62bb47d43d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb3.mp3": {
+   "sha256": "942a28a4fa8f91f4b9c884b534be6e23f29024faca5e69b4236dde30c2cf38a0",
+   "size": 14977,
+   "gz": "files/942a28a4fa8f91f4b9c884b534be6e23f29024faca5e69b4236dde30c2cf38a0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb4.mp3": {
+   "sha256": "36b17d2fbf861c84b265808595503224dd17ce4655e9d386714f8b532cb39f02",
+   "size": 18721,
+   "gz": "files/36b17d2fbf861c84b265808595503224dd17ce4655e9d386714f8b532cb39f02.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb5.mp3": {
+   "sha256": "012c635367bba458b8b970076ddaa581b60fe864c59fab9a130203bbdb711855",
+   "size": 15497,
+   "gz": "files/012c635367bba458b8b970076ddaa581b60fe864c59fab9a130203bbdb711855.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb6.mp3": {
+   "sha256": "dc6a363fa1bfa380d2c0de2ea0117defefe6fc1f2ae89ce8eec087eb32eed572",
+   "size": 14665,
+   "gz": "files/dc6a363fa1bfa380d2c0de2ea0117defefe6fc1f2ae89ce8eec087eb32eed572.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/acoustic_guitar_nylon/Gb7.mp3": {
+   "sha256": "c1dd7850a15d7afcaed055f71c42d527a0798f36f5e16d27a7b0387e043f78c7",
+   "size": 13989,
+   "gz": "files/c1dd7850a15d7afcaed055f71c42d527a0798f36f5e16d27a7b0387e043f78c7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A1.mp3": {
+   "sha256": "0f608c895ad6351fa6642f88d065a08c99e462b8eae435f0baf988242c8a04df",
+   "size": 25585,
+   "gz": "files/0f608c895ad6351fa6642f88d065a08c99e462b8eae435f0baf988242c8a04df.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A2.mp3": {
+   "sha256": "86e72851ff29ff8929e2573d53ec24f0b4548c8719837caa6863e8e3ba160955",
+   "size": 25585,
+   "gz": "files/86e72851ff29ff8929e2573d53ec24f0b4548c8719837caa6863e8e3ba160955.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A3.mp3": {
+   "sha256": "1c18df2570ff134bede58981c59719a2feec6ee4e16d79eeadaeb680195ddfe6",
+   "size": 25585,
+   "gz": "files/1c18df2570ff134bede58981c59719a2feec6ee4e16d79eeadaeb680195ddfe6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A4.mp3": {
+   "sha256": "58173cd889fdeb5b948f15b49fe3a9cbfb17c1acd9ad6b217c96803b5e7519d0",
+   "size": 25585,
+   "gz": "files/58173cd889fdeb5b948f15b49fe3a9cbfb17c1acd9ad6b217c96803b5e7519d0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A5.mp3": {
+   "sha256": "76eaa96e97195e8634cfd77e6cb85bbbe7febf3599eb1bd000f7cc35dc2c5ac3",
+   "size": 25585,
+   "gz": "files/76eaa96e97195e8634cfd77e6cb85bbbe7febf3599eb1bd000f7cc35dc2c5ac3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C1.mp3": {
+   "sha256": "73bd580a0fbad33abe3f91bc21d7579caf73bd9d63a77433a73f4e70190105aa",
+   "size": 25585,
+   "gz": "files/73bd580a0fbad33abe3f91bc21d7579caf73bd9d63a77433a73f4e70190105aa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C2.mp3": {
+   "sha256": "97e8222146625e908b954193319d8b69bcb344e6cca2878d64926f27a60a7f56",
+   "size": 25585,
+   "gz": "files/97e8222146625e908b954193319d8b69bcb344e6cca2878d64926f27a60a7f56.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C3.mp3": {
+   "sha256": "97c41a65ce31f41fb6b1df3b860a2abf8989f69825bff2802af96d0864f855d9",
+   "size": 25585,
+   "gz": "files/97c41a65ce31f41fb6b1df3b860a2abf8989f69825bff2802af96d0864f855d9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C4.mp3": {
+   "sha256": "4d3e59d0f84d21720ceee43eccda720370a7a891dfb336258cc8b2fd95c06dac",
+   "size": 25585,
+   "gz": "files/4d3e59d0f84d21720ceee43eccda720370a7a891dfb336258cc8b2fd95c06dac.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C5.mp3": {
+   "sha256": "1aed556973313bebb45d0ed056c1d08a05cb8631f419b130ea2b04b47df63aec",
+   "size": 25585,
+   "gz": "files/1aed556973313bebb45d0ed056c1d08a05cb8631f419b130ea2b04b47df63aec.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C6.mp3": {
+   "sha256": "73c5cc47b036deb27c3fd46f5e44c32d64ab4aac6022c76727583b141680a086",
+   "size": 25585,
+   "gz": "files/73c5cc47b036deb27c3fd46f5e44c32d64ab4aac6022c76727583b141680a086.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/C7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb1.mp3": {
+   "sha256": "c54a5a87156c3bd174571e68d42e50bf587d72cf139f671a08bbdb9ed720b76e",
+   "size": 25585,
+   "gz": "files/c54a5a87156c3bd174571e68d42e50bf587d72cf139f671a08bbdb9ed720b76e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb2.mp3": {
+   "sha256": "2aec557e8ec239beea035fed3997036757c917498d0922a07d5dba7db1c58486",
+   "size": 25585,
+   "gz": "files/2aec557e8ec239beea035fed3997036757c917498d0922a07d5dba7db1c58486.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb3.mp3": {
+   "sha256": "c2a97af04d8244fdbd8372149224af1d907183bf1296e052a1ef98631c9e916f",
+   "size": 25585,
+   "gz": "files/c2a97af04d8244fdbd8372149224af1d907183bf1296e052a1ef98631c9e916f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb4.mp3": {
+   "sha256": "dedd8e2e2f1e46305b056a86a2a2c9628c41d168703b4803dc9c42d177908299",
+   "size": 25585,
+   "gz": "files/dedd8e2e2f1e46305b056a86a2a2c9628c41d168703b4803dc9c42d177908299.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb5.mp3": {
+   "sha256": "5e8bc490ea806eecf37d3c8cc367d3ce1fd295f659895f63b0c8b421134ccb17",
+   "size": 25585,
+   "gz": "files/5e8bc490ea806eecf37d3c8cc367d3ce1fd295f659895f63b0c8b421134ccb17.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb1.mp3": {
+   "sha256": "f578b5df8827da98f50b4f3d29d105eabd8b00a29cf0f68f174f189373e956ac",
+   "size": 25585,
+   "gz": "files/f578b5df8827da98f50b4f3d29d105eabd8b00a29cf0f68f174f189373e956ac.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb2.mp3": {
+   "sha256": "ee0f3891168dd5840311ccada61ebe0ca7d733d00b74469da23fda5d3f961212",
+   "size": 25585,
+   "gz": "files/ee0f3891168dd5840311ccada61ebe0ca7d733d00b74469da23fda5d3f961212.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb3.mp3": {
+   "sha256": "71c1440e69de1b3d27d9b6e08567e849c713fd6554ec385e3be36d2dc9f821c1",
+   "size": 25585,
+   "gz": "files/71c1440e69de1b3d27d9b6e08567e849c713fd6554ec385e3be36d2dc9f821c1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb4.mp3": {
+   "sha256": "6096ebbefedc00bab6a77d29b7dd4137e8af92959cc2f45cdb9193e25efd6ed2",
+   "size": 25585,
+   "gz": "files/6096ebbefedc00bab6a77d29b7dd4137e8af92959cc2f45cdb9193e25efd6ed2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb5.mp3": {
+   "sha256": "a5afd78b1074cf3789952a9b9997f61fd7beb2a9ce452461868250f7deeb55b9",
+   "size": 25585,
+   "gz": "files/a5afd78b1074cf3789952a9b9997f61fd7beb2a9ce452461868250f7deeb55b9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/alto_sax/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A1.mp3": {
+   "sha256": "0b33a8df2f39c225a6f027218f6922ddb046cc89599c3552ba12c2b2ae2d40c9",
+   "size": 25585,
+   "gz": "files/0b33a8df2f39c225a6f027218f6922ddb046cc89599c3552ba12c2b2ae2d40c9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A2.mp3": {
+   "sha256": "33695abdc1fef09a6d9b4d3a730410bd26e0197a4208423f648769432ee01ad5",
+   "size": 25585,
+   "gz": "files/33695abdc1fef09a6d9b4d3a730410bd26e0197a4208423f648769432ee01ad5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A3.mp3": {
+   "sha256": "7d5f10fa717f42b2a1ca8e32af7e8578376679a14bcd0d13c218870b8753c580",
+   "size": 25585,
+   "gz": "files/7d5f10fa717f42b2a1ca8e32af7e8578376679a14bcd0d13c218870b8753c580.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A4.mp3": {
+   "sha256": "9c54c2fa8e0511e20aad3452abfad28bb4cf07ad03beddc2eb194b472a43d1d1",
+   "size": 25585,
+   "gz": "files/9c54c2fa8e0511e20aad3452abfad28bb4cf07ad03beddc2eb194b472a43d1d1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A5.mp3": {
+   "sha256": "e22e1d7be0e95bc5d4bf96853f5ac313e19f447b323e793265d1ec71fc3aaac5",
+   "size": 25585,
+   "gz": "files/e22e1d7be0e95bc5d4bf96853f5ac313e19f447b323e793265d1ec71fc3aaac5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A6.mp3": {
+   "sha256": "5fac11fb8e965e849085a255d420ff3422594b060c8cc33acea3534463184ebf",
+   "size": 25585,
+   "gz": "files/5fac11fb8e965e849085a255d420ff3422594b060c8cc33acea3534463184ebf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C1.mp3": {
+   "sha256": "39b252fee9beedb8d758e49174d05a4765a8c925c16005eda2f13f96d2443ae9",
+   "size": 25585,
+   "gz": "files/39b252fee9beedb8d758e49174d05a4765a8c925c16005eda2f13f96d2443ae9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C2.mp3": {
+   "sha256": "a5e3efdd2a40fad509c9e3bde47b26f88fa19bddc0f1ef39a4fc87223ef0e0ae",
+   "size": 25585,
+   "gz": "files/a5e3efdd2a40fad509c9e3bde47b26f88fa19bddc0f1ef39a4fc87223ef0e0ae.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C3.mp3": {
+   "sha256": "d7fdc6c08e93091f89abdab1fcfe7fbc319d490ae73526f39fd2b0a08099c283",
+   "size": 25585,
+   "gz": "files/d7fdc6c08e93091f89abdab1fcfe7fbc319d490ae73526f39fd2b0a08099c283.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C4.mp3": {
+   "sha256": "0f8e01c616b142942f88a7120e40e10e006db0d806a062747affebdee289ce56",
+   "size": 25585,
+   "gz": "files/0f8e01c616b142942f88a7120e40e10e006db0d806a062747affebdee289ce56.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C5.mp3": {
+   "sha256": "d9e5a7ec150e564332d038c8fe8dae170141887c6518ddc28b607c633887a460",
+   "size": 25585,
+   "gz": "files/d9e5a7ec150e564332d038c8fe8dae170141887c6518ddc28b607c633887a460.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C6.mp3": {
+   "sha256": "20159eeabae0996872ad05b8c6c825218ab8c03a51b4208aa59f85bc4728b581",
+   "size": 25585,
+   "gz": "files/20159eeabae0996872ad05b8c6c825218ab8c03a51b4208aa59f85bc4728b581.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/C7.mp3": {
+   "sha256": "01f5d4e6827464a9ed683a63c0b5a9e5967eb4137e8b5a775c90670b3a353236",
+   "size": 25585,
+   "gz": "files/01f5d4e6827464a9ed683a63c0b5a9e5967eb4137e8b5a775c90670b3a353236.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb1.mp3": {
+   "sha256": "88cf4d7eb6177ff8a8e624ea3c39f822542c0619a99e4c22bba6879fe33beeb9",
+   "size": 25585,
+   "gz": "files/88cf4d7eb6177ff8a8e624ea3c39f822542c0619a99e4c22bba6879fe33beeb9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb2.mp3": {
+   "sha256": "fea5f72e7be7480a1ec791413e5bd098db5717f719facf210c32d2ef8944ab03",
+   "size": 25585,
+   "gz": "files/fea5f72e7be7480a1ec791413e5bd098db5717f719facf210c32d2ef8944ab03.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb3.mp3": {
+   "sha256": "2928c897baa461ef35906277071828a7f51733fb5e7d316684a92c36666c9613",
+   "size": 25585,
+   "gz": "files/2928c897baa461ef35906277071828a7f51733fb5e7d316684a92c36666c9613.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb4.mp3": {
+   "sha256": "e099143145dd87aeb68ed1cdf2ebb705a71370893867a361be4d0949765fe406",
+   "size": 25585,
+   "gz": "files/e099143145dd87aeb68ed1cdf2ebb705a71370893867a361be4d0949765fe406.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb5.mp3": {
+   "sha256": "b784fac7454fef458c0943535ef76aa273e62e2988c4ed4d1e1236335c446c13",
+   "size": 25585,
+   "gz": "files/b784fac7454fef458c0943535ef76aa273e62e2988c4ed4d1e1236335c446c13.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb6.mp3": {
+   "sha256": "c2bbd844f79ef91efea5a4c3d907190307b8a4474f9062b777d0b35c15bbb599",
+   "size": 25585,
+   "gz": "files/c2bbd844f79ef91efea5a4c3d907190307b8a4474f9062b777d0b35c15bbb599.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb1.mp3": {
+   "sha256": "6a6e10807fae25ba909d32404807bf12dbf525ac3680cd88e7f6e3a28828657f",
+   "size": 25585,
+   "gz": "files/6a6e10807fae25ba909d32404807bf12dbf525ac3680cd88e7f6e3a28828657f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb2.mp3": {
+   "sha256": "6007566e62344f403112682b1b5b24302a34329b348e8f9a11bffd407f65799b",
+   "size": 25585,
+   "gz": "files/6007566e62344f403112682b1b5b24302a34329b348e8f9a11bffd407f65799b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb3.mp3": {
+   "sha256": "e7e542ddcc5bef4eb40600f2b66f185569cbdf9d31101fb5cbf3afc135618b7b",
+   "size": 25585,
+   "gz": "files/e7e542ddcc5bef4eb40600f2b66f185569cbdf9d31101fb5cbf3afc135618b7b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb4.mp3": {
+   "sha256": "dc6828c4549cf8f6dcb362418755c2aa39e5403665edd726def425dc108c17dd",
+   "size": 25585,
+   "gz": "files/dc6828c4549cf8f6dcb362418755c2aa39e5403665edd726def425dc108c17dd.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb5.mp3": {
+   "sha256": "63b95071b73a1d48f7449efed5485a6fbac6e71f33c176ac5ee239c8cad8c7d7",
+   "size": 25585,
+   "gz": "files/63b95071b73a1d48f7449efed5485a6fbac6e71f33c176ac5ee239c8cad8c7d7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb6.mp3": {
+   "sha256": "c91ae6608d9da3dd62ff99375d8d9cc73bcdf56eeacaef18c5b2ebe0c53553dd",
+   "size": 25585,
+   "gz": "files/c91ae6608d9da3dd62ff99375d8d9cc73bcdf56eeacaef18c5b2ebe0c53553dd.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/brass_section/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A1.mp3": {
+   "sha256": "e6c8ff5ea463b547beb695b9b43c4a1fcbb545064606551c9304875b3fb2fd61",
+   "size": 25585,
+   "gz": "files/e6c8ff5ea463b547beb695b9b43c4a1fcbb545064606551c9304875b3fb2fd61.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A2.mp3": {
+   "sha256": "aa18efdb1093f29ed02248f4be834d544bc483f82218bb3ff167eb09daa8d806",
+   "size": 25585,
+   "gz": "files/aa18efdb1093f29ed02248f4be834d544bc483f82218bb3ff167eb09daa8d806.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A3.mp3": {
+   "sha256": "ffabf414fcd7431e4f689d05637ebac7f04cf4e0244b0d8616016f838a7d600f",
+   "size": 25585,
+   "gz": "files/ffabf414fcd7431e4f689d05637ebac7f04cf4e0244b0d8616016f838a7d600f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A4.mp3": {
+   "sha256": "cd9f3a2632bffdebd910278be56863f2f96767d0c854b52830ef1767c0d511ba",
+   "size": 25585,
+   "gz": "files/cd9f3a2632bffdebd910278be56863f2f96767d0c854b52830ef1767c0d511ba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A5.mp3": {
+   "sha256": "d0e512725709e776795a6322bdc8c0f3f6b712f154bcb80ceb454bc404e5ef32",
+   "size": 25585,
+   "gz": "files/d0e512725709e776795a6322bdc8c0f3f6b712f154bcb80ceb454bc404e5ef32.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A6.mp3": {
+   "sha256": "7760898b1ba375f23118c3be4da223383b5aa24e347fbd92222c6cc18688adba",
+   "size": 25585,
+   "gz": "files/7760898b1ba375f23118c3be4da223383b5aa24e347fbd92222c6cc18688adba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/A7.mp3": {
+   "sha256": "ea1f9fc32455d77936cd464b046a3a5f729e8202a7a3c02d1523221bf61f8ea9",
+   "size": 25585,
+   "gz": "files/ea1f9fc32455d77936cd464b046a3a5f729e8202a7a3c02d1523221bf61f8ea9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C1.mp3": {
+   "sha256": "d4135b1db90ddbdaca4fc379dc4f934b4a09ee5ec5e80cf5b3e5383709e27ff9",
+   "size": 25585,
+   "gz": "files/d4135b1db90ddbdaca4fc379dc4f934b4a09ee5ec5e80cf5b3e5383709e27ff9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C2.mp3": {
+   "sha256": "b067cad9857d8fd2651ee6b2661fefd8b7305fae8227f6834f203d81c98c1e1c",
+   "size": 25585,
+   "gz": "files/b067cad9857d8fd2651ee6b2661fefd8b7305fae8227f6834f203d81c98c1e1c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C3.mp3": {
+   "sha256": "945c6f8243bbe13309a5938fb55483fd215bb760e41c77e21c890714c1d9f7ec",
+   "size": 25585,
+   "gz": "files/945c6f8243bbe13309a5938fb55483fd215bb760e41c77e21c890714c1d9f7ec.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C4.mp3": {
+   "sha256": "0495b262618c14e6b2d37f9457019ffc79d6bcd9b0571f626760aa1a497bb45b",
+   "size": 25585,
+   "gz": "files/0495b262618c14e6b2d37f9457019ffc79d6bcd9b0571f626760aa1a497bb45b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C5.mp3": {
+   "sha256": "8fb8fa3e1e8a855c0fd1466bec0450bfde80e503907407bda1f7f966d63f9fb2",
+   "size": 25585,
+   "gz": "files/8fb8fa3e1e8a855c0fd1466bec0450bfde80e503907407bda1f7f966d63f9fb2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C6.mp3": {
+   "sha256": "075b442347699e1a3d8191a367ed248f28979b791734ed830209e5fb1a4ac7e3",
+   "size": 25585,
+   "gz": "files/075b442347699e1a3d8191a367ed248f28979b791734ed830209e5fb1a4ac7e3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/C7.mp3": {
+   "sha256": "3085747b31c9c8eff0a18f5768d796f33e77764a50b977945f1b57d3c3efe206",
+   "size": 25585,
+   "gz": "files/3085747b31c9c8eff0a18f5768d796f33e77764a50b977945f1b57d3c3efe206.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb1.mp3": {
+   "sha256": "4aba8d2f4eadf7b3b9cfb2d5c92d89ffd97dc131228a13fc993fea68e60e7a97",
+   "size": 25585,
+   "gz": "files/4aba8d2f4eadf7b3b9cfb2d5c92d89ffd97dc131228a13fc993fea68e60e7a97.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb2.mp3": {
+   "sha256": "687b478a287c19b22b9ea0be675f78e4a7de29efa8c7da955878504fbf455bd5",
+   "size": 25585,
+   "gz": "files/687b478a287c19b22b9ea0be675f78e4a7de29efa8c7da955878504fbf455bd5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb3.mp3": {
+   "sha256": "080786c62520a9f950dbd8dc3f737993c0be64b06d1a4b7f282931a97d7dd60b",
+   "size": 25585,
+   "gz": "files/080786c62520a9f950dbd8dc3f737993c0be64b06d1a4b7f282931a97d7dd60b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb4.mp3": {
+   "sha256": "86c7a6adffa21878989e03bd4453bc21fa549c5b72cc8eee2227ef6e889a3763",
+   "size": 25585,
+   "gz": "files/86c7a6adffa21878989e03bd4453bc21fa549c5b72cc8eee2227ef6e889a3763.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb5.mp3": {
+   "sha256": "8cff6d68bc50b2211b57ca83685c905f4fb4f5771a4b3ac59b9ba1a1910c6726",
+   "size": 25585,
+   "gz": "files/8cff6d68bc50b2211b57ca83685c905f4fb4f5771a4b3ac59b9ba1a1910c6726.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb6.mp3": {
+   "sha256": "1d618a1550203a9c1c66f8475540e826192860b1ab2c8beb49983ee3b3c83078",
+   "size": 25585,
+   "gz": "files/1d618a1550203a9c1c66f8475540e826192860b1ab2c8beb49983ee3b3c83078.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Eb7.mp3": {
+   "sha256": "8fd26480dd2c2f9d3b4fe8cb037e2d190726052cf32a5d3bd88a46924d754479",
+   "size": 25585,
+   "gz": "files/8fd26480dd2c2f9d3b4fe8cb037e2d190726052cf32a5d3bd88a46924d754479.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb1.mp3": {
+   "sha256": "d3030b139473aa5e26770083058250faaedca8c822b10b6e0252ae225e74526e",
+   "size": 25585,
+   "gz": "files/d3030b139473aa5e26770083058250faaedca8c822b10b6e0252ae225e74526e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb2.mp3": {
+   "sha256": "8234567cc225a0bda39041749407a77dafda1949f987e11736c9af7a6a08bc17",
+   "size": 25585,
+   "gz": "files/8234567cc225a0bda39041749407a77dafda1949f987e11736c9af7a6a08bc17.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb3.mp3": {
+   "sha256": "e12363ae687cbf7888ead7e7e943df6895ae2c9ac18bced761160c5ea17bdff6",
+   "size": 25585,
+   "gz": "files/e12363ae687cbf7888ead7e7e943df6895ae2c9ac18bced761160c5ea17bdff6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb4.mp3": {
+   "sha256": "5be8caab906d4a28d06003ffcb80a933bd0a59e6f33f07da01b2eb0d9176a601",
+   "size": 25585,
+   "gz": "files/5be8caab906d4a28d06003ffcb80a933bd0a59e6f33f07da01b2eb0d9176a601.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb5.mp3": {
+   "sha256": "91ce319c70f5d7de97addbda67f4c1c8a3e57bef4d3c01fa5b7944c58823d2f8",
+   "size": 25585,
+   "gz": "files/91ce319c70f5d7de97addbda67f4c1c8a3e57bef4d3c01fa5b7944c58823d2f8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb6.mp3": {
+   "sha256": "a621150606ac0cfeef337a37b9c5d2876925812ce44c74500c0853425344982b",
+   "size": 25585,
+   "gz": "files/a621150606ac0cfeef337a37b9c5d2876925812ce44c74500c0853425344982b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/cello/Gb7.mp3": {
+   "sha256": "ea286fbc1ca233d4572941543df86a220c81520c6c998c331b7b2765ab19fc2b",
+   "size": 25585,
+   "gz": "files/ea286fbc1ca233d4572941543df86a220c81520c6c998c331b7b2765ab19fc2b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A1.mp3": {
+   "sha256": "d4bfecc6cf76b8d6f8f79511587cd492ca46db1d759c350ad0a0eeac3bdfd2b5",
+   "size": 25585,
+   "gz": "files/d4bfecc6cf76b8d6f8f79511587cd492ca46db1d759c350ad0a0eeac3bdfd2b5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A2.mp3": {
+   "sha256": "9641192b2988bd23a4864bd4d5c64499049293487bfda87e8ee0a6b3b1d8e8d9",
+   "size": 25585,
+   "gz": "files/9641192b2988bd23a4864bd4d5c64499049293487bfda87e8ee0a6b3b1d8e8d9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A3.mp3": {
+   "sha256": "aa98ca962b46827423bd89609e08893455339a1e87b90791275f753a91f4af1a",
+   "size": 25585,
+   "gz": "files/aa98ca962b46827423bd89609e08893455339a1e87b90791275f753a91f4af1a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A4.mp3": {
+   "sha256": "690c2dc026d9c99f61f23c5c5a6f984fa6b883b9babd6c58181c7c9e0e306029",
+   "size": 25585,
+   "gz": "files/690c2dc026d9c99f61f23c5c5a6f984fa6b883b9babd6c58181c7c9e0e306029.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A5.mp3": {
+   "sha256": "3cf1f339d8d07980465ca1cc6772c992208f477d53367eee0e21c4b29d868e17",
+   "size": 25585,
+   "gz": "files/3cf1f339d8d07980465ca1cc6772c992208f477d53367eee0e21c4b29d868e17.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A6.mp3": {
+   "sha256": "337637f4139f96c19b58576b39b8860e813bd074a144d7dc41cec3c1da53c6a4",
+   "size": 25585,
+   "gz": "files/337637f4139f96c19b58576b39b8860e813bd074a144d7dc41cec3c1da53c6a4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C1.mp3": {
+   "sha256": "6c743bee4caebc27dd014137b856415b64102ce0211b9019ebe6a58391aa80ba",
+   "size": 25585,
+   "gz": "files/6c743bee4caebc27dd014137b856415b64102ce0211b9019ebe6a58391aa80ba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C2.mp3": {
+   "sha256": "5a7e74ad50e0099756369034846509685278e4f0c0f5bd6630de10e61679da66",
+   "size": 25585,
+   "gz": "files/5a7e74ad50e0099756369034846509685278e4f0c0f5bd6630de10e61679da66.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C3.mp3": {
+   "sha256": "696a1c22a2b91a3206bf6af5c0c2e71972fcaffc5317f7e7b8962a01a054952b",
+   "size": 25585,
+   "gz": "files/696a1c22a2b91a3206bf6af5c0c2e71972fcaffc5317f7e7b8962a01a054952b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C4.mp3": {
+   "sha256": "9be9ef6a4f78f4de50fa08ec73a63869823a4db80e3b7b28d9b7ebad926e15a4",
+   "size": 25585,
+   "gz": "files/9be9ef6a4f78f4de50fa08ec73a63869823a4db80e3b7b28d9b7ebad926e15a4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C5.mp3": {
+   "sha256": "0cfcbd1818d9e7777d772d6fdf7fe5f7e3e26eebef76f6ca4e1c0bffd70b0e52",
+   "size": 25585,
+   "gz": "files/0cfcbd1818d9e7777d772d6fdf7fe5f7e3e26eebef76f6ca4e1c0bffd70b0e52.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C6.mp3": {
+   "sha256": "4905e22d0ebf66cfdae555501ee7943d9fb605bbc50f77baf29d6fa1a960baa0",
+   "size": 25585,
+   "gz": "files/4905e22d0ebf66cfdae555501ee7943d9fb605bbc50f77baf29d6fa1a960baa0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/C7.mp3": {
+   "sha256": "cc281aff663ee8eb202fa454d63573864dd8ed9741ad72986b4b130febba8956",
+   "size": 25585,
+   "gz": "files/cc281aff663ee8eb202fa454d63573864dd8ed9741ad72986b4b130febba8956.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb1.mp3": {
+   "sha256": "381a3a2f74848b2c5eb8b1140f14381e4cdb8f4be34c6829fe08dc735bc2ae62",
+   "size": 25585,
+   "gz": "files/381a3a2f74848b2c5eb8b1140f14381e4cdb8f4be34c6829fe08dc735bc2ae62.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb2.mp3": {
+   "sha256": "9e323b267fdc2ae652cd8bce6f67e09ac139dc8697d4498e37e7311451d99412",
+   "size": 25585,
+   "gz": "files/9e323b267fdc2ae652cd8bce6f67e09ac139dc8697d4498e37e7311451d99412.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb3.mp3": {
+   "sha256": "4940771ff32b27e99d3b59d5e976bad67308ec01ff0ed7e2e8d6e7abc78a4ebd",
+   "size": 25585,
+   "gz": "files/4940771ff32b27e99d3b59d5e976bad67308ec01ff0ed7e2e8d6e7abc78a4ebd.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb4.mp3": {
+   "sha256": "f875504abecfb9b276f9eb95dafffe6a529aa87708ee91acc0f593fd958f1bcb",
+   "size": 25585,
+   "gz": "files/f875504abecfb9b276f9eb95dafffe6a529aa87708ee91acc0f593fd958f1bcb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb5.mp3": {
+   "sha256": "a649a91a33f9ce580f9aa4ba17dec8a1105de6d7d47db9289d5d6b0bf5e2d91e",
+   "size": 25585,
+   "gz": "files/a649a91a33f9ce580f9aa4ba17dec8a1105de6d7d47db9289d5d6b0bf5e2d91e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb6.mp3": {
+   "sha256": "3f9d58d8221d75bbcbd28d0dd74d3825b8824ec4110601108ab35a114e66fe07",
+   "size": 25585,
+   "gz": "files/3f9d58d8221d75bbcbd28d0dd74d3825b8824ec4110601108ab35a114e66fe07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb1.mp3": {
+   "sha256": "e879729fd31fa7a02e963bbc92910b396d24165c92df508e61b0024eb1b7fbef",
+   "size": 25585,
+   "gz": "files/e879729fd31fa7a02e963bbc92910b396d24165c92df508e61b0024eb1b7fbef.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb2.mp3": {
+   "sha256": "f140718f6093f96d9d7f2d9e55cfbceccdd551d69678aa574945c2dda0e0a2b9",
+   "size": 25585,
+   "gz": "files/f140718f6093f96d9d7f2d9e55cfbceccdd551d69678aa574945c2dda0e0a2b9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb3.mp3": {
+   "sha256": "4a701646fe46a54f3532091d65916952206400e2c24ff64217554077057fdda3",
+   "size": 25585,
+   "gz": "files/4a701646fe46a54f3532091d65916952206400e2c24ff64217554077057fdda3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb4.mp3": {
+   "sha256": "f78560528ff4f4e5225e7610e699656a947a5ca442585542a312c46b12611f0a",
+   "size": 25585,
+   "gz": "files/f78560528ff4f4e5225e7610e699656a947a5ca442585542a312c46b12611f0a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb5.mp3": {
+   "sha256": "be0e59a73faede45db93169ef0e7211c839eb6e6213df310e85734d62011a2fb",
+   "size": 25585,
+   "gz": "files/be0e59a73faede45db93169ef0e7211c839eb6e6213df310e85734d62011a2fb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb6.mp3": {
+   "sha256": "53b4d936daf0f95adcf68f8b168a00d1ac6d466a975cd967e6a53810e847f2ab",
+   "size": 25585,
+   "gz": "files/53b4d936daf0f95adcf68f8b168a00d1ac6d466a975cd967e6a53810e847f2ab.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/choir_aahs/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A1.mp3": {
+   "sha256": "6e3136385e4d07ed1199ec14f2ebc213e2137dfa866ff69eac79c4befad721ad",
+   "size": 15263,
+   "gz": "files/6e3136385e4d07ed1199ec14f2ebc213e2137dfa866ff69eac79c4befad721ad.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A2.mp3": {
+   "sha256": "90809dbb496d971b0aec5464ba6dc81d38612d9692dd2a80eb4b104c74cfc128",
+   "size": 18227,
+   "gz": "files/90809dbb496d971b0aec5464ba6dc81d38612d9692dd2a80eb4b104c74cfc128.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A3.mp3": {
+   "sha256": "438f1e198a53a8924f143b8024fadcdf8743db8685b46dcf83dc85f50bf8137e",
+   "size": 22127,
+   "gz": "files/438f1e198a53a8924f143b8024fadcdf8743db8685b46dcf83dc85f50bf8137e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A4.mp3": {
+   "sha256": "f492240e4bfb693ab79b28fdd8884ab849c95e608aae07df07a13255970e5b02",
+   "size": 25585,
+   "gz": "files/f492240e4bfb693ab79b28fdd8884ab849c95e608aae07df07a13255970e5b02.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A5.mp3": {
+   "sha256": "ee352d2babcc8c430a483c0d643c1e2244c7120de76e7ac1110b3bff100494e2",
+   "size": 25585,
+   "gz": "files/ee352d2babcc8c430a483c0d643c1e2244c7120de76e7ac1110b3bff100494e2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A6.mp3": {
+   "sha256": "b4eea8c205a3f0e7ffc9da8e6b65c06057f5d58ebba289b2fac2c992606940c4",
+   "size": 25585,
+   "gz": "files/b4eea8c205a3f0e7ffc9da8e6b65c06057f5d58ebba289b2fac2c992606940c4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/A7.mp3": {
+   "sha256": "a6fe64ed4433d217ef085028d2d4c8670796acb0bc9e3d5e216094308a53b38a",
+   "size": 25585,
+   "gz": "files/a6fe64ed4433d217ef085028d2d4c8670796acb0bc9e3d5e216094308a53b38a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C1.mp3": {
+   "sha256": "59ad9682af15239948127488499c8bedabe89419b747c23a260ac9e907a51058",
+   "size": 14145,
+   "gz": "files/59ad9682af15239948127488499c8bedabe89419b747c23a260ac9e907a51058.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C2.mp3": {
+   "sha256": "ddb2690389beef3969f213b125280c37733194a44b2924ec89bd6c71fe37ea9e",
+   "size": 15263,
+   "gz": "files/ddb2690389beef3969f213b125280c37733194a44b2924ec89bd6c71fe37ea9e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C3.mp3": {
+   "sha256": "0d815e4ed06f9db8b585fa25874bd87d1ff4fc23eea5f8d86ac7e57d32726ec5",
+   "size": 19423,
+   "gz": "files/0d815e4ed06f9db8b585fa25874bd87d1ff4fc23eea5f8d86ac7e57d32726ec5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C4.mp3": {
+   "sha256": "1a60c9298c292eb6fcb68502b825b5c3af13e4dc39aadc9a0b25ef9293929ec5",
+   "size": 23011,
+   "gz": "files/1a60c9298c292eb6fcb68502b825b5c3af13e4dc39aadc9a0b25ef9293929ec5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C5.mp3": {
+   "sha256": "74f088b764a744ae55607dbd5dbcc82a08328ad33286de8a69869704b926f55d",
+   "size": 25585,
+   "gz": "files/74f088b764a744ae55607dbd5dbcc82a08328ad33286de8a69869704b926f55d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C6.mp3": {
+   "sha256": "dc431780fee784df3d3b7989f3e25d6bf0f9f1ca4f4a7c48e2e7c83d228dd777",
+   "size": 25585,
+   "gz": "files/dc431780fee784df3d3b7989f3e25d6bf0f9f1ca4f4a7c48e2e7c83d228dd777.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/C7.mp3": {
+   "sha256": "4b6330f90ccfe66352fa2ab02843fa5584f19ea8ee72f2b28949ab5aa9052046",
+   "size": 25585,
+   "gz": "files/4b6330f90ccfe66352fa2ab02843fa5584f19ea8ee72f2b28949ab5aa9052046.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb1.mp3": {
+   "sha256": "58d8098a15f85a573aa08785698e4cd39906dcb0a2e5b71306e089a336fcbdc2",
+   "size": 13989,
+   "gz": "files/58d8098a15f85a573aa08785698e4cd39906dcb0a2e5b71306e089a336fcbdc2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb2.mp3": {
+   "sha256": "a1bb12225c533eea9d0e2250b7ecfa0dae6138ba7b76f9b581f1c4a4b00e8915",
+   "size": 17473,
+   "gz": "files/a1bb12225c533eea9d0e2250b7ecfa0dae6138ba7b76f9b581f1c4a4b00e8915.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb3.mp3": {
+   "sha256": "5d6b99d5049e86649bdfc3afc0fe698e5e4df416a8d2c61b41b06d08ac92d875",
+   "size": 20307,
+   "gz": "files/5d6b99d5049e86649bdfc3afc0fe698e5e4df416a8d2c61b41b06d08ac92d875.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb4.mp3": {
+   "sha256": "8fe594ca5e4178d79b28eceeb64642a6b429317ead5adf4cf59814947903a2fc",
+   "size": 23115,
+   "gz": "files/8fe594ca5e4178d79b28eceeb64642a6b429317ead5adf4cf59814947903a2fc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb5.mp3": {
+   "sha256": "12ace6e636029d27d978433e58b53261a26ee493b91953eb3d290d0adefc5091",
+   "size": 25585,
+   "gz": "files/12ace6e636029d27d978433e58b53261a26ee493b91953eb3d290d0adefc5091.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb6.mp3": {
+   "sha256": "6d69af266d8f8faa0d04e7e34595586bc164eccef2b426752537cc67f944c0c5",
+   "size": 25585,
+   "gz": "files/6d69af266d8f8faa0d04e7e34595586bc164eccef2b426752537cc67f944c0c5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Eb7.mp3": {
+   "sha256": "7030855b51e69170dc15710eb54188f928468b960e35b1bc526cba4f7a320dae",
+   "size": 25585,
+   "gz": "files/7030855b51e69170dc15710eb54188f928468b960e35b1bc526cba4f7a320dae.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb1.mp3": {
+   "sha256": "612a7b63c6239628ac7c424bfabc3d928582e29dc3ac7e6310694405e3094ae1",
+   "size": 15003,
+   "gz": "files/612a7b63c6239628ac7c424bfabc3d928582e29dc3ac7e6310694405e3094ae1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb2.mp3": {
+   "sha256": "cc28bd39d4bcdcd7454ed3e142d1b987e45662a0644e39db1dba83ecc3699ebb",
+   "size": 16927,
+   "gz": "files/cc28bd39d4bcdcd7454ed3e142d1b987e45662a0644e39db1dba83ecc3699ebb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb3.mp3": {
+   "sha256": "3c4e4af570f35bc3efb0d4a4ec9633b0cf93d2320c6a2aaa28dc680691085cdc",
+   "size": 21269,
+   "gz": "files/3c4e4af570f35bc3efb0d4a4ec9633b0cf93d2320c6a2aaa28dc680691085cdc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb4.mp3": {
+   "sha256": "b9f749a1b75e20300f676c4e9f3008ffc241474a4661eb4cbad9ea344d46ad56",
+   "size": 25065,
+   "gz": "files/b9f749a1b75e20300f676c4e9f3008ffc241474a4661eb4cbad9ea344d46ad56.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb5.mp3": {
+   "sha256": "b9fabd50907e31b505d123f052776e506961beee61d99e2c8ab7bb96b2295b67",
+   "size": 25585,
+   "gz": "files/b9fabd50907e31b505d123f052776e506961beee61d99e2c8ab7bb96b2295b67.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb6.mp3": {
+   "sha256": "2e9f0293f77a4747dda060c3c867f61937085851a1a3672c42a0be5d61b01c7a",
+   "size": 25585,
+   "gz": "files/2e9f0293f77a4747dda060c3c867f61937085851a1a3672c42a0be5d61b01c7a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/drawbar_organ/Gb7.mp3": {
+   "sha256": "2fb8a793fb4abc0ea003322073bddfff39f40e5e0b31d390a18360867604a79d",
+   "size": 25585,
+   "gz": "files/2fb8a793fb4abc0ea003322073bddfff39f40e5e0b31d390a18360867604a79d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A1.mp3": {
+   "sha256": "21eefca40f03995a99211ab0ad69400f06346b7d318b039b70919fb09de28d07",
+   "size": 14951,
+   "gz": "files/21eefca40f03995a99211ab0ad69400f06346b7d318b039b70919fb09de28d07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A2.mp3": {
+   "sha256": "6533d953b056e195aadb251acb779b2b0d31df2cdf302040c30d078d2899689a",
+   "size": 17083,
+   "gz": "files/6533d953b056e195aadb251acb779b2b0d31df2cdf302040c30d078d2899689a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A3.mp3": {
+   "sha256": "53c51f2e7f14dc9bd911cf2be4059c2a12d0d19e3576f80887772a088b9d77ce",
+   "size": 17837,
+   "gz": "files/53c51f2e7f14dc9bd911cf2be4059c2a12d0d19e3576f80887772a088b9d77ce.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A4.mp3": {
+   "sha256": "6aec9abbb3fb3bd43116b8a465491b92e80fa1a79315e96afa1822117fac8403",
+   "size": 22049,
+   "gz": "files/6aec9abbb3fb3bd43116b8a465491b92e80fa1a79315e96afa1822117fac8403.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A5.mp3": {
+   "sha256": "7998e519d80721f14150c79f0c65d89b09fbbcaf04fb2d81e2e4538381de8fa9",
+   "size": 23219,
+   "gz": "files/7998e519d80721f14150c79f0c65d89b09fbbcaf04fb2d81e2e4538381de8fa9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C1.mp3": {
+   "sha256": "3cb44db366c340e0e33ff4ee78c15eda76decc679b6709b89e373410b4bf5a6d",
+   "size": 14119,
+   "gz": "files/3cb44db366c340e0e33ff4ee78c15eda76decc679b6709b89e373410b4bf5a6d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C2.mp3": {
+   "sha256": "bd192806d98b69e801f5a00422a236cd6967ab4954d1b0475608db9205a05814",
+   "size": 15783,
+   "gz": "files/bd192806d98b69e801f5a00422a236cd6967ab4954d1b0475608db9205a05814.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C3.mp3": {
+   "sha256": "2ebc6adc15cc1d1624f203986ede3fe818594b613f45ad4fcd2de94fc01e693a",
+   "size": 16173,
+   "gz": "files/2ebc6adc15cc1d1624f203986ede3fe818594b613f45ad4fcd2de94fc01e693a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C4.mp3": {
+   "sha256": "152f0a4bc28a96831298cac6318ae72eebb7d32ebc3bd443868c3e652edd6f51",
+   "size": 18019,
+   "gz": "files/152f0a4bc28a96831298cac6318ae72eebb7d32ebc3bd443868c3e652edd6f51.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C5.mp3": {
+   "sha256": "ba5cc49e062906f92f7643ad8bd7263b6088a6b34c6b3fd92577a90aaf8af84d",
+   "size": 22543,
+   "gz": "files/ba5cc49e062906f92f7643ad8bd7263b6088a6b34c6b3fd92577a90aaf8af84d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C6.mp3": {
+   "sha256": "21201d189c9669a625328ad4ec58e6de9989232a339c6a6303061a0fca0ca6ed",
+   "size": 25585,
+   "gz": "files/21201d189c9669a625328ad4ec58e6de9989232a339c6a6303061a0fca0ca6ed.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/C7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb1.mp3": {
+   "sha256": "6b0ed2757bbc1bead7762ae8dc3a9e8f212f36eac0cf848cabaa58281c37cd8e",
+   "size": 14327,
+   "gz": "files/6b0ed2757bbc1bead7762ae8dc3a9e8f212f36eac0cf848cabaa58281c37cd8e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb2.mp3": {
+   "sha256": "0eceb57f00bde51d490ba32d59ece1db33b43b6908f9474f8427f0aacafdd8ad",
+   "size": 17135,
+   "gz": "files/0eceb57f00bde51d490ba32d59ece1db33b43b6908f9474f8427f0aacafdd8ad.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb3.mp3": {
+   "sha256": "ce4f7336b8196f57d8debf1719638c6590acb90d6106aac5e015dd26370c0483",
+   "size": 15965,
+   "gz": "files/ce4f7336b8196f57d8debf1719638c6590acb90d6106aac5e015dd26370c0483.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb4.mp3": {
+   "sha256": "befe04abb0770413a8cfbd4798e9e2a1a12647952d31020b0f4b534b9e51eb4e",
+   "size": 19111,
+   "gz": "files/befe04abb0770413a8cfbd4798e9e2a1a12647952d31020b0f4b534b9e51eb4e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb5.mp3": {
+   "sha256": "4d26dc9dcafbe3daf1badd3bc554a70ab5c875c55bd11a4e804c518aea771d08",
+   "size": 23921,
+   "gz": "files/4d26dc9dcafbe3daf1badd3bc554a70ab5c875c55bd11a4e804c518aea771d08.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb1.mp3": {
+   "sha256": "eb005c27769be9953ff430e920d558d19201693fca8af28e7f34db156f8c9aa2",
+   "size": 15185,
+   "gz": "files/eb005c27769be9953ff430e920d558d19201693fca8af28e7f34db156f8c9aa2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb2.mp3": {
+   "sha256": "57e36deb575063646a8ec9db9c9549e842f6afece88952654efc3c09bb6bf83a",
+   "size": 16615,
+   "gz": "files/57e36deb575063646a8ec9db9c9549e842f6afece88952654efc3c09bb6bf83a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb3.mp3": {
+   "sha256": "5cbad6a001649d9e64fb80a369e2c7d6cc2fe1cc50f1104a993924a4b5e7c7bb",
+   "size": 16511,
+   "gz": "files/5cbad6a001649d9e64fb80a369e2c7d6cc2fe1cc50f1104a993924a4b5e7c7bb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb4.mp3": {
+   "sha256": "4b529879a1df3a13d9f5d8c1ffbd99d5b2759e2eddbb39051508022cd6589ebf",
+   "size": 20567,
+   "gz": "files/4b529879a1df3a13d9f5d8c1ffbd99d5b2759e2eddbb39051508022cd6589ebf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb5.mp3": {
+   "sha256": "0750e8d34a8221990e35961dd96b1340780d5a99b9a0b99393ef4577ff63e677",
+   "size": 22647,
+   "gz": "files/0750e8d34a8221990e35961dd96b1340780d5a99b9a0b99393ef4577ff63e677.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb6.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_bass_finger/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A1.mp3": {
+   "sha256": "76390f2da2ab1653627c7689fdfe53867982f696304dbd8ef5da464be3439d08",
+   "size": 17161,
+   "gz": "files/76390f2da2ab1653627c7689fdfe53867982f696304dbd8ef5da464be3439d08.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A2.mp3": {
+   "sha256": "75b6ce5015012972adc9bd626df5834f8cd23cba764014438f0d9de47b5dc528",
+   "size": 20411,
+   "gz": "files/75b6ce5015012972adc9bd626df5834f8cd23cba764014438f0d9de47b5dc528.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A3.mp3": {
+   "sha256": "386f8e9c874d7a10ad47e369e91e13eb88c4671c50a007eea6410d568e33be0f",
+   "size": 20515,
+   "gz": "files/386f8e9c874d7a10ad47e369e91e13eb88c4671c50a007eea6410d568e33be0f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A4.mp3": {
+   "sha256": "777530a9cb83a877805474beab6db70615a78ac7d0243e9a5efc70a0fc5f6ddc",
+   "size": 19995,
+   "gz": "files/777530a9cb83a877805474beab6db70615a78ac7d0243e9a5efc70a0fc5f6ddc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A5.mp3": {
+   "sha256": "f10fc87de13f5f7bce4b3f9d9be61413461e19cce077e26531f2d658051c5e00",
+   "size": 15237,
+   "gz": "files/f10fc87de13f5f7bce4b3f9d9be61413461e19cce077e26531f2d658051c5e00.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A6.mp3": {
+   "sha256": "fa8b27c4a75bed48dc741af6f5c9e3419ec683728975307268ea2696c990fba6",
+   "size": 15627,
+   "gz": "files/fa8b27c4a75bed48dc741af6f5c9e3419ec683728975307268ea2696c990fba6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/A7.mp3": {
+   "sha256": "69ff2648614fcf6891e3ef17cd3d687d53b44df177cdcf36947f4371abcadeff",
+   "size": 14353,
+   "gz": "files/69ff2648614fcf6891e3ef17cd3d687d53b44df177cdcf36947f4371abcadeff.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C1.mp3": {
+   "sha256": "04b46f4114688da9e9331ea50d89dc7b29ccae4c28652f4eb4bf012191f5c62e",
+   "size": 15289,
+   "gz": "files/04b46f4114688da9e9331ea50d89dc7b29ccae4c28652f4eb4bf012191f5c62e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C2.mp3": {
+   "sha256": "d4a8b6e6e80eedd9abba0ae7735f1febf13bb7df99df56fa28e5888d7f3b1871",
+   "size": 18097,
+   "gz": "files/d4a8b6e6e80eedd9abba0ae7735f1febf13bb7df99df56fa28e5888d7f3b1871.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C3.mp3": {
+   "sha256": "de1fe9ac0346b169729ef1321a35c95006afc9c06bfb3df95a9f437afe030217",
+   "size": 20619,
+   "gz": "files/de1fe9ac0346b169729ef1321a35c95006afc9c06bfb3df95a9f437afe030217.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C4.mp3": {
+   "sha256": "d9b9f7b46f44c2c8b30968a2672bc2b2d7bde08dd93cbf1d960613f2e83a4c78",
+   "size": 20567,
+   "gz": "files/d9b9f7b46f44c2c8b30968a2672bc2b2d7bde08dd93cbf1d960613f2e83a4c78.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C5.mp3": {
+   "sha256": "1d9130ce85e611b51cc5d84bae4dd5139c26b947304ec3f9a4a51de3da9b01b8",
+   "size": 19059,
+   "gz": "files/1d9130ce85e611b51cc5d84bae4dd5139c26b947304ec3f9a4a51de3da9b01b8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C6.mp3": {
+   "sha256": "295f6c97b01f5eee43cbb90b11c201ef69f2c2f82668fff463ae632d78bbc01c",
+   "size": 16485,
+   "gz": "files/295f6c97b01f5eee43cbb90b11c201ef69f2c2f82668fff463ae632d78bbc01c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/C7.mp3": {
+   "sha256": "f1b6f3e5b0b7faa60228c36338f5f1002b34030c99d1cdf28aa85dc84cabdf65",
+   "size": 16589,
+   "gz": "files/f1b6f3e5b0b7faa60228c36338f5f1002b34030c99d1cdf28aa85dc84cabdf65.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb1.mp3": {
+   "sha256": "9f95675e85c2eb50b0caa807676e49bbbd8ec36c89c522ea59952573f8fcf13c",
+   "size": 15315,
+   "gz": "files/9f95675e85c2eb50b0caa807676e49bbbd8ec36c89c522ea59952573f8fcf13c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb2.mp3": {
+   "sha256": "ee37c636875b655a6650e7849ae71a5e57ec2e30871f80597634d700ae9192e2",
+   "size": 18591,
+   "gz": "files/ee37c636875b655a6650e7849ae71a5e57ec2e30871f80597634d700ae9192e2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb3.mp3": {
+   "sha256": "8d2bf4903bc34cf5be314f95d09e295fdd4b113f90daa952f8d586752417236a",
+   "size": 20515,
+   "gz": "files/8d2bf4903bc34cf5be314f95d09e295fdd4b113f90daa952f8d586752417236a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb4.mp3": {
+   "sha256": "4548063a382f2ca0fc6d84d6c8227e9f4a35e9fab867869a0a915730de863027",
+   "size": 21191,
+   "gz": "files/4548063a382f2ca0fc6d84d6c8227e9f4a35e9fab867869a0a915730de863027.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb5.mp3": {
+   "sha256": "dd28f50bdcc32a1079911a469d30d0ab767f269fcb3c009f50589655fa93a92b",
+   "size": 18695,
+   "gz": "files/dd28f50bdcc32a1079911a469d30d0ab767f269fcb3c009f50589655fa93a92b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb6.mp3": {
+   "sha256": "386968fffbd5df92c273c3e7930d7463b77c7107b47dc1c271d471d4fdbb8a64",
+   "size": 16121,
+   "gz": "files/386968fffbd5df92c273c3e7930d7463b77c7107b47dc1c271d471d4fdbb8a64.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Eb7.mp3": {
+   "sha256": "80edd48d5613e1a7b4ad9d562415a61f376cc8a5832d0110cfd4a5c60bc9f57c",
+   "size": 15081,
+   "gz": "files/80edd48d5613e1a7b4ad9d562415a61f376cc8a5832d0110cfd4a5c60bc9f57c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb1.mp3": {
+   "sha256": "fd0ab05c4003e21c3d499c2b17896865b3cbbe74b48ca714a0bae9ab2f297200",
+   "size": 16225,
+   "gz": "files/fd0ab05c4003e21c3d499c2b17896865b3cbbe74b48ca714a0bae9ab2f297200.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb2.mp3": {
+   "sha256": "ceecc5d81e73284f78c7236941ff40d1a8c095eb46f767f98474a7f80e4a28e2",
+   "size": 19709,
+   "gz": "files/ceecc5d81e73284f78c7236941ff40d1a8c095eb46f767f98474a7f80e4a28e2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb3.mp3": {
+   "sha256": "952f33755a47bc3f29c57fac0196d79fd58c6f50f4545b3f8ddab7ee48162a03",
+   "size": 21763,
+   "gz": "files/952f33755a47bc3f29c57fac0196d79fd58c6f50f4545b3f8ddab7ee48162a03.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb4.mp3": {
+   "sha256": "11228a0993adb62831c366f888a25d996b9db4e3b0adccdb33b058683b2396c6",
+   "size": 21139,
+   "gz": "files/11228a0993adb62831c366f888a25d996b9db4e3b0adccdb33b058683b2396c6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb5.mp3": {
+   "sha256": "f7cdb40cac023b51e66e6e6d8568d06c0ba12285067b3299dc19615bf40fbbef",
+   "size": 16329,
+   "gz": "files/f7cdb40cac023b51e66e6e6d8568d06c0ba12285067b3299dc19615bf40fbbef.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb6.mp3": {
+   "sha256": "14d07994c17eb3d51109d0ebde2c6ac80a72bd0c60220f3d141f23c354f9c50a",
+   "size": 16667,
+   "gz": "files/14d07994c17eb3d51109d0ebde2c6ac80a72bd0c60220f3d141f23c354f9c50a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_guitar_clean/Gb7.mp3": {
+   "sha256": "920e172a309933d52152a28d789af45e1f2eb5a607da2410821f2975aad93227",
+   "size": 16485,
+   "gz": "files/920e172a309933d52152a28d789af45e1f2eb5a607da2410821f2975aad93227.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A1.mp3": {
+   "sha256": "a873f976f357f8c747f632de3ff204f22d41d6cb393f9a165ceb77b5d2517b51",
+   "size": 22829,
+   "gz": "files/a873f976f357f8c747f632de3ff204f22d41d6cb393f9a165ceb77b5d2517b51.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A2.mp3": {
+   "sha256": "6909423acd147b82978bb6e94cbd6e7a83b1a70dfd28950cdd6bf030fb5f12bb",
+   "size": 20697,
+   "gz": "files/6909423acd147b82978bb6e94cbd6e7a83b1a70dfd28950cdd6bf030fb5f12bb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A3.mp3": {
+   "sha256": "0dc407415e2f76e385eb4b1dda91a6defad0f19abb63882da2bfeefa7586dfd4",
+   "size": 23765,
+   "gz": "files/0dc407415e2f76e385eb4b1dda91a6defad0f19abb63882da2bfeefa7586dfd4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A4.mp3": {
+   "sha256": "01a2dfb73f7b2a2d36400fbd30203eb5d2750c0e8006907bd16d6d25dbf9534f",
+   "size": 18539,
+   "gz": "files/01a2dfb73f7b2a2d36400fbd30203eb5d2750c0e8006907bd16d6d25dbf9534f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A5.mp3": {
+   "sha256": "cb240e65d7937fa15887e76c17e6a7dcbac5a8df50a30b33674028eee2855c07",
+   "size": 17421,
+   "gz": "files/cb240e65d7937fa15887e76c17e6a7dcbac5a8df50a30b33674028eee2855c07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A6.mp3": {
+   "sha256": "abe8bee47c45ff5f795127389757bb735d0468c12c1e9485aed319c47ef69d58",
+   "size": 14717,
+   "gz": "files/abe8bee47c45ff5f795127389757bb735d0468c12c1e9485aed319c47ef69d58.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/A7.mp3": {
+   "sha256": "7305cf91ba68c7fd3af3d68a1429561a5c4bd1cbeb40948131fe367fdad55667",
+   "size": 13911,
+   "gz": "files/7305cf91ba68c7fd3af3d68a1429561a5c4bd1cbeb40948131fe367fdad55667.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C1.mp3": {
+   "sha256": "c50b21961b8b6c414bc7ae5237cf629b7bbfcd692a435a4c8a39632c47acea27",
+   "size": 21893,
+   "gz": "files/c50b21961b8b6c414bc7ae5237cf629b7bbfcd692a435a4c8a39632c47acea27.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C2.mp3": {
+   "sha256": "f65168930ab68381c487c065490e8d56d016cd607ea9e47c9bdeedf01498088b",
+   "size": 22309,
+   "gz": "files/f65168930ab68381c487c065490e8d56d016cd607ea9e47c9bdeedf01498088b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C3.mp3": {
+   "sha256": "3173362ab63be26db5ea64c35c171299e9836296b3023adb249e2809d20d8cd9",
+   "size": 20437,
+   "gz": "files/3173362ab63be26db5ea64c35c171299e9836296b3023adb249e2809d20d8cd9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C4.mp3": {
+   "sha256": "096c7cdb68e9a0cb645a932eea80562a5c7d43f17dd94d231135f883e860048d",
+   "size": 19553,
+   "gz": "files/096c7cdb68e9a0cb645a932eea80562a5c7d43f17dd94d231135f883e860048d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C5.mp3": {
+   "sha256": "a4f7ce39ade2b62dde4c4283ae202dd729433d54630e25b8d055afcfb9fda019",
+   "size": 19761,
+   "gz": "files/a4f7ce39ade2b62dde4c4283ae202dd729433d54630e25b8d055afcfb9fda019.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C6.mp3": {
+   "sha256": "a199829f5b6d6bbcd266fbd48a3309fd5ff42322e0ff001524a66550cace8384",
+   "size": 17837,
+   "gz": "files/a199829f5b6d6bbcd266fbd48a3309fd5ff42322e0ff001524a66550cace8384.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/C7.mp3": {
+   "sha256": "c2fd88b6409d639a325338a35497452c485f6a7946be1f3fdae260d9cb09adda",
+   "size": 14743,
+   "gz": "files/c2fd88b6409d639a325338a35497452c485f6a7946be1f3fdae260d9cb09adda.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb1.mp3": {
+   "sha256": "f60a9f60d09da300182765c90cbcc60e9273d203d19c029ef693dd8bc9172058",
+   "size": 21685,
+   "gz": "files/f60a9f60d09da300182765c90cbcc60e9273d203d19c029ef693dd8bc9172058.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb2.mp3": {
+   "sha256": "c4bbad56ce1635c09b8a94fb2198e2652248200440d910d7b8afcbcdb65425c8",
+   "size": 21711,
+   "gz": "files/c4bbad56ce1635c09b8a94fb2198e2652248200440d910d7b8afcbcdb65425c8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb3.mp3": {
+   "sha256": "37548da76846d6c34e784470214956b582ad687aaff476331cc188ff775c8677",
+   "size": 20333,
+   "gz": "files/37548da76846d6c34e784470214956b582ad687aaff476331cc188ff775c8677.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb4.mp3": {
+   "sha256": "013ed2db02a3de23c57b4062dfcc55d41a6e7326b365abdf9f5ce9b3d7361eb5",
+   "size": 20385,
+   "gz": "files/013ed2db02a3de23c57b4062dfcc55d41a6e7326b365abdf9f5ce9b3d7361eb5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb5.mp3": {
+   "sha256": "a39799194dd472b197b6240b980c1c878662588acb860f5203ae7f69c06d0183",
+   "size": 19943,
+   "gz": "files/a39799194dd472b197b6240b980c1c878662588acb860f5203ae7f69c06d0183.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb6.mp3": {
+   "sha256": "d85ccffb9bb7996ef7febedc58ce1f4613d5f8d472af785ca32ce7b7798b65fc",
+   "size": 17343,
+   "gz": "files/d85ccffb9bb7996ef7febedc58ce1f4613d5f8d472af785ca32ce7b7798b65fc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Eb7.mp3": {
+   "sha256": "0ea5b68c754fdf87516242949bba68a2951b663e4bf95055eed7bd0ee8490577",
+   "size": 14405,
+   "gz": "files/0ea5b68c754fdf87516242949bba68a2951b663e4bf95055eed7bd0ee8490577.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb1.mp3": {
+   "sha256": "c4a79ebea6ef6d2d9996ee67407fda904a5eb97520ba6159cdf8463862e9dbbf",
+   "size": 22829,
+   "gz": "files/c4a79ebea6ef6d2d9996ee67407fda904a5eb97520ba6159cdf8463862e9dbbf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb2.mp3": {
+   "sha256": "3fd127c4e33275a44aa8c85ead2b91bb720c5ef01779d9ae6564421396beeb99",
+   "size": 20879,
+   "gz": "files/3fd127c4e33275a44aa8c85ead2b91bb720c5ef01779d9ae6564421396beeb99.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb3.mp3": {
+   "sha256": "baeba58701c701eff069a79a4f6b15bd5d98e6bcaa909fd526dbc12f3ddd3e65",
+   "size": 21893,
+   "gz": "files/baeba58701c701eff069a79a4f6b15bd5d98e6bcaa909fd526dbc12f3ddd3e65.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb4.mp3": {
+   "sha256": "3c67f551169df15889408caf6c54e17f500787908cc857603d49965a7b0e750a",
+   "size": 17083,
+   "gz": "files/3c67f551169df15889408caf6c54e17f500787908cc857603d49965a7b0e750a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb5.mp3": {
+   "sha256": "514dbdd5f3a1106a9c4463ee564386ef625bbad623df05b589e9256d307b758b",
+   "size": 19605,
+   "gz": "files/514dbdd5f3a1106a9c4463ee564386ef625bbad623df05b589e9256d307b758b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb6.mp3": {
+   "sha256": "4fa90a1c1f17275c30a9b734f5e70613521aba20fef26eaa389945ed053114c9",
+   "size": 15991,
+   "gz": "files/4fa90a1c1f17275c30a9b734f5e70613521aba20fef26eaa389945ed053114c9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/electric_piano_1/Gb7.mp3": {
+   "sha256": "1cdb06c8935b5c3a7c72eef148d8b7ac014d49761391dd7c68d99c7a4899373f",
+   "size": 14353,
+   "gz": "files/1cdb06c8935b5c3a7c72eef148d8b7ac014d49761391dd7c68d99c7a4899373f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A1.mp3": {
+   "sha256": "33332605f9301a111c2fdcc73aef3d83adf9c565d8caff71edd1744170e38070",
+   "size": 25039,
+   "gz": "files/33332605f9301a111c2fdcc73aef3d83adf9c565d8caff71edd1744170e38070.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A2.mp3": {
+   "sha256": "caef87b0bd87aadef0360043b833fa1844a5c664c838fc8bb899186a08dfdab3",
+   "size": 25585,
+   "gz": "files/caef87b0bd87aadef0360043b833fa1844a5c664c838fc8bb899186a08dfdab3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A3.mp3": {
+   "sha256": "965b0f16c5735f1b94a60f8de1e2bfd6e85a913b61f79b82d06807715d710399",
+   "size": 25585,
+   "gz": "files/965b0f16c5735f1b94a60f8de1e2bfd6e85a913b61f79b82d06807715d710399.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A4.mp3": {
+   "sha256": "88f71f60012c81d0b3d843ee13a5790688e1c905ae9e5503997959b646d96a61",
+   "size": 25585,
+   "gz": "files/88f71f60012c81d0b3d843ee13a5790688e1c905ae9e5503997959b646d96a61.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A5.mp3": {
+   "sha256": "cb20a25ce9ca3dfa596eac6cc1cea4096e2a6c9bddbddd29d76a536cd5f57826",
+   "size": 25585,
+   "gz": "files/cb20a25ce9ca3dfa596eac6cc1cea4096e2a6c9bddbddd29d76a536cd5f57826.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A6.mp3": {
+   "sha256": "2d2dd0eecf262cabda5895b868c6d000e33abb2d5573510581ba59e71571c220",
+   "size": 25585,
+   "gz": "files/2d2dd0eecf262cabda5895b868c6d000e33abb2d5573510581ba59e71571c220.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/A7.mp3": {
+   "sha256": "8cb30223293cb0cb47b60e7828c4a030ef5286e73e715ffb050ba26b5be9815b",
+   "size": 25585,
+   "gz": "files/8cb30223293cb0cb47b60e7828c4a030ef5286e73e715ffb050ba26b5be9815b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C1.mp3": {
+   "sha256": "08e7c4695933ecf9224cc8ed54fc6c22260037f210bbf724c26ee938fec164ba",
+   "size": 22881,
+   "gz": "files/08e7c4695933ecf9224cc8ed54fc6c22260037f210bbf724c26ee938fec164ba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C2.mp3": {
+   "sha256": "646db44d72044c1420a5c3746aa78b9b86b60e8d7b88e326d8f256232e986805",
+   "size": 25429,
+   "gz": "files/646db44d72044c1420a5c3746aa78b9b86b60e8d7b88e326d8f256232e986805.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C3.mp3": {
+   "sha256": "15dda29306795d4fd02b8976718bfedf4920a94ea2a63dc409f96a0fa46b5242",
+   "size": 25585,
+   "gz": "files/15dda29306795d4fd02b8976718bfedf4920a94ea2a63dc409f96a0fa46b5242.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C4.mp3": {
+   "sha256": "5cd80bb51e7b11a5bba2a496af78e982dc3f1f216eb13a0c36366142190e35c9",
+   "size": 25585,
+   "gz": "files/5cd80bb51e7b11a5bba2a496af78e982dc3f1f216eb13a0c36366142190e35c9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C5.mp3": {
+   "sha256": "761a2afe76c7445aa53453689797ff7152a4187769328e1e66d1f92ceb914a5d",
+   "size": 25585,
+   "gz": "files/761a2afe76c7445aa53453689797ff7152a4187769328e1e66d1f92ceb914a5d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C6.mp3": {
+   "sha256": "54bfb6782319e9f2c6e8b14843ca0f1a635cfc006ae988ac2aef0fff00f9ad90",
+   "size": 25585,
+   "gz": "files/54bfb6782319e9f2c6e8b14843ca0f1a635cfc006ae988ac2aef0fff00f9ad90.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/C7.mp3": {
+   "sha256": "1b3bb3f4a4ae9ebfd82f72b1cdd12efd90f6007a97df7b0f503f555892d1b1de",
+   "size": 25585,
+   "gz": "files/1b3bb3f4a4ae9ebfd82f72b1cdd12efd90f6007a97df7b0f503f555892d1b1de.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb1.mp3": {
+   "sha256": "2fbba222a59a7baea1a9d976a248ce4f1391ec095f77eaabf13b5894b00016f2",
+   "size": 23583,
+   "gz": "files/2fbba222a59a7baea1a9d976a248ce4f1391ec095f77eaabf13b5894b00016f2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb2.mp3": {
+   "sha256": "9e46f089bbe2fc01212c44537b279525dbe62183c387f9c783df06603a91ffbf",
+   "size": 25585,
+   "gz": "files/9e46f089bbe2fc01212c44537b279525dbe62183c387f9c783df06603a91ffbf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb3.mp3": {
+   "sha256": "47b6135fe6cff5d560400e93a11cffa20e75e691ccbb8fef0e121a7313e79bad",
+   "size": 25585,
+   "gz": "files/47b6135fe6cff5d560400e93a11cffa20e75e691ccbb8fef0e121a7313e79bad.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb4.mp3": {
+   "sha256": "909e0c2542f9397a32937833f706e5f5b6a8bc1ffdfb077715d6b9d56c155a58",
+   "size": 25585,
+   "gz": "files/909e0c2542f9397a32937833f706e5f5b6a8bc1ffdfb077715d6b9d56c155a58.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb5.mp3": {
+   "sha256": "c63ddd440b9445b528df2ad8689e629614550db766248a91fd2a190e8350da50",
+   "size": 25585,
+   "gz": "files/c63ddd440b9445b528df2ad8689e629614550db766248a91fd2a190e8350da50.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb6.mp3": {
+   "sha256": "325179e7265d0558e0e919e2d7a61703ebe33218f28fc72beeef1784e0c95828",
+   "size": 25585,
+   "gz": "files/325179e7265d0558e0e919e2d7a61703ebe33218f28fc72beeef1784e0c95828.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Eb7.mp3": {
+   "sha256": "31fa54c4167ab0917c2b639a64c539b6fec36083a7a570daa7b7ed6568d9c881",
+   "size": 25585,
+   "gz": "files/31fa54c4167ab0917c2b639a64c539b6fec36083a7a570daa7b7ed6568d9c881.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb1.mp3": {
+   "sha256": "45aa26cba9643fd3a97b74976f074460aac37c794853176cfe83463b51693239",
+   "size": 24467,
+   "gz": "files/45aa26cba9643fd3a97b74976f074460aac37c794853176cfe83463b51693239.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb2.mp3": {
+   "sha256": "53af7b7a6aeced1a63c73b108391506ffca43941b82b7753dbbc9749b87d9799",
+   "size": 25585,
+   "gz": "files/53af7b7a6aeced1a63c73b108391506ffca43941b82b7753dbbc9749b87d9799.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb3.mp3": {
+   "sha256": "5cafc3adb24fd5c3a568c5b9746b93538ced0da08009d14e8c52e9c8f2fc8ef3",
+   "size": 25585,
+   "gz": "files/5cafc3adb24fd5c3a568c5b9746b93538ced0da08009d14e8c52e9c8f2fc8ef3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb4.mp3": {
+   "sha256": "dd5ea09bb02a44e7a7b5b5ec7ed28c239f8c0fcca7761f60631ce7e99ebd6925",
+   "size": 25585,
+   "gz": "files/dd5ea09bb02a44e7a7b5b5ec7ed28c239f8c0fcca7761f60631ce7e99ebd6925.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb5.mp3": {
+   "sha256": "1aa17a30987f98215572b1db601a53f489e227dfb373795471aa8ac5ecdc8b35",
+   "size": 25585,
+   "gz": "files/1aa17a30987f98215572b1db601a53f489e227dfb373795471aa8ac5ecdc8b35.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb6.mp3": {
+   "sha256": "47edac18dfdd170b8969c832bddd11c117985c3f659642774d99c657f69c5fde",
+   "size": 25585,
+   "gz": "files/47edac18dfdd170b8969c832bddd11c117985c3f659642774d99c657f69c5fde.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/flute/Gb7.mp3": {
+   "sha256": "b305bd4a976afaa2629b9c36f46cf74e0440cebd6b85aa1136aa6a001209a2ba",
+   "size": 25585,
+   "gz": "files/b305bd4a976afaa2629b9c36f46cf74e0440cebd6b85aa1136aa6a001209a2ba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A1.mp3": {
+   "sha256": "9a65bf19b3a89295caf0683bb94dcc4108d690162a519c91c41b620caa08b6d6",
+   "size": 13885,
+   "gz": "files/9a65bf19b3a89295caf0683bb94dcc4108d690162a519c91c41b620caa08b6d6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A2.mp3": {
+   "sha256": "4817276c32b3a2349d83ac811834ae91bfe8d8d0945b3d3abb6e0c49c73e0899",
+   "size": 13885,
+   "gz": "files/4817276c32b3a2349d83ac811834ae91bfe8d8d0945b3d3abb6e0c49c73e0899.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A3.mp3": {
+   "sha256": "4cc28238b5f93cdbd9b6d4243422d9aa811bb760f7403561b818e68d1a36d94f",
+   "size": 13911,
+   "gz": "files/4cc28238b5f93cdbd9b6d4243422d9aa811bb760f7403561b818e68d1a36d94f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A4.mp3": {
+   "sha256": "398e7d4d685b6e9835e0756b70cced42407dc6e55dc5409171ae6e0e769cfa4b",
+   "size": 13781,
+   "gz": "files/398e7d4d685b6e9835e0756b70cced42407dc6e55dc5409171ae6e0e769cfa4b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A5.mp3": {
+   "sha256": "d426b947e39ccee32c70f8b7415d44b39d56bc4e35cf528d3d4361429682e0fa",
+   "size": 14067,
+   "gz": "files/d426b947e39ccee32c70f8b7415d44b39d56bc4e35cf528d3d4361429682e0fa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A6.mp3": {
+   "sha256": "1cf2c340f3f5b07fcc79cb2cc91454eb8321c9b0cb33eb777e411e762f27457a",
+   "size": 13937,
+   "gz": "files/1cf2c340f3f5b07fcc79cb2cc91454eb8321c9b0cb33eb777e411e762f27457a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/A7.mp3": {
+   "sha256": "c00c03b03f0ffa935bf6901c0a397925447aa6935e2d0399c959e52b2b15be39",
+   "size": 13651,
+   "gz": "files/c00c03b03f0ffa935bf6901c0a397925447aa6935e2d0399c959e52b2b15be39.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C1.mp3": {
+   "sha256": "3f8da9f3a577e061d0f6028d7bd7333c1960e9d9ef952bfb11abbe211df7082e",
+   "size": 13963,
+   "gz": "files/3f8da9f3a577e061d0f6028d7bd7333c1960e9d9ef952bfb11abbe211df7082e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C2.mp3": {
+   "sha256": "7c1012aa7d8290c4727c71050bffb0929547eb9d7a6cd72f8188757a2dadb576",
+   "size": 13963,
+   "gz": "files/7c1012aa7d8290c4727c71050bffb0929547eb9d7a6cd72f8188757a2dadb576.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C3.mp3": {
+   "sha256": "2cf206bf63a93d9f4e6dc5d693d266920708970717d3504409c8e1ef66142844",
+   "size": 13911,
+   "gz": "files/2cf206bf63a93d9f4e6dc5d693d266920708970717d3504409c8e1ef66142844.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C4.mp3": {
+   "sha256": "d45e4598009da405ead18d7124d456546664d95a18be8767ef850d1a2716e4a6",
+   "size": 13859,
+   "gz": "files/d45e4598009da405ead18d7124d456546664d95a18be8767ef850d1a2716e4a6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C5.mp3": {
+   "sha256": "51205bb0b6ff73f439d92789ae34c0ca774030d5491abe1d27c490c5edc7e492",
+   "size": 13989,
+   "gz": "files/51205bb0b6ff73f439d92789ae34c0ca774030d5491abe1d27c490c5edc7e492.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C6.mp3": {
+   "sha256": "059b9fc123ba93ec8c6a3f9fe7e8774f0b67b5c3235bf9bfe066e79362735e9e",
+   "size": 14145,
+   "gz": "files/059b9fc123ba93ec8c6a3f9fe7e8774f0b67b5c3235bf9bfe066e79362735e9e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/C7.mp3": {
+   "sha256": "9c07f96ffd6451f3516edb46a81a21eb61bc8c7ef8cd2c459e1d9a5ebaed0e81",
+   "size": 14015,
+   "gz": "files/9c07f96ffd6451f3516edb46a81a21eb61bc8c7ef8cd2c459e1d9a5ebaed0e81.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb1.mp3": {
+   "sha256": "14e26147e41a71c28eadcceb7938550622591dd72f8221434042eff6cacfa87d",
+   "size": 13911,
+   "gz": "files/14e26147e41a71c28eadcceb7938550622591dd72f8221434042eff6cacfa87d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb2.mp3": {
+   "sha256": "390ff236226ebc74e1a120389e40fa4749a9409d34162d9a250a76faa774b207",
+   "size": 13963,
+   "gz": "files/390ff236226ebc74e1a120389e40fa4749a9409d34162d9a250a76faa774b207.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb3.mp3": {
+   "sha256": "f8810ba0d20c93b87eadf721aa8f23d70febaaa4b3f439668ef5e8aa37ee5bf2",
+   "size": 13885,
+   "gz": "files/f8810ba0d20c93b87eadf721aa8f23d70febaaa4b3f439668ef5e8aa37ee5bf2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb4.mp3": {
+   "sha256": "e86ed4bb643399790feadbb7bd9c1fe912601c0ccd676773a1029cba1c7c0ac4",
+   "size": 13833,
+   "gz": "files/e86ed4bb643399790feadbb7bd9c1fe912601c0ccd676773a1029cba1c7c0ac4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb5.mp3": {
+   "sha256": "75997697ed05ce1f9916f33794dfe2e56f54f40dc3d4e23fdc1f0b63e2263250",
+   "size": 13963,
+   "gz": "files/75997697ed05ce1f9916f33794dfe2e56f54f40dc3d4e23fdc1f0b63e2263250.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb6.mp3": {
+   "sha256": "d36ba6cb824297316c9b89e48e92887f79fb017f54430fd73cb62e88401b2284",
+   "size": 14145,
+   "gz": "files/d36ba6cb824297316c9b89e48e92887f79fb017f54430fd73cb62e88401b2284.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Eb7.mp3": {
+   "sha256": "988d4d2efae8bd5e804ef4136c33705d34c2f724bc013fd3dbfd0bb647940a11",
+   "size": 13781,
+   "gz": "files/988d4d2efae8bd5e804ef4136c33705d34c2f724bc013fd3dbfd0bb647940a11.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb1.mp3": {
+   "sha256": "373650f049f383cfdee4444bf823504dfa6f8be7700321400b4013b22f31cab6",
+   "size": 13937,
+   "gz": "files/373650f049f383cfdee4444bf823504dfa6f8be7700321400b4013b22f31cab6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb2.mp3": {
+   "sha256": "a98726fec3fecf7be48b1e7b52f6e7bfe08711041e024ddf089efc53d329602b",
+   "size": 13937,
+   "gz": "files/a98726fec3fecf7be48b1e7b52f6e7bfe08711041e024ddf089efc53d329602b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb3.mp3": {
+   "sha256": "2a3ad78871e3b69f07e76557b3fc149d8fc5e36f461399bf867cceb591876f59",
+   "size": 13807,
+   "gz": "files/2a3ad78871e3b69f07e76557b3fc149d8fc5e36f461399bf867cceb591876f59.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb4.mp3": {
+   "sha256": "9e0e38287b6c84020262a7cf1f348c2daefa16d8d9d8cdf0d25827cdf4bac474",
+   "size": 13807,
+   "gz": "files/9e0e38287b6c84020262a7cf1f348c2daefa16d8d9d8cdf0d25827cdf4bac474.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb5.mp3": {
+   "sha256": "6639736ff444f4295eb4d929cd4286671d3f6b246a614e3c39f04ea5a3f66056",
+   "size": 13859,
+   "gz": "files/6639736ff444f4295eb4d929cd4286671d3f6b246a614e3c39f04ea5a3f66056.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb6.mp3": {
+   "sha256": "087113425d2ff92d3588225feef876cdf980b285e947c05f7a9f7ae183790b9f",
+   "size": 14197,
+   "gz": "files/087113425d2ff92d3588225feef876cdf980b285e947c05f7a9f7ae183790b9f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/kalimba/Gb7.mp3": {
+   "sha256": "e53fcce4bcd2ff9a30aebb527bc0209f0d68772abf75b546a8025c2961641d3a",
+   "size": 13755,
+   "gz": "files/e53fcce4bcd2ff9a30aebb527bc0209f0d68772abf75b546a8025c2961641d3a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A1.mp3": {
+   "sha256": "295013cead68347a263281f2dc843ea6ec8af87f185083a950862013e01d8f68",
+   "size": 14301,
+   "gz": "files/295013cead68347a263281f2dc843ea6ec8af87f185083a950862013e01d8f68.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A2.mp3": {
+   "sha256": "d1525bfb1e216cdb67d3de23bd95bec63bbe4206f134a0e6e6fd1723a899d595",
+   "size": 14405,
+   "gz": "files/d1525bfb1e216cdb67d3de23bd95bec63bbe4206f134a0e6e6fd1723a899d595.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A3.mp3": {
+   "sha256": "bcc575fe2d97f83637017de993fc9d8dbb4ae1040941c74bdb53c989f03d5978",
+   "size": 14665,
+   "gz": "files/bcc575fe2d97f83637017de993fc9d8dbb4ae1040941c74bdb53c989f03d5978.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A4.mp3": {
+   "sha256": "518e69afb6b9035f41c02a6f4c5eb974b0f0ff1291e4bc72f021c9ee3e7e1867",
+   "size": 14795,
+   "gz": "files/518e69afb6b9035f41c02a6f4c5eb974b0f0ff1291e4bc72f021c9ee3e7e1867.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A5.mp3": {
+   "sha256": "8f98779e46f1a10d13112195413fbf05e71324c927984957946abdadbf2234de",
+   "size": 14275,
+   "gz": "files/8f98779e46f1a10d13112195413fbf05e71324c927984957946abdadbf2234de.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A6.mp3": {
+   "sha256": "c48ac2cab9aa2dbaabe71ea15d78aaa29cbe0f957ed3dfa7d473f5a61cef8504",
+   "size": 13963,
+   "gz": "files/c48ac2cab9aa2dbaabe71ea15d78aaa29cbe0f957ed3dfa7d473f5a61cef8504.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/A7.mp3": {
+   "sha256": "ad176696e14c189066c5e24da5dc483ca7b6c37f7e6cc93183c6384fdc9ed6f2",
+   "size": 13677,
+   "gz": "files/ad176696e14c189066c5e24da5dc483ca7b6c37f7e6cc93183c6384fdc9ed6f2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C1.mp3": {
+   "sha256": "7b2d426db934a8087654bb1552369246fceecf642a1a81d105dbf7a2cc3df6ad",
+   "size": 14067,
+   "gz": "files/7b2d426db934a8087654bb1552369246fceecf642a1a81d105dbf7a2cc3df6ad.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C2.mp3": {
+   "sha256": "da2040c6ab4d6c5eb84f5479c84928ef267004a6ddcf954f0d8e634cfc0aed58",
+   "size": 14379,
+   "gz": "files/da2040c6ab4d6c5eb84f5479c84928ef267004a6ddcf954f0d8e634cfc0aed58.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C3.mp3": {
+   "sha256": "75777407882b562a507a559b2a962513117cba5db0e6eed8021dd47c055471ee",
+   "size": 14457,
+   "gz": "files/75777407882b562a507a559b2a962513117cba5db0e6eed8021dd47c055471ee.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C4.mp3": {
+   "sha256": "2f1382b9a79050de0be336fc53689ba246f5e516ce81c02f28a0e39e8d1e98f6",
+   "size": 14769,
+   "gz": "files/2f1382b9a79050de0be336fc53689ba246f5e516ce81c02f28a0e39e8d1e98f6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C5.mp3": {
+   "sha256": "7a38fcba7fb5ead5225e6322891b92c3ab3e2083997b78299f75b6f8b928ec2f",
+   "size": 14743,
+   "gz": "files/7a38fcba7fb5ead5225e6322891b92c3ab3e2083997b78299f75b6f8b928ec2f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C6.mp3": {
+   "sha256": "24646a8db53bcf4f614d8e9dad86f056962dd54f2f0f0f2fdbbf90a1caff1c87",
+   "size": 14353,
+   "gz": "files/24646a8db53bcf4f614d8e9dad86f056962dd54f2f0f0f2fdbbf90a1caff1c87.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/C7.mp3": {
+   "sha256": "1d4e2a0c964d7a11054ff5db0cce72041cef7bdfc9c6c64b994b41447151c88d",
+   "size": 14015,
+   "gz": "files/1d4e2a0c964d7a11054ff5db0cce72041cef7bdfc9c6c64b994b41447151c88d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb1.mp3": {
+   "sha256": "f1e50ff5c99a23457485e91696f3fa734d5b0b327db83df77ded670f6a940aba",
+   "size": 14171,
+   "gz": "files/f1e50ff5c99a23457485e91696f3fa734d5b0b327db83df77ded670f6a940aba.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb2.mp3": {
+   "sha256": "11151e52b2db37965b211f5c31a39d42df068b397b52418f5a7d7b370b473641",
+   "size": 14379,
+   "gz": "files/11151e52b2db37965b211f5c31a39d42df068b397b52418f5a7d7b370b473641.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb3.mp3": {
+   "sha256": "c7eb4fbbb4b1de8d010cd7e29775f99fb1dc20076e3ceabceca4aad67d88482f",
+   "size": 14353,
+   "gz": "files/c7eb4fbbb4b1de8d010cd7e29775f99fb1dc20076e3ceabceca4aad67d88482f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb4.mp3": {
+   "sha256": "328afc7c7ac8e8c146957d26eb7c29bc4e4daee179f125076816dc03f1d2a652",
+   "size": 14743,
+   "gz": "files/328afc7c7ac8e8c146957d26eb7c29bc4e4daee179f125076816dc03f1d2a652.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb5.mp3": {
+   "sha256": "95e2dc9c30ea6162cacb80d6cedc0835cf36c1b6ffa4ba2aa6f24d0e2efcd86a",
+   "size": 14483,
+   "gz": "files/95e2dc9c30ea6162cacb80d6cedc0835cf36c1b6ffa4ba2aa6f24d0e2efcd86a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb6.mp3": {
+   "sha256": "dd81d7233a068ba0dd581aa87a67f9bb1914cb1178183451d86cd40144fddead",
+   "size": 14275,
+   "gz": "files/dd81d7233a068ba0dd581aa87a67f9bb1914cb1178183451d86cd40144fddead.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Eb7.mp3": {
+   "sha256": "9706af5b38981952d4ca7f04971b69e1b0e5f3d0b062c14f7497f4da4d74007c",
+   "size": 13859,
+   "gz": "files/9706af5b38981952d4ca7f04971b69e1b0e5f3d0b062c14f7497f4da4d74007c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb1.mp3": {
+   "sha256": "bacbb82dd22bdc82e2ca3411daefb6797afb6fb0231fcac0365ec8d257932edc",
+   "size": 14197,
+   "gz": "files/bacbb82dd22bdc82e2ca3411daefb6797afb6fb0231fcac0365ec8d257932edc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb2.mp3": {
+   "sha256": "ffb61fca7d944233636662f461f7c8503512423a067e8bebc9747b56df5c86ea",
+   "size": 14509,
+   "gz": "files/ffb61fca7d944233636662f461f7c8503512423a067e8bebc9747b56df5c86ea.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb3.mp3": {
+   "sha256": "2ca088770e9fbc2fc723971abc91ac8b71f9aacc96e71922c8f36cb9fdad0af1",
+   "size": 14535,
+   "gz": "files/2ca088770e9fbc2fc723971abc91ac8b71f9aacc96e71922c8f36cb9fdad0af1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb4.mp3": {
+   "sha256": "d35ac054ad5e79322b3b8760748c1310cc693c53ae80ecbd77c9aafa2cba2e83",
+   "size": 14899,
+   "gz": "files/d35ac054ad5e79322b3b8760748c1310cc693c53ae80ecbd77c9aafa2cba2e83.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb5.mp3": {
+   "sha256": "76cf0834500827709855588bfb1df0344970986eecf27bdcdb733a1d8abcd53b",
+   "size": 14483,
+   "gz": "files/76cf0834500827709855588bfb1df0344970986eecf27bdcdb733a1d8abcd53b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb6.mp3": {
+   "sha256": "2b6a0f4f116c2b5d4fb61db636f8479e6afc39f48b2ac0652c3d7b0e5d2da3e7",
+   "size": 14197,
+   "gz": "files/2b6a0f4f116c2b5d4fb61db636f8479e6afc39f48b2ac0652c3d7b0e5d2da3e7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/marimba/Gb7.mp3": {
+   "sha256": "c031fca712b2cc9700809f07fb95b2a67482c174c2d597ffee0923da55697804",
+   "size": 13807,
+   "gz": "files/c031fca712b2cc9700809f07fb95b2a67482c174c2d597ffee0923da55697804.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A1.mp3": {
+   "sha256": "f71cc1aa2e9b0843512f91ac48e9bcf0273244a7d2f5254f18e140d18e3abbf8",
+   "size": 15887,
+   "gz": "files/f71cc1aa2e9b0843512f91ac48e9bcf0273244a7d2f5254f18e140d18e3abbf8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A2.mp3": {
+   "sha256": "b2fd5e59892e3049403985ffc745e4ee42f4ef16fd2c7e78f2dca5095b9eed95",
+   "size": 15783,
+   "gz": "files/b2fd5e59892e3049403985ffc745e4ee42f4ef16fd2c7e78f2dca5095b9eed95.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A3.mp3": {
+   "sha256": "dd4c878772e8fd42c98cd34ab4bdf11a4fa979622effcba2417186b10741dcb7",
+   "size": 15965,
+   "gz": "files/dd4c878772e8fd42c98cd34ab4bdf11a4fa979622effcba2417186b10741dcb7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A4.mp3": {
+   "sha256": "f476a8f2cc5abb535695701cb6dd6f8096364d845bcf131e170687411a3efb84",
+   "size": 15575,
+   "gz": "files/f476a8f2cc5abb535695701cb6dd6f8096364d845bcf131e170687411a3efb84.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A5.mp3": {
+   "sha256": "034b0c4378ec8dcce2db087c26af9e2ba1ea75229d9da2cf4c77271a7a23f034",
+   "size": 15003,
+   "gz": "files/034b0c4378ec8dcce2db087c26af9e2ba1ea75229d9da2cf4c77271a7a23f034.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A6.mp3": {
+   "sha256": "07693ccc5dec6527d1196f3e0e8c9bb6c1a1b3db6c7a826196183032b7de56a9",
+   "size": 14561,
+   "gz": "files/07693ccc5dec6527d1196f3e0e8c9bb6c1a1b3db6c7a826196183032b7de56a9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/A7.mp3": {
+   "sha256": "a19a5927c279ad4e51f765a70a53a0ae9d4ec56330183877bf29d9d7a66b3774",
+   "size": 14041,
+   "gz": "files/a19a5927c279ad4e51f765a70a53a0ae9d4ec56330183877bf29d9d7a66b3774.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C1.mp3": {
+   "sha256": "d144d2f942c0b3d4a15ea4f123680f48bd840bccf170b958b4231a157fdf0bcb",
+   "size": 16147,
+   "gz": "files/d144d2f942c0b3d4a15ea4f123680f48bd840bccf170b958b4231a157fdf0bcb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C2.mp3": {
+   "sha256": "d3755ba1fcf92af1cedeb94d0f42a59734564428c12438a095e9f9c60b5bfcc9",
+   "size": 15705,
+   "gz": "files/d3755ba1fcf92af1cedeb94d0f42a59734564428c12438a095e9f9c60b5bfcc9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C3.mp3": {
+   "sha256": "cd15f10c1bfcd637e756539ca68c5c5c1d4ae303b28996216a91d1284b645dd2",
+   "size": 15913,
+   "gz": "files/cd15f10c1bfcd637e756539ca68c5c5c1d4ae303b28996216a91d1284b645dd2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C4.mp3": {
+   "sha256": "5af8fb4bb8ff107f38defb5126534387c17eef2c06f8e92fcafa6b09c76cd84a",
+   "size": 16667,
+   "gz": "files/5af8fb4bb8ff107f38defb5126534387c17eef2c06f8e92fcafa6b09c76cd84a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C5.mp3": {
+   "sha256": "da6f2cfd5f242cda13165401525924c6378c4739920479c42a096c352c9e160b",
+   "size": 15679,
+   "gz": "files/da6f2cfd5f242cda13165401525924c6378c4739920479c42a096c352c9e160b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C6.mp3": {
+   "sha256": "91fc1d524e1880664414af31d1c30fc39f8b5f275266dc991ebb58f51db1df0e",
+   "size": 15549,
+   "gz": "files/91fc1d524e1880664414af31d1c30fc39f8b5f275266dc991ebb58f51db1df0e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/C7.mp3": {
+   "sha256": "7d0acbafd0ef62c79b55d18f876f8bbd2e986b95b1303d41e5c5e61b3f064cf1",
+   "size": 14899,
+   "gz": "files/7d0acbafd0ef62c79b55d18f876f8bbd2e986b95b1303d41e5c5e61b3f064cf1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb1.mp3": {
+   "sha256": "6c10f87bb2c381223b07317771daaf1d10980961da1bbd80f88143596c55947b",
+   "size": 16069,
+   "gz": "files/6c10f87bb2c381223b07317771daaf1d10980961da1bbd80f88143596c55947b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb2.mp3": {
+   "sha256": "82ae02ed4c27a18d20d8c05279fa8282675326f12af55ffeff2c60373ae9ef05",
+   "size": 15523,
+   "gz": "files/82ae02ed4c27a18d20d8c05279fa8282675326f12af55ffeff2c60373ae9ef05.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb3.mp3": {
+   "sha256": "408b896ddaf05b529608eed752d17e8ef3744d92c3d4ee59f03b9a0577c430e0",
+   "size": 15861,
+   "gz": "files/408b896ddaf05b529608eed752d17e8ef3744d92c3d4ee59f03b9a0577c430e0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb4.mp3": {
+   "sha256": "e4a68cc1005391ee199b8dffc8d7c66e296b45ad929c81efb81b43e9754eedd0",
+   "size": 16329,
+   "gz": "files/e4a68cc1005391ee199b8dffc8d7c66e296b45ad929c81efb81b43e9754eedd0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb5.mp3": {
+   "sha256": "97e1e0654a7a7214f7a52bb403bf417ce9b8acfca53c3020636a7ad2ea9cd311",
+   "size": 16173,
+   "gz": "files/97e1e0654a7a7214f7a52bb403bf417ce9b8acfca53c3020636a7ad2ea9cd311.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb6.mp3": {
+   "sha256": "422697d8d8b8a0bcbbcd24e4a0fc1b1c8457e99419d62a6ceece3aaf459b2a90",
+   "size": 15445,
+   "gz": "files/422697d8d8b8a0bcbbcd24e4a0fc1b1c8457e99419d62a6ceece3aaf459b2a90.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Eb7.mp3": {
+   "sha256": "afd13557ba805d3f4f8e24947f8134bccb0f1b5dbe6b01b7cd518ad6550a274a",
+   "size": 14587,
+   "gz": "files/afd13557ba805d3f4f8e24947f8134bccb0f1b5dbe6b01b7cd518ad6550a274a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb1.mp3": {
+   "sha256": "83037e4b2bbe5450c335f868e87481dc203495c00c4e555337d3504c68255da4",
+   "size": 15939,
+   "gz": "files/83037e4b2bbe5450c335f868e87481dc203495c00c4e555337d3504c68255da4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb2.mp3": {
+   "sha256": "f29bf84ee0be9f2eaaeb275d16720c90c9c055885a28aab827a95579ca148282",
+   "size": 15991,
+   "gz": "files/f29bf84ee0be9f2eaaeb275d16720c90c9c055885a28aab827a95579ca148282.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb3.mp3": {
+   "sha256": "ea42754cd54d7d84be521af0dc55a2d0bca420ae565409899b95ef5058ee673f",
+   "size": 15939,
+   "gz": "files/ea42754cd54d7d84be521af0dc55a2d0bca420ae565409899b95ef5058ee673f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb4.mp3": {
+   "sha256": "4519c68e02a834e4fd68ea4eae4e5a7220323c642c5c78b7bf58c453bba909a3",
+   "size": 15601,
+   "gz": "files/4519c68e02a834e4fd68ea4eae4e5a7220323c642c5c78b7bf58c453bba909a3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb5.mp3": {
+   "sha256": "dab88a3cb91c107d8d0bf71f0f1acd5f9d8f0ed51b66cf8f4179a3ad11bfd765",
+   "size": 15419,
+   "gz": "files/dab88a3cb91c107d8d0bf71f0f1acd5f9d8f0ed51b66cf8f4179a3ad11bfd765.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb6.mp3": {
+   "sha256": "95a1b1218819b68f22ac806e6331608d8a356f06c2c3d2a38b380b1e656466f6",
+   "size": 15133,
+   "gz": "files/95a1b1218819b68f22ac806e6331608d8a356f06c2c3d2a38b380b1e656466f6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/music_box/Gb7.mp3": {
+   "sha256": "61bf9ee18b3dbf8df5b8a1d15d2715fad256a3f81e42b4288df52dc0f0813c37",
+   "size": 14431,
+   "gz": "files/61bf9ee18b3dbf8df5b8a1d15d2715fad256a3f81e42b4288df52dc0f0813c37.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A1.mp3": {
+   "sha256": "42e8ee81133c354886e855ebdf40db3f8341e3a90fdcaaa61faeb417b1ea0d74",
+   "size": 25143,
+   "gz": "files/42e8ee81133c354886e855ebdf40db3f8341e3a90fdcaaa61faeb417b1ea0d74.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A2.mp3": {
+   "sha256": "f1391dddabd453f9b3de9c19a04822e37b80108cf0bd60c9b8771c89cba5ba91",
+   "size": 22907,
+   "gz": "files/f1391dddabd453f9b3de9c19a04822e37b80108cf0bd60c9b8771c89cba5ba91.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A3.mp3": {
+   "sha256": "0bdc3f44b8d54fd74cab118c127407d25fe412981c04d6a35ef75ff1e58f5101",
+   "size": 25559,
+   "gz": "files/0bdc3f44b8d54fd74cab118c127407d25fe412981c04d6a35ef75ff1e58f5101.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A4.mp3": {
+   "sha256": "4cee28abf819bcf4a0d53aef49126685028ae3976e816d24561eff380da1c2ab",
+   "size": 25559,
+   "gz": "files/4cee28abf819bcf4a0d53aef49126685028ae3976e816d24561eff380da1c2ab.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A5.mp3": {
+   "sha256": "478e18a7b382842dfe6eac727f0fefc0c11fb6120fbe3b739df49c395e5f6ec2",
+   "size": 25403,
+   "gz": "files/478e18a7b382842dfe6eac727f0fefc0c11fb6120fbe3b739df49c395e5f6ec2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A6.mp3": {
+   "sha256": "2e1696cf4aab4c936849ba79c3ef5221ef7e2f98d838a9eb31e161ddbe88296c",
+   "size": 25585,
+   "gz": "files/2e1696cf4aab4c936849ba79c3ef5221ef7e2f98d838a9eb31e161ddbe88296c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/A7.mp3": {
+   "sha256": "70ee3acf838c7fbc1722eb5da636d9aee62dddbe8b35c39963b5aa03c3d5e530",
+   "size": 25585,
+   "gz": "files/70ee3acf838c7fbc1722eb5da636d9aee62dddbe8b35c39963b5aa03c3d5e530.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C1.mp3": {
+   "sha256": "12e698d58d210a5105e5d7ecd1fff077a762d69ca253c26e6acc45e28bfc1e56",
+   "size": 24831,
+   "gz": "files/12e698d58d210a5105e5d7ecd1fff077a762d69ca253c26e6acc45e28bfc1e56.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C2.mp3": {
+   "sha256": "0a2eb2c33d6000853b49b45f430aa5770cd93d441b3a850ca2a42409cb5eda9b",
+   "size": 23193,
+   "gz": "files/0a2eb2c33d6000853b49b45f430aa5770cd93d441b3a850ca2a42409cb5eda9b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C3.mp3": {
+   "sha256": "f4ef38294adb5b49df9df7356dd41507db99914c2cad565fdf7be184bdb10cbd",
+   "size": 23089,
+   "gz": "files/f4ef38294adb5b49df9df7356dd41507db99914c2cad565fdf7be184bdb10cbd.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C4.mp3": {
+   "sha256": "6e67759007b7625cb153f5fecd01f5635c51363d2b5897d8fe6c27630a41bd67",
+   "size": 25533,
+   "gz": "files/6e67759007b7625cb153f5fecd01f5635c51363d2b5897d8fe6c27630a41bd67.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C5.mp3": {
+   "sha256": "70a07fe507b5eb10952f7f2076d70ac3abbade9c7dd5d6cc701f5da064d78e0f",
+   "size": 25091,
+   "gz": "files/70a07fe507b5eb10952f7f2076d70ac3abbade9c7dd5d6cc701f5da064d78e0f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C6.mp3": {
+   "sha256": "24e7bda02e3b753c175cacc3f18f7ece2d874bc9ed000be91e655018d49d2131",
+   "size": 25585,
+   "gz": "files/24e7bda02e3b753c175cacc3f18f7ece2d874bc9ed000be91e655018d49d2131.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/C7.mp3": {
+   "sha256": "5dce5356a1943937ff8976c9ef55b9ca800763ea39025cea572d60b09a84ec75",
+   "size": 25585,
+   "gz": "files/5dce5356a1943937ff8976c9ef55b9ca800763ea39025cea572d60b09a84ec75.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb1.mp3": {
+   "sha256": "6cb387edb978c587ecc077eed1fcfd4036211f47f2f1d3fb428a67fc1addf2be",
+   "size": 24935,
+   "gz": "files/6cb387edb978c587ecc077eed1fcfd4036211f47f2f1d3fb428a67fc1addf2be.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb2.mp3": {
+   "sha256": "f595ba4362b0537f0e45f0c3a6fc449b0de63327acefd16c588ed398806d42a8",
+   "size": 22907,
+   "gz": "files/f595ba4362b0537f0e45f0c3a6fc449b0de63327acefd16c588ed398806d42a8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb3.mp3": {
+   "sha256": "017d7ff15a6364ff7129116433f140420ad6428c1d7b0a3a95842b0ca074fd39",
+   "size": 24675,
+   "gz": "files/017d7ff15a6364ff7129116433f140420ad6428c1d7b0a3a95842b0ca074fd39.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb4.mp3": {
+   "sha256": "ac12ee5c0de16a87ff5b1a0f76aec4b7e7b03253b509c99a50e985bba309f982",
+   "size": 25559,
+   "gz": "files/ac12ee5c0de16a87ff5b1a0f76aec4b7e7b03253b509c99a50e985bba309f982.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb5.mp3": {
+   "sha256": "ddc7d7942968ade1696273c751433906fac21d43913b31c33a4cf90a5f924816",
+   "size": 25585,
+   "gz": "files/ddc7d7942968ade1696273c751433906fac21d43913b31c33a4cf90a5f924816.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb6.mp3": {
+   "sha256": "3427a8f6281306985fbe8aad2dba7bfa8e776f0ebfce9617666be7f819f68083",
+   "size": 25585,
+   "gz": "files/3427a8f6281306985fbe8aad2dba7bfa8e776f0ebfce9617666be7f819f68083.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Eb7.mp3": {
+   "sha256": "8d5753d8c48aa1003fccba484674a4a90b354d2d36c25ed2e563f3f061d408cc",
+   "size": 25585,
+   "gz": "files/8d5753d8c48aa1003fccba484674a4a90b354d2d36c25ed2e563f3f061d408cc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb1.mp3": {
+   "sha256": "43c727cd5901ea6f4dc9fc8f655d1b4810c97eb7f5749c4f380696bfa86889a8",
+   "size": 25221,
+   "gz": "files/43c727cd5901ea6f4dc9fc8f655d1b4810c97eb7f5749c4f380696bfa86889a8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb2.mp3": {
+   "sha256": "05a89072540d7dadde40216c6f395dabd3829f4e1d187975091581eb63df576d",
+   "size": 23115,
+   "gz": "files/05a89072540d7dadde40216c6f395dabd3829f4e1d187975091581eb63df576d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb3.mp3": {
+   "sha256": "cbcbb3504ffdd9106c3c78f92c6e63890515ba29af46564e2d38d721c0067138",
+   "size": 25455,
+   "gz": "files/cbcbb3504ffdd9106c3c78f92c6e63890515ba29af46564e2d38d721c0067138.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb4.mp3": {
+   "sha256": "8d4cd30bcd3c47922c524b3bfacc1d732af2264453c9899dc97110ac7788096c",
+   "size": 25585,
+   "gz": "files/8d4cd30bcd3c47922c524b3bfacc1d732af2264453c9899dc97110ac7788096c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb5.mp3": {
+   "sha256": "4e36501cca0e571fd147ce3c4d2ad763e021fde4790e216b8f17e92a43f60a13",
+   "size": 25585,
+   "gz": "files/4e36501cca0e571fd147ce3c4d2ad763e021fde4790e216b8f17e92a43f60a13.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb6.mp3": {
+   "sha256": "2a0465b6cf2e08f4ec7803bb80afc84ab1f325532dea00d3aef0b7d64fce70c4",
+   "size": 25585,
+   "gz": "files/2a0465b6cf2e08f4ec7803bb80afc84ab1f325532dea00d3aef0b7d64fce70c4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/overdriven_guitar/Gb7.mp3": {
+   "sha256": "f8f6aec790f4685471c9dcddc8e97c4257ebb2f812cba2cf7588dd8bba28e099",
+   "size": 25585,
+   "gz": "files/f8f6aec790f4685471c9dcddc8e97c4257ebb2f812cba2cf7588dd8bba28e099.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A1.mp3": {
+   "sha256": "df25fd1c285da0f4af9f9f175c79d41d46be945a081bd54b10213a67d1d1ca8f",
+   "size": 17603,
+   "gz": "files/df25fd1c285da0f4af9f9f175c79d41d46be945a081bd54b10213a67d1d1ca8f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A2.mp3": {
+   "sha256": "f4e0af25984ec667f8eec38811ac4d4cd1443ecae7cf1bcbb4f00190b590d364",
+   "size": 18747,
+   "gz": "files/f4e0af25984ec667f8eec38811ac4d4cd1443ecae7cf1bcbb4f00190b590d364.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A3.mp3": {
+   "sha256": "11d9c92aab449234dd22c4a278769bdbe7ce675daf3e1b7bba5cafc03bce5c4c",
+   "size": 17395,
+   "gz": "files/11d9c92aab449234dd22c4a278769bdbe7ce675daf3e1b7bba5cafc03bce5c4c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A4.mp3": {
+   "sha256": "b08c08b8dcfba0e7f8f35febd800a2921cf3a433397036cdc8dfc4a692b497b4",
+   "size": 16875,
+   "gz": "files/b08c08b8dcfba0e7f8f35febd800a2921cf3a433397036cdc8dfc4a692b497b4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A5.mp3": {
+   "sha256": "49a28170ac06774d4bbd044b4d5f40857765171f1acead8513993375ad811f76",
+   "size": 18227,
+   "gz": "files/49a28170ac06774d4bbd044b4d5f40857765171f1acead8513993375ad811f76.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A6.mp3": {
+   "sha256": "6a8a9f675e26e58b9cec741721f3e08402d725e5819164fe10541e0d2521422f",
+   "size": 15809,
+   "gz": "files/6a8a9f675e26e58b9cec741721f3e08402d725e5819164fe10541e0d2521422f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C1.mp3": {
+   "sha256": "8b467cd01388c37d04a45bdffa02d77a5870b00ba396f0e128d15cbbc83c5061",
+   "size": 17733,
+   "gz": "files/8b467cd01388c37d04a45bdffa02d77a5870b00ba396f0e128d15cbbc83c5061.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C2.mp3": {
+   "sha256": "5994d490993da2cc27b4cd2e79592cdf5d7e3e24fd7b7cfc4723f5b997e6cfaf",
+   "size": 17213,
+   "gz": "files/5994d490993da2cc27b4cd2e79592cdf5d7e3e24fd7b7cfc4723f5b997e6cfaf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C3.mp3": {
+   "sha256": "b5c10ef6e3a9513370782d973ddcd998b36e0f14d666f5f517fb9c2c40817806",
+   "size": 18461,
+   "gz": "files/b5c10ef6e3a9513370782d973ddcd998b36e0f14d666f5f517fb9c2c40817806.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C4.mp3": {
+   "sha256": "0676acb913f62658845a4034a1c9b053a85886b5e583071367b3ade3575d81ea",
+   "size": 17317,
+   "gz": "files/0676acb913f62658845a4034a1c9b053a85886b5e583071367b3ade3575d81ea.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C5.mp3": {
+   "sha256": "07a661383503b1ea98da6aed060e14e092ee98f7773ebaa9996db77e7516ade6",
+   "size": 17993,
+   "gz": "files/07a661383503b1ea98da6aed060e14e092ee98f7773ebaa9996db77e7516ade6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C6.mp3": {
+   "sha256": "1aff4b558651ae5af74cb73216265af1d538ad34353e56c3092fca1b83968e26",
+   "size": 17343,
+   "gz": "files/1aff4b558651ae5af74cb73216265af1d538ad34353e56c3092fca1b83968e26.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/C7.mp3": {
+   "sha256": "1320e1aacd83f855d70eca94c28547afa30ce2ca6908192b12970c73518b6827",
+   "size": 15445,
+   "gz": "files/1320e1aacd83f855d70eca94c28547afa30ce2ca6908192b12970c73518b6827.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb1.mp3": {
+   "sha256": "99050008263c5a5f4536fb94a22a94085b23723ce0baba88df7e7e10d1b2c325",
+   "size": 17421,
+   "gz": "files/99050008263c5a5f4536fb94a22a94085b23723ce0baba88df7e7e10d1b2c325.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb2.mp3": {
+   "sha256": "693424767f0d2a95be25df0882b29d9ba26e050a05f15f7aa0b84fac0e215b88",
+   "size": 16459,
+   "gz": "files/693424767f0d2a95be25df0882b29d9ba26e050a05f15f7aa0b84fac0e215b88.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb3.mp3": {
+   "sha256": "9d2c9e23f308a289b6eff31feb8a89f971d27bd2ddbb1e6e59fb9e71c88972bc",
+   "size": 20177,
+   "gz": "files/9d2c9e23f308a289b6eff31feb8a89f971d27bd2ddbb1e6e59fb9e71c88972bc.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb4.mp3": {
+   "sha256": "77e31f2104e6591c52b356480dd5aeb4fae61b52467ec3304dbb1c51ba63f9b4",
+   "size": 16979,
+   "gz": "files/77e31f2104e6591c52b356480dd5aeb4fae61b52467ec3304dbb1c51ba63f9b4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb5.mp3": {
+   "sha256": "30c6054cb64060e7cdbc31fcb0a421f89c6bb31454fc1ec8a9d3750e2bb5013f",
+   "size": 19319,
+   "gz": "files/30c6054cb64060e7cdbc31fcb0a421f89c6bb31454fc1ec8a9d3750e2bb5013f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb6.mp3": {
+   "sha256": "f0661b0977d6ac7e48b94aa5e7b91a0e468e5f48536e2637546b400e2279cc4c",
+   "size": 16797,
+   "gz": "files/f0661b0977d6ac7e48b94aa5e7b91a0e468e5f48536e2637546b400e2279cc4c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb1.mp3": {
+   "sha256": "874ee87d14079f7ace0e7f63b093818b7c75d73cd21fdd4b8dbf16eee40894a4",
+   "size": 17343,
+   "gz": "files/874ee87d14079f7ace0e7f63b093818b7c75d73cd21fdd4b8dbf16eee40894a4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb2.mp3": {
+   "sha256": "fd76075e332e3f0655b4eab9a3b7275e5f79d65f057d73b8b4e34c55c6d19242",
+   "size": 19527,
+   "gz": "files/fd76075e332e3f0655b4eab9a3b7275e5f79d65f057d73b8b4e34c55c6d19242.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb3.mp3": {
+   "sha256": "f47d94956fefab5ab54d9647974d553074544343b25888b918910dd104281237",
+   "size": 17239,
+   "gz": "files/f47d94956fefab5ab54d9647974d553074544343b25888b918910dd104281237.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb4.mp3": {
+   "sha256": "af9888634d5d128cad69ed96a7240fdef3a2de5d0846250c70d404782c741f03",
+   "size": 16771,
+   "gz": "files/af9888634d5d128cad69ed96a7240fdef3a2de5d0846250c70d404782c741f03.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb5.mp3": {
+   "sha256": "fccecf9d64723ba755722cc1e0123394b13545a9453a2ff48efb1c70d18f77c9",
+   "size": 18565,
+   "gz": "files/fccecf9d64723ba755722cc1e0123394b13545a9453a2ff48efb1c70d18f77c9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb6.mp3": {
+   "sha256": "71e81868f63f7ad9f4b5074a6581ef6fcf56fb717cf87c663adbf2623737c1e2",
+   "size": 16277,
+   "gz": "files/71e81868f63f7ad9f4b5074a6581ef6fcf56fb717cf87c663adbf2623737c1e2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/pizzicato_strings/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A1.mp3": {
+   "sha256": "6e52c6d3be17a6ca428445725293aaeb93c4c29c5b00abf1a78cefbfdda5aded",
+   "size": 25065,
+   "gz": "files/6e52c6d3be17a6ca428445725293aaeb93c4c29c5b00abf1a78cefbfdda5aded.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A2.mp3": {
+   "sha256": "97e71de6e77464d5901bc57f80b6195117693a9d68169e29935f15318fd52662",
+   "size": 25585,
+   "gz": "files/97e71de6e77464d5901bc57f80b6195117693a9d68169e29935f15318fd52662.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A3.mp3": {
+   "sha256": "0f2b9beb9721cbd1d5329f087adcac77f436bbe4558aaadafacc567f1d8267f7",
+   "size": 25585,
+   "gz": "files/0f2b9beb9721cbd1d5329f087adcac77f436bbe4558aaadafacc567f1d8267f7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A4.mp3": {
+   "sha256": "cbdff69a0c3734338aa05de91aa432cad3d2bbdf7170489f9e71ea3c8f6c054b",
+   "size": 25585,
+   "gz": "files/cbdff69a0c3734338aa05de91aa432cad3d2bbdf7170489f9e71ea3c8f6c054b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A5.mp3": {
+   "sha256": "a07eaa75ceb451e6abe2286237122cbbe043b9a2046aa3f684f02cec843d5338",
+   "size": 25585,
+   "gz": "files/a07eaa75ceb451e6abe2286237122cbbe043b9a2046aa3f684f02cec843d5338.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A6.mp3": {
+   "sha256": "9e7d074973ee64243378cd20001d1d184349825e2197abbc65e48f386c4357ae",
+   "size": 23791,
+   "gz": "files/9e7d074973ee64243378cd20001d1d184349825e2197abbc65e48f386c4357ae.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/A7.mp3": {
+   "sha256": "e2a66000849865c6960e25bb1c8ebf796572a42a747e9707b410de331f9327b2",
+   "size": 21373,
+   "gz": "files/e2a66000849865c6960e25bb1c8ebf796572a42a747e9707b410de331f9327b2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C1.mp3": {
+   "sha256": "2c205bfef1243cc3d260d19f9b157a9c78010881ad208c4748202afa7d404535",
+   "size": 23245,
+   "gz": "files/2c205bfef1243cc3d260d19f9b157a9c78010881ad208c4748202afa7d404535.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C2.mp3": {
+   "sha256": "5dc3d5381cdc1d60ec9c1962b5afacbeebcfb0287b075f80dbf57f204f933bbf",
+   "size": 25351,
+   "gz": "files/5dc3d5381cdc1d60ec9c1962b5afacbeebcfb0287b075f80dbf57f204f933bbf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C3.mp3": {
+   "sha256": "19b80b32eadf776780b572e099e71c3d5241d915f991607e9bb169f39a3f0672",
+   "size": 25585,
+   "gz": "files/19b80b32eadf776780b572e099e71c3d5241d915f991607e9bb169f39a3f0672.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C4.mp3": {
+   "sha256": "ad22a7b9ff8b47139c2dc7f812e0fcd51f741c3f1e23c327f0a0dd3309bb0426",
+   "size": 25585,
+   "gz": "files/ad22a7b9ff8b47139c2dc7f812e0fcd51f741c3f1e23c327f0a0dd3309bb0426.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C5.mp3": {
+   "sha256": "8f82858f19dd37f87598c94464a8d344fb3149123dd34e8d5f99399e5068cc92",
+   "size": 25585,
+   "gz": "files/8f82858f19dd37f87598c94464a8d344fb3149123dd34e8d5f99399e5068cc92.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C6.mp3": {
+   "sha256": "6ee394915535f73f3cb26dc0a68b15811e39249e169d71a0d59b4e5ebc89c6c1",
+   "size": 24987,
+   "gz": "files/6ee394915535f73f3cb26dc0a68b15811e39249e169d71a0d59b4e5ebc89c6c1.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/C7.mp3": {
+   "sha256": "5bd5493f024a12d77c5efe36e6ce73ad65ee9d498370abbc2e761a504a8b110b",
+   "size": 23947,
+   "gz": "files/5bd5493f024a12d77c5efe36e6ce73ad65ee9d498370abbc2e761a504a8b110b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb1.mp3": {
+   "sha256": "426f6261259838c63c161a406955c9c976d76df9415be77a556d42d20a67424d",
+   "size": 23687,
+   "gz": "files/426f6261259838c63c161a406955c9c976d76df9415be77a556d42d20a67424d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb2.mp3": {
+   "sha256": "bd3249477fa1ee3bd33b32dedb42a4dcf80f504be26cf1bff103891b63dc8986",
+   "size": 25585,
+   "gz": "files/bd3249477fa1ee3bd33b32dedb42a4dcf80f504be26cf1bff103891b63dc8986.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb3.mp3": {
+   "sha256": "ce5cad711bb591dd083814dbfe75a080a787857fb1158b0c5d1297e12cdea326",
+   "size": 25585,
+   "gz": "files/ce5cad711bb591dd083814dbfe75a080a787857fb1158b0c5d1297e12cdea326.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb4.mp3": {
+   "sha256": "8b6baee377a773e41b9ebe36acbc2a9061fb5aec1b26fbc450aaaa349b3c730b",
+   "size": 25585,
+   "gz": "files/8b6baee377a773e41b9ebe36acbc2a9061fb5aec1b26fbc450aaaa349b3c730b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb5.mp3": {
+   "sha256": "bc3c2b513ae334fd484cb5bc43d87ba0b93f34e178a3902d178f06b7de4af570",
+   "size": 25585,
+   "gz": "files/bc3c2b513ae334fd484cb5bc43d87ba0b93f34e178a3902d178f06b7de4af570.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb6.mp3": {
+   "sha256": "86ad7be2e864b75065db35567fe2d44d687e16a2949b0f08f2ba7350e57c3746",
+   "size": 25013,
+   "gz": "files/86ad7be2e864b75065db35567fe2d44d687e16a2949b0f08f2ba7350e57c3746.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Eb7.mp3": {
+   "sha256": "c2753f1cb55a795c2706bdb73a3197c61a2e5dc775dfdb8ee9cd8eea1a6f956e",
+   "size": 23531,
+   "gz": "files/c2753f1cb55a795c2706bdb73a3197c61a2e5dc775dfdb8ee9cd8eea1a6f956e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb1.mp3": {
+   "sha256": "a3866ec5054a16d2e9807fd89dc6d3dc1243ee02fb6990772f4987e9c23aca18",
+   "size": 24311,
+   "gz": "files/a3866ec5054a16d2e9807fd89dc6d3dc1243ee02fb6990772f4987e9c23aca18.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb2.mp3": {
+   "sha256": "2d87e0600670ffe1c707a3e636e00e0ee39503a021856ad7faf8b54302f459b3",
+   "size": 25585,
+   "gz": "files/2d87e0600670ffe1c707a3e636e00e0ee39503a021856ad7faf8b54302f459b3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb3.mp3": {
+   "sha256": "a92ceb89634b8d8247a33ece765f3f7993bb98102dc8f663bfedf0d04e8b4a18",
+   "size": 25585,
+   "gz": "files/a92ceb89634b8d8247a33ece765f3f7993bb98102dc8f663bfedf0d04e8b4a18.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb4.mp3": {
+   "sha256": "1fea2405b2f08431344efb1f28a82be4036ab1971874a5219539c00fdea4c354",
+   "size": 25585,
+   "gz": "files/1fea2405b2f08431344efb1f28a82be4036ab1971874a5219539c00fdea4c354.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb5.mp3": {
+   "sha256": "1338a1fc71ce9473dd2da0289e3b3d784cea0e2fe8b6634ecad49a20f1c85e62",
+   "size": 25585,
+   "gz": "files/1338a1fc71ce9473dd2da0289e3b3d784cea0e2fe8b6634ecad49a20f1c85e62.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb6.mp3": {
+   "sha256": "a07de5ff0e64a91bcff416bfb9636d6bd3dd0abe51e02d1b84edb431a20c4d29",
+   "size": 24077,
+   "gz": "files/a07de5ff0e64a91bcff416bfb9636d6bd3dd0abe51e02d1b84edb431a20c4d29.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/sitar/Gb7.mp3": {
+   "sha256": "64d6615c622a8276b863dd868144a729fbff89df57dad79a768bf684574bc716",
+   "size": 21529,
+   "gz": "files/64d6615c622a8276b863dd868144a729fbff89df57dad79a768bf684574bc716.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A1.mp3": {
+   "sha256": "7b91fd220721c45a7dc31df1d258b11ba3c96839810be1923a27546dd7783d4a",
+   "size": 16641,
+   "gz": "files/7b91fd220721c45a7dc31df1d258b11ba3c96839810be1923a27546dd7783d4a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A2.mp3": {
+   "sha256": "0fb6851262c6700359edad6938c54872e8dea637c2e6b656396412d316a2e82a",
+   "size": 15523,
+   "gz": "files/0fb6851262c6700359edad6938c54872e8dea637c2e6b656396412d316a2e82a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A3.mp3": {
+   "sha256": "b9a3bd34b730458bec55d966fd003b49e81bdd1d3accd139e478f392b22e6534",
+   "size": 15445,
+   "gz": "files/b9a3bd34b730458bec55d966fd003b49e81bdd1d3accd139e478f392b22e6534.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A4.mp3": {
+   "sha256": "830e29bddc31d3b172a1533d70e332bd1d78fe1580e0d98fd678b4f8b904ffd7",
+   "size": 15029,
+   "gz": "files/830e29bddc31d3b172a1533d70e332bd1d78fe1580e0d98fd678b4f8b904ffd7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A5.mp3": {
+   "sha256": "55a96fc4c5e790daa3f4926536580b590c9447de5d82a59f06f48955b59a88e7",
+   "size": 14145,
+   "gz": "files/55a96fc4c5e790daa3f4926536580b590c9447de5d82a59f06f48955b59a88e7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A6.mp3": {
+   "sha256": "83aaa292e8f0b797c20f5675f285c4bb01e60b3b32f675b60147c0a29b237032",
+   "size": 13625,
+   "gz": "files/83aaa292e8f0b797c20f5675f285c4bb01e60b3b32f675b60147c0a29b237032.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/A7.mp3": {
+   "sha256": "3296926d80a6a053c8ed5961ce598be1d39007c272e949b95c1cde938f894a97",
+   "size": 13417,
+   "gz": "files/3296926d80a6a053c8ed5961ce598be1d39007c272e949b95c1cde938f894a97.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C1.mp3": {
+   "sha256": "ae2ddf1c84e125767f2cb77008597bd7361c7604606fa4445889727083d7b011",
+   "size": 16589,
+   "gz": "files/ae2ddf1c84e125767f2cb77008597bd7361c7604606fa4445889727083d7b011.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C2.mp3": {
+   "sha256": "14d11e24a3979a96ec91a92449dc5004120b6ed53fd5dbba248468564c6f1cab",
+   "size": 16459,
+   "gz": "files/14d11e24a3979a96ec91a92449dc5004120b6ed53fd5dbba248468564c6f1cab.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C3.mp3": {
+   "sha256": "cb49f387dc344f46d0836df970492429510feb325c5370917bf237301b80a4da",
+   "size": 15731,
+   "gz": "files/cb49f387dc344f46d0836df970492429510feb325c5370917bf237301b80a4da.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C4.mp3": {
+   "sha256": "4a50a6d12f67c1030f38f7f8e67e928bb48d41fe827b56c48d143b62d4c29572",
+   "size": 15393,
+   "gz": "files/4a50a6d12f67c1030f38f7f8e67e928bb48d41fe827b56c48d143b62d4c29572.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C5.mp3": {
+   "sha256": "9f1b688d546bde55c4b085b10f9c4933570c572821c7c7a5d0a5405eb52be042",
+   "size": 14821,
+   "gz": "files/9f1b688d546bde55c4b085b10f9c4933570c572821c7c7a5d0a5405eb52be042.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C6.mp3": {
+   "sha256": "946189feef87a60585adb374e7b2388ae7ae2227070fcd25eab6d3d843f9e78d",
+   "size": 13937,
+   "gz": "files/946189feef87a60585adb374e7b2388ae7ae2227070fcd25eab6d3d843f9e78d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/C7.mp3": {
+   "sha256": "58bb5819e5dc65e064dcf4427aaeaa24f6624a5fcda10c0d1cde4e9f2f79238a",
+   "size": 13521,
+   "gz": "files/58bb5819e5dc65e064dcf4427aaeaa24f6624a5fcda10c0d1cde4e9f2f79238a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb1.mp3": {
+   "sha256": "f2aec7b450bf3ab6b8ed341d8365997f431660e889fe13852047344befb9634b",
+   "size": 16407,
+   "gz": "files/f2aec7b450bf3ab6b8ed341d8365997f431660e889fe13852047344befb9634b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb2.mp3": {
+   "sha256": "7d429d56a089827fa52937002e1d91bc3e01403bbe4b69b44b6f31a29a253712",
+   "size": 15913,
+   "gz": "files/7d429d56a089827fa52937002e1d91bc3e01403bbe4b69b44b6f31a29a253712.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb3.mp3": {
+   "sha256": "3c6208218d0feb26eb438611dd154c8fd72c161247c5e36988c50bad1d0b6cb7",
+   "size": 15575,
+   "gz": "files/3c6208218d0feb26eb438611dd154c8fd72c161247c5e36988c50bad1d0b6cb7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb4.mp3": {
+   "sha256": "320112a31a2b290d9168cd5d0a7701e34400d12b60c3f6c464d6b2dc2b3499b7",
+   "size": 15237,
+   "gz": "files/320112a31a2b290d9168cd5d0a7701e34400d12b60c3f6c464d6b2dc2b3499b7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb5.mp3": {
+   "sha256": "97efb8f5021bc111135a1d70899318771a4996d5ce7b00c78d82568510ab13ac",
+   "size": 14561,
+   "gz": "files/97efb8f5021bc111135a1d70899318771a4996d5ce7b00c78d82568510ab13ac.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb6.mp3": {
+   "sha256": "099db936f844d54aa4c363f10e0ac8cc4599cd315db10cdd7243c6cf0046f551",
+   "size": 13833,
+   "gz": "files/099db936f844d54aa4c363f10e0ac8cc4599cd315db10cdd7243c6cf0046f551.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Eb7.mp3": {
+   "sha256": "c54c92bf7b4d9f39c28bdf4455f183a2a4687cffabdf5e628fcf629dea79b4d8",
+   "size": 13521,
+   "gz": "files/c54c92bf7b4d9f39c28bdf4455f183a2a4687cffabdf5e628fcf629dea79b4d8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb1.mp3": {
+   "sha256": "1b47b58f73ef326cf88e53ee32a0c0cba6d290f0e67c09e83d2235057945a622",
+   "size": 16095,
+   "gz": "files/1b47b58f73ef326cf88e53ee32a0c0cba6d290f0e67c09e83d2235057945a622.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb2.mp3": {
+   "sha256": "ced11920168c180774f7f615afc151bf8f173b7a3ff3544214127ffb4baded1d",
+   "size": 15809,
+   "gz": "files/ced11920168c180774f7f615afc151bf8f173b7a3ff3544214127ffb4baded1d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb3.mp3": {
+   "sha256": "00f1d76d7105ed5f684ad27015f6c4e3897d2e9eb45096493c5d057a5fff644f",
+   "size": 15497,
+   "gz": "files/00f1d76d7105ed5f684ad27015f6c4e3897d2e9eb45096493c5d057a5fff644f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb4.mp3": {
+   "sha256": "98112488eb13a921e7f2a2f9951cbab75215f0fc83c5f8a1cb71a670b39badb8",
+   "size": 15133,
+   "gz": "files/98112488eb13a921e7f2a2f9951cbab75215f0fc83c5f8a1cb71a670b39badb8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb5.mp3": {
+   "sha256": "1730572694ec215ce48b513597ae3eed81f61583e84fef77d4dd651ae0ef1e46",
+   "size": 14353,
+   "gz": "files/1730572694ec215ce48b513597ae3eed81f61583e84fef77d4dd651ae0ef1e46.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb6.mp3": {
+   "sha256": "a1bd39eb260d0e5f311532082489acdf625ada89c7dd2075f08f41a1fc103a81",
+   "size": 13729,
+   "gz": "files/a1bd39eb260d0e5f311532082489acdf625ada89c7dd2075f08f41a1fc103a81.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/steel_drums/Gb7.mp3": {
+   "sha256": "fd6ac5c93ef9e9308a37191148e5cfbb3611118f91585e5d7aab62505c08ca79",
+   "size": 13417,
+   "gz": "files/fd6ac5c93ef9e9308a37191148e5cfbb3611118f91585e5d7aab62505c08ca79.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A1.mp3": {
+   "sha256": "784d8c22fe4a2f2d010e7ac557012113895fd0acc49cc5db34ceffbf3e1e47a3",
+   "size": 25585,
+   "gz": "files/784d8c22fe4a2f2d010e7ac557012113895fd0acc49cc5db34ceffbf3e1e47a3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A2.mp3": {
+   "sha256": "026c1374d2867bb8865d39aa559c0bdb51ff6227cded366fab1663bbe8e94421",
+   "size": 25585,
+   "gz": "files/026c1374d2867bb8865d39aa559c0bdb51ff6227cded366fab1663bbe8e94421.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A3.mp3": {
+   "sha256": "9b0bb53b2cafa9575bc3046320d754e0363f6014e83ae8807e31cdf90a453c5a",
+   "size": 25585,
+   "gz": "files/9b0bb53b2cafa9575bc3046320d754e0363f6014e83ae8807e31cdf90a453c5a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A4.mp3": {
+   "sha256": "ccf7f7c9fd2669446943a85c4d8b84d563aadf6ef557facd5b6a4c0bb830bfaa",
+   "size": 25585,
+   "gz": "files/ccf7f7c9fd2669446943a85c4d8b84d563aadf6ef557facd5b6a4c0bb830bfaa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A5.mp3": {
+   "sha256": "12e1d4ac5556765fa5cc8827f309b755b6c605cf5437f9db3b59088bc278ba2c",
+   "size": 25585,
+   "gz": "files/12e1d4ac5556765fa5cc8827f309b755b6c605cf5437f9db3b59088bc278ba2c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A6.mp3": {
+   "sha256": "177cce5105be643a243c82c25588b4e6db4ca881be8b4f7d76548e32a949a223",
+   "size": 25585,
+   "gz": "files/177cce5105be643a243c82c25588b4e6db4ca881be8b4f7d76548e32a949a223.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C1.mp3": {
+   "sha256": "dbefa04d0a3f843371796e848704c989bf534d4231832b77a0701764200b1e3d",
+   "size": 25585,
+   "gz": "files/dbefa04d0a3f843371796e848704c989bf534d4231832b77a0701764200b1e3d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C2.mp3": {
+   "sha256": "bc8dfb98c0b251be3aa31ddfc95c4c192aeccb7d6250583860553607c04c5a62",
+   "size": 25585,
+   "gz": "files/bc8dfb98c0b251be3aa31ddfc95c4c192aeccb7d6250583860553607c04c5a62.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C3.mp3": {
+   "sha256": "9e1473b471b22fa129ad63118e378088b45c0cb3767b61b7b21999eb7415f185",
+   "size": 25585,
+   "gz": "files/9e1473b471b22fa129ad63118e378088b45c0cb3767b61b7b21999eb7415f185.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C4.mp3": {
+   "sha256": "e2ca8e8308c6ab163508f351617af213923fc59d3d380148f1d0df756db109e3",
+   "size": 25585,
+   "gz": "files/e2ca8e8308c6ab163508f351617af213923fc59d3d380148f1d0df756db109e3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C5.mp3": {
+   "sha256": "17af2f3d0956ce6b9faacba437f6b48bc43aa1c0f36a700edb7be92df3149239",
+   "size": 25585,
+   "gz": "files/17af2f3d0956ce6b9faacba437f6b48bc43aa1c0f36a700edb7be92df3149239.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C6.mp3": {
+   "sha256": "f89dfd4b7472e7b479a2336b4bc95c2b5904818e39a671424ad2c6f9325d7292",
+   "size": 25585,
+   "gz": "files/f89dfd4b7472e7b479a2336b4bc95c2b5904818e39a671424ad2c6f9325d7292.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/C7.mp3": {
+   "sha256": "e8cc3d57967147b4502aa768b916c63a14b4ebebb2739075590901f67f3ab069",
+   "size": 25585,
+   "gz": "files/e8cc3d57967147b4502aa768b916c63a14b4ebebb2739075590901f67f3ab069.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb1.mp3": {
+   "sha256": "8176071567b82cbc9a486fefaf9dd4db4e4906536b32a2c56af9e73daf27c5ab",
+   "size": 25585,
+   "gz": "files/8176071567b82cbc9a486fefaf9dd4db4e4906536b32a2c56af9e73daf27c5ab.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb2.mp3": {
+   "sha256": "b9aeb171adb0f5c97c218d2f7517a929b4cfdb1ccb75808fd2a27e9ddfcdb38d",
+   "size": 25585,
+   "gz": "files/b9aeb171adb0f5c97c218d2f7517a929b4cfdb1ccb75808fd2a27e9ddfcdb38d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb3.mp3": {
+   "sha256": "5447d719ade7cf929c3645dd7ccfcefa8f573ad89e12fa76945b3fa6e5288571",
+   "size": 25585,
+   "gz": "files/5447d719ade7cf929c3645dd7ccfcefa8f573ad89e12fa76945b3fa6e5288571.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb4.mp3": {
+   "sha256": "6aaf411f4117bbed5fa7d979cf5b33ba855dc286d2f47c4d89bb9db8488bf070",
+   "size": 25585,
+   "gz": "files/6aaf411f4117bbed5fa7d979cf5b33ba855dc286d2f47c4d89bb9db8488bf070.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb5.mp3": {
+   "sha256": "164e66e838e492eac341cfc4604a821ef2fcd8eecb59196edb06ea319b7013a3",
+   "size": 25585,
+   "gz": "files/164e66e838e492eac341cfc4604a821ef2fcd8eecb59196edb06ea319b7013a3.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb6.mp3": {
+   "sha256": "74463b3a0e1a8584ccb05fde86bb9bfd192c899374265dd5ac792a22933fc62f",
+   "size": 25585,
+   "gz": "files/74463b3a0e1a8584ccb05fde86bb9bfd192c899374265dd5ac792a22933fc62f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Eb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb1.mp3": {
+   "sha256": "ba573ad59c5e21ba9e9ae6aa7204baf4dc6a568a389c725bee3302511be4283b",
+   "size": 25585,
+   "gz": "files/ba573ad59c5e21ba9e9ae6aa7204baf4dc6a568a389c725bee3302511be4283b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb2.mp3": {
+   "sha256": "5845bd947d2bea81829043c3b80b3f35249378458b3a8bba9e1fe934edfd940d",
+   "size": 25585,
+   "gz": "files/5845bd947d2bea81829043c3b80b3f35249378458b3a8bba9e1fe934edfd940d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb3.mp3": {
+   "sha256": "67df21e03f87fccdb842d5b35627be712ea5aa1f79b941c4c2e7ae32957b7173",
+   "size": 25585,
+   "gz": "files/67df21e03f87fccdb842d5b35627be712ea5aa1f79b941c4c2e7ae32957b7173.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb4.mp3": {
+   "sha256": "aeb5e503821cb91e13a32776cba366a331e407720c5d7ae6a8cf09ef8c70bb5c",
+   "size": 25585,
+   "gz": "files/aeb5e503821cb91e13a32776cba366a331e407720c5d7ae6a8cf09ef8c70bb5c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb5.mp3": {
+   "sha256": "b92b99e1f16c4ddf1d58d6b6eccd057d7a5b4501883ab02ca72573bab31894b9",
+   "size": 25585,
+   "gz": "files/b92b99e1f16c4ddf1d58d6b6eccd057d7a5b4501883ab02ca72573bab31894b9.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb6.mp3": {
+   "sha256": "273600e80a4551d6d606f725a85a0314101edc4b5e69e16d4fbd9e93f523c84c",
+   "size": 25585,
+   "gz": "files/273600e80a4551d6d606f725a85a0314101edc4b5e69e16d4fbd9e93f523c84c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/string_ensemble_1/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A1.mp3": {
+   "sha256": "30b4d4bdc6ac895f85719bf85a8cec2abca3463d5e6085f4ca73744890bd7e8f",
+   "size": 19293,
+   "gz": "files/30b4d4bdc6ac895f85719bf85a8cec2abca3463d5e6085f4ca73744890bd7e8f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A2.mp3": {
+   "sha256": "1cb68c13fce48cb5f3fe61458872200da030f38d636c405cab5cb407e0f908de",
+   "size": 19345,
+   "gz": "files/1cb68c13fce48cb5f3fe61458872200da030f38d636c405cab5cb407e0f908de.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A3.mp3": {
+   "sha256": "57c9b7b1ca00c57f3fdb0f6689c4a2f2809a7a3f267f3d03d5f343084b34c7e2",
+   "size": 19579,
+   "gz": "files/57c9b7b1ca00c57f3fdb0f6689c4a2f2809a7a3f267f3d03d5f343084b34c7e2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A4.mp3": {
+   "sha256": "fd53a2890e65e9d04727bfed523e6a24436197ec0b298ab90654f73ad4621859",
+   "size": 17759,
+   "gz": "files/fd53a2890e65e9d04727bfed523e6a24436197ec0b298ab90654f73ad4621859.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A5.mp3": {
+   "sha256": "b883228604b1f613c0126a7118559c79100b79dd9f93557c4e252b75b6b6a1c7",
+   "size": 14769,
+   "gz": "files/b883228604b1f613c0126a7118559c79100b79dd9f93557c4e252b75b6b6a1c7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A6.mp3": {
+   "sha256": "58e78252f1eef08230252d1e8364b495c12d04c4c83c63affaa9921fad09b7aa",
+   "size": 14223,
+   "gz": "files/58e78252f1eef08230252d1e8364b495c12d04c4c83c63affaa9921fad09b7aa.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/A7.mp3": {
+   "sha256": "dec80b76f5e83e8a7d49acca50fbee5027361bb3bf648fa3cacb79407a1cad8f",
+   "size": 14067,
+   "gz": "files/dec80b76f5e83e8a7d49acca50fbee5027361bb3bf648fa3cacb79407a1cad8f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C1.mp3": {
+   "sha256": "d51ba4273eb0e9796cea314f2184a0556480abb6c4aab5f7eeb44d7890a04cac",
+   "size": 18617,
+   "gz": "files/d51ba4273eb0e9796cea314f2184a0556480abb6c4aab5f7eeb44d7890a04cac.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C2.mp3": {
+   "sha256": "8624be87c266fda44b5e230a279fbdbe341e98191abf18259ec4aed2e32ad96a",
+   "size": 19475,
+   "gz": "files/8624be87c266fda44b5e230a279fbdbe341e98191abf18259ec4aed2e32ad96a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C3.mp3": {
+   "sha256": "e79d2b431ffa69715120ad228fd17d54e5732b64d56cd0b094c9a33907639ed0",
+   "size": 20203,
+   "gz": "files/e79d2b431ffa69715120ad228fd17d54e5732b64d56cd0b094c9a33907639ed0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C4.mp3": {
+   "sha256": "1dde9fe0bfbbef535c04183181808ee1ae80da7232344f0178dfb86add845638",
+   "size": 19449,
+   "gz": "files/1dde9fe0bfbbef535c04183181808ee1ae80da7232344f0178dfb86add845638.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C5.mp3": {
+   "sha256": "163bd7a4f000564c41f455b15f9cf92c718a2de1fcb5a69c3ba628881b063b46",
+   "size": 16953,
+   "gz": "files/163bd7a4f000564c41f455b15f9cf92c718a2de1fcb5a69c3ba628881b063b46.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C6.mp3": {
+   "sha256": "15dcb817ae8573b546e03d6f77e0904289737213c9612f8ecace9cbf253a797d",
+   "size": 14821,
+   "gz": "files/15dcb817ae8573b546e03d6f77e0904289737213c9612f8ecace9cbf253a797d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/C7.mp3": {
+   "sha256": "1fd1671786d70b231d9908eff37e707144064962e70235b5d4facc620a07b98e",
+   "size": 14353,
+   "gz": "files/1fd1671786d70b231d9908eff37e707144064962e70235b5d4facc620a07b98e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb1.mp3": {
+   "sha256": "8197242a56b37627f129d57f9941b0632a256e5afcb3923f57ae995eac6a7a3e",
+   "size": 19215,
+   "gz": "files/8197242a56b37627f129d57f9941b0632a256e5afcb3923f57ae995eac6a7a3e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb2.mp3": {
+   "sha256": "db0f93c14d44ec2de38651c0e8b34a03742e35862c8143f5309c90fef730202c",
+   "size": 19423,
+   "gz": "files/db0f93c14d44ec2de38651c0e8b34a03742e35862c8143f5309c90fef730202c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb3.mp3": {
+   "sha256": "299121f67f51ba017c962d7d914d2bd5d5b435f407107749cdd7e2e81c2595b4",
+   "size": 19397,
+   "gz": "files/299121f67f51ba017c962d7d914d2bd5d5b435f407107749cdd7e2e81c2595b4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb4.mp3": {
+   "sha256": "5e67bea55635fc35f62785bb1dd598136393306ee35b04c38a07c1302f0dd557",
+   "size": 19293,
+   "gz": "files/5e67bea55635fc35f62785bb1dd598136393306ee35b04c38a07c1302f0dd557.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb5.mp3": {
+   "sha256": "f120142d7516077a2beac8dc2b3b5bddc72780aaeaefa87c27fdb020e2f6696c",
+   "size": 16433,
+   "gz": "files/f120142d7516077a2beac8dc2b3b5bddc72780aaeaefa87c27fdb020e2f6696c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb6.mp3": {
+   "sha256": "bfa5811f088f1233f8697cc6cf0fdcb509d39d10661da671e212b5713fa022ca",
+   "size": 14977,
+   "gz": "files/bfa5811f088f1233f8697cc6cf0fdcb509d39d10661da671e212b5713fa022ca.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Eb7.mp3": {
+   "sha256": "cbed2b0d7372571f9a23ae81e3c772af0471211f150845af7ba85b0209c4e44b",
+   "size": 14483,
+   "gz": "files/cbed2b0d7372571f9a23ae81e3c772af0471211f150845af7ba85b0209c4e44b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb1.mp3": {
+   "sha256": "ea18e9cf1b7b3385fdb6e4297acc4c9e889ad9ad548330b9353e6d9bdc087635",
+   "size": 19891,
+   "gz": "files/ea18e9cf1b7b3385fdb6e4297acc4c9e889ad9ad548330b9353e6d9bdc087635.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb2.mp3": {
+   "sha256": "37ff0d534a8bfd7524f1e3643133149e3083a9d34963903e598b4ebda9050f51",
+   "size": 19761,
+   "gz": "files/37ff0d534a8bfd7524f1e3643133149e3083a9d34963903e598b4ebda9050f51.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb3.mp3": {
+   "sha256": "c91a11edfa3fe072bcb63e04f616517be2fa18fe90790b194d1634c486279bd8",
+   "size": 19501,
+   "gz": "files/c91a11edfa3fe072bcb63e04f616517be2fa18fe90790b194d1634c486279bd8.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb4.mp3": {
+   "sha256": "3d60e3d335a1905ec31799b8ed95045b06d42ce2f0dcd78c6f9063ce3a9c6b76",
+   "size": 18305,
+   "gz": "files/3d60e3d335a1905ec31799b8ed95045b06d42ce2f0dcd78c6f9063ce3a9c6b76.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb5.mp3": {
+   "sha256": "3310dffd490179e4979f2f57581ba8acf2253e7a9be044d5e3e575dc07028958",
+   "size": 15367,
+   "gz": "files/3310dffd490179e4979f2f57581ba8acf2253e7a9be044d5e3e575dc07028958.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb6.mp3": {
+   "sha256": "62ef7acf613161d48fbef5a1b98f167611814bc3c34a0861aa3087befe2c0b14",
+   "size": 14951,
+   "gz": "files/62ef7acf613161d48fbef5a1b98f167611814bc3c34a0861aa3087befe2c0b14.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/synth_bass_1/Gb7.mp3": {
+   "sha256": "a2475a6c9027a4837f9f59a12618a67ee6f7a90de0234aa011184b88965b6940",
+   "size": 14665,
+   "gz": "files/a2475a6c9027a4837f9f59a12618a67ee6f7a90de0234aa011184b88965b6940.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A1.mp3": {
+   "sha256": "12d6f82c6d701446a9bbb810ea5951495a5b6d90a264fde040e2a218e5d0f955",
+   "size": 24883,
+   "gz": "files/12d6f82c6d701446a9bbb810ea5951495a5b6d90a264fde040e2a218e5d0f955.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A2.mp3": {
+   "sha256": "72befbac9b9fecb8844d66731d04fb01c04cd3bfbbc2dce45d1f9fe46b6f1b64",
+   "size": 25585,
+   "gz": "files/72befbac9b9fecb8844d66731d04fb01c04cd3bfbbc2dce45d1f9fe46b6f1b64.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A3.mp3": {
+   "sha256": "aa3802937ad6e29287a150fb29e91c6d3869cf200bdf3434c137ddedc1304776",
+   "size": 22959,
+   "gz": "files/aa3802937ad6e29287a150fb29e91c6d3869cf200bdf3434c137ddedc1304776.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A4.mp3": {
+   "sha256": "84aae8d0fbef015c3b7b18a726a731a88f1ede655b5bb49f46fa47f26b810d07",
+   "size": 25585,
+   "gz": "files/84aae8d0fbef015c3b7b18a726a731a88f1ede655b5bb49f46fa47f26b810d07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A5.mp3": {
+   "sha256": "d875cdd76d4393505d95c83dbd9506c1ee075571564b722541dce1115111def0",
+   "size": 25585,
+   "gz": "files/d875cdd76d4393505d95c83dbd9506c1ee075571564b722541dce1115111def0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A6.mp3": {
+   "sha256": "f0e192fa03ee3a62b07689a331980f75ff5aa2241d8980f18bbbbf5e00c2265f",
+   "size": 25585,
+   "gz": "files/f0e192fa03ee3a62b07689a331980f75ff5aa2241d8980f18bbbbf5e00c2265f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/A7.mp3": {
+   "sha256": "838a157f8e9d8e871f4966f3dbaf3c9d8b2e7180ceb086d437fbf9fd8b313050",
+   "size": 25585,
+   "gz": "files/838a157f8e9d8e871f4966f3dbaf3c9d8b2e7180ceb086d437fbf9fd8b313050.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C1.mp3": {
+   "sha256": "46028104ee30016bdd86c3fa4973e3e872b0c1ecad557d241aca3460aa91a9b6",
+   "size": 20905,
+   "gz": "files/46028104ee30016bdd86c3fa4973e3e872b0c1ecad557d241aca3460aa91a9b6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C2.mp3": {
+   "sha256": "9debeb301cac36616f83490e01305f05b4caba1b6d7d2b399c87ee0262e6edbe",
+   "size": 25429,
+   "gz": "files/9debeb301cac36616f83490e01305f05b4caba1b6d7d2b399c87ee0262e6edbe.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C3.mp3": {
+   "sha256": "330b7bfe72f137adee3c0b0dcc7c37d27dc2c68d8e0d40c6416f5bddc9ceb91e",
+   "size": 25585,
+   "gz": "files/330b7bfe72f137adee3c0b0dcc7c37d27dc2c68d8e0d40c6416f5bddc9ceb91e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C4.mp3": {
+   "sha256": "d8741f42a2d514dbbf80aff2550dac4d1282901c4b215dcc18c020c64ca4d6d5",
+   "size": 25351,
+   "gz": "files/d8741f42a2d514dbbf80aff2550dac4d1282901c4b215dcc18c020c64ca4d6d5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C5.mp3": {
+   "sha256": "4ea6680974d2814c59f21819fc26d9afba9dc43d56005fe659d478378bbc5510",
+   "size": 25585,
+   "gz": "files/4ea6680974d2814c59f21819fc26d9afba9dc43d56005fe659d478378bbc5510.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C6.mp3": {
+   "sha256": "213b7103c2077d7926961062186d59a25b43be8a756dbac839a18fdc0ea65d98",
+   "size": 25585,
+   "gz": "files/213b7103c2077d7926961062186d59a25b43be8a756dbac839a18fdc0ea65d98.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/C7.mp3": {
+   "sha256": "377d7da1a78b06cefd7760d55a57fcc749baa399f5ecfaf86b9f30c7783df9a5",
+   "size": 25585,
+   "gz": "files/377d7da1a78b06cefd7760d55a57fcc749baa399f5ecfaf86b9f30c7783df9a5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb1.mp3": {
+   "sha256": "1721b59491497655f6f25706fee0d55323381e36d33268533be76b5e0c7edc8f",
+   "size": 22933,
+   "gz": "files/1721b59491497655f6f25706fee0d55323381e36d33268533be76b5e0c7edc8f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb2.mp3": {
+   "sha256": "bb7936f093e5923651cdad4c192e258d0eb89e628314a48920f4eaca5472a132",
+   "size": 25585,
+   "gz": "files/bb7936f093e5923651cdad4c192e258d0eb89e628314a48920f4eaca5472a132.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb3.mp3": {
+   "sha256": "e73651ddd5b2d82b4580cdc9bd7bc3fa8d851c8ba3a8e077bb3fd8e3a360141b",
+   "size": 25585,
+   "gz": "files/e73651ddd5b2d82b4580cdc9bd7bc3fa8d851c8ba3a8e077bb3fd8e3a360141b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb4.mp3": {
+   "sha256": "29e52f70b7e52d3e1bc02ebc777252036afee3d797193ac2f0baa5f6163af9d7",
+   "size": 25325,
+   "gz": "files/29e52f70b7e52d3e1bc02ebc777252036afee3d797193ac2f0baa5f6163af9d7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb5.mp3": {
+   "sha256": "a77a0bb295223bc363171a1ff3c8c94a9436e6de2505f90feac224354fed57b7",
+   "size": 25585,
+   "gz": "files/a77a0bb295223bc363171a1ff3c8c94a9436e6de2505f90feac224354fed57b7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb6.mp3": {
+   "sha256": "a26bbe350a894a24b694bf87ff9c7b2afc9a4af5a1bdc48510495e5ba3fb438b",
+   "size": 25585,
+   "gz": "files/a26bbe350a894a24b694bf87ff9c7b2afc9a4af5a1bdc48510495e5ba3fb438b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Eb7.mp3": {
+   "sha256": "c431353026af8f734c25f771e5173911c011a03dc659cce5684b1d82d3d65988",
+   "size": 25585,
+   "gz": "files/c431353026af8f734c25f771e5173911c011a03dc659cce5684b1d82d3d65988.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb1.mp3": {
+   "sha256": "095ac178e8ffbabb5d4ee53f93c4a625322f9e96a1d77e809e4e70796d280aaf",
+   "size": 24623,
+   "gz": "files/095ac178e8ffbabb5d4ee53f93c4a625322f9e96a1d77e809e4e70796d280aaf.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb2.mp3": {
+   "sha256": "a2ba75331f1d97355422e5e67060823e8a22ca4d7d95a398433e9dfe6b6360cb",
+   "size": 25585,
+   "gz": "files/a2ba75331f1d97355422e5e67060823e8a22ca4d7d95a398433e9dfe6b6360cb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb3.mp3": {
+   "sha256": "d9d8adf5ba842fb8dfcc737b3bf2669eb2cd0e270ac06ceeb20e6b0f6ac2ae80",
+   "size": 25585,
+   "gz": "files/d9d8adf5ba842fb8dfcc737b3bf2669eb2cd0e270ac06ceeb20e6b0f6ac2ae80.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb4.mp3": {
+   "sha256": "58e3c1a84dd50bf3f11d65fcf8044a7d66c0328a238ecaf140f74dec3d2d1e5b",
+   "size": 25481,
+   "gz": "files/58e3c1a84dd50bf3f11d65fcf8044a7d66c0328a238ecaf140f74dec3d2d1e5b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb5.mp3": {
+   "sha256": "3c56a0ca783a11a7cffe89da19587dadbfac7f154d72856c2a3c5ce284a071cb",
+   "size": 25585,
+   "gz": "files/3c56a0ca783a11a7cffe89da19587dadbfac7f154d72856c2a3c5ce284a071cb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb6.mp3": {
+   "sha256": "3445e178c394356093f42043d7579e32bd4770d546d4690d9f45f8c40749603d",
+   "size": 25585,
+   "gz": "files/3445e178c394356093f42043d7579e32bd4770d546d4690d9f45f8c40749603d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/trumpet/Gb7.mp3": {
+   "sha256": "050711ac9ed2a50845ea8e0657e2ca416fc6fa41bd2274d1cf64b42ef9c17a63",
+   "size": 25585,
+   "gz": "files/050711ac9ed2a50845ea8e0657e2ca416fc6fa41bd2274d1cf64b42ef9c17a63.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A1.mp3": {
+   "sha256": "f562b870bc7be6a6a0bd5ca324f40945718990506593b565a041c0c95bcc35fb",
+   "size": 17291,
+   "gz": "files/f562b870bc7be6a6a0bd5ca324f40945718990506593b565a041c0c95bcc35fb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A2.mp3": {
+   "sha256": "070882a40dd1aec6b1e5d4a48930bd6a2e3750ecbd054c451bebb612e7eea3ec",
+   "size": 18565,
+   "gz": "files/070882a40dd1aec6b1e5d4a48930bd6a2e3750ecbd054c451bebb612e7eea3ec.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A3.mp3": {
+   "sha256": "0fc46db3e6d234547516ee4652d697686864d0d3db6e919aea3671f6647be346",
+   "size": 20801,
+   "gz": "files/0fc46db3e6d234547516ee4652d697686864d0d3db6e919aea3671f6647be346.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A4.mp3": {
+   "sha256": "5c28eb3722b8ffb6b1ee964e53bd621af7bfdfe84846a174367d50f488fa9894",
+   "size": 18253,
+   "gz": "files/5c28eb3722b8ffb6b1ee964e53bd621af7bfdfe84846a174367d50f488fa9894.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A5.mp3": {
+   "sha256": "d509769e0ea4fdf0cac8451ed50a6a6370f860420f2a4c3c6e22af46028b7dc2",
+   "size": 15757,
+   "gz": "files/d509769e0ea4fdf0cac8451ed50a6a6370f860420f2a4c3c6e22af46028b7dc2.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A6.mp3": {
+   "sha256": "ff3ea5fbc38686473ac10f89971f9256dba165bb464d9cd435ae72ab6b9b4c06",
+   "size": 14197,
+   "gz": "files/ff3ea5fbc38686473ac10f89971f9256dba165bb464d9cd435ae72ab6b9b4c06.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/A7.mp3": {
+   "sha256": "f4baae04d49a283c5b56170dfbfa5d4f0c0fe948777c093af73627376509f318",
+   "size": 13703,
+   "gz": "files/f4baae04d49a283c5b56170dfbfa5d4f0c0fe948777c093af73627376509f318.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C1.mp3": {
+   "sha256": "a28c0cebbae20f36616055a187cfa4de60d8ed0cae74131ee2e79d9ed967fc61",
+   "size": 16173,
+   "gz": "files/a28c0cebbae20f36616055a187cfa4de60d8ed0cae74131ee2e79d9ed967fc61.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C2.mp3": {
+   "sha256": "e3cbb123d64280e7aee9aabbb519e9eeb4ef62e28c06e8ec3121d491536ce96e",
+   "size": 17577,
+   "gz": "files/e3cbb123d64280e7aee9aabbb519e9eeb4ef62e28c06e8ec3121d491536ce96e.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C3.mp3": {
+   "sha256": "2d1210ff7dd648e2ebcd105bf710f9549e9906034a52ef76b9d8ad0be2384824",
+   "size": 19553,
+   "gz": "files/2d1210ff7dd648e2ebcd105bf710f9549e9906034a52ef76b9d8ad0be2384824.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C4.mp3": {
+   "sha256": "1c00c4711fb9e5fe85b0f55674e6371eae818c929d65cc05c7a1a6c89c4ea13f",
+   "size": 20229,
+   "gz": "files/1c00c4711fb9e5fe85b0f55674e6371eae818c929d65cc05c7a1a6c89c4ea13f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C5.mp3": {
+   "sha256": "22e7b6e7cade7b9a8dc35ae264938a607cdce307b1125f877f15cda29f2a9b23",
+   "size": 18929,
+   "gz": "files/22e7b6e7cade7b9a8dc35ae264938a607cdce307b1125f877f15cda29f2a9b23.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C6.mp3": {
+   "sha256": "a20edea27f50d8771f5e7a57915470a27ce172741295c63ba6e4d9683f479ef7",
+   "size": 16511,
+   "gz": "files/a20edea27f50d8771f5e7a57915470a27ce172741295c63ba6e4d9683f479ef7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/C7.mp3": {
+   "sha256": "8e3d390b205759a753467a2912c053cb7ec5fa4f89fc941de8fc6d41425cddb0",
+   "size": 14457,
+   "gz": "files/8e3d390b205759a753467a2912c053cb7ec5fa4f89fc941de8fc6d41425cddb0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb1.mp3": {
+   "sha256": "955566389ea3503bc489ee6529fce7378173f199c43c9a96d545918ccfef5f72",
+   "size": 16667,
+   "gz": "files/955566389ea3503bc489ee6529fce7378173f199c43c9a96d545918ccfef5f72.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb2.mp3": {
+   "sha256": "fcea93ecce007fe7cbaf7111518dce874cae7f109b9f1816e59adb673d85ba96",
+   "size": 17681,
+   "gz": "files/fcea93ecce007fe7cbaf7111518dce874cae7f109b9f1816e59adb673d85ba96.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb3.mp3": {
+   "sha256": "b3b7d66eac057a6536156b2a7dee9fd8de98c9ccb28d93d5027e7564df93f4eb",
+   "size": 19553,
+   "gz": "files/b3b7d66eac057a6536156b2a7dee9fd8de98c9ccb28d93d5027e7564df93f4eb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb4.mp3": {
+   "sha256": "f9225da31dc5de09775840a780586c1f39587a7e5885fa424660a2a5e5ca4f7b",
+   "size": 19891,
+   "gz": "files/f9225da31dc5de09775840a780586c1f39587a7e5885fa424660a2a5e5ca4f7b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb5.mp3": {
+   "sha256": "839f0ef551da8742822548bff594e9f8e623b6f1c3914814ba67d019904115a6",
+   "size": 18201,
+   "gz": "files/839f0ef551da8742822548bff594e9f8e623b6f1c3914814ba67d019904115a6.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb6.mp3": {
+   "sha256": "89bdb18ffc4e39804863b735cc524585d803d3d4361a313ece325f3fa8fcbffb",
+   "size": 16147,
+   "gz": "files/89bdb18ffc4e39804863b735cc524585d803d3d4361a313ece325f3fa8fcbffb.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Eb7.mp3": {
+   "sha256": "4e12e078021c5482e615efdca32f51445826392f655c191cea903bbcc77ac01d",
+   "size": 14327,
+   "gz": "files/4e12e078021c5482e615efdca32f51445826392f655c191cea903bbcc77ac01d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb1.mp3": {
+   "sha256": "8dc3c69447ee3c4e4bd39dde7b785237a3b88ce3a48085ae33396d3217d93fec",
+   "size": 17005,
+   "gz": "files/8dc3c69447ee3c4e4bd39dde7b785237a3b88ce3a48085ae33396d3217d93fec.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb2.mp3": {
+   "sha256": "5712f9b7464ec5ff54c7cb9381dd8f17529356a3df1aec92c42b0b3f1585f07b",
+   "size": 18305,
+   "gz": "files/5712f9b7464ec5ff54c7cb9381dd8f17529356a3df1aec92c42b0b3f1585f07b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb3.mp3": {
+   "sha256": "6234b27b607291e4957abc96ed96c41515cc38005274ebb74d4a950a739af849",
+   "size": 20489,
+   "gz": "files/6234b27b607291e4957abc96ed96c41515cc38005274ebb74d4a950a739af849.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb4.mp3": {
+   "sha256": "fe82050da2e6536c79f0393222ddd0523821e3c3e506fb3fc37840ac66a5e5e7",
+   "size": 19241,
+   "gz": "files/fe82050da2e6536c79f0393222ddd0523821e3c3e506fb3fc37840ac66a5e5e7.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb5.mp3": {
+   "sha256": "ef91aa439fa24b247c07262152f73e52ff66731050ebe188af4374e81d561b89",
+   "size": 18695,
+   "gz": "files/ef91aa439fa24b247c07262152f73e52ff66731050ebe188af4374e81d561b89.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb6.mp3": {
+   "sha256": "1cd34f975e00bc5bbcb8e5734bfc551cf5cec0e0da706cc5033cdb7bd2eba7ea",
+   "size": 15263,
+   "gz": "files/1cd34f975e00bc5bbcb8e5734bfc551cf5cec0e0da706cc5033cdb7bd2eba7ea.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/vibraphone/Gb7.mp3": {
+   "sha256": "3be683f72e7e3e9e8cf21d756759de327a47e1ce96ba892e9367cbbcb3f6365c",
+   "size": 13781,
+   "gz": "files/3be683f72e7e3e9e8cf21d756759de327a47e1ce96ba892e9367cbbcb3f6365c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A1.mp3": {
+   "sha256": "5a410ce10b3903ef1ba347a0cae6eb65891ec64e29ff63a9bd2200fc73819f07",
+   "size": 25585,
+   "gz": "files/5a410ce10b3903ef1ba347a0cae6eb65891ec64e29ff63a9bd2200fc73819f07.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A2.mp3": {
+   "sha256": "b7a6de643272af53f0831ca05e9394ab2912c02bdfb69f2682bf47e8ad52f587",
+   "size": 25585,
+   "gz": "files/b7a6de643272af53f0831ca05e9394ab2912c02bdfb69f2682bf47e8ad52f587.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A3.mp3": {
+   "sha256": "e914941fedc19081276debdce78ebd4edfd19c35a45586821442a7224720b330",
+   "size": 25585,
+   "gz": "files/e914941fedc19081276debdce78ebd4edfd19c35a45586821442a7224720b330.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A4.mp3": {
+   "sha256": "b38214489431ec990f6b7a82bf736126464ddda59aef3c25310c9c854a496342",
+   "size": 25585,
+   "gz": "files/b38214489431ec990f6b7a82bf736126464ddda59aef3c25310c9c854a496342.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A5.mp3": {
+   "sha256": "f8ea42c8f4f3fe39ba798a897f0772b7daca7b134c1dd08542ee6752db234a64",
+   "size": 25585,
+   "gz": "files/f8ea42c8f4f3fe39ba798a897f0772b7daca7b134c1dd08542ee6752db234a64.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A6.mp3": {
+   "sha256": "54417b150617e4f6ba2269510f3e254a08a7704a95a4acdae111020d673f73ae",
+   "size": 25585,
+   "gz": "files/54417b150617e4f6ba2269510f3e254a08a7704a95a4acdae111020d673f73ae.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/A7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C1.mp3": {
+   "sha256": "b78e94b90ac29d933aceae4f32c4f5c73c281eea5912247d2645b21e1fdff154",
+   "size": 25585,
+   "gz": "files/b78e94b90ac29d933aceae4f32c4f5c73c281eea5912247d2645b21e1fdff154.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C2.mp3": {
+   "sha256": "5da09320f408f14141147f398085fd2a651c1493fdfaae704ac8375186584344",
+   "size": 25585,
+   "gz": "files/5da09320f408f14141147f398085fd2a651c1493fdfaae704ac8375186584344.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C3.mp3": {
+   "sha256": "929e86fd48dac861900fa309bacff3109fe07fba456c350b4838f589510ba314",
+   "size": 25585,
+   "gz": "files/929e86fd48dac861900fa309bacff3109fe07fba456c350b4838f589510ba314.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C4.mp3": {
+   "sha256": "65b06ce5993748a3666704f4fee56661989ef225dc5394d0198be8bfa6f1d9f5",
+   "size": 25585,
+   "gz": "files/65b06ce5993748a3666704f4fee56661989ef225dc5394d0198be8bfa6f1d9f5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C5.mp3": {
+   "sha256": "190b0646492ff186c51dff70ceb6ed33aecc3ec691cacb895302ae0daa4c6585",
+   "size": 25585,
+   "gz": "files/190b0646492ff186c51dff70ceb6ed33aecc3ec691cacb895302ae0daa4c6585.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C6.mp3": {
+   "sha256": "2751aba9241f7c76ac59155d1e67f9677bb0de37de15e56aee0bd58a9c6834df",
+   "size": 25585,
+   "gz": "files/2751aba9241f7c76ac59155d1e67f9677bb0de37de15e56aee0bd58a9c6834df.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/C7.mp3": {
+   "sha256": "5ac830f075ea3dfcc3560bd78f2aff7a8673f3a5f2d6a513fc830ffa3994312f",
+   "size": 25585,
+   "gz": "files/5ac830f075ea3dfcc3560bd78f2aff7a8673f3a5f2d6a513fc830ffa3994312f.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb1.mp3": {
+   "sha256": "0a72c1d3abdb1bb90abbd50829b85e60a7d5864b031de478e38be5029157be42",
+   "size": 25585,
+   "gz": "files/0a72c1d3abdb1bb90abbd50829b85e60a7d5864b031de478e38be5029157be42.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb2.mp3": {
+   "sha256": "e7b9d05f6da446b5266a09aca227e48e3a8f6ec8364ed84197149c279704d165",
+   "size": 25585,
+   "gz": "files/e7b9d05f6da446b5266a09aca227e48e3a8f6ec8364ed84197149c279704d165.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb3.mp3": {
+   "sha256": "a0964295eb5cdc8aff0953b745c2c1cd29ab57a54c9db0cb27bcfaeaa13603d4",
+   "size": 25585,
+   "gz": "files/a0964295eb5cdc8aff0953b745c2c1cd29ab57a54c9db0cb27bcfaeaa13603d4.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb4.mp3": {
+   "sha256": "4eb51042660ab3f44e37560abfdc4bf00894bf992e85938e5c417ca13fa4ded5",
+   "size": 25585,
+   "gz": "files/4eb51042660ab3f44e37560abfdc4bf00894bf992e85938e5c417ca13fa4ded5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb5.mp3": {
+   "sha256": "1b2c95fd68eeec5d7cf6583fee127b6e2b12262d59a95ce7f6fdaf1b8970eab5",
+   "size": 25585,
+   "gz": "files/1b2c95fd68eeec5d7cf6583fee127b6e2b12262d59a95ce7f6fdaf1b8970eab5.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb6.mp3": {
+   "sha256": "4ebc50795174f9fdc402705d358fad885a2bd4be8ee0e50050a7c3b2f6349a9c",
+   "size": 25585,
+   "gz": "files/4ebc50795174f9fdc402705d358fad885a2bd4be8ee0e50050a7c3b2f6349a9c.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Eb7.mp3": {
+   "sha256": "be0ebd8553c968f1ab3c2a8304dddc2c197ce132aba0556a0fa14492682904a0",
+   "size": 25585,
+   "gz": "files/be0ebd8553c968f1ab3c2a8304dddc2c197ce132aba0556a0fa14492682904a0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb1.mp3": {
+   "sha256": "7f2f1d1825326401cf14676e1145b2022a579667d6d2db546bfaa70fe8b18093",
+   "size": 25585,
+   "gz": "files/7f2f1d1825326401cf14676e1145b2022a579667d6d2db546bfaa70fe8b18093.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb2.mp3": {
+   "sha256": "5c309fdf49b20260835dea1008c83cfad992302b36037da31a6fc3e18f22dad0",
+   "size": 25585,
+   "gz": "files/5c309fdf49b20260835dea1008c83cfad992302b36037da31a6fc3e18f22dad0.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb3.mp3": {
+   "sha256": "99d46556bac1d960775af90f6460514b4e5597a8f2ce294e458f1108af17198b",
+   "size": 25585,
+   "gz": "files/99d46556bac1d960775af90f6460514b4e5597a8f2ce294e458f1108af17198b.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb4.mp3": {
+   "sha256": "3258d23b91cc6430ddc9ae4d2cabde819c058f7f09089405098aa16dcba1acef",
+   "size": 25585,
+   "gz": "files/3258d23b91cc6430ddc9ae4d2cabde819c058f7f09089405098aa16dcba1acef.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb5.mp3": {
+   "sha256": "6fb2e39b8fac3d21799e9f2546fbd046794973776c297800c757210dfc53944a",
+   "size": 25585,
+   "gz": "files/6fb2e39b8fac3d21799e9f2546fbd046794973776c297800c757210dfc53944a.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb6.mp3": {
+   "sha256": "9849074b21f3d29591c952100b65f9541c40b6f40444479427f07e91dca53d63",
+   "size": 25585,
+   "gz": "files/9849074b21f3d29591c952100b65f9541c40b6f40444479427f07e91dca53d63.gz"
+  },
+  "resources/app/ui/vendor/sounds/fluidr3/violin/Gb7.mp3": {
+   "sha256": "cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d",
+   "size": 13001,
+   "gz": "files/cd20893f17b39244b0141ce4be12243d1d4d57904f430e332adc32307921562d.gz"
   }
  }
 }
