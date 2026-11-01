@@ -17,6 +17,7 @@ copy('app/bunny3d.json', 'ui/bunny3d.json');
 copy('app/guide.md', 'ui/guide.md');
 for (const c of ['koala', 'frog']) copy(`app/chars/${c}.json`, `ui/chars/${c}.json`);
 for (const c of ['bunny', 'koala', 'frog']) copy(`app/chars/${c}.png`, `ui/chars/${c}.png`);
+if (fs.existsSync(path.join(here, 'app/cards'))) copy('app/cards', 'ui/cards');   // front-on wardrobe cards (tools/wardrobe_cards.cjs)
 if (fs.existsSync(path.join(here, 'app/icon.png'))) copy('app/icon.png', 'ui/icon.png');
 const files = [];
 const walk = d => { for (const n of fs.readdirSync(d)) { const p = path.join(d, n); fs.statSync(p).isDirectory() ? walk(p) : files.push(path.relative(out, p)); } };

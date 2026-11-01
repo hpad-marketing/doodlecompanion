@@ -45,6 +45,34 @@ void main(){
 #include <colorspace_fragment>
 }`;
 
+// smooth vertex normals straight on the typed arrays (same result as three's computeVertexNormals
+// for indexed meshes, without a Vector3 per corner): the outline hull needs them on every pose
+function fastNormals(g) {
+  const pos = g.attributes.position.array, idx = g.index?.array;
+  if (!idx) { g.computeVertexNormals(); return; }
+  let na = g.attributes.normal;
+  if (!na || na.count !== g.attributes.position.count) { g.computeVertexNormals(); return; }
+  const n = na.array;
+  n.fill(0);
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = 3 * idx[t], b = 3 * idx[t + 1], c = 3 * idx[t + 2];
+    const ax = pos[a], ay = pos[a + 1], az = pos[a + 2];
+    const e1x = pos[b] - ax, e1y = pos[b + 1] - ay, e1z = pos[b + 2] - az;
+    const e2x = pos[c] - ax, e2y = pos[c + 1] - ay, e2z = pos[c + 2] - az;
+    // (c - b) x (a - b), as three does
+    const cbx = e2x - e1x, cby = e2y - e1y, cbz = e2z - e1z, abx = -e1x, aby = -e1y, abz = -e1z;
+    const x = cby * abz - cbz * aby, y = cbz * abx - cbx * abz, z = cbx * aby - cby * abx;
+    n[a] += x; n[a + 1] += y; n[a + 2] += z;
+    n[b] += x; n[b + 1] += y; n[b + 2] += z;
+    n[c] += x; n[c + 1] += y; n[c + 2] += z;
+  }
+  for (let i = 0; i < n.length; i += 3) {
+    const l = Math.hypot(n[i], n[i + 1], n[i + 2]) || 1;
+    n[i] /= l; n[i + 1] /= l; n[i + 2] /= l;
+  }
+  na.needsUpdate = true;
+}
+
 export class Viewport {
   constructor(canvas, data) {
     this.canvas = canvas;
@@ -187,7 +215,16 @@ export class Viewport {
     a.faceTex.dispose();
   }
 
+  // the pose key: the values plus everything else that moves the drawn body (floor lift follows the ink width)
+  poseKey(values) {
+    const g = this.group?.position;
+    return JSON.stringify(values) + '|' + (this.floorCollision !== false) + '|' + this.inkWorld().toFixed(5) + '|' + (g ? g.x + ',' + g.y : '');
+  }
+
   pose(values) {
+    // same pose as last time and nobody else posed the rig since: the buffers are already right
+    const key = this.poseKey(values);
+    if (key === this._poseKey && this.rig.serial === this._poseSerial) { this.values = values; return; }
     this.values = values;
     this.rig.pose(values);
     for (const o of this.objects) this.rig.deform(o.m, o.buf);
@@ -202,10 +239,12 @@ export class Viewport {
         for (const o of this.objects) this.rig.deform(o.m, o.buf);
       }
     }
+    // normals feed only the outline hull (fills are flat), so parts without an outline skip them
     for (const o of this.objects) {
       o.g.attributes.position.needsUpdate = true;
-      o.g.computeVertexNormals();
+      if (o.outline || !o.g.attributes.normal) fastNormals(o.g);
     }
+    this._poseKey = key; this._poseSerial = this.rig.serial;
     const fs = { expression: values.expression ?? 0, gaze: values.gaze ?? 0, mouth: values.mouth ?? 0, blink: values.blink ?? 0 };
     if (Object.keys(fs).some(k => Math.round(fs[k]) !== this.faceState[k])) {
       for (const k in fs) this.faceState[k] = Math.round(fs[k]);
@@ -367,6 +406,58 @@ export class Viewport {
     const v = b.headV.clone().add(b.tailV).multiplyScalar(0.5).applyMatrix4(this.rig.A.get('head') || new THREE.Matrix4());
     this.group.updateMatrixWorld();
     return v.applyMatrix4(this.group.matrixWorld);
+  }
+
+  // ---------- draw on demand: one number for everything the next frame would show (camera, size,
+  // every object's place and visibility, buffer and texture versions, material values). When it
+  // matches the frame on screen, drawing again would show nothing new, so the GPU rests.
+  frameSig() {
+    const f32 = this._sigF || (this._sigF = new Float32Array(1)), i32 = this._sigI || (this._sigI = new Int32Array(f32.buffer));
+    let hsh = 0x811c9dc5 | 0;
+    const num = x => { f32[0] = typeof x === 'number' ? x : x ? 1 : 0; hsh = Math.imul(hsh ^ i32[0], 16777619); };
+    const val = v => {
+      if (v == null) return num(0);
+      if (typeof v === 'number' || typeof v === 'boolean') return num(v);
+      if (v.isTexture) { num(v.id); num(v.version); return; }
+      if (v.isColor) { num(v.r); num(v.g); num(v.b); return; }
+      if (v.isVector2 || v.isVector3 || v.isVector4) { num(v.x); num(v.y); num(v.z ?? 0); num(v.w ?? 0); return; }
+      if (v.isMatrix4 || v.isMatrix3) { for (const e of v.elements) num(e); return; }
+      if (Array.isArray(v)) { num(v.length); for (const x of v) val(x); }
+    };
+    const mat = m => {
+      if (!m) return;
+      num(m.id); num(m.version); num(m.visible); num(m.opacity); val(m.color); val(m.map); num(m.linewidth ?? 0);
+      if (m.uniforms) for (const k in m.uniforms) val(m.uniforms[k].value);
+    };
+    const cam = this.camera;
+    this.scene.updateMatrixWorld();
+    cam.updateMatrixWorld();
+    val(cam.matrixWorld); val(cam.projectionMatrix);
+    const [w, h] = this.size || [this.canvas.width, this.canvas.height];
+    num(w); num(h); num(this.renderer.getPixelRatio()); num(this.inkScale); val(this.scene.background);
+    this.scene.traverse(o => {
+      num(o.id); num(o.visible);
+      if (!o.visible) return;
+      if (o.isMesh || o.isLine || o.isPoints || o.isSprite) {
+        for (const e of o.matrixWorld.elements) num(e);
+        const g = o.geometry;
+        if (g) { num(g.id); for (const k in g.attributes) num(g.attributes[k].version); if (g.index) num(g.index.version); num(g.drawRange.start); num(g.drawRange.count); num(o.count ?? 0); if (o.instanceMatrix) num(o.instanceMatrix.version); }
+        Array.isArray(o.material) ? o.material.forEach(mat) : mat(o.material);
+      }
+    });
+    return hsh;
+  }
+
+  // draws only when something changed (or force); a slow heartbeat keeps anything missed from sticking
+  renderIfChanged(force = false) {
+    const now = performance.now();
+    const sig = this.frameSig();
+    if (!force && sig === this._drawnSig && now - (this._drawnAt || 0) < 1000) return false;
+    this.render();
+    // render() may redraw the face texture for the new ink width: that frame is already on screen
+    this._drawnSig = this.frameSig();
+    this._drawnAt = now;
+    return true;
   }
 
   render() {

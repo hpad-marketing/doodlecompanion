@@ -91,7 +91,7 @@ When a new Blender version is picked, the app renders a test frame first. It onl
 - **Timeline / dope sheet:** keys, markers, the audio waveform, and the graph editor when it's on.
 - **Side panels:** Pose, Face, Camera, Library (character, stage, outfit, mouth set, motions, props, effects).
 - **Favourites bar:** horizontal and editable. Ctrl+K opens the command search for anything else.
-- **View menu:** dark mode, fps meter, pop the viewport out to the Samsung screen (the Kamvas stays primary), saved layouts.
+- **View menu:** dark mode, fps meter (frames a second and how many the 3D view actually drew: it redraws only when something changes; View › Always redraw the 3D view turns that off), pop the viewport out to the Samsung screen (the Kamvas stays primary), saved layouts.
 
 ### Your first shot in ten minutes
 
@@ -156,7 +156,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - Watch out: the Frog has no ear acting. Give him brows, eye darts and body instead.
 
 **Co-stars.** Up to five more characters in a shot (six on stage with the lead). The render keeps bodies from touching with an eased push-apart.
-- How: Shot › Co-stars…; `cast action=add|place|key|copy|motion|remove|list`.
+- How: Shot › Co-stars…; `cast action=add|place|key|copy|motion|remove|list`. In the dialog, library motions are moving picture cards: search or pick a family, click a card, then Play from the playhead (double-click plays it at once).
 - Fits: dialogue, reactions, a chorus, a crowd of named characters.
 - Also try: `cast action=copy {mirror:true}` makes an instant mirror dance partner. Two Bunnies make an inner-voice or angel-and-devil argument.
 - Watch out: camera presets and Look at camera follow the lead. For OTS shots, place the co-star first, then pick `view: ots-l` or `ots-r`.
@@ -363,7 +363,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.9 Wardrobe
 
 **Outfits.** Raincoat, track jacket, zip hoodie (plus the default hoodie), all brand black with ochre detail strokes. **Accessories:** bow tie, square glasses, necktie.
-- How: Library tab; `set_stage {stage: {outfit, accessories}}` or `library_use {id: outfit-…}`.
+- How: Stage › Wardrobe shows each outfit and accessory front-on, worn by the lead (Blender renders in app/cards; re-make them with tools/wardrobe_cards.cjs when the clothing studio adds a piece); `set_stage {stage: {outfit, accessories}}` or `library_use {id: outfit-…}`.
 - Fits: weather (raincoat), a sporty bit (track jacket), a formal bit (bow tie, tie), a nerdy narrator (glasses).
 - Also try: change the outfit with `shotOnly` for time skips ("three days later").
 - Watch out: cloth only simulates in full renders. Previews skip it.

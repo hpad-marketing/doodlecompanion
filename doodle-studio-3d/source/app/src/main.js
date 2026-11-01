@@ -12,7 +12,7 @@ import { retention, chapters, loopBack, gags, bibleDialog } from './storytime.js
 import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, CHARACTERS, CATEGORIES, EXTRA } from './library.js';
 import { idleOf, IDLE_DEFAULT, IDLE_RANGE } from './idle.js';
 import { modal, historyDialog, claude, changeLogDialog, presets, presetsDialog, applyPreset, estimate, preflight, recordModeratorPass, projector, preflightDialog, batchDialog, runBatch, health, fix as healthFix, healthDialog, pack, cacheDialog } from './production.js';
-import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
+import { keys as myKeys, comboOf, cmdId, hotkeyDialog, layouts, saveLayout, useLayout, restoreLastLayout, bindResizers, popOut, popOpen, popDraw, popSizeNow, noteRun, toggleFav, quickbar, snap, snapValue, perf, heavy, STATUS, statusOf, setStatus, nextStatus, TEMPLATES, fromTemplate, templateDialog, drawNote, showNotes, detectBeats, splitShotAt, splitBySentences } from './workflow.js';
 import * as A2 from './animtools2.js';
 import * as S2 from './storytime2.js';
 import * as P from './post.js';
@@ -27,7 +27,7 @@ import * as MR from './mirror.js';
 import * as BB from './babblescene.js';
 import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
-import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
+import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
 const h = (tag, attrs = {}, ...kids) => {
@@ -177,7 +177,7 @@ async function setCharacter(c) {
   toast(`${charName()} on stage`);
 }
 const libCtx = () => ({
-  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, data: () => data, lib: libraryInfo,
+  h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, data: () => data, lib: libraryInfo, character,
   trackIds: () => BUNNY_IDS.concat(FACE_IDS), setCharacter: c => setCharacter(c).catch(e => toast(e.message, 5000)),
   changed: keys => { dirty = true; apply(); drawTracks(); if (keys) buildTimelineTools(); updateHud(); },
   rebuild: () => { if (['library', 'stage', 'animate', 'face'].includes(tab)) buildPanel(); },
@@ -1018,17 +1018,18 @@ async function castDialog() {
     const rows = CS.costarsOf(project).map((c, i) => {
       const num = (v, step, label) => h('input', { type: 'number', step, value: v, style: 'width:60px', 'aria-label': label });
       const x = num(c.x, 0.05, 'Left / right in metres'), y = num(c.y, 0.05, 'Near / far in metres'), t = num(c.turn, 5, 'Turn in degrees');
-      const q = h('input', { type: 'search', placeholder: 'Find a motion', style: 'width:9em', 'aria-label': 'Find a motion' });
-      const sel = h('select', { 'aria-label': 'Motion', style: 'max-width:14em' }, ...motions.slice(0, 400).map(m => h('option', { value: m.id }, m.name)));
-      q.addEventListener('input', () => { const s = q.value.toLowerCase(); sel.replaceChildren(...motions.filter(m => m.name.toLowerCase().includes(s)).slice(0, 200).map(m => h('option', { value: m.id }, m.name))); });
+      // the co-star's library motion is picked from moving pictures, like every other library
+      const play = id => { if (!id) { toast('Pick a motion first'); return; } close(); castRun({ action: 'motion', index: i, id }); };
+      const pickOne = motionPicker(h, motions, { onUse: r => play(r.id), onPick: r => { playBtn.textContent = `Play “${r.name}” from the playhead`; } });
+      const playBtn = h('button', { class: 'primary', onclick: () => play(pickOne.value()) }, 'Play from the playhead');
       return h('div', { class: 'ds-list' },
         h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('b', { style: 'min-width:5em' }, castName(c.character)), h('span', { class: 'hint' }, 'x'), x, h('span', { class: 'hint' }, 'y'), y, h('span', { class: 'hint' }, 'turn'), t,
           h('button', { onclick: () => { close(); castRun({ action: 'place', index: i, x: Number(x.value), y: Number(y.value), turn: Number(t.value) }).then(castDialog); } }, 'Place'),
           h('button', { onclick: () => { close(); castRun({ action: 'remove', index: i }).then(castDialog); } }, 'Remove')),
         h('div', { class: 'row', style: 'flex-wrap:wrap' }, h('button', { onclick: () => { close(); castRun({ action: 'copy', index: i, mirror: true }); } }, `Copy ${charName()}'s moves (mirrored)`),
-          h('button', { onclick: () => { close(); castRun({ action: 'copy', index: i, mirror: false }); } }, 'Copy as is'), q, sel,
-          h('button', { onclick: () => { close(); castRun({ action: 'motion', index: i, id: sel.value }); } }, 'Play from the playhead'),
-          h('button', { onclick: () => { close(); castRun({ action: 'clear_keys', index: i }); } }, 'Clear keys')));
+          h('button', { onclick: () => { close(); castRun({ action: 'copy', index: i, mirror: false }); } }, 'Copy as is'),
+          h('button', { onclick: () => { close(); castRun({ action: 'clear_keys', index: i }); } }, 'Clear keys')),
+        h('details', { class: 'costar-motions', open: '' }, h('summary', {}, `Play a library motion on the ${castName(c.character)}`), pickOne.el, h('div', { class: 'row' }, playBtn)));
     });
     return [h('p', { class: 'hint' }, `Co-stars share ${charName()}'s rig, look and rules. In the render they are pushed apart, eased, whenever two bodies would touch.`), ...rows,
       CS.costarsOf(project).length < CS.MAX_COSTARS ? h('div', { class: 'row' }, h('div', { class: 'char-cards' }, ...CHARACTERS.map(([id, n]) => h('button', { class: 'libx-card', title: `Add the ${n} as a co-star`, onclick: () => { close(); castRun({ action: 'add', character: id }).then(castDialog); } }, h('span', { class: 'pic', style: 'aspect-ratio:2/3' }, h('img', { src: `chars/${id}.png`, alt: '', draggable: 'false' })), h('span', {}, `Add ${n}`)))), h('button', { onclick: close }, 'Close')) : h('button', { onclick: close }, 'Close')];
@@ -1247,7 +1248,7 @@ const MENUS = [
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M'], ['Draw a review note on this frame', () => reviewNote(), 'N'], ['Tap a beat marker', () => tapBeat(), 'B']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Shape shading in the 3D view on / off', () => toggleShading()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Always redraw the 3D view on / off', () => toggleRedraw()], ['Snapping on / off', () => toggleSnap()], ['Shape shading in the 3D view on / off', () => toggleShading()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ...DOCK.LAYOUTS.map(([id, n]) => [`Panels: ${n}`, () => DOCK.setLayout(id)]), ['Detach the timeline (another window)', () => DOCK.detach('timeline')], ['Detach the tools panel (another window)', () => DOCK.detach('tools')], ['Dock everything back', () => DOCK.dockAll()], ['Hide the tools panel', () => (DOCK.toggleHidden('tools') ? toast('Tools panel hidden: Ctrl+Shift+H brings it back') : toast('Tools panel shown')), 'Ctrl+Shift+H'], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
@@ -2743,12 +2744,16 @@ function refreshAll() {
   layout(); buildPanel(); buildTimelineTools(); drawTracks(); apply();
 }
 
+// the 3D view draws on demand: only frames where something changed reach the GPU (View › Always
+// redraw the 3D view turns that off); the pop-out copies a frame only when there is a new one
+let alwaysRedraw = (() => { try { return localStorage.getItem('ds3d.redraw') === 'always'; } catch { return false; } })(), popSize = '';
+function toggleRedraw() { alwaysRedraw = !alwaysRedraw; try { localStorage.setItem('ds3d.redraw', alwaysRedraw ? 'always' : 'demand'); } catch {} toast(alwaysRedraw ? '3D view redraws every frame' : '3D view redraws only when something changes (faster, cooler GPU)'); }
 function loop() {
   const t = performance.now();
-  view.render();
-  perf('3D view', performance.now() - t);
-  if (popOpen()) perf('pop-out window', popDraw(view.renderer.domElement));
-  if (fpsTick() && fpsText()) updateHud();
+  const drew = view.renderIfChanged(alwaysRedraw);
+  if (drew) perf('3D view', performance.now() - t);
+  if (popOpen()) { const ps = popSizeNow(); if (drew || ps !== popSize) { popSize = ps; perf('pop-out window', popDraw(view.renderer.domElement)); } } else popSize = '';
+  if (fpsTick(drew) && fpsText()) updateHud();
   requestAnimationFrame(loop);
 }
 

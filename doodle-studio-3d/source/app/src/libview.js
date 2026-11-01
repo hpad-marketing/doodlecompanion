@@ -1,7 +1,7 @@
 // The library and stage as pictures: every asset shows a large preview, hovering a motion or a
 // face plays it on the character in the 3D view before you add it, and the stage (set, pieces,
 // light, wardrobe) and the items in the shot are picked and edited from their pictures.
-import { libraryRows, loadLibrary, useItem, setStage, removeItem, search, CATEGORIES, CHARACTERS } from './library.js';
+import { libraryRows, libraryInfo, loadLibrary, useItem, setStage, removeItem, search, CATEGORIES, CHARACTERS } from './library.js';
 import { stageOf } from './project.js';
 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
@@ -54,6 +54,7 @@ function faceIndexOf(row) {
   return Number.isInteger(row.data?.expression) ? row.data.expression : F.faces.findIndex(x => x.toLowerCase() === n);
 }
 export function picture(h, row, big = false) {
+  if (!animIdx && libraryInfo()?.anim) animIdx = libraryInfo().anim;
   if (row?.category === 'motion' && hasAnim(row.id)) return animPic(h, row.id);
   if (row?.preview && ['outfit', 'accessory'].includes(row.category)) return trimmed(h, '/lib/' + row.preview);
   if (row?.preview) return h('img', { src: '/lib/' + row.preview, alt: '', loading: 'lazy', draggable: 'false' });
@@ -186,13 +187,21 @@ export function setPanel(ctx) {
   return h('div', { class: 'ws two' }, left, right);
 }
 
+// front-on wardrobe cards (app/cards, made by tools/wardrobe_cards.cjs from real Blender renders of
+// each outfit and accessory on each character); the library's side-on picture is the fallback
+let cards = null;
+const loadCards = () => (cards ||= fetch('cards/index.json').then(r => (r.ok ? r.json() : {})).catch(() => ({})));
+export const wardrobeCard = (character, id) => (cards && typeof cards.then !== 'function' ? cards[character]?.[id] || cards.bunny?.[id] || null : null);
 export function wardrobePanel(ctx) {
   const { h } = ctx;
   const scene = ctx.scene(), project = ctx.project(), st = stageOf(scene, project), rows = libraryRows(), lib = ctx.lib?.();
   const re = () => ctx.rebuild();
   if (!rows.length) loadLibrary(ctx.api).then(re);
+  if (!cards) loadCards().then(c => { cards = c; re(); });
+  const who = ctx.character?.() || 'bunny';
+  const pic = r => { const c = r && wardrobeCard(who, r.id); return c ? trimmed(h, c) : picture(h, r); };
   const outfits = rows.filter(r => r.category === 'outfit'), accs = rows.filter(r => r.category === 'accessory');
-  const card = (r, on, fn, title) => h('button', { class: 'libx-card', 'aria-pressed': String(on), onclick: fn, title }, h('span', { class: 'pic' }, picture(h, r)), h('span', {}, r?.name || 'None'));
+  const card = (r, on, fn, title) => h('button', { class: 'libx-card wardrobe-card', 'aria-pressed': String(on), onclick: fn, title, 'data-id': r?.id || '' }, h('span', { class: 'pic' }, r ? pic(r) : trimmed(h, `chars/${who}.png`)), h('span', {}, r?.name || 'Default look'));
   return h('div', { class: 'ws three' },
     h('div', { class: 'col' }, h('h3', {}, 'Outfit'), h('div', { class: 'libx-grid' },
       card(null, !st.outfit, () => { setStage(ctx, { outfit: null }, ui.shotOnly); re(); }, 'No outfit'),
@@ -314,4 +323,34 @@ export function faceGrid(ctx, current, pick) {
     b.addEventListener('mouseleave', () => ctx.previewEnd?.());
     return b;
   }));
+}
+
+// ---------------------------------------------------------------- a motion picker made of moving pictures
+// (Co-stars › play a library motion): search, family chips and a grid of animated motion cards.
+// Returns { el, value() }; onPick(row) runs when a card is picked, onUse(row) on a double click.
+export const motionFamily = r => (/^Mocap/.test(r.sub || '') ? 'Mocap' : /^Performance/.test(r.sub || '') ? 'Performance' : r.kind === 'ds' ? 'Doodle' : 'Blender');
+export function motionPicker(h, motions, opts = {}) {
+  const st = { q: '', fam: 'All', sel: opts.value || null, n: opts.page || 24 };
+  const fams = ['All', ...['Doodle', 'Performance', 'Mocap', 'Blender'].filter(f => motions.some(r => motionFamily(r) === f))];
+  const q = h('input', { type: 'search', placeholder: 'Find a motion, e.g. wave, walk, shrug', 'aria-label': 'Find a motion', style: 'flex:1;min-width:10em' });
+  const chips = h('div', { class: 'chips', role: 'tablist', 'aria-label': 'Motion family' });
+  const grid = h('div', { class: 'libx-grid motion-pick', role: 'listbox', 'aria-label': 'Motions' });
+  const more = h('button', { class: 'more', onclick: () => { st.n += 48; fill(); } }, 'Show more');
+  const el = h('div', { class: 'motion-picker' }, h('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' }, q, chips), grid, more);
+  const pool = () => { const s = st.q.toLowerCase(); return motions.filter(r => (st.fam === 'All' || motionFamily(r) === st.fam) && (!s || r.name.toLowerCase().includes(s) || (r.sub || '').toLowerCase().includes(s))); };
+  // animated cards first: a motion with a moving picture reads at a glance
+  const order = rs => [...rs.filter(r => hasAnim(r.id)), ...rs.filter(r => !hasAnim(r.id))];
+  function fill() {
+    chips.replaceChildren(...fams.map(f => h('button', { 'aria-pressed': String(st.fam === f), onclick: () => { st.fam = f; st.n = opts.page || 24; fill(); } }, f === 'Doodle' ? 'Hand-made' : f)));
+    const rs = order(pool());
+    grid.replaceChildren(...rs.slice(0, st.n).map(r => h('button', { class: 'libx-card', role: 'option', 'aria-pressed': String(st.sel === r.id), 'aria-selected': String(st.sel === r.id), title: `${r.name}${r.frames ? ` · ${r.frames} frames` : ''}. Click to pick, double-click to play it now`, 'data-id': r.id,
+      onclick: () => { st.sel = r.id; for (const b of grid.children) b.setAttribute('aria-pressed', String(b.dataset.id === r.id)); opts.onPick?.(r); },
+      ondblclick: () => { st.sel = r.id; opts.onUse?.(r); } }, h('span', { class: 'pic' }, picture(h, r)), h('span', {}, r.name))));
+    if (!rs.length) grid.append(h('p', { class: 'hint' }, 'No motion matches. Try another word.'));
+    more.style.display = rs.length > st.n ? '' : 'none';
+    more.textContent = `Show more (${rs.length - st.n} left)`;
+  }
+  q.addEventListener('input', () => { st.q = q.value; st.n = opts.page || 24; fill(); });
+  fill();
+  return { el, value: () => st.sel };
 }

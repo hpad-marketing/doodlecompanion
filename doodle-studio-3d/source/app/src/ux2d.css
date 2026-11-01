@@ -179,3 +179,12 @@ body.ux2d #timeline-tools{gap:6px 12px;padding:5px 8px}
 .dr-f{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .dr-f input[type=number]{width:60px;height:28px;min-height:28px;padding:0 4px}
 .dr-f select{height:28px}
+
+/* Co-stars: library motions as moving pictures */
+.motion-picker{display:grid;gap:6px;margin-top:6px}
+.motion-picker .libx-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));grid-auto-rows:max-content;max-height:340px;overflow-y:auto;padding:2px}
+.motion-picker .libx-card .pic{aspect-ratio:auto;height:120px;flex:none}
+.motion-picker .libx-card .pic .anim{height:100%;width:auto}
+.motion-picker .more{justify-self:start}
+.costar-motions{margin-top:6px}
+.costar-motions summary{cursor:pointer;font-weight:750}
