@@ -15,6 +15,7 @@ import math
 
 import bpy
 import bmesh
+from mathutils import Matrix, Vector
 
 from . import paths
 
@@ -207,6 +208,115 @@ def remap_materials(ob, mats=None):
                 bpy.data.materials.remove(m)
 
 
+# ---------------------------------------------------------------- thin ink details
+THIN_M = 0.03      # an ink-coloured part thinner than this (world metres) is a drawn line, not a shape
+THIN_RATIO = 3.0   # ...when it is at least this many times longer than it is thick
+
+
+def thin_ink_to_lines(ob):
+    """Turn thin ink-coloured parts (strings, ropes, spokes, clock hands, cobweb strands, slots)
+    into true strokes: the part is replaced by a centre line marked `dsl_crease`, so the crease
+    tubes draw it exactly one ink wide on screen, like every other line. Left as geometry, the
+    hull outlines both sides of a 4-20 mm black bar and it reads two to three strokes thick.
+    Runs once per mesh; returns how many parts became lines."""
+    me = ob.data
+    if me.get('dsl_thin_lines') is not None:
+        return int(me['dsl_thin_lines'])
+    names = [(s.material.name.split('.')[0] if s.material else '') for s in ob.material_slots]
+    ink = {i for i, n in enumerate(names) if n in ('DS_ink', 'DSL_ink')}
+    if not ink or not me.polygons:
+        me['dsl_thin_lines'] = 0
+        return 0
+    sc = ob.matrix_world.to_scale()
+    k = (abs(sc.x) + abs(sc.y) + abs(sc.z)) / 3 or 1.0
+    if ob.get('dsl_kind') == 'prop':  # hand props keep their geometry: the grip and collision tests use it
+        me['dsl_thin_lines'] = 0
+        return 0
+    limit = THIN_M
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    faces = {f for f in bm.faces if f.material_index in ink}
+    seen, kill, ends = set(), [], []
+    for f in faces:
+        if f in seen:
+            continue
+        comp, stack = [], [f]
+        seen.add(f)
+        while stack:
+            g = stack.pop()
+            comp.append(g)
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h in faces and h not in seen:
+                        seen.add(h)
+                        stack.append(h)
+        pts = list({v: v.co.copy() for g in comp for v in g.verts}.values())
+        if len(pts) < 4:
+            continue
+        c = sum(pts, Vector()) / len(pts)
+        cov = Matrix(((0.0,) * 3,) * 3)
+        for p in pts:
+            d = p - c
+            for i in range(3):
+                for j in range(3):
+                    cov[i][j] += d[i] * d[j]
+        axes = _principal_axes(cov)
+        ext = []
+        for a in axes:
+            proj = [(p - c).dot(a) for p in pts]
+            ext.append((max(proj) - min(proj), min(proj), max(proj), a))
+        ext.sort(key=lambda e: e[0])
+        thick, long_ = ext[1][0] * k, ext[2][0] * k
+        if thick > limit or long_ < THIN_RATIO * max(thick, 1e-6):
+            continue
+        _, lo, hi, a = ext[2]
+        kill.extend(comp)
+        ends.append((c + a * lo, c + a * hi))
+    if not kill:
+        bm.free()
+        me['dsl_thin_lines'] = 0
+        return 0
+    verts = {v for f in kill for v in f.verts}
+    bmesh.ops.delete(bm, geom=kill, context='FACES_ONLY')
+    loose = [v for v in verts if v.is_valid and not v.link_faces]
+    for v in loose:
+        for e in list(v.link_edges):
+            if e.is_valid and not e.link_faces:
+                bm.edges.remove(e)
+    bmesh.ops.delete(bm, geom=[v for v in loose if v.is_valid and not v.link_edges], context='VERTS')
+    lay = bm.edges.layers.bool.get('dsl_crease') or bm.edges.layers.bool.new('dsl_crease')
+    for p0, p1 in ends:
+        e = bm.edges.new((bm.verts.new(p0), bm.verts.new(p1)))
+        e[lay] = True
+    bm.to_mesh(me)
+    bm.free()
+    me['dsl_thin_lines'] = len(ends)
+    me.update()
+    return len(ends)
+
+
+def _principal_axes(cov):
+    """Eigenvectors of a 3x3 symmetric matrix (Jacobi), unit length."""
+    A = [list(r) for r in cov]
+    V = [[1.0 if i == j else 0.0 for j in range(3)] for i in range(3)]
+    for _ in range(30):
+        p, q = max(((0, 1), (0, 2), (1, 2)), key=lambda t: abs(A[t[0]][t[1]]))
+        if abs(A[p][q]) < 1e-12:
+            break
+        th = 0.5 * math.atan2(2 * A[p][q], A[q][q] - A[p][p])
+        cs, sn = math.cos(th), math.sin(th)
+        for r in range(3):
+            arp, arq = A[r][p], A[r][q]
+            A[r][p], A[r][q] = cs * arp - sn * arq, sn * arp + cs * arq
+        for r in range(3):
+            apr, aqr = A[p][r], A[q][r]
+            A[p][r], A[q][r] = cs * apr - sn * aqr, sn * apr + cs * aqr
+        for r in range(3):
+            vrp, vrq = V[r][p], V[r][q]
+            V[r][p], V[r][q] = cs * vrp - sn * vrq, sn * vrp + cs * vrq
+    return [Vector((V[0][i], V[1][i], V[2][i])).normalized() for i in range(3)]
+
+
 # ---------------------------------------------------------------- crease lines
 def compute_creases(me, angle_deg=32.0, groups_attr='dsl_group'):
     """Mark edges that get a line: sharp creases, open borders, part boundaries."""
@@ -337,6 +447,11 @@ def apply_style(ob, cam=None, mats=None, outline=True, lines=True, seed=0.0):
         ob.modifiers.remove(old)
     if 'dsl_crease' not in ob.data.attributes:
         compute_creases(ob.data)
+    if lines:
+        try:
+            thin_ink_to_lines(ob)
+        except Exception as e:  # a style pass never stops an insert
+            print('Doodle Library: thin lines skipped on %s: %s' % (ob.name, e))
     mod = ob.modifiers.new(MOD_NAME, 'NODES')
     mod.node_group = ink_group()
     ids = {s.name: s.identifier for s in mod.node_group.interface.items_tree if getattr(s, 'in_out', None) == 'INPUT'}

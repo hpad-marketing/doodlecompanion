@@ -60,6 +60,44 @@ def bunny_height():
     return (max(zs) - min(zs)) if zs else 1.02
 
 
+# Pieces the library audit (2026-11-01) measured sunk into, or hovering over, the floor of
+# their set. Wheels and feet were cut by the floor line (cart 14 cm, sight screen 16 cm,
+# mixer 13 cm) or hung 1-4 cm in the air. They are set down so their lowest point rests
+# on the set's floor. Rocks, bushes, ferns, reeds, jetties and boats are bedded in on
+# purpose and are not in this list.
+REST_ON_FLOOR = {
+    'bathtub', 'campfire', 'swings', 'hose_reel', 'barrier', 'easel', 'candy_cart',
+    'cement_mixer', 'sight_screen', 'trolley', 'sheet_ghost_chair', 'whiteboard_stand',
+    'podcast_desk',
+}
+
+
+def _world_min_z(ob):
+    return min((ob.matrix_world @ Vector(c)).z for c in ob.bound_box)
+
+
+def rest_on_floor(objs):
+    """Set the REST_ON_FLOOR pieces down on the set's floor (things standing on them follow)."""
+    objs = [o for o in objs if o.type == 'MESH']
+    shell = [o for o in objs if o.get('dsl_shell')]
+    if not shell:
+        return 0
+    bpy.context.view_layer.update()
+    floor = min(_world_min_z(o) for o in shell)
+    moved = 0
+    for ob in objs:
+        if ob.get('dsl_model') not in REST_ON_FLOOR:
+            continue
+        dz = floor - _world_min_z(ob)
+        if abs(dz) < 0.002:
+            continue
+        for o in [ob] + [x for x in objs if x.get('dsl_on') and x.get('dsl_on') == ob.get('dsl_prop')]:
+            o.location.z += dz
+        moved += 1
+    bpy.context.view_layer.update()
+    return moved
+
+
 def sets():
     """[{id, name, kind, props:[{id, label, on}]}] for every room set in the library."""
     out = []
@@ -111,6 +149,7 @@ def switch_set(room_id, keep_choices=True, shadows=None):
     root.children.link(coll)
     mats = style.materials()
     mine = choices.get(room_id, {}) if keep_choices else {}
+    rest_on_floor(list(coll.all_objects))
     for ob in list(coll.all_objects):
         if ob.type != 'MESH':
             continue
