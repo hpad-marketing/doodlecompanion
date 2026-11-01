@@ -63,6 +63,25 @@ export function outlinesOff(m) {
   return { character: outlineOff(l.character || l.scene), set: outlineOff(l.set || l.scene), item: it => (it.material ? outlineOff(it.material) : props) };
 }
 
+// the palette in the 3D view: the same colour for each piece as the render (_piece_colour in lib/materials.py)
+const crc32 = s => { let c = ~0; for (let i = 0; i < s.length; i++) { c ^= s.charCodeAt(i); for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1)); } return ~c >>> 0; };
+const FIRST_COLOUR = ['rug', 'carpet', 'mat', 'cushion', 'pillow', 'vase', 'clock', 'lamp'];
+const pieceColour = (pal, key) => {
+  if (FIRST_COLOUR.some(w => String(key).toLowerCase().includes(w))) return pal.accent;
+  const list = pal.pieces?.length ? pal.pieces : [pal.accent];
+  return list[crc32(String(key)) % list.length];
+};
+export function stagePaint(m, items, api, ready) {
+  const l = m?.layers || {};
+  if (!Object.values(l).some(Boolean) && !items.some(it => it.material)) return null;
+  if (!cache) { loadLooks(api).then(ready, () => {}); return null; }
+  const pal = L => { const brand = cache.palettes.find(p => p.id === 'brand'); return typeof L.palette === 'object' && L.palette ? { ...brand, ...L.palette } : cache.palettes.find(p => p.id === (L.palette || 'brand')) || brand; };
+  const S = l.set || l.scene, P = pal(S || {});
+  const set = S ? { wall: S.color || P.wall, floor: S.color || P.floor, ceiling: S.color || P.ceiling, piece: id => S.color || pieceColour(P, id) } : null;
+  const item = it => { const L = it.material || l.props || l.scene; return L ? L.color || pieceColour(pal(L), it.id) : null; };
+  return { set, item, sig: JSON.stringify([S?.palette, S?.color, l.props, l.scene?.palette]) };
+}
+
 export function setLayer(ctx, target, patch, label = 'Material') {
   const s = slot(ctx, target);
   if (!s.ok) throw Error('Pick a prop in the 3D view first');

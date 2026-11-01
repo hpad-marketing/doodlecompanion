@@ -31,10 +31,11 @@ const STAGE_BIAS = 1.2;            // outline push behind a set piece, in ink wi
 const CREASE_DEG = 32;            // edges sharper than this get a line, as the library's crease lines in Blender
 // Fills read the scene's light and shadow when they are on (lit.js), flat mustard otherwise.
 const fillVS = `varying vec3 vN; varying vec3 vP; void main(){ vN = normalize(mat3(modelMatrix) * normal); vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
-const fillFS = `uniform vec3 base; varying vec3 vN; varying vec3 vP;
+const fillFS = `uniform vec3 base; uniform vec3 floorC; uniform vec3 roofC; uniform float room; varying vec3 vN; varying vec3 vP;
 ${litPars}
 void main(){
-  gl_FragColor = vec4(mix(base, litInk, litBand(normalize(gl_FrontFacing ? vN : -vN), vP)), 1.0);
+  vec3 c = room > 0.5 && abs(vN.z) > 0.7 ? (vP.z < 1.0 ? floorC : roofC) : base;   // a room shell: walls, floor and ceiling
+  gl_FragColor = vec4(mix(c, litInk, litBand(normalize(gl_FrontFacing ? vN : -vN), vP)), 1.0);
 #include <colorspace_fragment>
 }`;
 const rnd = s => { let x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
@@ -54,7 +55,8 @@ export class Stage {
     // set pieces sit on the floor: a smaller push behind keeps their outline above the ground (Bunny's own stays as it is)
     this.outline = new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: { ...view.outlineUniforms, bias: { value: STAGE_BIAS } }, side: THREE.BackSide });
     this.fill = new THREE.ShaderMaterial({ vertexShader: fillVS, fragmentShader: fillFS, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-      uniforms: { ...LIT, base: { value: MUSTARD.clone() } } });
+      uniforms: { ...LIT, base: { value: MUSTARD.clone() }, floorC: { value: MUSTARD.clone() }, roofC: { value: MUSTARD.clone() }, room: { value: 0 } } });
+    this.fills = new Map();       // palette colour -> fill
     // crease and border lines: one ink width on screen, the same width as Bunny's outline
     this.lineMat = new LineMaterial({ color: INK.getHex(), linewidth: 4, worldUnits: false });
     this.lineMat.polygonOffset = true; this.lineMat.polygonOffsetFactor = -1; this.lineMat.polygonOffsetUnits = -2;
@@ -136,6 +138,7 @@ export class Stage {
       if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
       const shell = inShell(o);
       o.material = ink ? this.inkMats.ink : this.fill;
+      o.userData.isFill = !ink;
       if (!shell) o.layers.enable(1);   // casts in the shadow pass; the room only catches
       if (o.userData.noInk) return;
       const { hull, edges } = this.inkGeometry(o.geometry, shell);
@@ -172,6 +175,19 @@ export class Stage {
     l.onBeforeRender = this.inkSync;
     return l;
   }
+  // a fill in a palette colour; shell = a room, with its own floor and ceiling
+  fillFor(hex, shell) {
+    if (!hex) return this.fill;
+    const k = shell ? shell.wall + shell.floor + shell.ceiling : hex;
+    let m = this.fills.get(k);
+    if (!m) {
+      m = this.fill.clone();
+      m.uniforms = { ...LIT, base: { value: new THREE.Color(hex) }, floorC: { value: new THREE.Color(shell?.floor || hex) }, roofC: { value: new THREE.Color(shell?.ceiling || hex) }, room: { value: shell ? 1 : 0 } };
+      this.fills.set(k, m);
+    }
+    return m;
+  }
+  setFill(root, m) { root.traverse(o => { if (o.userData.isFill) o.material = m; }); }
   // one object's outline as a percent of Bunny's line; 0 takes it off
   inkFor(pct) {
     if (pct === 100) return { hull: this.outline, line: this.lineMat };
@@ -191,7 +207,7 @@ export class Stage {
 
   // ---------------------------------------------------------------- what is on stage this frame
   // st: stageOf(scene, shot); items: shot.items; f: frame; rows: library rows by id
-  sync({ stage: st, noInk = {}, items = [], frame: f, length, rows, playing }) {
+  sync({ stage: st, noInk = {}, paint = null, items = [], frame: f, length, rows, playing }) {
     this.frame = f;
     // set
     const setId = st.set ? 'set-' + st.set : null;
@@ -233,6 +249,13 @@ export class Stage {
     if (this.view.inkK) this.view.inkK.value = (inks['@lead'] ?? 100) / 100;
     (this.view.actors || []).forEach((a, i) => { if (a.inkK) a.inkK.value = (inks['@costar' + i] ?? 100) / 100; });
     for (const who of [this.view, ...(this.view.actors || [])]) for (const o of who.objects) if (o.outline) o.outline.visible = !noInk.character && (who.inkK?.value ?? 1) > 0;
+    const paintSig = (paint?.sig || '') + (this.setGroup?.uuid || '') + !!this.setGroup?.userData.pending;
+    if (paintSig !== this.paintSig && this.setGroup) {
+      this.paintSig = paintSig;
+      const set = paint?.set;
+      this.setGroup.traverse(o => { const u = o.userData; if (u.ds_prop) this.setFill(o, !set ? this.fill : u.ds_shell ? this.fillFor(set.wall, set) : this.fillFor(set.piece(u.ds_prop))); });
+      this.view.scene.background.set(set ? set.ceiling : MUSTARD);
+    }
     // items
     const want = [];
     items.forEach((it, i) => {
@@ -247,6 +270,8 @@ export class Stage {
         rec.obj.traverse(o => { o.userData.item = i; });
         this.root.add(rec.obj);
       }
+      const fill = paint?.item(it) || null;
+      if (rec.fill !== fill) { rec.fill = fill; this.setFill(rec.obj, this.fillFor(fill)); }
       const ink = noInk.item?.(it) ? 0 : it.ink ?? 100;
       if (rec.ink !== ink) { rec.ink = ink; this.setInk(rec.obj, ink); }
       const end = it.until ?? (kind === 'react' ? it.frame + REACT_FRAMES : kind === 'story' && STORY_FRAMES[it.id.split(':')[1]] ? it.frame + STORY_FRAMES[it.id.split(':')[1]] : length);

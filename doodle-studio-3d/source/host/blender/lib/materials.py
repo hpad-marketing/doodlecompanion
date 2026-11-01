@@ -336,7 +336,7 @@ class _Painter:
         for poly, z in zip(me.polygons, zs):
             # level faces are the floor (low) or the ceiling (high), whichever way they face
             level = abs((rot @ poly.normal).normalized().z) > 0.7
-            poly.material_index = (1 if z < mid else 2) if level else 0
+            poly.material_index = (1 if z <= mid else 2) if level else 0   # <=: an outdoor shell is one flat ground
         for slot in ob.material_slots:
             slot.link = 'DATA'
         if not self.ink:

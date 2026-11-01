@@ -432,7 +432,7 @@ function apply() {
   if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
   MR.onApply(frame, vals, cam);
-  if (stage) { const t = performance.now(), st = liveStage(); stage.sync({ stage: st, noInk: MAT.outlinesOff(materialsOf(scene, project)), items: liveItems(), frame, length: project.length, rows: libRowMap(), playing }); updateLit(view, stage, st); perf('stage', performance.now() - t); }
+  if (stage) { const t = performance.now(), st = liveStage(); stage.sync({ stage: st, noInk: MAT.outlinesOff(materialsOf(scene, project)), paint: MAT.stagePaint(materialsOf(scene, project), project.items || [], api, () => apply()), items: liveItems(), frame, length: project.length, rows: libRowMap(), playing }); updateLit(view, stage, st); perf('stage', performance.now() - t); }
   // live checks first, so the HUD below shows this frame's lights
   if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
   if (balanceOn) { balanceNow = A2.balance(view); drawCog(); }
