@@ -3,6 +3,7 @@
 // light, wardrobe) and the items in the shot are picked and edited from their pictures.
 import { libraryRows, loadLibrary, useItem, setStage, removeItem, search, CATEGORIES, CHARACTERS } from './library.js';
 import { stageOf } from './project.js';
+import { lightControls } from './lightpanel.js';
 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
 const TIMES = ['day', 'golden', 'night'];
@@ -180,9 +181,7 @@ export function setPanel(ctx) {
   const left = h('div', { class: 'col' }, h('h3', {}, 'Set'), h('div', { class: 'row', style: 'margin-bottom:6px' }, q, scope), grid);
   const right = h('div', { class: 'col' }, h('h3', {}, 'Character'), chars, pieces, h('h3', {}, 'Light'),
     sel('Time', 'time', [['', 'Default'], ...TIMES.map(t => [t, cap(t)])], st.time), sel('Sky', 'sky', [['', 'Default'], ...SKIES.map(t => [t, cap(t)])], st.sky),
-    check('Cel shadows', st.shadows, v => ({ shadows: v }), 'Flat cel shadows on the set. Off unless you turn it on.'),
-    check('Halftone dots in the shadows', st.halftone, v => (v ? { halftone: true, shadows: true } : { halftone: false }), 'Comic-book halftone: the cel shadows become ink dots. Turns cel shadows on.'),
-    h('p', { class: 'hint' }, 'Light, sky and shadows show in the Blender render; the 3D view keeps the flat Doodle look so posing stays readable.'));
+    lightControls(ctx, ui.shotOnly));
   return h('div', { class: 'ws two' }, left, right);
 }
 

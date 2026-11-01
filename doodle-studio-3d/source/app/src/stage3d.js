@@ -13,6 +13,7 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { outlineVS, outlineFS, INK, MUSTARD } from './viewport.js';
 import { glyphOf } from './libview.js';
+import { LIT, litPars } from './lit.js';
 
 const D2R = Math.PI / 180;
 const REACT_FRAMES = 36;          // a reaction pop stays this long
@@ -28,15 +29,12 @@ const FX = {
 };
 const STAGE_BIAS = 1.2;            // outline push behind a set piece, in ink widths
 const CREASE_DEG = 32;            // edges sharper than this get a line, as the library's crease lines in Blender
-// Viewport-only shape shading: faces turned away from a light over the camera's shoulder go a
-// step darker, so a shape reads from any angle. Two flat bands, no gradients; the render is untouched.
-const fillVS = `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-const fillFS = `uniform vec3 base; uniform vec3 ink; uniform float shade; varying vec3 vN;
+// Fills read the scene's light and shadow when they are on (lit.js), flat mustard otherwise.
+const fillVS = `varying vec3 vN; varying vec3 vP; void main(){ vN = normalize(mat3(modelMatrix) * normal); vec4 w = modelMatrix * vec4(position, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
+const fillFS = `uniform vec3 base; varying vec3 vN; varying vec3 vP;
+${litPars}
 void main(){
-  vec3 n = normalize(gl_FrontFacing ? vN : -vN);
-  float l = dot(n, normalize(vec3(-0.45, 0.55, 0.70)));
-  float k = l < 0.12 ? shade : (l < 0.5 ? shade * 0.45 : 0.0);
-  gl_FragColor = vec4(mix(base, ink, k), 1.0);
+  gl_FragColor = vec4(mix(base, litInk, litBand(normalize(gl_FrontFacing ? vN : -vN), vP)), 1.0);
 #include <colorspace_fragment>
 }`;
 const rnd = s => { let x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
@@ -52,19 +50,17 @@ export class Stage {
     this.loader = new GLTFLoader();
     this.selected = null;         // { type: 'item', index } | { type: 'piece', id } | { type: 'bunny' }
     this.waiting = new Set(); this.polling = false;
-    this.inkMats = { mustard: new THREE.MeshBasicMaterial({ color: MUSTARD }), ink: new THREE.MeshBasicMaterial({ color: INK }), room: new THREE.MeshBasicMaterial({ color: MUSTARD, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), line: new THREE.LineBasicMaterial({ color: INK }) };
+    this.inkMats = { mustard: new THREE.MeshBasicMaterial({ color: MUSTARD }), ink: new THREE.MeshBasicMaterial({ color: INK }), line: new THREE.LineBasicMaterial({ color: INK }) };
     // set pieces sit on the floor: a smaller push behind keeps their outline above the ground (Bunny's own stays as it is)
     this.outline = new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: { ...view.outlineUniforms, bias: { value: STAGE_BIAS } }, side: THREE.BackSide });
-    // fills: flat mustard, or two-band shape shading (View › Shape shading, 3D view only)
-    this.shadeU = { value: 0 };
     this.fill = new THREE.ShaderMaterial({ vertexShader: fillVS, fragmentShader: fillFS, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-      uniforms: { base: { value: MUSTARD.clone() }, ink: { value: INK.clone() }, shade: this.shadeU } });
-    this.setShading(ctx.shading ? ctx.shading() : true);
+      uniforms: { ...LIT, base: { value: MUSTARD.clone() } } });
     // crease and border lines: one ink width on screen, the same width as Bunny's outline
     this.lineMat = new LineMaterial({ color: INK.getHex(), linewidth: 4, worldUnits: false });
     this.lineMat.polygonOffset = true; this.lineMat.polygonOffsetFactor = -1; this.lineMat.polygonOffsetUnits = -2;
     const U = view.outlineUniforms;
-    this.inkSync = () => { this.lineMat.resolution.copy(U.res.value); this.lineMat.linewidth = U.inkPx.value; };
+    this.inkSync = (r, s, c, g, m) => { m.resolution.copy(U.res.value); m.linewidth = U.inkPx.value * (m.userData.inkK ?? 1); };
+    this.inks = new Map();        // percent -> { hull, line }: a piece's own outline thickness
     this.gizmo = new TransformControls(view.camera, view.canvas);
     this.gizmo.setSize(0.85);
     this.helper = this.gizmo.getHelper();
@@ -139,7 +135,8 @@ export class Stage {
       const ink = (Array.isArray(o.material) ? o.material : [o.material]).every(m => m?.userData?.ds_ink || /ink/i.test(m?.name || ''));
       if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
       const shell = inShell(o);
-      o.material = ink ? this.inkMats.ink : shell ? this.inkMats.room : this.fill;
+      o.material = ink ? this.inkMats.ink : this.fill;
+      if (!shell) o.layers.enable(1);   // casts in the shadow pass; the room only catches
       if (o.userData.noInk) return;
       const { hull, edges } = this.inkGeometry(o.geometry, shell);
       // silhouette: the screen-constant hull, on smooth normals so it never cracks at hard
@@ -175,11 +172,26 @@ export class Stage {
     l.onBeforeRender = this.inkSync;
     return l;
   }
-  setShading(on) { this.shading = !!on; this.shadeU.value = on ? 0.2 : 0; }
+  // one object's outline as a percent of Bunny's line; 0 takes it off
+  inkFor(pct) {
+    if (pct === 100) return { hull: this.outline, line: this.lineMat };
+    let m = this.inks.get(pct);
+    if (!m) {
+      const line = new LineMaterial({ color: INK.getHex(), linewidth: 4, worldUnits: false });
+      line.polygonOffset = true; line.polygonOffsetFactor = -1; line.polygonOffsetUnits = -2; line.userData.inkK = pct / 100;
+      m = { line, hull: new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS, uniforms: { ...this.view.outlineUniforms, bias: { value: STAGE_BIAS }, inkK: { value: pct / 100 } }, side: THREE.BackSide }) };
+      this.inks.set(pct, m);
+    }
+    return m;
+  }
+  setInk(root, pct) {
+    const m = this.inkFor(pct);
+    root.traverse(o => { if (o.userData.isInk) { o.material = o.isLineSegments2 ? m.line : m.hull; o.visible = pct > 0; } });
+  }
 
   // ---------------------------------------------------------------- what is on stage this frame
   // st: stageOf(scene, shot); items: shot.items; f: frame; rows: library rows by id
-  sync({ stage: st, items = [], frame: f, length, rows, playing }) {
+  sync({ stage: st, noInk = {}, items = [], frame: f, length, rows, playing }) {
     this.frame = f;
     // set
     const setId = st.set ? 'set-' + st.set : null;
@@ -213,6 +225,14 @@ export class Stage {
         }
       });
     }
+    const inks = st.inks || {}, inkSig = JSON.stringify(st.inks || null) + !!noInk.set + (this.setGroup?.uuid || '') + !!this.setGroup?.userData.pending;
+    if (inkSig !== this.inkSig && this.setGroup) {
+      this.inkSig = inkSig;
+      this.setGroup.traverse(o => { const u = o.userData; if (u.ds_prop) this.setInk(o, noInk.set ? 0 : u.ds_shell ? 100 : inks[u.ds_prop] ?? 100); });
+    }
+    if (this.view.inkK) this.view.inkK.value = (inks['@lead'] ?? 100) / 100;
+    (this.view.actors || []).forEach((a, i) => { if (a.inkK) a.inkK.value = (inks['@costar' + i] ?? 100) / 100; });
+    for (const who of [this.view, ...(this.view.actors || [])]) for (const o of who.objects) if (o.outline) o.outline.visible = !noInk.character && (who.inkK?.value ?? 1) > 0;
     // items
     const want = [];
     items.forEach((it, i) => {
@@ -227,6 +247,8 @@ export class Stage {
         rec.obj.traverse(o => { o.userData.item = i; });
         this.root.add(rec.obj);
       }
+      const ink = noInk.item?.(it) ? 0 : it.ink ?? 100;
+      if (rec.ink !== ink) { rec.ink = ink; this.setInk(rec.obj, ink); }
       const end = it.until ?? (kind === 'react' ? it.frame + REACT_FRAMES : kind === 'story' && STORY_FRAMES[it.id.split(':')[1]] ? it.frame + STORY_FRAMES[it.id.split(':')[1]] : length);
       rec.obj.visible = f >= it.frame && f <= end;
       if (!(this.dragging && this.gizmo.object === rec.obj)) this.place(rec, it, f - it.frame);

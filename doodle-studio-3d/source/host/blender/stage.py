@@ -39,7 +39,7 @@ def _library():
 
 def needed(shot):
     st = shot.get('stage') or {}
-    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'sun', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet')))
+    return bool(shot.get('items') or any(st.get(k) for k in ('set', 'time', 'sky', 'sun', 'shadows', 'halftone', 'lighting', 'outfit', 'accessories', 'mouthSet')))
 
 
 def setup(shot, log):

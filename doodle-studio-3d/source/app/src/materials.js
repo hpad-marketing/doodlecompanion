@@ -56,13 +56,20 @@ const lookName = (layer) => {
 // textured looks have no body outline unless it is switched on; the flat look keeps it unless switched off
 export const inkOn = (layer, look) => layer.ink != null ? layer.ink !== false : !!(look?.flat ?? true);
 
+// which targets have their outline off, as the render does it (lib/materials.py): the 3D view follows
+const outlineOff = L => !!L?.look && (L.ink != null ? L.ink === false : L.look !== 'ink-mustard');
+export function outlinesOff(m) {
+  const l = m?.layers || {}, props = outlineOff(l.props || l.scene);
+  return { character: outlineOff(l.character || l.scene), set: outlineOff(l.set || l.scene), item: it => (it.material ? outlineOff(it.material) : props) };
+}
+
 export function setLayer(ctx, target, patch, label = 'Material') {
   const s = slot(ctx, target);
   if (!s.ok) throw Error('Pick a prop in the 3D view first');
   ctx.pushUndo(label);
   const cur = s.get();
   const next = patch === null ? null : { palette: 'brand', ...(cur || {}), ...patch };
-  if (next && next.look === 'ink-mustard' && (next.palette || 'brand') === 'brand' && !next.color) s.set(target === 'scene' || ui.scope === 'scene' ? null : next);
+  if (next && next.look === 'ink-mustard' && (next.palette || 'brand') === 'brand' && !next.color && next.ink == null) s.set(target === 'scene' || ui.scope === 'scene' ? null : next);
   else s.set(next);
   ctx.changed();
   return next;
@@ -148,7 +155,7 @@ export function materialsPanel(ctx) {
   root.append(h('h3', {}, `${cur?.name || 'Ink & Mustard'} settings`),
     params.length ? h('div', { class: 'mat-ctls' }, ...params.map(ctl)) : h('p', { class: 'hint' }, 'Flat brand fills and the ink line, exactly as Doodle Studio draws them. Pick colours above to repaint the flat look.'),
     h('div', { class: 'row mat-row' },
-      h('button', { 'aria-pressed': String(inkOn(layer, cur)), title: 'The ink outline around bodies, set and props on this target. Face lines always stay. Textured looks start without it.', onclick: () => set({ ink: !inkOn(layer, cur) }, 'Ink outline') }, 'Ink outline'),
+      h('button', { 'aria-pressed': String(inkOn(layer, cur)), title: 'The ink outline around bodies, set and props on this target, in any look: the colours stay. Face lines always stay. Textured looks start without it. The 3D view follows.', onclick: () => set({ ink: !inkOn(layer, cur), look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, 'Outlines') }, inkOn(layer, cur) ? 'Outlines: on' : 'Outlines: off'),
       ui.target === 'scene' || ui.target === 'character' ? h('button', { 'aria-pressed': String(layer.keepCharacter !== false), title: 'Keep the characters mustard whatever the palette (brand rule). Off: they take the palette\'s character colour.', onclick: () => set({ keepCharacter: layer.keepCharacter === false }, 'Keep Bunny mustard') }, 'Keep Bunny mustard') : null,
       h('label', { class: 'row', title: 'Paint every fill of this target one colour (handy for one prop)' }, 'One colour', colour),
       layer.color ? h('button', { onclick: () => { const q = { ...layer }; delete q.color; set({ ...q, color: undefined }, 'Palette colours'); } }, 'Use palette colours') : null,
@@ -168,8 +175,7 @@ export function materialsPanel(ctx) {
     n.addEventListener('change', () => put(n.value));
     return h('label', { class: 'ctl' }, h('span', { class: 'name' }, label), r, n);
   };
-  root.append(h('h3', {}, 'Light for lit looks (every shot)'), h('div', { class: 'mat-ctls' }, ...LIGHT.map(lightCtl),
-    h('button', { 'aria-pressed': String(!!L.shadows), title: 'Cast shadows. Off by default: the doodle rule is no shadows.', onclick: () => { ctx.pushUndo('Shadows'); const sc = ctx.scene(); sc.materials = sc.materials || {}; sc.materials.light = { ...(sc.materials.light || {}), shadows: !L.shadows }; ctx.changed(); ctx.rebuild(); } }, 'Cast shadows')),
+  root.append(h('h3', {}, 'Light for lit looks (every shot)'), h('div', { class: 'mat-ctls' }, ...LIGHT.map(lightCtl)),
   h('p', { class: 'hint' }, 'Flat looks (Ink & Mustard, Cel toon edges) ignore the light. Clay, vinyl, felt, paper and ceramic read it.'));
 
   // 6. look add-ons

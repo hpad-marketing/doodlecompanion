@@ -27,10 +27,10 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   let sc = await ev(() => ds3d.scene.materials);
   ok(sc?.layers?.scene?.look === 'clay' && sc.layers.scene.palette === 'teal-coral', 'Clay in Teal & coral on the whole scene');
   ok(await ev(() => document.querySelectorAll('.mat-ctls .ctl').length) >= 5 + 6, 'clay sliders and the light row show');
-  ok(await ev(() => [...document.querySelectorAll('.mat-row button')].find(b => b.textContent === 'Ink outline')?.getAttribute('aria-pressed') === 'false'), 'a textured look starts with no body outline');
-  await p.click('.mat-row button:has-text("Ink outline")');
+  ok(await ev(() => [...document.querySelectorAll('.mat-row button')].find(b => b.textContent.startsWith('Outlines:'))?.getAttribute('aria-pressed') === 'false'), 'a textured look starts with no body outline');
+  await p.click('.mat-row button:has-text("Outlines:")');
   ok(await ev(() => ds3d.scene.materials.layers.scene.ink === true), 'the outline can be switched back on');
-  await p.click('.mat-row button:has-text("Ink outline")');
+  await p.click('.mat-row button:has-text("Outlines:")');
   await p.click('.mat-row button:has-text("Set")');
   await p.click('.mat-card:has-text("Cel toon")');
   await p.click('.mat-row button:has-text("This shot only")');

@@ -52,6 +52,7 @@ import cast as costars  # noqa: E402
 import rules_scene  # noqa: E402
 import constraints  # noqa: E402
 import materials  # noqa: E402
+import lights  # noqa: E402
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 if argv and argv[0].endswith('.blend'):
@@ -331,6 +332,11 @@ try:
     materials.apply(shot, cam, lambda m: print(m, flush=True), out_dir)
 except Exception as e:   # a material never stops a render: the shot stays Ink & Mustard
     print('materials: skipped:', e, flush=True)
+# shadows, 3-point light and each object's own outline, on whatever the looks left
+try:
+    lights.apply(shot, cam, arm, lambda m: print(m, flush=True), out_dir)
+except Exception as e:   # nor does a light
+    print('lights: skipped:', e, flush=True)
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}

@@ -143,7 +143,7 @@ export function idleFor(project, faceNames = [], character = 'bunny') {
 
 // The stage a shot renders on: the scene's set, light, outfit and so on, with this
 // shot's own overrides on top. Library items placed in the shot ride along.
-export const STAGE_KEYS = ['set', 'setProps', 'time', 'sky', 'shadows', 'outfit', 'accessories', 'mouthSet'];
+export const STAGE_KEYS = ['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'lighting', 'inks', 'outfit', 'accessories', 'mouthSet'];
 export function stageOf(scene, shot) {
   const st = { ...(scene.stage || {}), ...(shot.stage || {}) };
   for (const k of Object.keys(st)) if (st[k] == null || st[k] === '' || (Array.isArray(st[k]) && !st[k].length)) delete st[k];

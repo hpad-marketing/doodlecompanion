@@ -30,6 +30,8 @@ import * as VF from './voicefx.js';
 import * as STT from './transcribe.js';
 import * as MAT from './materials.js';
 import { VOICES as BB_VOICES, STYLES as BB_STYLES, DIALS as BB_DIALS, MOODS as BB_MOODS, speak as bbSpeak, voiceFor as bbVoiceFor } from './babble.js';
+import { updateLit, LIGHT_PRESETS } from './lit.js';
+import { inkBar, makeLighting } from './lightpanel.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, wardrobePanel, itemsPanel, libUi, glyphOf } from './libview.js';
 
 const $ = s => document.querySelector(s) || DOCK.query(s);
@@ -180,6 +182,7 @@ async function setCharacter(c) {
   toast(`${charName()} on stage`);
 }
 const libCtx = () => ({
+  cameraYaw: () => view.cam.yaw, characterName: () => CHARACTERS.find(c => c[0] === character())?.[1] || 'Character', selectedTarget: selectedLightTarget, itemName: id => libRowMap().get(id)?.name, previewLighting: l => { litPreview = l; apply(); },
   h, api, toast, pushUndo, goto, scene: () => scene, project: () => project, frame: () => frame, data: () => data, lib: libraryInfo,
   trackIds: () => BUNNY_IDS.concat(FACE_IDS), setCharacter: c => setCharacter(c).catch(e => toast(e.message, 5000)),
   changed: keys => { dirty = true; apply(); drawTracks(); if (keys) buildTimelineTools(); updateHud(); },
@@ -191,14 +194,48 @@ const libCtx = () => ({
 });
 // Materials tab (materials.js): looks on the scene, characters, set or props, drawn by Blender
 const matCtx = () => ({ h, api, toast, pushUndo, scene: () => scene, project: () => project, selectedItem: () => (stage?.selected?.type === 'item' ? stage.selected.index : null), selectItem,
-  changed: () => { dirty = true; updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
+  changed: () => { dirty = true; apply(); updateHud(); }, rebuild: () => { if (tab === 'materials') buildPanel(); }, renderFrame: () => render(true), openBlender: () => MR.open() });
 // ---------------------------------------------------------------- live stage (stage3d.js): pick, place and move what is in the shot
 let stage = null;
 const libRowMap = () => { const rows = libraryRows(); if (rowMapFor !== rows) { rowMap = new Map(rows.map(r => [r.id, r])); rowMapFor = rows; } return rowMap; };
 let rowMap = new Map(), rowMapFor = null;
-let shapeShading = (() => { try { return localStorage.getItem('ds3d.shading') !== 'off'; } catch { return true; } })();
-function toggleShading(on) { shapeShading = on ?? !shapeShading; try { localStorage.setItem('ds3d.shading', shapeShading ? 'on' : 'off'); } catch {} stage?.setShading(shapeShading); apply(); toast(shapeShading ? 'Shape shading on (3D view only, the render stays flat)' : 'Shape shading off: flat Doodle look in the 3D view'); }
-const stageCtx = () => ({ api, toast, snap: () => snap.on, shading: () => shapeShading, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
+// the shadow button and each object's outline. A slider drag previews here; the shot saves when it is let go
+let litPreview = null, inkPreview = null;
+function toggleShadows(on) {
+  const was = !!stageOf(scene, project).shadows;
+  on ??= !was;
+  setStage(libCtx(), on ? { shadows: true } : { shadows: false, halftone: null }, libUi.shotOnly);
+  if (tab === 'stage') buildPanel();
+  toast(on ? 'Shadows on: the whole scene, characters included' : 'Shadows off: flat Doodle look');
+}
+function inkTarget() {
+  const s = stage?.selected, st = stageOf(scene, project);
+  if (s?.type === 'piece') return { id: 'piece:' + s.id, key: s.id, name: s.obj?.userData?.dsl_label || s.id, value: inkPreview?.id === 'piece:' + s.id ? inkPreview.value : st.inks?.[s.id] ?? 100 };
+  if (s?.type === 'bunny') return { id: 'lead', key: '@lead', name: CHARACTERS.find(c => c[0] === character())?.[1] || 'Character', value: inkPreview?.id === 'lead' ? inkPreview.value : st.inks?.['@lead'] ?? 100 };
+  if (s?.type === 'item') { const it = project.items?.[s.index]; if (it && stage.items[s.index]?.cat) return { id: 'item:' + s.index, index: s.index, name: libRowMap().get(it.id)?.name || it.id, value: inkPreview?.id === 'item:' + s.index ? inkPreview.value : it.ink ?? 100 }; }
+  return null;
+}
+function setInk(key, value, save) {
+  inkPreview = save ? null : { id: key.id, value };
+  if (save) {
+    if (key.index != null) editItem(key.index, { ink: value === 100 ? null : value }, 'Outline');
+    else {
+      const inks = { ...(stageOf(scene, project).inks || {}), [key.key]: value };
+      if (value === 100) delete inks[key.key];
+      setStage(libCtx(), { inks: Object.keys(inks).length ? inks : null }, libUi.shotOnly);
+    }
+  }
+  apply();
+}
+const selectedLightTarget = () => { const s = stage?.selected; return s?.type === 'bunny' ? 'lead' : s?.type === 'item' ? 'item:' + s.index : null; };
+function liveStage() {
+  const st = stageOf(scene, project);
+  if (litPreview) st.lighting = litPreview;
+  if (inkPreview && !inkPreview.id.startsWith('item:')) st.inks = { ...(st.inks || {}), [inkPreview.id === 'lead' ? '@lead' : inkPreview.id.slice(6)]: inkPreview.value };
+  return st;
+}
+const liveItems = () => { const n = inkPreview?.id.startsWith('item:') ? +inkPreview.id.slice(5) : -1, all = project.items || []; return n < 0 ? all : all.map((it, i) => (i === n ? { ...it, ink: inkPreview.value } : it)); };
+const stageCtx = () => ({ api, toast, snap: () => snap.on, rows: libRowMap, items: () => project.items || [], picture: id => { const r = libRowMap().get(id); return r?.preview ? '/lib/' + r.preview : null; },
   changed: () => requestAnimationFrame(() => { apply(); updateHud(); }), pushUndo: l => pushUndo(l),
   editItem: (i, patch, label) => editItem(i, patch, label, true), editPiece,
   // once a new item's model is in: stand it beside the character (level with him, never in front), clear of his body
@@ -395,7 +432,7 @@ function apply() {
   if (project.horizonLock) cam.roll = 0;
   view.setCamera(cam);
   MR.onApply(frame, vals, cam);
-  if (stage) { const t = performance.now(); stage.sync({ stage: stageOf(scene, project), items: project.items || [], frame, length: project.length, rows: libRowMap(), playing }); perf('stage', performance.now() - t); }
+  if (stage) { const t = performance.now(), st = liveStage(); stage.sync({ stage: st, noInk: MAT.outlinesOff(materialsOf(scene, project)), items: liveItems(), frame, length: project.length, rows: libRowMap(), playing }); updateLit(view, stage, st); perf('stage', performance.now() - t); }
   // live checks first, so the HUD below shows this frame's lights
   if (ruleLights) { const t = performance.now(); rules = view.ruleCheck(); perf('rule lights', performance.now() - t); }
   if (balanceOn) { balanceNow = A2.balance(view); drawCog(); }
@@ -1278,7 +1315,7 @@ const MENUS = [
     ['Next shot', () => selectShot(Math.min(scene.shots.length - 1, scene.active + 1)), 'PgDn'], '-', ['Delete this shot', () => deleteShot()]]],
   ['Edit', [['Undo', undo, 'Ctrl+Z'], ['Redo', redo, 'Ctrl+Shift+Z'], ['Undo history…', () => historyDialog(prodCtx()), 'Ctrl+H'], '-', ['Key Bunny pose', () => keyGroup(BUNNY_IDS.concat(FACE_IDS)), 'K'], ['Key camera', () => keyGroup(CAM_IDS), 'Shift+K'],
     ['Delete selected key', deleteSelected, 'Delete'], ['Clear all keys', clearAll], '-', ['Add marker with a note', () => addMarker(polCtx()), 'M'], ['Draw a review note on this frame', () => reviewNote(), 'N'], ['Tap a beat marker', () => tapBeat(), 'B']]],
-  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Shape shading in the 3D view on / off', () => toggleShading()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
+  ['View', [['Command search', () => commandSearch(polCtx()), 'Ctrl+K'], ['Show fps', () => { toggleFps(); updateHud(); }], ['Pop out the viewport (second screen)', () => popOut(wfCtx())], ['Snapping on / off', () => toggleSnap()], ['Shadows on / off', () => toggleShadows()], ['Rule lights on / off', () => { ruleLights = !ruleLights; updateHud(); }], ['Balance marker on / off', () => { balanceOn = !balanceOn; if (!balanceOn) { balanceNow = null; drawCog(); } apply(); }], ['Graph editor (curves) on / off', () => toggleCurves()], '-',
     ...DOCK.LAYOUTS.map(([id, n]) => [`Panels: ${n}`, () => DOCK.setLayout(id)]), ['Detach the timeline (another window)', () => DOCK.detach('timeline')], ['Detach the tools panel (another window)', () => DOCK.detach('tools')], ['Dock everything back', () => DOCK.dockAll()], ['Hide the tools panel', () => (DOCK.toggleHidden('tools') ? toast('Tools panel hidden: Ctrl+Shift+H brings it back') : toast('Tools panel shown')), 'Ctrl+Shift+H'], '-',
     ['Save layout…', () => saveLayout(wfCtx())], 'layouts', '-',
     ['Onion skin', () => { view3.onion = !view3.onion; apply(); }, 'O'], ['Silhouette check', () => setSilhouette(view, !view3.silhouette)], ['Mirror view', () => setMirror(!view3.mirror)], '-', ['Dark mode', toggleDark, 'Ctrl+D'], ['Floor grid', () => { view.grid.visible = !view.grid.visible; }, 'G'], ['Frame Bunny', frameBunny, 'F']]],
@@ -2303,7 +2340,7 @@ function canvasClick(x, y, e = {}) {
     else { stage.select({ type: 'piece', id: hit.id, obj: hit.obj }, GIZMO[tool]); toast(`Set piece ${hit.id} selected: drag to move it for this ${libUi.shotOnly || project.stage?.pieces ? 'shot' : 'scene'}`); }
     updateHud(); return hit;
   }
-  if (body) { if (e.altKey || tool !== 'select') { selectBunny(); return { bunny: true }; } clearSelection(); return clickPick(x, y); }
+  if (body) { if (e.altKey || tool !== 'select' || tab === 'stage') { selectBunny(); return { bunny: true }; } clearSelection(); return clickPick(x, y); }
   clearSelection();
   return null;
 }
@@ -2385,6 +2422,7 @@ function layout() {
 }
 
 function updateHud() {
+  inkBar({ h, inkTarget, setInk, host: () => $('#frame') });
   const st = stageOf(scene, project), setName = st.set && (libraryRows().find(r => r.category === 'set' && (r.data?.room === st.set))?.name || st.set);
   $('#hud').replaceChildren(h('span', {}, charName() + (setName ? ' · ' + setName : '') + (st.outfit ? ' · ' + st.outfit : '') + (project.items?.length ? ` · ${project.items.length} item${project.items.length > 1 ? 's' : ''}` : '')),
     h('span', {}, `${Math.round(current('cam.lens'))} mm`), h('span', {}, tab === 'carousel' ? `Carousel ${SIZES[carouselOf(scene).size].join('×')}` : `${project.width}×${project.height}`),
@@ -3120,11 +3158,37 @@ function loop() {
       return r;
     },
     setStage(patch, shotOnly) {
-      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'outfit', 'accessories', 'mouthSet'].includes(k));
+      const bad = Object.keys(patch).filter(k => !['set', 'setProps', 'time', 'sky', 'shadows', 'halftone', 'lighting', 'inks', 'outfit', 'accessories', 'mouthSet'].includes(k));
       if (bad.length) throw Error('Unknown stage keys: ' + bad.join(', '));
       const r = setStage(libCtx(), patch, !!shotOnly);
       if (tab === 'library') buildPanel();
       return r;
+    },
+    // shadows and the 3-point light: { shadows, halftone, preset (id or null), target, key, fill, back, turn, height, distance, soft, shade, shotOnly }
+    lighting(a = {}) {
+      const st = stageOf(scene, project), patch = {};
+      if (a.shadows != null) patch.shadows = !!a.shadows;
+      if (a.halftone != null) { patch.halftone = a.halftone ? true : null; if (a.halftone) patch.shadows = true; }
+      if (a.preset === null || a.preset === 'off') patch.lighting = null;
+      else {
+        if (a.preset && !LIGHT_PRESETS.some(p => p[0] === a.preset)) throw Error('preset is one of ' + LIGHT_PRESETS.map(p => p[0]).join(', '));
+        const base = a.preset ? makeLighting(a.preset, a.turn ?? st.lighting?.turn ?? view.cam.yaw, st.lighting?.target) : st.lighting;
+        const nums = Object.fromEntries(['key', 'fill', 'back', 'turn', 'height', 'distance', 'soft', 'shade'].filter(k => a[k] != null).map(k => [k, Number(a[k])]));
+        if (Object.keys(nums).length || a.target != null || a.preset) { if (!base) throw Error('Pick a preset first: ' + LIGHT_PRESETS.map(p => p[0]).join(', ')); patch.lighting = { ...base, ...nums, ...(a.target != null ? { target: String(a.target) } : {}) }; }
+      }
+      if (Object.keys(patch).length) setStage(libCtx(), patch, !!a.shotOnly);
+      if (tab === 'stage') buildPanel();
+      const now = stageOf(scene, project);
+      return { shadows: !!now.shadows, halftone: !!now.halftone, lighting: now.lighting || null, presets: LIGHT_PRESETS.map(p => ({ id: p[0], name: p[1], about: p[2] })) };
+    },
+    // one object's outline, percent of Bunny's line (0 takes it off, 100 is the default): piece id, '@lead', '@costar0', or item index
+    setInk(target, percent, shotOnly) {
+      const v = Math.max(0, Math.min(300, Math.round(Number(percent))));
+      if (typeof target === 'number') { if (!project.items?.[target]) throw Error('No item ' + target); editItem(target, { ink: v === 100 ? null : v }, 'Outline'); return { item: target, ink: v }; }
+      const inks = { ...(stageOf(scene, project).inks || {}), [target]: v };
+      if (v === 100) delete inks[target];
+      setStage(libCtx(), { inks: Object.keys(inks).length ? inks : null }, !!shotOnly);
+      return { inks: stageOf(scene, project).inks || {} };
     },
     storyboard: () => storyboard(),
     importAudio: p => importAudio(p ?? null),
