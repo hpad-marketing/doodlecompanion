@@ -271,7 +271,16 @@ def _ceramic(t, base, P):
     return p.outputs['BSDF']
 
 
-BUILD = {'clay': _clay, 'cel': _cel, 'vinyl': _vinyl, 'felt': _felt, 'paper': _paper, 'ceramic': _ceramic}
+def _plush(t, base, P):
+    # plush toy: soft fur (the strands are grown by Doodle Studio), velvet halo, darker roots
+    p = _principled(t, base, Roughness=1.0, **{'Sheen Weight': P['sheen'], 'Sheen Roughness': 0.3, 'Specular IOR Level': 0.0})
+    p.inputs['Sheen Tint'].default_value = _lin(_shift(base, 1.3, ds=0.7))
+    ao = t.n('ShaderNodeAmbientOcclusion', Distance=0.03)
+    t.link(_mix(t, ao.outputs['AO'], _lin(_shift(base, 0.6, ds=1.1)), _speckle(t, base, 0.4, 200.0, 0.85, 1.1)), p.inputs['Base Color'])
+    return p.outputs['BSDF']
+
+
+BUILD = {'clay': _clay, 'cel': _cel, 'vinyl': _vinyl, 'felt': _felt, 'paper': _paper, 'ceramic': _ceramic, 'plush': _plush}
 
 
 def material(look, rgb, params=None):

@@ -53,12 +53,15 @@ const lookName = (layer) => {
   return l ? l.name : layer.look;
 };
 
+// textured looks have no body outline unless it is switched on; the flat look keeps it unless switched off
+export const inkOn = (layer, look) => layer.ink != null ? layer.ink !== false : !!(look?.flat ?? true);
+
 export function setLayer(ctx, target, patch, label = 'Material') {
   const s = slot(ctx, target);
   if (!s.ok) throw Error('Pick a prop in the 3D view first');
   ctx.pushUndo(label);
   const cur = s.get();
-  const next = patch === null ? null : { palette: 'brand', ink: true, ...(cur || {}), ...patch };
+  const next = patch === null ? null : { palette: 'brand', ...(cur || {}), ...patch };
   if (next && next.look === 'ink-mustard' && (next.palette || 'brand') === 'brand' && !next.color) s.set(target === 'scene' || ui.scope === 'scene' ? null : next);
   else s.set(next);
   ctx.changed();
@@ -145,7 +148,7 @@ export function materialsPanel(ctx) {
   root.append(h('h3', {}, `${cur?.name || 'Ink & Mustard'} settings`),
     params.length ? h('div', { class: 'mat-ctls' }, ...params.map(ctl)) : h('p', { class: 'hint' }, 'Flat brand fills and the ink line, exactly as Doodle Studio draws them. Pick colours above to repaint the flat look.'),
     h('div', { class: 'row mat-row' },
-      h('button', { 'aria-pressed': String(layer.ink !== false), title: 'Bunny\'s ink outline on this target (one weight everywhere)', onclick: () => set({ ink: layer.ink === false }, 'Ink outline') }, 'Ink outline'),
+      h('button', { 'aria-pressed': String(inkOn(layer, cur)), title: 'The ink outline around bodies, set and props on this target. Face lines always stay. Textured looks start without it.', onclick: () => set({ ink: !inkOn(layer, cur) }, 'Ink outline') }, 'Ink outline'),
       ui.target === 'scene' || ui.target === 'character' ? h('button', { 'aria-pressed': String(layer.keepCharacter !== false), title: 'Keep the characters mustard whatever the palette (brand rule). Off: they take the palette\'s character colour.', onclick: () => set({ keepCharacter: layer.keepCharacter === false }, 'Keep Bunny mustard') }, 'Keep Bunny mustard') : null,
       h('label', { class: 'row', title: 'Paint every fill of this target one colour (handy for one prop)' }, 'One colour', colour),
       layer.color ? h('button', { onclick: () => { const q = { ...layer }; delete q.color; set({ ...q, color: undefined }, 'Palette colours'); } }, 'Use palette colours') : null,

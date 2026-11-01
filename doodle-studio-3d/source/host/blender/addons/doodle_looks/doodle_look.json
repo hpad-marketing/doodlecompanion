@@ -165,6 +165,48 @@
       "preview": "previews/felt.png"
     },
     {
+      "id": "plush",
+      "name": "Plush",
+      "about": "A fuzzy plush toy: real fur strands on the body, face kept clear.",
+      "flat": false,
+      "fur": true,
+      "preview": "previews/plush.png",
+      "params": [
+        {
+          "id": "furLength",
+          "label": "Fur length (cm)",
+          "type": "float",
+          "min": 0.3,
+          "max": 3,
+          "default": 1.0
+        },
+        {
+          "id": "furDensity",
+          "label": "Fur density",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.8
+        },
+        {
+          "id": "furTilt",
+          "label": "Messy",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.25
+        },
+        {
+          "id": "sheen",
+          "label": "Soft halo",
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.7
+        }
+      ]
+    },
+    {
       "id": "paper",
       "name": "Paper cut-out",
       "about": "Crumpled card: flat facets that catch the light, with a fine grain.",

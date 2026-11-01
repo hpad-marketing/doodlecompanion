@@ -150,6 +150,114 @@ def _flat(c):
 
 
 # ---------------------------------------------------------------- painting
+def _fur_of(layer, addons):
+    """fur settings for a look whose manifest entry says "fur": true (strands grown on the fill)"""
+    mod_name = layer.get('addon') or 'doodle_looks'
+    man = (_mods.get(mod_name) or (None, {}))[1]
+    lk = next((x for x in man.get('looks', []) if x.get('id') == layer.get('look')), None)
+    if not lk or not lk.get('fur'):
+        return None
+    P = {q['id']: q.get('default') for q in lk.get('params', []) if q.get('id')}
+    P.update(layer.get('params') or {})
+    return {'length': float(P.get('furLength', 1.2)) / 100.0, 'density': float(P.get('furDensity', 0.6)),
+            'tilt': float(P.get('furTilt', 0.35))}
+
+
+def _face_objects(rig):
+    return [o for o in bpy.data.objects if o.type == 'MESH' and _rig_of(o) is rig
+            and any(m.type == 'NODES' and m.name == 'DS Face' for m in o.modifiers)]
+
+
+def _fur_group(fill_mat, faces, fur):
+    """geometry nodes: short strands on the faces that wear fill_mat, kept clear of the face drawings"""
+    g = bpy.data.node_groups.new('DSM Fur', 'GeometryNodeTree')
+    g.interface.new_socket('Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+    g.interface.new_socket('Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    N, L = g.nodes, g.links
+    gi, go = N.new('NodeGroupInput'), N.new('NodeGroupOutput')
+    sel = N.new('GeometryNodeMaterialSelection')
+    sel.inputs['Material'].default_value = fill_mat
+    keep = sel.outputs['Selection']
+    if faces:
+        join_f = N.new('GeometryNodeJoinGeometry')
+        for f in faces:
+            oi = N.new('GeometryNodeObjectInfo')
+            oi.transform_space = 'RELATIVE'
+            oi.inputs['Object'].default_value = f
+            L.new(oi.outputs['Geometry'], join_f.inputs['Geometry'])
+        prox = N.new('GeometryNodeProximity')
+        L.new(join_f.outputs['Geometry'], prox.inputs[0])
+        far = N.new('FunctionNodeCompare')
+        far.data_type, far.operation = 'FLOAT', 'GREATER_THAN'
+        L.new(prox.outputs['Distance'], far.inputs[0])
+        far.inputs[1].default_value = fur['length'] * 1.6 + 0.004
+        both = N.new('FunctionNodeBooleanMath')
+        both.operation = 'AND'
+        L.new(keep, both.inputs[0])
+        L.new(far.outputs[0], both.inputs[1])
+        keep = both.outputs[0]
+    dist = N.new('GeometryNodeDistributePointsOnFaces')
+    dist.distribute_method = 'RANDOM'
+    L.new(gi.outputs[0], dist.inputs['Mesh'])
+    L.new(keep, dist.inputs['Selection'])
+    dist.inputs['Density'].default_value = 4000 + 36000 * fur['density']
+    line = N.new('GeometryNodeCurvePrimitiveLine')
+    line.inputs['Start'].default_value = (0, 0, 0)
+    line.inputs['End'].default_value = (0, 0, fur['length'])
+    res = N.new('GeometryNodeResampleCurve')
+    res.inputs['Count'].default_value = 3
+    L.new(line.outputs[0], res.inputs['Curve'])
+    tilt = N.new('FunctionNodeRandomValue')
+    tilt.data_type = 'FLOAT_VECTOR'
+    tilt.inputs['Min'].default_value = (-fur['tilt'], -fur['tilt'], -3.14)
+    tilt.inputs['Max'].default_value = (fur['tilt'], fur['tilt'], 3.14)
+    rot = N.new('FunctionNodeRotateRotation')
+    L.new(dist.outputs['Rotation'], rot.inputs['Rotation'])
+    e2r = N.new('FunctionNodeEulerToRotation')
+    L.new(tilt.outputs['Value'], e2r.inputs[0])
+    L.new(e2r.outputs[0], rot.inputs['Rotate By'])
+    size = N.new('FunctionNodeRandomValue')
+    size.data_type = 'FLOAT'
+    size.inputs[2].default_value, size.inputs[3].default_value = 0.55, 1.15
+    inst = N.new('GeometryNodeInstanceOnPoints')
+    L.new(dist.outputs['Points'], inst.inputs['Points'])
+    L.new(res.outputs[0], inst.inputs['Instance'])
+    L.new(rot.outputs[0], inst.inputs['Rotation'])
+    L.new(size.outputs[1], inst.inputs['Scale'])
+    real = N.new('GeometryNodeRealizeInstances')
+    L.new(inst.outputs[0], real.inputs[0])
+    # strands taper from root to tip
+    rad = N.new('GeometryNodeSetCurveRadius')
+    L.new(real.outputs[0], rad.inputs['Curve'])
+    par = N.new('GeometryNodeSplineParameter')
+    taper = N.new('ShaderNodeMapRange')
+    L.new(par.outputs['Factor'], taper.inputs['Value'])
+    taper.inputs['To Min'].default_value = 1.0
+    taper.inputs['To Max'].default_value = 0.35
+    L.new(taper.outputs['Result'], rad.inputs['Radius'])
+    prof = N.new('GeometryNodeCurvePrimitiveCircle')
+    prof.inputs['Resolution'].default_value = 3
+    prof.inputs['Radius'].default_value = max(0.0008, fur['length'] * 0.14)
+    c2m = N.new('GeometryNodeCurveToMesh')
+    L.new(rad.outputs[0], c2m.inputs['Curve'])
+    L.new(prof.outputs[0], c2m.inputs['Profile Curve'])
+    sm = N.new('GeometryNodeSetMaterial')
+    L.new(c2m.outputs[0], sm.inputs['Geometry'])
+    sm.inputs['Material'].default_value = fill_mat
+    join = N.new('GeometryNodeJoinGeometry')
+    L.new(gi.outputs[0], join.inputs[0])
+    L.new(sm.outputs[0], join.inputs[0])
+    L.new(join.outputs[0], go.inputs[0])
+    return g
+
+
+def _grow_fur(ob, fill_mat, fur):
+    if fill_mat is None or any(m.name == 'DSM Fur' for m in ob.modifiers):
+        return
+    md = ob.modifiers.new('DSM Fur', 'NODES')
+    md.node_group = _fur_group(fill_mat, _face_objects(_rig_of(ob)) if _rig_of(ob) else [], fur)
+
+
 class _Painter:
     def __init__(self, layer, addons, log):
         self.layer = layer
@@ -161,6 +269,9 @@ class _Painter:
         if not isinstance(probe, bpy.types.Material):
             raise TypeError('the look returned %r, not a material' % (probe,))
         self.lit = self.make is not _flat and not self._flat_emission(probe)
+        # body outline: textured looks go without it unless it is switched on (face lines always stay)
+        self.ink = layer.get('ink') if layer.get('ink') is not None else self.make is _flat
+        self.fur = _fur_of(layer, addons) if self.make is not _flat else None
 
     @staticmethod
     def _flat_emission(m):
@@ -189,7 +300,7 @@ class _Painter:
         if not ob.data.get('dsm_copy'):
             ob.data = ob.data.copy()
             ob.data['dsm_copy'] = 1
-        changed = 0
+        changed, fill_mat = 0, None
         for slot in ob.material_slots:
             m = slot.material
             if m is None or m.get('dsm_look'):
@@ -201,7 +312,11 @@ class _Painter:
             else:
                 ob.data.materials[slot.slot_index] = new
             changed += 1
-        if self.layer.get('ink') is False:
+            if not ink:
+                fill_mat = new
+        if self.fur and ob.type == 'MESH' and _rig_of(ob) is not None:   # characters only: a furry room would be millions of strands
+            _grow_fur(ob, fill_mat, self.fur)
+        if not self.ink:
             for md in ob.modifiers:
                 if md.type == 'NODES' and md.name in INK_MODS:
                     md.show_render = md.show_viewport = False
@@ -224,7 +339,7 @@ class _Painter:
             poly.material_index = (1 if z < mid else 2) if level else 0
         for slot in ob.material_slots:
             slot.link = 'DATA'
-        if self.layer.get('ink') is False:
+        if not self.ink:
             for md in ob.modifiers:
                 if md.type == 'NODES' and md.name in INK_MODS:
                     md.show_render = md.show_viewport = False
