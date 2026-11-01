@@ -84,7 +84,11 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -yq xvfb
           RUNTIME=$(node -p "require('../manifest.json').runtime")
           mkdir -p /tmp/electron && cd /tmp/electron && npm init -y >/dev/null && npm install --no-save electron@$RUNTIME
+          # newer npm does not run electron's download script on install, so run it ourselves
+          node node_modules/electron/install.js
+          test -x node_modules/electron/dist/electron
       - name: Packaged smoke test
         env:
           ELECTRON: /tmp/electron/node_modules/electron/dist/electron
+          REQUIRE_ALL: '1'   # a missing runtime is a failure here, never a silent skip
         run: node tools/run_tests.cjs --only=packaged --verbose
