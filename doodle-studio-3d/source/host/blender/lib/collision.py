@@ -9,6 +9,7 @@ cleared pose is guaranteed clear after subdivision too.
 """
 import bpy
 import bmesh
+import compat
 import math
 from mathutils.bvhtree import BVHTree
 
@@ -201,15 +202,15 @@ def _depth_bias(ob):
 def hold_depth_bias():
     """Zero every ink shell's Depth Bias while the floor is worked out frame by frame (the bridge
     loop); returns a restore function. Switching it per measurement can lag one evaluation."""
-    held = [(m, k, m[k]) for ob in bpy.data.objects if ob.type == 'MESH' for m, k in _depth_bias(ob)]
+    held = [(m, k, compat.gn_get(m, k)) for ob in bpy.data.objects if ob.type == 'MESH' for m, k in _depth_bias(ob)]
     for m, k, _ in held:
-        m[k] = 0.0
+        compat.gn_set(m, k, 0.0)
     for ob in {m.id_data for m, _, _ in held}:
         ob.update_tag()
 
     def restore():
         for m, k, v in held:
-            m[k] = v
+            compat.gn_set(m, k, v)
         for ob in {m.id_data for m, _, _ in held}:
             ob.update_tag()
     return restore
@@ -218,16 +219,16 @@ def hold_depth_bias():
 def drawn_zmin(obs):
     """Lowest world z of the drawn surfaces, ink stroke included: the outline's real width round
     the body, without its push away from the camera (see _depth_bias)."""
-    bias = [(m, k, m[k]) for ob in obs for m, k in _depth_bias(ob) if m[k] != 0.0]
+    bias = [(m, k, compat.gn_get(m, k)) for ob in obs for m, k in _depth_bias(ob) if compat.gn_get(m, k) != 0.0]
     for m, k, _ in bias:
-        m[k] = 0.0
+        compat.gn_set(m, k, 0.0)
     for ob in obs:
         ob.update_tag()
     try:
         return _zmin_eval(obs)
     finally:
         for m, k, v in bias:
-            m[k] = v
+            compat.gn_set(m, k, v)
         for ob in obs:
             ob.update_tag()
 
@@ -534,17 +535,17 @@ def bind_shell_floor():
         for md in ob.modifiers:
             if md.type != 'NODES' or md.node_group not in groups:
                 continue
-            if _floor_sid(md) not in md.keys():
+            if not compat.gn_has(md, _floor_sid(md)):
                 md.node_group = md.node_group          # pick up the new input on an old modifier
             arm = _rig_of(ob)
             sid = next(it.identifier for it in md.node_group.interface.items_tree if getattr(it, 'in_out', None) == 'INPUT' and it.name == 'Floor Z')
             if arm is None:
-                md[sid] = FLOOR_OFF
+                compat.gn_set(md, sid, FLOOR_OFF)
                 continue
             h = floor_holder(arm)
-            path = f'modifiers["{md.name}"]["{sid}"]'
-            ob.driver_remove(path)
-            d = ob.driver_add(path).driver
+            owner, path = compat.gn_socket(md, sid)
+            owner.driver_remove(path)
+            d = owner.driver_add(path).driver
             d.type = 'AVERAGE'
             v = d.variables.new(); v.type = 'SINGLE_PROP'
             v.targets[0].id = h; v.targets[0].data_path = '["ds_floor_z"]'

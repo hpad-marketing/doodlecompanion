@@ -170,6 +170,7 @@ def _face_objects(rig):
 
 def _fur_group(fill_mat, faces, fur):
     """geometry nodes: short strands on the faces that wear fill_mat, kept clear of the face drawings"""
+    import compat  # 5.2: Random Value and Compare show only the live sockets
     g = bpy.data.node_groups.new('DSM Fur', 'GeometryNodeTree')
     g.interface.new_socket('Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
     g.interface.new_socket('Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
@@ -189,8 +190,8 @@ def _fur_group(fill_mat, faces, fur):
         L.new(join_f.outputs['Geometry'], prox.inputs[0])
         far = N.new('FunctionNodeCompare')
         far.data_type, far.operation = 'FLOAT', 'GREATER_THAN'
-        L.new(prox.outputs['Distance'], far.inputs[0])
-        far.inputs[1].default_value = fur['length'] * 1.6 + 0.004
+        L.new(prox.outputs['Distance'], compat.sock(far.inputs, 'A'))
+        compat.sock(far.inputs, 'B').default_value = fur['length'] * 1.6 + 0.004
         both = N.new('FunctionNodeBooleanMath')
         both.operation = 'AND'
         L.new(keep, both.inputs[0])
@@ -209,21 +210,21 @@ def _fur_group(fill_mat, faces, fur):
     L.new(line.outputs[0], res.inputs['Curve'])
     tilt = N.new('FunctionNodeRandomValue')
     tilt.data_type = 'FLOAT_VECTOR'
-    tilt.inputs['Min'].default_value = (-fur['tilt'], -fur['tilt'], -3.14)
-    tilt.inputs['Max'].default_value = (fur['tilt'], fur['tilt'], 3.14)
+    compat.sock(tilt.inputs, 'Min').default_value = (-fur['tilt'], -fur['tilt'], -3.14)
+    compat.sock(tilt.inputs, 'Max').default_value = (fur['tilt'], fur['tilt'], 3.14)
     rot = N.new('FunctionNodeRotateRotation')
     L.new(dist.outputs['Rotation'], rot.inputs['Rotation'])
     e2r = N.new('FunctionNodeEulerToRotation')
-    L.new(tilt.outputs['Value'], e2r.inputs[0])
+    L.new(compat.sock(tilt.outputs, 'Value'), e2r.inputs[0])
     L.new(e2r.outputs[0], rot.inputs['Rotate By'])
     size = N.new('FunctionNodeRandomValue')
     size.data_type = 'FLOAT'
-    size.inputs[2].default_value, size.inputs[3].default_value = 0.55, 1.15
+    compat.sock(size.inputs, 'Min').default_value, compat.sock(size.inputs, 'Max').default_value = 0.55, 1.15
     inst = N.new('GeometryNodeInstanceOnPoints')
     L.new(dist.outputs['Points'], inst.inputs['Points'])
     L.new(res.outputs[0], inst.inputs['Instance'])
     L.new(rot.outputs[0], inst.inputs['Rotation'])
-    L.new(size.outputs[1], inst.inputs['Scale'])
+    L.new(compat.sock(size.outputs, 'Value'), inst.inputs['Scale'])
     real = N.new('GeometryNodeRealizeInstances')
     L.new(inst.outputs[0], real.inputs[0])
     # strands taper from root to tip

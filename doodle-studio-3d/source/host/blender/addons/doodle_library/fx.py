@@ -18,6 +18,7 @@ import bpy
 from mathutils import Vector
 
 from . import index, paths, style
+from . import gnodes
 
 LOOP, BURST = 'DSL_FX_Loop', 'DSL_FX_Burst'
 
@@ -103,7 +104,7 @@ class _G:
     def node(self, typ, **kw):
         n = self.N.new(typ)
         for k, v in kw.items():
-            setattr(n, k, v)
+            gnodes.set_option(n, k, v)
         return n
 
     def link(self, a, b):
@@ -138,14 +139,14 @@ class _G:
 
     def rand(self, kind, lo, hi, seed):
         n = self.node('FunctionNodeRandomValue', data_type=kind)
-        idx = {'FLOAT': (2, 3), 'FLOAT_VECTOR': (0, 1)}[kind]
-        for i, v in zip(idx, (lo, hi)):
+        for name, v in (('Min', lo), ('Max', hi)):
+            s = gnodes.sock(n.inputs, name)
             if isinstance(v, (int, float, tuple)):
-                n.inputs[i].default_value = v
+                s.default_value = v
             else:
-                self.link(v, n.inputs[i])
+                self.link(v, s)
         n.inputs['Seed'].default_value = seed
-        return n.outputs[1 if kind == 'FLOAT' else 0]
+        return gnodes.sock(n.outputs, 'Value')
 
 
 def _common_io(ng):
@@ -283,22 +284,22 @@ def add_effect(kind, frame=None, location=None, parent=None, amount=1.0, cam=Non
     mod = ob.modifiers.new('DSL FX', 'NODES')
     mod.node_group = loop_group() if setup == 'loop' else burst_group()
     ids = _ids(mod)
-    mod[ids['Piece']] = _piece(piece)
-    mod[ids['Count']] = max(1, int(cfg['count'] * amount))
-    mod[ids['Seed']] = hash(kind) % 1000
-    mod[ids['Spin']] = cfg.get('spin', 0.0)
-    mod[ids['Scale']] = cfg.get('scale', 1.0)
+    gnodes.gn_set(mod, ids['Piece'], _piece(piece))
+    gnodes.gn_set(mod, ids['Count'], max(1, int(cfg['count'] * amount)))
+    gnodes.gn_set(mod, ids['Seed'], hash(kind) % 1000)
+    gnodes.gn_set(mod, ids['Spin'], cfg.get('spin', 0.0))
+    gnodes.gn_set(mod, ids['Scale'], cfg.get('scale', 1.0))
     if setup == 'loop':
         for k, n in (('box', 'Box'), ('dir', 'Direction')):
-            mod[ids[n]] = cfg[k]
+            gnodes.gn_set(mod, ids[n], cfg[k])
         for k, n in (('speed', 'Speed'), ('travel', 'Travel'), ('sway', 'Sway'), ('grow', 'Grow')):
-            mod[ids[n]] = float(cfg.get(k, 0.0))
+            gnodes.gn_set(mod, ids[n], float(cfg.get(k, 0.0)))
     else:
         f = bpy.context.scene.frame_current if frame is None else frame
-        mod[ids['Start']] = float(f)
+        gnodes.gn_set(mod, ids['Start'], float(f))
         for k, n in (('length', 'Length'), ('radius', 'Radius'), ('gravity', 'Gravity'), ('up', 'Up')):
-            mod[ids[n]] = float(cfg[k])
-    fc = mod.driver_add('["%s"]' % ids['Frame'])
+            gnodes.gn_set(mod, ids[n], float(cfg[k]))
+    fc = gnodes.gn_driver_add(mod, ids['Frame'])
     fc.driver.type = 'SCRIPTED'
     fc.driver.expression = 'frame'
     ob['dsl_fx'] = kind
@@ -310,7 +311,7 @@ def add_effect(kind, frame=None, location=None, parent=None, amount=1.0, cam=Non
 def set_amount(ob, amount):
     mod = ob.modifiers.get('DSL FX')
     ids = _ids(mod)
-    mod[ids['Count']] = max(1, int(ob.get('dsl_fx_base', 100) * amount))
+    gnodes.gn_set(mod, ids['Count'], max(1, int(ob.get('dsl_fx_base', 100) * amount)))
     ob.update_tag()
 
 
