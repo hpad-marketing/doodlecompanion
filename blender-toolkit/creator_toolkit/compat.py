@@ -68,7 +68,7 @@ def group_socket(tree, name, in_out, socket_type, default=None, min_value=None, 
 
 def gp_data_new(name):
     """Grease Pencil data block (v3 on 4.3+)."""
-    coll = getattr(bpy.data, 'grease_pencils_v3', None) or bpy.data.grease_pencils
+    coll = bpy.data.grease_pencils_v3 if hasattr(bpy.data, 'grease_pencils_v3') else bpy.data.grease_pencils
     return coll.new(name)
 
 

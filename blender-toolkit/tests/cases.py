@@ -406,3 +406,39 @@ def gn_kit():
         print('  gn', k, n)
         for md in list(tgt.modifiers):
             tgt.modifiers.remove(md)
+
+
+@case
+def gp_kit():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import gpkit
+    assert bpy.ops.ctk.gp_canvas(ink='Ink') == {'FINISHED'}
+    o = C.active_object
+    assert o.type == 'GREASEPENCIL'
+    dr = o.data.layers[0].frames[0].drawing if len(o.data.layers[0].frames) else o.data.layers[0].frames.new(1).drawing
+    import math
+    def ring(r, n=24, cx=0.0):
+        return [(cx + r * math.cos(a * 2 * math.pi / n), 0, r * math.sin(a * 2 * math.pi / n)) for a in range(n + 1)]
+    shapes = [ring(1.0), ring(0.4), ring(0.3, cx=3.0), [(0, 0, 0), (1, 0, 1), (2, 0, 0)]]
+    dr.add_strokes([len(s) for s in shapes])
+    for st, pts in zip(dr.strokes, shapes):
+        for p, co in zip(st.points, pts):
+            p.position = co
+            p.radius = 0.02
+    for k in ('DRAW_ON', 'BOIL', 'POP', 'EVEN'):
+        assert bpy.ops.ctk.gp_effect(kind=k) == {'FINISHED'}, k
+    assert {m.type for m in o.modifiers} >= {'GREASE_PENCIL_BUILD', 'GREASE_PENCIL_NOISE', 'GREASE_PENCIL_THICKNESS'}
+    assert bpy.ops.ctk.gp_fill() == {'FINISHED'}
+    assert len(dr.strokes) == 7, len(dr.strokes)
+    fills = [s for s in dr.strokes if o.data.materials[s.material_index].grease_pencil.show_fill]
+    assert len(fills) == 3, len(fills)
+    if hasattr(dr.strokes[0], 'fill_id'):
+        ids = sorted(s.fill_id for s in fills)
+        assert ids.count(ids[-1]) >= 2, ids  # outer ring + hole share a fill
+    for p in gpkit.ONION:
+        assert bpy.ops.ctk.gp_onion(preset=p) == {'FINISHED'}
+    assert bpy.ops.ctk.gp_effect(kind='CLEAR') == {'FINISHED'} and not any(m.name.startswith('CTK ') for m in o.modifiers)
+    bpy.ops.mesh.primitive_monkey_add()
+    cd = bpy.data.cameras.new('c'); cam = bpy.data.objects.new('c', cd); C.scene.collection.objects.link(cam)
+    cam.location = (0, -6, 0); cam.rotation_euler = (1.5708, 0, 0); C.scene.camera = cam
+    assert bpy.ops.ctk.gp_ink3d(source='SCENE') == {'FINISHED'}
