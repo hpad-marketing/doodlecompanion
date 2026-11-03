@@ -271,7 +271,8 @@ def add_sticker(kind, frame=None, u=None, v=None):
     f = sc.frame_current if frame is None else frame
     length = core.sec(st.sticker_seconds)
     size = st.sticker_size
-    if u is None or v is None:
+    auto = u is None or v is None
+    if auto:
         u, v = 0.72, 0.32
         lead = core.lead_character(sc)
         if lead:
@@ -299,10 +300,98 @@ def add_sticker(kind, frame=None, u=None, v=None):
                       outline='ink' if fill == 'mustard' else 'mustard', name='Sticker ' + kind.title())
         parts.append(t)
         core.key_pop(root, f, f + length, length=6)
+    cuts = sorted(m.frame for m in sc.timeline_markers if m.frame > f and (m.camera or m.name.startswith('Slot: ')))
+    if cuts and cuts[0] < f + length:   # a sticker never runs across a cut
+        length = max(core.sec(0.5), cuts[0] - f)
+        core.key_pop(root, f, f + length, style='cut' if kind in SHAPES else 'pop', length=6)
+        root['ss_end'] = int(f + length)
+    _keep_in_frame(root, parts, sc, f if auto else None)
     if st.line_boil > 0:
         for p in parts:
             core.boil(p, f, f + length, amount=st.line_boil)
     return root
+
+
+def _extent(parts, sc):
+    xs, ys = [], []
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    for p in parts:
+        pts = []
+        if p.type == 'CURVE':   # bevel-only curves report a padded box, so read the points
+            for sp in p.data.splines:
+                pts += [q.co for q in sp.points] + [q.co for q in sp.bezier_points]
+        for c in pts or p.evaluated_get(dg).bound_box:
+            xs.append(c[0] * p.scale.x + p.location.x)
+            ys.append(c[1] * p.scale.y + p.location.y)
+    aspect = sc.render.resolution_x / sc.render.resolution_y
+    if not xs:
+        return 0, 0, 0, 0
+    # in screen units: left, right (width fraction), up, down (height fraction) from the anchor
+    return min(xs) / aspect, max(xs) / aspect, max(ys), -min(ys)
+
+
+def _hits(a, b):
+    return not (a[2] < b[0] or a[0] > b[2] or a[3] < b[1] or a[1] > b[3])
+
+
+def _keep_in_frame(root, parts, sc, frame=None):
+    """Nothing gets cut by the frame and nothing touches the character:
+    beside the head (right, then left, then above), inside the safe area."""
+    l0, r0, up0, dn0 = _extent(parts, sc)
+    top, bottom, left, right = core.safe(sc)
+    pad = 0.012
+    lead = core.lead_character(sc) if frame is not None else None
+    box = None
+    if lead:
+        # the whole time the sticker is up (shots can cut under it)
+        keep = sc.frame_current
+        bs, hs = [], []
+        end = int(root.get('ss_end', frame + 1))
+        for fr in range(frame, max(frame + 1, end) + 1, max(1, core.sec(0.25, sc))):
+            sc.frame_set(fr)
+            bs.append(core.body_rect(lead))
+            hs.append(core.head_rect(lead))
+        sc.frame_set(keep)
+        uni = lambda rs: (min(r[0] for r in rs), min(r[1] for r in rs), max(r[2] for r in rs), max(r[3] for r in rs))
+        box = uni(bs), uni(hs)
+    u, v, k = root['ss_u'], root['ss_v'], 1.0
+    others = []
+    if frame is not None:
+        s0, s1 = frame, int(root.get('ss_end', frame + 1))
+        for o in core.items(sc=sc):
+            if o is root or o.get('ss_kind') in ('sticker', 'endcard', 'card'):
+                continue
+            if int(o.get('ss_start', -10**6)) <= s1 and int(o.get('ss_end', 10**6)) >= s0:
+                kids = [c for c in core.pop_of(o).children if c.type in ('FONT', 'CURVE', 'MESH')]
+                if kids:
+                    a, b, c_, d = _extent(kids, sc)
+                    others.append((o['ss_u'] + a - pad, o['ss_v'] - c_ - pad, o['ss_u'] + b + pad, o['ss_v'] + d + pad))
+    for k in (1.0, 0.85, 0.72, 0.6, 0.5):   # shrink a little rather than touch the character
+        l, r, up, dn = l0 * k, r0 * k, up0 * k, dn0 * k
+        lo_u, hi_u, lo_v, hi_v = left + pad - l, 1 - right - pad - r, top + pad + up, 1 - bottom - pad - dn
+        if box:
+            (bu0, bv0, bu1, bv1), (hu0, hv0, hu1, hv1) = box
+            hv = min(max((hv0 + hv1) / 2, lo_v), hi_v)
+            mid = (bu0 + bu1) / 2
+            tries = [(bu1 + pad - l, hv), (bu0 - pad - r, hv),           # beside the head
+                     (mid, bv1 + pad * 2 + up), (mid, bv0 - pad * 2 - dn)]  # under the feet, over the ears
+        else:
+            tries = [(u, v)]
+        fit = [t for t in tries if lo_u <= t[0] <= hi_u and lo_v <= t[1] <= hi_v
+               and not any(_hits((t[0] + l, t[1] - up, t[0] + r, t[1] + dn), ob) for ob in others)]
+        if fit:
+            u, v = fit[0]
+            break
+    else:
+        u = min(max(u, lo_u), max(lo_u, hi_u))
+        v = min(max(v, lo_v), max(lo_v, hi_v))
+    if k < 1.0:
+        for c in parts:
+            c.scale = (c.scale.x * k, c.scale.y * k, c.scale.z)
+            c.location = (c.location.x * k, c.location.y * k, c.location.z)
+    root['ss_u'], root['ss_v'] = u, v
+    core.place(root)
 
 
 # ================================================================== comment bubbles
@@ -358,18 +447,27 @@ def add_comment(username, comment, frame=None, where='TOP', seconds=None, show_u
     core.text('\n'.join(lines), pop, size=size, kind='hand', fill=ink, align='LEFT',
               loc=(-w / 2 + size * 0.7, y - (len(lines) - 1) * size * 0.6, 0.001))
     if lead_rig and not small:
-        # sit at the top of the safe zone, and shrink rather than cover the eyes
+        # sit at the top of the safe zone and never touch the character (ears included):
+        # shrink first, and if it would get too small, drop the character a little instead
+        from . import formats
         top = core.safe(sc)[0]
-        u0, v0, u1, v1 = core.head_rect(lead_rig, frame=f)
-        eye_top = v0 + (v1 - v0) * 0.42
-        room = eye_top - 0.02 - top
-        s = min(1.0, max(0.45, room / h)) if room > 0 else 0.45
+        keep = sc.frame_current
+        sc.frame_set(f)
+        bu0, bv0, bu1, bv1 = core.body_rect(lead_rig)
+        sc.frame_set(keep)
+        room = bv0 - 0.02 - top
+        s = min(1.0, room / h) if room > 0 else 0.0
+        if s < 0.6:
+            s = 0.6
         if s < 1.0:
             for c in pop.children:
                 c.scale = (s, s, 1)
                 c.location = (c.location.x * s, c.location.y * s, c.location.z)
         root['ss_v'] = top + h * s / 2
         core.place(root)
+        if room < h * s:
+            half = w * s / aspect / 2
+            formats._clear_face(sc.camera, lead_rig, sc, 0.5 - half, 0.5 + half, top + h * s + 0.02)
     core.key_pop(root, f, f + length, length=6)
     return root
 

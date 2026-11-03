@@ -198,16 +198,27 @@ def add_reaction(path, layout='PIP', side='AUTO', border=True, react_at=None):
         root, pop = core.item('Reaction clip', 0.5, 0.5, kind='react')
         ob, w = _media_plane(path, pop, h, border)
         maxw = aspect * 0.46   # never wider than about half the frame
-        if w > maxw:
-            s = maxw / w
-            for c in pop.children:
-                c.scale = (s, s, 1)
-            w, h = w * s, h * s
-        root['ss_v'] = top + h / 2 + 0.015
-        root['ss_u'] = left + w / aspect / 2 + 0.01 if side == 'LEFT' else 1 - right - w / aspect / 2 - 0.01
+        s = min(1.0, maxw / w)
+        spans = _char_span(cam, lead, sc) if lead else []
+        # Nothing touches: the whole character (ears too) stays clear of the clip, and the feet stay in frame.
+        # Shrink the clip until both hold.
+        while True:
+            cw, ch = w * s, h * s
+            v = top + ch / 2 + 0.015
+            u = left + cw / aspect / 2 + 0.01 if side == 'LEFT' else 1 - right - cw / aspect / 2 - 0.01
+            if not lead:
+                break
+            need, foot = _shift_needed(cam, lead, sc, u - cw / aspect / 2 - 0.01, u + cw / aspect / 2 + 0.01,
+                                       top + ch + 0.03, spans)
+            if foot <= 0.985 or s < 0.4:
+                break
+            s *= 0.88
+        for c in pop.children:
+            c.scale = (s, s, 1)
+        root['ss_v'], root['ss_u'] = v, u
         core.place(root)
         if lead:
-            _clear_face(cam, lead, sc, root['ss_u'] - w / aspect / 2, root['ss_u'] + w / aspect / 2, top + h + 0.03)
+            _clear_face(cam, lead, sc, u - cw / aspect / 2 - 0.01, u + cw / aspect / 2 + 0.01, top + ch + 0.03)
     else:  # BOARD: a doodle board in the set, beside the character
         root, pop = core.item('Reaction board', 0.68 if side != 'LEFT' else 0.32, 0.42, kind='react',
                               depth=core.settings(sc).overlay_depth * 2.5)
@@ -235,25 +246,37 @@ def add_reaction(path, layout='PIP', side='AUTO', border=True, react_at=None):
     return root
 
 
-def _shift_needed(cam, lead, sc, cu0, cu1, cv1):
-    """How far (in frame heights) the face must drop to clear a box at the top, over the whole shot."""
-    need = 0.0
+def _char_span(cam, lead, sc):
+    """Per sampled frame: the character's whole screen box (ears, hands and feet included)."""
+    out = []
+    keep = sc.frame_current
     step = max(1, core.sec(0.5, sc))
     for f in range(sc.frame_start, sc.frame_end + 1, step):
-        u0, v0, u1, v1 = core.head_rect(lead, cam, sc, frame=f)
-        eye_top = v0 + (v1 - v0) * 0.3   # ear tips may tuck under the clip; eyes and mouth never
+        sc.frame_set(f)
+        out.append(core.body_rect(lead, cam, sc))
+    sc.frame_set(keep)
+    return out
+
+
+def _shift_needed(cam, lead, sc, cu0, cu1, cv1, spans=None):
+    """How far (in frame heights) the character must drop so no part of it touches a box at the top.
+    Returns (shift, lowest foot after the shift)."""
+    need, low = 0.0, 0.0
+    for u0, v0, u1, v1 in spans or _char_span(cam, lead, sc):
+        low = max(low, v1)
         if not (u1 < cu0 or u0 > cu1):
-            need = max(need, cv1 - eye_top)
-    return need
+            need = max(need, cv1 - v0)
+    return need, low + max(need, 0.0)
 
 
 def _clear_face(cam, lead, sc, cu0, cu1, cv1):
-    need = _shift_needed(cam, lead, sc, cu0, cu1, cv1)
+    need, _ = _shift_needed(cam, lead, sc, cu0, cu1, cv1)
     if need <= 0:
         return 0.0
     up = cam.matrix_world.to_quaternion() @ Vector((0, 1, 0))
     _, _, z = core.to_frame(core.head_center(lead))
     core.move_camera(cam, up * (need * 2 * core.frame_half(z, cam, sc)[1]))
+    core.layout(cam, sc)   # captions re-anchor under the moved face
     return need
 
 
