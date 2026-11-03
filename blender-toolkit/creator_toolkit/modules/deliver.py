@@ -350,12 +350,13 @@ def unregister_extra():
 
 def draw(layout, context):
     d = context.scene.ctk_deliver
-    col = layout.column(align=True)
-    col.prop(d, 'project')
-    col.prop(d, 'fmt', text='')
-    col.prop(d, 'colour', text='')
-    col.prop(d, 'output', text='')
-    col.prop(d, 'preview')
+    row = layout.row(align=True)
+    row.prop(d, 'project')
+    row.prop(d, 'preview', toggle=True)
+    row = layout.row(align=True)
+    row.prop(d, 'fmt', text='')
+    row.prop(d, 'colour', text='')
+    row.prop(d, 'output', text='')
     row = layout.row(align=True)
     row.operator('ctk.deliver_setup', icon='PREFERENCES')
     row.operator('ctk.deliver_render', icon='RENDER_ANIMATION')

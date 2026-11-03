@@ -5,8 +5,8 @@ curves and takes them away again when switched off. Your keys never change. Touc
   jitter   small hand-placed wobble on every moving object and the camera
   boil     Grease Pencil lines (and Line Art ink) redraw a little on each step
   flicker  lights breathe a little, like practical lamps on a set
-Simulations and procedural Geometry Nodes (ropes, cloth, text, visualizers) follow scene time
-and stay smooth; Bake on Export captures them as they are."""
+  hold     procedural text, visualizers, ropes, cloth and simulations step too (a hold modifier)
+  models   solid 3D models boil a little on each step"""
 import json
 import bpy
 from ..compat import fcurves_of
@@ -21,8 +21,12 @@ class CTK_StopmoProps(bpy.types.PropertyGroup):
     jitter: bpy.props.FloatProperty(name='Jitter', default=0.0, min=0.0, max=0.2, unit='LENGTH',
                                     description='Hand-placed wobble on moving objects and the camera')
     boil: bpy.props.BoolProperty(name='Line boil', default=True,
-                                 description='Grease Pencil and Line Art lines redraw a little each step')
+                                 description='Grease Pencil lines redraw a little each step')
     flicker: bpy.props.FloatProperty(name='Light flicker', default=0.0, min=0.0, max=0.5, subtype='FACTOR')
+    hold: bpy.props.BoolProperty(name='Step procedural too', default=True,
+                                 description='Procedural text, visualizers, ropes, cloth and simulations hold for the same frames')
+    boil_models: bpy.props.BoolProperty(name='Boil 3D models', default=False,
+                                        description='Solid models shift a hair on every step, like hand-made puppets')
 
 
 def _ids(scene):
@@ -103,7 +107,17 @@ def switch_on(scene):
             if o.type in {'GREASEPENCIL', 'GPENCIL'} and not any(m.name == 'CTK Line boil' for m in o.modifiers):
                 gpkit.boil(o, 0.35, p.step)
                 boiled.append(o.name)
-    scene[TAG] = json.dumps({'made': made, 'boiled': boiled, 'step': p.step,
+    from . import boil3d
+    held, mboiled = [], []
+    for o in scene.objects:
+        if p.hold and boil3d.is_live(o) and not o.modifiers.get(boil3d.HOLD):
+            boil3d.add_hold(o, p.step, scene.frame_start)
+            held.append(o.name)
+        if p.boil_models and o.type == 'MESH' and not o.hide_render and not boil3d.is_flat(o) \
+                and not o.modifiers.get(boil3d.BOIL):
+            boil3d.add_boil(o, 0.006, p.step)
+            mboiled.append(o.name)
+    scene[TAG] = json.dumps({'made': made, 'boiled': boiled, 'held': held, 'mboiled': mboiled, 'step': p.step,
                              'jitter': p.jitter > 0, 'flicker': p.flicker > 0})
     return True
 
@@ -142,6 +156,15 @@ def switch_off(scene):
             m = o.modifiers.get('CTK Line boil')
             if m:
                 o.modifiers.remove(m)
+    from . import boil3d
+    for name in info.get('held', []):
+        o = bpy.data.objects.get(name)
+        if o:
+            boil3d.remove(o, boil3d.HOLD)
+    for name in info.get('mboiled', []):
+        o = bpy.data.objects.get(name)
+        if o:
+            boil3d.remove(o, boil3d.BOIL)
     del scene[TAG]
     return True
 
@@ -184,10 +207,13 @@ def draw(layout, context):
         row.operator('ctk.stopmo', text=f'Stop motion is on ({state(sc)["step"]}s): turn off', icon='CANCEL', depress=True).on = False
     else:
         row.operator('ctk.stopmo', text='Turn on stop motion', icon='RENDER_ANIMATION').on = True
-    col = layout.column(align=True)
-    col.prop(p, 'step', text='On (frames)')
-    col.prop(p, 'jitter')
-    col.prop(p, 'flicker')
-    col.prop(p, 'boil')
+    row = layout.row(align=True)
+    row.prop(p, 'step', text='On')
+    row.prop(p, 'jitter')
+    row.prop(p, 'flicker', text='Flicker')
+    row = layout.row(align=True)
+    row.prop(p, 'boil', text='Line boil', toggle=True)
+    row.prop(p, 'hold', text='Procedural', toggle=True)
+    row.prop(p, 'boil_models', text='Boil models', toggle=True)
     if on:
         layout.label(text='Changed a setting? Turn on again to apply', icon='INFO')

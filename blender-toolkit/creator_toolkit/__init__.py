@@ -17,7 +17,7 @@ from . import compat  # noqa: F401
 _NAMES = [
     'vault', 'doodle', 'cleanimport', 'material', 'style', 'palette', 'lights',
     'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'playback', 'lipsync', 'stopmo', 'physics52', 'smear52',
-    'kinetic', 'camera', 'music', 'gnkit', 'shapes52', 'looks52', 'text52', 'gpkit', 'nodetidy',
+    'kinetic', 'wordcloud', 'camera', 'music', 'gnkit', 'shapes52', 'looks52', 'text52', 'gpkit', 'boil3d', 'powers', 'nodetidy',
     'deliver', 'bake', 'vse52', 'templates', 'turntable', 'speed', 'pie', 'updates',
 ]
 
@@ -90,7 +90,13 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         default='')
     doodle_lib_dir: bpy.props.StringProperty(
         name='Doodle Library folder', subtype='DIR_PATH', default='',
-        description='Only needed without the Doodle Library add-on. Default: Documents/Talking Character App/blender-library')
+        description='Folder holding library.json. Default: Documents/Talking Character App/blender-library')
+    doodle_bunny_dir: bpy.props.StringProperty(
+        name='3D Bunny folder', subtype='DIR_PATH', default='',
+        description='Folder holding Bunny3D.blend and lib/. Default: next to the library')
+    doodle_auto_capture: bpy.props.BoolProperty(
+        name='Auto-save to the Doodle Library', default=True,
+        description="On every save, store Bunny's new animation, new faces and anything in the 'Add to Doodle Library' collection")
     auto_update_check: bpy.props.BoolProperty(
         name='Check for updates when Blender starts', default=True,
         description='Looks at GitHub once per start (needs Allow Online Access). Nothing installs without your click')
@@ -105,6 +111,8 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         c.prop(self, 'deliver_root')
         c.prop(self, 'rhubarb_path')
         c.prop(self, 'doodle_lib_dir')
+        c.prop(self, 'doodle_bunny_dir')
+        c.prop(self, 'doodle_auto_capture')
         c.prop(self, 'auto_update_check')
 
 
@@ -205,9 +213,13 @@ def register():
         p = _make_panel(m, i)
         bpy.utils.register_class(p)
         _panels.append(p)
+    from . import dsl  # the Doodle Library (Doodle tab), unless its own add-on is on
+    dsl.register()
 
 
 def unregister():
+    from . import dsl
+    dsl.unregister()
     for p in reversed(_panels):
         bpy.utils.unregister_class(p)
     _panels.clear()

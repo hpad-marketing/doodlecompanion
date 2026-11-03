@@ -199,6 +199,6 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.operator('ctk.node_frame', icon='OBJECT_HIDDEN')
     row.operator('ctk.node_clean', icon='TRASH')
-    layout.operator('ctk.node_wrangler', icon='NODETREE')
+    row.operator('ctk.node_wrangler', text='', icon='NODETREE')
     if not (context.space_data and context.space_data.type == 'NODE_EDITOR'):
         layout.label(text='Here it tidies the active object\'s materials and node setups', icon='INFO')

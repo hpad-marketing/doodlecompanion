@@ -431,8 +431,9 @@ def draw(layout, context):
     row = col.row(align=True)
     for k in ('arms', 'legs', 'ears', 'tail'):
         row.prop(p, 'use_' + k, toggle=True)
-    col.prop(p, 'mirror')
-    col.prop(p, 'springy')
+    row = col.row(align=True)
+    row.prop(p, 'mirror', toggle=True)
+    row.prop(p, 'springy', toggle=True)
     row = layout.row(align=True)
     row.scale_y = 1.3
     row.operator('ctk.rig_markers', text='1  Place markers', icon='EMPTY_DATA')

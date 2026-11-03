@@ -132,12 +132,12 @@ def register_extra():
 
 
 def draw(layout, context):
-    layout.label(text='Installed: ' + installed_version())
     row = layout.row(align=True)
+    row.label(text='Installed: ' + installed_version())
     row.operator('ctk.update_check', icon='FILE_REFRESH')
     info = STATE.get('latest')
     if info and _v(info['version']) > _v(installed_version()):
         row.operator('ctk.update_install', icon='IMPORT')
     if STATE['status']:
         layout.label(text=STATE['status'][:80])
-    layout.operator('ctk.update_from_file', icon='FILE_ARCHIVE')
+    row.operator('ctk.update_from_file', text='', icon='FILE_ARCHIVE')

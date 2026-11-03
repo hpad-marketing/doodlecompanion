@@ -20,13 +20,19 @@ _cache = {'path': None, 'mtime': None, 'items': []}
 
 
 def dl_api():
-    """The Doodle Library add-on's API module, or None."""
+    """The Doodle Library API: its own add-on when that is on, else the Toolkit's built-in copy."""
     for key in list(bpy.context.preferences.addons.keys()):
         if key == 'doodle_library' or key.endswith('.doodle_library'):
             try:
                 return importlib.import_module(key + '.api')
             except Exception:
                 return None
+    try:
+        from .. import dsl
+        if dsl._active['on']:
+            return importlib.import_module(dsl.__name__ + '.api')
+    except Exception:
+        pass
     return None
 
 
@@ -126,7 +132,12 @@ def insert(item_id, hold=False):
         raise KeyError(item_id)
     api = dl_api()
     if api:
-        return api.insert(item_id, hold=hold) if row['category'] == 'prop' else api.insert(item_id)
+        try:
+            return api.insert(item_id, hold=hold) if row['category'] == 'prop' else api.insert(item_id)
+        except Exception:
+            # props and scenery still come in plain when the 3D Bunny files aren't on this PC
+            if row['category'] not in OBJECT_CATS:
+                raise
     if row['category'] in OBJECT_CATS and row.get('file') and row.get('datablock'):
         return append_object(row)
     raise RuntimeError('Sets, faces and motions need the Doodle Library add-on (it comes with Doodle Studio 3D)')
@@ -186,13 +197,13 @@ def draw(layout, context):
         layout.label(text='Doodle Library not found', icon='ERROR')
         layout.label(text='Set its folder in the add-on preferences')
         return
-    layout.prop(p, 'category', text='')
     row = layout.row(align=True)
+    row.prop(p, 'category', text='')
     row.prop(p, 'search', text='', icon='VIEWZOOM')
     row.operator('ctk.doodle_refresh', text='', icon='FILE_REFRESH')
     layout.template_icon_view(p, 'pick', show_labels=True, scale=7.0, scale_popup=5.0)
+    row = layout.row(align=True)
     if p.category == 'prop':
-        layout.prop(p, 'hold')
-    layout.operator('ctk.doodle_insert', icon='ADD')
-    if not dl_api() and p.category not in OBJECT_CATS:
-        layout.label(text='Turn on the Doodle Library add-on for this', icon='INFO')
+        row.prop(p, 'hold')
+    row.operator('ctk.doodle_insert', icon='ADD')
+    layout.label(text='Effects, lighting, storytime and more: Doodle tab', icon='INFO')
