@@ -7,6 +7,9 @@ import { idleLayer, idleOn } from './idle.js';
 import { costarsForBridge } from './cast.js';
 import { forBridge as drawingsForBridge } from './drawings.js';
 
+// how lines respond to the camera: 'thin' (default) thins them as it pulls back, 'same' keeps one size,
+// 'grow' also thickens them close up. Older shots stored inkLock (false = grow).
+export const inkModeOf = p => p.inkMode || (p.inkLock === false ? 'grow' : 'thin');
 export const DISCRETE = new Set(['expression', 'gaze', 'mouth', 'blink']);
 export const CAM_DEFAULT = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52, focus: 0, fstop: 2.8 };   // focus 0 = everything sharp
 export const EASES = { ease: 'Ease in and out', linear: 'Linear', in: 'Ease in (slow start)', out: 'Ease out (slow in)', snap: 'Snap', overshoot: 'Overshoot', bounce: 'Bounce', hold: 'Hold' };
@@ -180,7 +183,7 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}, 
     v.cam = cam;
     frames.push(v);
   }
-  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3, ...(project.ink && project.ink !== 100 ? { ink_px: +(12.73 * project.ink / 100).toFixed(3) } : {}), ...(project.inkLock === false ? { ink_follow: 1 } : {}) } };
+  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3, ...(project.ink && project.ink !== 100 ? { ink_px: +(12.73 * project.ink / 100).toFixed(3) } : {}), ink_follow: { thin: 2, same: 0, grow: 1 }[inkModeOf(project)] } };
   // Bunny-only shots with no stage stay byte-identical to older builds, so their render cache holds
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;

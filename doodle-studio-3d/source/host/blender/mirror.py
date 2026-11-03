@@ -384,7 +384,12 @@ def ink_now(ctx):
     head = root.bone.head_local + root.bone.matrix_local.to_3x3() @ root.location
     P = arm.matrix_basis @ head + Vector((0, 0, ctx['pivot_z']))
     depth = max(0.05, (P - cam.matrix_basis.translation).dot(fwd))
-    zoom = ctx['base_ortho'] / (depth * 36.0 / max(1.0, cam.data.lens))
+    if cam.data.type == 'ORTHO':
+        zoom = ctx['base_ortho'] / max(1e-6, cam.data.ortho_scale)
+    else:
+        zoom = ctx['base_ortho'] / (depth * 36.0 / max(1.0, cam.data.lens))
+    if int(ctx.get('ink_follow') or 0) == 2:   # thin out when far, never thicker up close
+        return ctx['ink_base'] * max(ctx.get('thin_min', 0.5), min(1.0, zoom))
     return ctx['ink_base'] * max(0.4, min(3.5, zoom))
 
 

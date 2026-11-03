@@ -27,15 +27,17 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   ok(sh.frames[0].cam.focus === 3 && sh.frames[0].cam.fstop === 1.4, 'rack focus reaches Blender');
   ok(sh.frames[0].cam.roll === 0, 'horizon lock zeroes the roll');
   ok(Math.abs(sh.settings.ink_px - 19.095) < 0.01, 'line weight 150% -> ink_px ' + sh.settings.ink_px);
-  ok(r.inkLock === true && sh.settings.ink_follow == null, 'lines locked to the camera by default');
+  ok(r.inkMode === 'thin' && sh.settings.ink_follow === 2, 'lines thin out as the camera pulls back by default');
+  r = await ev(() => ds3d.setShotLook({ inkMode: 'same' }));
+  ok(r.inkMode === 'same' && (await bridge()).settings.ink_follow === 0, 'same size keeps one stroke at any distance');
   r = await ev(() => ds3d.setShotLook({ inkLock: false }));
-  ok(r.inkLock === false && (await bridge()).settings.ink_follow === 1, 'unlocking lets lines follow the camera');
-  await ev(() => ds3d.setShotLook({ inkLock: true }));
+  ok(r.inkMode === 'grow' && (await bridge()).settings.ink_follow === 1, 'old inkLock false still means lines grow close up');
+  await ev(() => ds3d.setShotLook({ inkMode: 'thin' }));
   const ui = await ev(() => { [...document.querySelectorAll('#tabs button')].find(b => b.textContent === 'Render').click();
     for (const b of document.querySelectorAll('#subtabs .sub-chips button')) { b.click(); if (document.body.textContent.includes('Line size (%)')) break; }
-    const box = [...document.querySelectorAll('label')].find(l => l.textContent.includes('Same size at any distance'));
-    return { slider: !!document.querySelector('input[type=range][min="40"][max="250"]'), lock: !!box && box.querySelector('input').checked, all: [...document.querySelectorAll('button')].some(b => b.textContent === 'Use for every shot') }; });
-  ok(ui.slider && ui.lock && ui.all, 'line size slider, camera lock and copy-to-all show in Render ' + JSON.stringify(ui));
+    const row = [...document.querySelectorAll('label')].find(l => l.textContent.startsWith('Camera moves'));
+    return { slider: !!document.querySelector('input[type=range][min="40"][max="250"]'), mode: row ? row.querySelector('select').value : null, all: [...document.querySelectorAll('button')].some(b => b.textContent === 'Use for every shot') }; });
+  ok(ui.slider && ui.mode === 'thin' && ui.all, 'line size slider, camera setting and copy-to-all show in Render ' + JSON.stringify(ui));
   // storyboard
   await ev(() => { ds3d.addShot(false); ds3d.setShot({ name: 'reveal' }); });
   r = await ev(() => ds3d.storyboard());
