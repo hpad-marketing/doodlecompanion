@@ -447,7 +447,13 @@ def build(scene, px):
     pmax['role'] = 'half'
     pmin['role'] = 'nhalf'
     seam = T.math('GREATER_THAN', T.math('SUBTRACT', pmax.outputs[0], pmin.outputs[0]), 0.5)
-    by_ink = T.morph(inkm, h)
+    # only ink at least two thirds of a stroke wide holds a seam off: a crease seen edge-on or a
+    # squeezed hull is too thin to stand in for the line, so the seam draws it whole
+    q = max(1, int(round(r / 3.0)))
+    thick = T.morph(T.morph(inkm, -q).outputs[0], q)
+    thick.inputs[0].links[0].from_node['role'] = 'nquart'
+    thick['role'] = 'quart'
+    by_ink = T.morph(thick.outputs[0], h)
     by_ink['role'] = 'half1'
     seam = T.math('MULTIPLY', seam, T.math('SUBTRACT', 1.0, by_ink.outputs[0], clamp=True))
     seam = T.math('MULTIPLY', seam, T.math('SUBTRACT', 1.0, noline))
@@ -494,7 +500,8 @@ def _widths(scene, ink):
     k = max(scene.render.resolution_x, scene.render.resolution_y) * scene.render.resolution_percentage / 100.0 / 1920.0
     r = max(1, int(round(ink * k)))
     h = max(1, r // 2)
-    return {'near': -r, 'half': h, 'nhalf': -h, 'half1': h}
+    q = max(1, int(round(r / 3.0)))
+    return {'near': -r, 'half': h, 'nhalf': -h, 'half1': h, 'quart': q, 'nquart': -q}
 
 
 def _drive(scene, tree):
@@ -506,7 +513,7 @@ def _drive(scene, tree):
                if f.data_path == '["ink_px"]'), None)
     if fc is None:
         return 0
-    nodes = [n for n in tree.nodes if n.get('role') in ('near', 'half', 'nhalf', 'half1')]
+    nodes = [n for n in tree.nodes if n.get('role') in ('near', 'half', 'nhalf', 'half1', 'quart', 'nquart')]
     last = None
     for f in range(scene.frame_start, scene.frame_end + 1):
         w = _widths(scene, fc.evaluate(f))
