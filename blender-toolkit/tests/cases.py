@@ -339,3 +339,34 @@ def lip_sync():
     strips(C.scene).new_sound('v', p, 1, 10)
     lp.source = 'STRIPS'
     assert bpy.ops.ctk.lipsync() == {'FINISHED'}
+
+
+@case
+def kinetic_type():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules.kinetic import STYLES
+    for k, *_ in STYLES:
+        assert bpy.ops.ctk.kinetic_text('EXEC_DEFAULT', text='Hi there', style=k, split='LETTER') == {'FINISHED'}, k
+    assert bpy.ops.ctk.kinetic_text('EXEC_DEFAULT', text='Two lines\nhere', split='WORD') == {'FINISHED'}
+    import tempfile
+    svg = os.path.join(tempfile.mkdtemp(), 'logo.svg')
+    open(svg, 'w').write('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect x="0" y="0" width="40" height="40"/><circle cx="70" cy="20" r="18"/></svg>')
+    for st in ('DRAW', 'POP', 'EXTRUDE', 'DROP'):
+        assert bpy.ops.ctk.logo_reveal(filepath=svg, style=st) == {'FINISHED'}, st
+
+
+@case
+def camera_moves():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.mesh.primitive_monkey_add()
+    from creator_toolkit.modules.camera import MOVES, SHAKES
+    for k, _ in MOVES:
+        C.scene.frame_set(1)
+        assert bpy.ops.ctk.camera_move(kind=k, seconds=1, bpm=120) == {'FINISHED'}, k
+    for p in SHAKES:
+        assert bpy.ops.ctk.camera_shake(preset=p) == {'FINISHED'}
+    cam = C.scene.camera
+    a = cam.matrix_world.translation.copy(); C.scene.frame_set(7); b = cam.matrix_world.translation.copy()
+    assert (a - b).length > 0
+    assert bpy.ops.ctk.camera_shake(remove=True) == {'FINISHED'}
+    assert bpy.ops.ctk.beat_markers(bpm=120) == {'FINISHED'} and len(C.scene.timeline_markers) > 5
