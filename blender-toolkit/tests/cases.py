@@ -370,3 +370,39 @@ def camera_moves():
     assert (a - b).length > 0
     assert bpy.ops.ctk.camera_shake(remove=True) == {'FINISHED'}
     assert bpy.ops.ctk.beat_markers(bpm=120) == {'FINISHED'} and len(C.scene.timeline_markers) > 5
+
+
+@case
+def gn_kit():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    import bmesh
+    from creator_toolkit.modules import gnkit
+    bpy.ops.mesh.primitive_plane_add(size=4)
+    ground = C.active_object
+    bpy.ops.mesh.primitive_cube_add(size=0.1, location=(5, 0, 0))
+    rock = C.active_object
+    bpy.ops.curve.primitive_bezier_curve_add()
+    path = C.active_object
+    base = len(ground.evaluated_get(C.evaluated_depsgraph_get()).data.vertices)
+    for k, _, _ in gnkit.KINDS:
+        tgt = path if k in gnkit.NEEDS_CURVE else ground
+        bpy.ops.object.select_all(action='DESELECT')
+        if k in gnkit.NEEDS_COPY:
+            rock.hide_set(False); rock.select_set(True)
+        tgt.select_set(True); C.view_layer.objects.active = tgt
+        assert bpy.ops.ctk.gn_add(kind=k) == {'FINISHED'}, k
+        dg = C.evaluated_depsgraph_get()
+        ev = tgt.evaluated_get(dg)
+        m = ev.to_mesh()
+        n = len(m.vertices) if m else 0
+        if k == 'WOBBLE':
+            moved = max((m.vertices[i].co - ground.data.vertices[i].co).length for i in range(4))
+            assert moved > 1e-4, moved
+            n = 99
+        ev.to_mesh_clear()
+        inst = sum(1 for d in dg.object_instances if d.is_instance and d.parent and d.parent.original == tgt)
+        n += inst
+        assert n > (4 if tgt == ground else 0) and (k not in gnkit.NEEDS_COPY or inst > 1), (k, n, inst)
+        print('  gn', k, n)
+        for md in list(tgt.modifiers):
+            tgt.modifiers.remove(md)
