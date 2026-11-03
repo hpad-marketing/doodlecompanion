@@ -231,7 +231,43 @@ class CTK_OT_beat_markers(bpy.types.Operator):
         return {'FINISHED'}
 
 
-CLASSES = (CTK_OT_camera_move, CTK_OT_camera_shake, CTK_OT_beat_markers)
+class CTK_OT_pin_to_camera(bpy.types.Operator):
+    """Keep labels, stickers, arrows and lower thirds in frame while the camera moves"""
+    bl_idname = 'ctk.pin_to_camera'
+    bl_label = 'Pin to camera'
+    bl_options = {'REGISTER', 'UNDO'}
+    how: bpy.props.EnumProperty(items=[
+        ('FOLLOW', 'Follow camera', 'Parent to the camera: always pinned, edit anytime'),
+        ('KEYS', 'Bake keys (5.2)', 'Blender 5.2 Fix to Camera: keys every frame, keeps your own keys'),
+        ('FREE', 'Unpin', 'Stop following, stay where it is now')])
+
+    def execute(self, context):
+        cam = context.scene.camera
+        obs = [o for o in context.selected_objects if o is not cam]
+        if not cam or not obs:
+            self.report({'ERROR'}, 'Needs a scene camera and selected objects')
+            return {'CANCELLED'}
+        context.view_layer.update()
+        if self.how == 'KEYS':
+            if not hasattr(bpy.ops.object, 'fix_to_camera'):
+                self.report({'ERROR'}, 'Bake keys needs Blender 5.2; use Follow camera')
+                return {'CANCELLED'}
+            return bpy.ops.object.fix_to_camera()
+        for o in obs:
+            mw = o.matrix_world.copy()
+            if self.how == 'FOLLOW':
+                o.parent = cam
+                o.matrix_parent_inverse = cam.matrix_world.inverted()
+                o.matrix_world = mw
+                o['ctk_pinned'] = 1
+            else:
+                o.parent = None
+                o.matrix_world = mw
+                o.pop('ctk_pinned', None)
+        return {'FINISHED'}
+
+
+CLASSES = (CTK_OT_camera_move, CTK_OT_camera_shake, CTK_OT_beat_markers, CTK_OT_pin_to_camera)
 
 
 def draw(layout, context):
@@ -248,3 +284,8 @@ def draw(layout, context):
     op = row.operator('ctk.camera_shake', text='Remove shake', icon='X')
     op.remove = True
     row.operator('ctk.beat_markers', icon='MARKER_HLT')
+    row = layout.row(align=True)
+    row.operator('ctk.pin_to_camera', text='Pin to camera', icon='PINNED').how = 'FOLLOW'
+    if hasattr(bpy.ops.object, 'fix_to_camera'):
+        row.operator('ctk.pin_to_camera', text='Bake keys').how = 'KEYS'
+    row.operator('ctk.pin_to_camera', text='', icon='UNPINNED').how = 'FREE'

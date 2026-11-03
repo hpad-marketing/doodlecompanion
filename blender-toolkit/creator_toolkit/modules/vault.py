@@ -56,6 +56,37 @@ def ensure_library(context=None):
     return lib
 
 
+def online_supported():
+    try:
+        import _bpy_internal.assets.remote_library.cli  # noqa: F401  (Blender 5.2+)
+        return hasattr(bpy.types.UserAssetLibrary, 'bl_rna') and \
+            'remote_url' in bpy.types.UserAssetLibrary.bl_rna.properties
+    except Exception:
+        return False
+
+
+def publish_listing(folder=None):
+    """Write Blender's online-library index next to the Vault files (5.2). Upload the whole
+    folder to any static web host (GitHub Pages, your site, a CDN) and every PC can browse it."""
+    from _bpy_internal.assets.remote_library import cli
+    folder = folder or _util.vault_dir()
+    try:
+        cli.main(['-q', 'generate', folder])
+    except SystemExit as e:
+        if e.code:
+            raise RuntimeError('Listing failed (%s)' % e.code)
+    return folder
+
+
+def add_online(url, name='Creator Vault (online)'):
+    libs = bpy.context.preferences.filepaths.asset_libraries
+    for lib in libs:
+        if getattr(lib, 'remote_url', '') == url:
+            return lib
+    bpy.ops.preferences.asset_library_add(name=name, remote_url=url, type='REMOTE')
+    return next(lib for lib in libs if getattr(lib, 'remote_url', '') == url)
+
+
 def _clean(name):
     return ''.join(c if c.isalnum() or c in ' -_' else '_' for c in name).strip() or 'asset'
 
@@ -174,6 +205,47 @@ class CTK_OT_vault_open(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class CTK_OT_vault_publish(bpy.types.Operator):
+    """Make your Vault ready to put online: writes Blender's online library index into the Vault folder"""
+    bl_idname = 'ctk.vault_publish'
+    bl_label = 'Prepare online Vault'
+
+    @classmethod
+    def poll(cls, context):
+        return online_supported()
+
+    def execute(self, context):
+        try:
+            d = publish_listing()
+        except Exception as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+        self.report({'INFO'}, 'Ready. Upload this folder to your web host: ' + d)
+        return {'FINISHED'}
+
+
+class CTK_OT_vault_online(bpy.types.Operator):
+    """Browse your online Vault on this PC (downloads assets only when you use them)"""
+    bl_idname = 'ctk.vault_online'
+    bl_label = 'Connect online Vault'
+    url: bpy.props.StringProperty(name='Vault web address', default='https://')
+
+    @classmethod
+    def poll(cls, context):
+        return online_supported()
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=420)
+
+    def execute(self, context):
+        if not self.url.startswith('https://') or len(self.url) < 12:
+            self.report({'ERROR'}, 'Paste the https:// address where the Vault folder is hosted')
+            return {'CANCELLED'}
+        add_online(self.url.rstrip('/') + '/')
+        self.report({'INFO'}, 'Online Vault added to the Asset Browser')
+        return {'FINISHED'}
+
+
 class CTK_MT_vault_context(bpy.types.Menu):
     bl_label = 'Save to Vault'
     bl_idname = 'CTK_MT_vault_context'
@@ -188,7 +260,8 @@ def _object_menu(self, context):
     self.layout.menu(CTK_MT_vault_context.bl_idname, icon=ICON)
 
 
-CLASSES = (CTK_OT_vault_save, CTK_OT_vault_add_library, CTK_OT_vault_open, CTK_MT_vault_context)
+CLASSES = (CTK_OT_vault_save, CTK_OT_vault_add_library, CTK_OT_vault_open, CTK_OT_vault_publish, CTK_OT_vault_online,
+           CTK_MT_vault_context)
 
 
 def register_extra():
@@ -212,4 +285,8 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.operator('ctk.vault_add_library', icon='ASSET_MANAGER')
     row.operator('ctk.vault_open', text='', icon='FILE_FOLDER')
+    if online_supported():
+        row = layout.row(align=True)
+        row.operator('ctk.vault_publish', icon='WORLD')
+        row.operator('ctk.vault_online', icon='URL')
     layout.label(text='Tip: right-click an object › Save to Vault', icon='INFO')

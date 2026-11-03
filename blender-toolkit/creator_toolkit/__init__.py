@@ -16,9 +16,9 @@ from . import compat  # noqa: F401
 
 _NAMES = [
     'vault', 'doodle', 'cleanimport', 'material', 'style', 'palette', 'lights',
-    'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'lipsync', 'physics52',
+    'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'playback', 'lipsync', 'physics52',
     'kinetic', 'camera', 'music', 'gnkit', 'gpkit', 'nodetidy',
-    'deliver', 'templates', 'turntable', 'pie', 'updates',
+    'deliver', 'templates', 'turntable', 'speed', 'pie', 'updates',
 ]
 
 MODULES = []

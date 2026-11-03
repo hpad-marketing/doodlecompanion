@@ -695,3 +695,38 @@ def music_kit():
     e = cube.evaluated_get(C.evaluated_depsgraph_get())
     assert max(v.co.x for v in e.data.vertices) > 1.05
     assert 'ctk_glow' in e.data.attributes and 'CTK glow' in m.node_tree.nodes
+
+
+@case
+def speed_playback_online_pin():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import speed, playback, vault
+    sc = C.scene
+    before = sc.render.use_simplify
+    assert bpy.ops.ctk.heavy_scene(on=True) == {'FINISHED'} and sc.render.use_simplify and speed.is_heavy(sc)
+    if hasattr(sc.render, 'use_texture_cache'):
+        assert sc.render.use_texture_cache
+    assert bpy.ops.ctk.heavy_scene(on=False) == {'FINISHED'} and sc.render.use_simplify == before and not speed.is_heavy(sc)
+    sc.frame_set(1); sc['ctk_bpm'] = 120
+    bpy.ops.ctk.jump(amount=1, unit='BEAT')
+    assert sc.frame_current == 1 + round(sc.render.fps / 2), sc.frame_current
+    if hasattr(sc, 'playback_loop_mode'):
+        assert bpy.ops.ctk.loop_mode(mode='BOUNCE') == {'FINISHED'} and sc.playback_loop_mode == 'BOUNCE'
+    cd = bpy.data.cameras.new('c'); cam = bpy.data.objects.new('c', cd); sc.collection.objects.link(cam); sc.camera = cam
+    cam.location = (0, -5, 1)
+    bpy.ops.mesh.primitive_plane_add(location=(0, -3, 1)); lab = C.active_object
+    assert bpy.ops.ctk.pin_to_camera(how='FOLLOW') == {'FINISHED'} and lab.parent == cam
+    C.view_layer.update(); w0 = lab.matrix_world.translation.copy()
+    assert (w0 - __import__('mathutils').Vector((0, -3, 1))).length < 1e-4, w0
+    cam.location.x += 2; C.view_layer.update()
+    assert abs(lab.matrix_world.translation.x - 2) < 1e-4
+    assert bpy.ops.ctk.pin_to_camera(how='FREE') == {'FINISHED'} and lab.parent is None
+    if vault.online_supported():
+        bpy.ops.mesh.primitive_cube_add(); o = C.active_object
+        assert bpy.ops.ctk.vault_save(kind='OBJECTS', name='Online cube', category='Props', tags='') == {'FINISHED'}
+        d = vault.publish_listing()
+        found = [f for r, _, fs in os.walk(d) for f in fs if f.endswith('.json') and 'asset' in f]
+        assert found, os.listdir(d)
+        lib = vault.add_online('https://example.org/vault/')
+        assert lib.use_remote_url and lib.remote_url == 'https://example.org/vault/'
+        bpy.context.preferences.filepaths.asset_libraries.remove(lib)
