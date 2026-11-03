@@ -21,6 +21,7 @@ from . import paths
 from . import gnodes
 
 MOD_NAME = 'DSL Ink'
+DETAIL_STROKES = 10.0   # an object fewer strokes across than this draws only its outline
 INK_HEX = '#1F1F1D'
 MUSTARD_HEX = '#E0A64B'
 
@@ -347,8 +348,14 @@ def compute_creases(me, angle_deg=32.0, groups_attr='dsl_group'):
 
 
 def ink_group():
-    """DSL_Ink: Bunny's DS_InkOutline (fill + silhouette) plus crease tubes."""
-    name = 'DSL_Ink'
+    """DSL_Ink: Bunny's DS_InkOutline (fill + silhouette) plus crease tubes.
+
+    Detail lines (creases, and the line pass's seams via the ds_coarse attribute) only draw
+    while the object is at least DETAIL_STROKES strokes across on screen. A cup across the
+    room keeps its outline but drops its rim and handle lines, so it never closes up into a
+    blob of ink; walk the camera in and they come back. The stroke itself never changes
+    width (user, 2026-11-03)."""
+    name = 'DSL_Ink 2'   # new name: sets saved with the old group build this one fresh
     ng = bpy.data.node_groups.get(name)
     if ng:
         return ng
@@ -363,15 +370,38 @@ def ink_group():
             if hasattr(item, 'default_value') and hasattr(s, 'default_value'):
                 s.default_value = item.default_value
     _sock(ng, 'Lines', 'NodeSocketBool', default=True)
+    _sock(ng, 'Detail Strokes', 'NodeSocketFloat', default=DETAIL_STROKES)
     _sock(ng, 'Line Material', 'NodeSocketMaterial')
     _sock(ng, 'Geometry', 'NodeSocketGeometry', io='OUTPUT')
     g = G(ng)
     gi = g.node('NodeGroupInput')
     go = g.node('NodeGroupOutput')
+    # how many strokes across the object is on screen: its bound-box diagonal over the
+    # frame's world size there (the mean over its points), over the stroke's frame fraction
+    pxd = g.node('GeometryNodeGroup')
+    pxd.node_tree = lk.pixel_size_group()
+    for k in ('Camera', 'Orthographic', 'Ortho Scale', 'Sensor / Focal'):
+        g.link(gi.outputs[k], pxd.inputs[k])
+    stat = g.node('GeometryNodeAttributeStatistic', data_type='FLOAT', domain='POINT')
+    g.link(gi.outputs['Geometry'], stat.inputs['Geometry'])
+    g.link(pxd.outputs[0], stat.inputs['Attribute'])
+    bb = g.node('GeometryNodeBoundBox')
+    g.link(gi.outputs['Geometry'], bb.inputs['Geometry'])
+    diag = g.vmath('LENGTH', g.vmath('SUBTRACT', bb.outputs['Max'], bb.outputs['Min']))
+    strokes = g.math('DIVIDE', g.math('DIVIDE', diag, g.math('MAXIMUM', stat.outputs['Mean'], 1e-6)),
+                     g.math('MAXIMUM', gi.outputs['Ink Fraction'], 1e-6))
+    detail = g.math('GREATER_THAN', strokes, gi.outputs['Detail Strokes'])
+    store = g.node('GeometryNodeStoreNamedAttribute', data_type='FLOAT', domain='CORNER')
+    store.inputs['Name'].default_value = 'ds_coarse'   # 1: too small for detail (missing = detail on)
+    g.link(gi.outputs['Geometry'], store.inputs['Geometry'])
+    g.link(g.math('SUBTRACT', 1.0, detail), store.inputs['Value'])
+    src = store.outputs[0]
     hull = g.node('GeometryNodeGroup')
     hull.node_tree = hull_tree
     for s in hull.inputs:
-        if s.name in gi.outputs:
+        if s.name == 'Geometry':
+            g.link(src, s)
+        elif s.name in gi.outputs:
             g.link(gi.outputs[s.name], s)
     # crease edges -> curves -> tubes one ink wide (screen-constant)
     att = g.node('GeometryNodeInputNamedAttribute', data_type='BOOLEAN')
@@ -383,7 +413,7 @@ def ink_group():
     for k in ('Camera', 'Orthographic', 'Ortho Scale', 'Sensor / Focal'):
         g.link(gi.outputs[k], px0.inputs[k])
     lift = g.node('GeometryNodeSetPosition')
-    g.link(gi.outputs['Geometry'], lift.inputs['Geometry'])
+    g.link(src, lift.inputs['Geometry'])
     g.link(g.vmath('SCALE', g.node('GeometryNodeInputNormal').outputs[0],
                    scale=g.math('MULTIPLY', g.math('MULTIPLY', px0.outputs[0], gi.outputs['Ink Fraction']), 0.5)),
            lift.inputs['Offset'])
@@ -426,7 +456,10 @@ def ink_group():
     g.link(c2m.outputs[0], smat.inputs['Geometry'])
     g.link(gi.outputs['Line Material'], smat.inputs['Material'])
     sw = g.node('GeometryNodeSwitch', input_type='GEOMETRY')
-    g.link(gi.outputs['Lines'], sw.inputs['Switch'])
+    on = g.node('FunctionNodeBooleanMath', operation='AND')
+    g.link(gi.outputs['Lines'], on.inputs[0])
+    g.link(g.math('GREATER_THAN', detail, 0.5), on.inputs[1])
+    g.link(on.outputs[0], sw.inputs['Switch'])
     g.link(smat.outputs[0], sw.inputs['True'])
     join = g.node('GeometryNodeJoinGeometry')
     g.link(hull.outputs[0], join.inputs[0])

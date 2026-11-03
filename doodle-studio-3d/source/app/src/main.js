@@ -1724,9 +1724,21 @@ function buildPanel() {
         h('div', { class: 'col' }, autosavePanel()), h('div', { class: 'col' }, ...shelves('render:blender'))));
       api('settings', {}).then(st => { const el = $('#blender-path'); if (el) el.textContent = st.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
     } else {
+      // Line size (user, 2026-11-03): one control for every stroke in the shot, a lock that keeps it the same
+      // on screen at any camera distance or angle, and a button that copies both to every shot
+      const inkRow = () => {
+        const num = h('input', { type: 'number', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'width:4.5em' });
+        const sl = h('input', { type: 'range', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'flex:1' });
+        const set = v => { v = Math.max(40, Math.min(250, Math.round(Number(v) || 100))); pushUndo(); project.ink = v; num.value = sl.value = v; updateHud(); };
+        sl.addEventListener('input', () => { num.value = sl.value; }); sl.addEventListener('change', () => set(sl.value)); num.addEventListener('change', () => set(num.value));
+        const lock = h('input', { type: 'checkbox', checked: project.inkLock !== false, onchange: e => { pushUndo(); project.inkLock = e.target.checked ? undefined : false; updateHud(); } });
+        const all = h('button', { title: 'Copy this line size and lock to every shot in the scene', onclick: () => { pushUndo(); for (const sh of scene.shots) { sh.ink = project.ink ?? 100; sh.inkLock = project.inkLock; } all.textContent = 'Done ✓'; setTimeout(() => { all.textContent = 'Use for every shot'; }, 1500); } }, 'Use for every shot');
+        return h('div', {}, h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Line size for every stroke in this shot, as a percent of Bunny\'s usual line (100). All lines change together, so they stay equal.' }, 'Line size (%)', h('div', { class: 'row' }, sl, num)),
+          h('div', { class: 'row', style: 'margin:4px 0' }, h('label', { class: 'row', style: 'flex:1', title: 'On: every line stays the same size on screen however close or far the camera is, at any angle. Off: lines grow as the camera moves in and shrink as it pulls back.' }, lock, ' Same size at any distance or angle'), all));
+      };
       const field = (label, obj, key, attrs) => { const i = h('input', { ...attrs, value: obj[key] }); i.addEventListener('change', () => { pushUndo(); obj[key] = attrs.type === 'number' ? Number(i.value) : i.value; buildTimelineTools(); drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
       c.append(cols('two', [h('h3', {}, `Shot ${project.code}`), field('Name', project, 'label', { type: 'text', placeholder: 'optional, e.g. intro' }), field('Length (frames)', project, 'length', { type: 'number', min: 1, max: 54000 }),
-        h('span', { title: 'Line weight for this shot in Blender, as a percent of Doodle Studio\'s ink (100 = Bunny\'s usual weight). Every line in the shot changes together, so weights stay equal.' }, field('Line weight (%)', project, 'ink', { type: 'number', min: 40, max: 250, placeholder: '100' })),
+        inkRow(),
         rulesRow(),
         h('h3', {}, `Scene: ${scene.shots.length} shot${scene.shots.length > 1 ? 's' : ''}, ${(sceneFrames() / scene.fps).toFixed(1)} s`),
         field('Frame rate', scene, 'fps', { type: 'number', min: 12, max: 60 }),
@@ -3535,11 +3547,11 @@ function loop() {
     // Materials tab (materials.js): list looks and palettes, apply a look to a target, clear it, set the light
     materials(a) { return MAT.mcp(matCtx(), a || {}); },
     setShotLook(p) {
-      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink)));
+      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); if (p.inkLock != null) project.inkLock = p.inkLock ? undefined : false;
       for (const [k, v] of Object.entries(p.rules || {})) if (RULES.some(r => r[0] === k)) { project.rules ||= {}; if (v === false) project.rules[k] = false; else delete project.rules[k]; }
       if (p.captionSnap != null) { P.captionsOf(scene).snap = p.captionSnap ? undefined : false; drawPost(); }
       apply(); buildPanel();
-      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
+      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, inkLock: project.inkLock !== false, rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
     },
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
