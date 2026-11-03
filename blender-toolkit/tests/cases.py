@@ -730,3 +730,32 @@ def speed_playback_online_pin():
         lib = vault.add_online('https://example.org/vault/')
         assert lib.use_remote_url and lib.remote_url == 'https://example.org/vault/'
         bpy.context.preferences.filepaths.asset_libraries.remove(lib)
+
+
+@case
+def blobs_smoke_soft():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import shapes52 as sh
+    sc = C.scene
+    def nverts(o):
+        e = o.evaluated_get(C.evaluated_depsgraph_get()); return len(e.data.vertices)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(8, 0, 0)); cube = C.active_object
+    assert bpy.ops.ctk.soft_toy() == {'FINISHED'}
+    assert nverts(cube) > 8
+    if not sh.sdf_available():
+        print('  (blob/smoke skipped: needs 5.2)')
+        return
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.5, location=(0, 0, 0)); a = C.active_object
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.4, location=(0.7, 0, 0)); b = C.active_object
+    a.select_set(True); b.select_set(True)
+    assert bpy.ops.ctk.blob() == {'FINISHED'}
+    blob = C.active_object
+    assert nverts(blob) > 100 and a.hide_render
+    assert bpy.ops.ctk.blob_apply() == {'FINISHED'} and len(blob.modifiers) == 0 and len(blob.data.vertices) > 100
+    for k, *_ in sh.SMOKES:
+        assert bpy.ops.ctk.toon_smoke(kind=k) == {'FINISHED'}, k
+    trail = next(o for o in sc.objects if o.name.startswith('Smoke trail'))
+    sc.frame_set(10); n1 = nverts(trail)
+    e = trail.evaluated_get(C.evaluated_depsgraph_get()); z1 = max(v.co.z for v in e.data.vertices)
+    sc.frame_set(30); e = trail.evaluated_get(C.evaluated_depsgraph_get())
+    assert n1 > 50 and abs(max(v.co.z for v in e.data.vertices) - z1) > 1e-3
