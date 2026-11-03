@@ -551,3 +551,37 @@ def starter_templates():
     assert os.path.exists(p) and 'My reel' in templates.my_templates()
     s2 = templates.load_mine('My reel')
     assert s2.render.resolution_y == 1920
+
+
+@case
+def doodle_library_browser():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    import json, tempfile
+    lib = tempfile.mkdtemp()
+    os.environ['DSL_LIBRARY'] = lib
+    bpy.ops.mesh.primitive_cube_add(); cub = C.active_object; cub.name = 'PROP_mug'
+    os.makedirs(os.path.join(lib, 'props')); os.makedirs(os.path.join(lib, 'previews', 'prop'))
+    bpy.data.libraries.write(os.path.join(lib, 'props', 'mug.blend'), {cub})
+    im = bpy.data.images.new('p', 8, 8); im.filepath_raw = os.path.join(lib, 'previews', 'prop', 'prop-mug.png'); im.file_format = 'PNG'; im.save()
+    json.dump({'version': 1, 'items': [
+        {'id': 'prop-mug', 'category': 'prop', 'name': 'Mug', 'file': 'props/mug.blend', 'datablock': 'PROP_mug',
+         'preview': 'previews/prop/prop-mug.png', 'tags': ['kitchen']},
+        {'id': 'face-01', 'category': 'expression', 'name': 'Happy'}]}, open(os.path.join(lib, 'library.json'), 'w'))
+    bpy.data.objects.remove(cub)
+    from creator_toolkit.modules import doodle
+    doodle._cache['mtime'] = None
+    p = C.scene.ctk_doodle
+    p.category = 'prop'
+    items = doodle._items(p, C)
+    assert items[0][0] == 'prop-mug' and len(doodle._previews()) == 1, items  # icon ids are 0 without a GPU
+    p.search = 'kitch'
+    assert doodle.filtered('prop', 'kitch')
+    assert bpy.ops.ctk.doodle_insert(item='prop-mug') == {'FINISHED'}
+    assert any(o.get('dsl_id') == 'prop-mug' for o in C.scene.objects)
+    if not doodle.dl_api():
+        try:
+            doodle.insert('face-01')
+            raise AssertionError('should need the add-on')
+        except RuntimeError:
+            pass
+    del os.environ['DSL_LIBRARY']

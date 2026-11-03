@@ -15,7 +15,7 @@ import bpy
 from . import compat  # noqa: F401
 
 _NAMES = [
-    'vault', 'cleanimport', 'material', 'style', 'palette', 'lights',
+    'vault', 'doodle', 'cleanimport', 'material', 'style', 'palette', 'lights',
     'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'lipsync',
     'kinetic', 'camera', 'gnkit', 'gpkit', 'nodetidy',
     'deliver', 'templates', 'turntable', 'pie', 'updates',
@@ -86,6 +86,9 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         name='Projects folder', subtype='DIR_PATH',
         description='Deliver panel makes <Project>\\ and <Project>\\work\\ here',
         default='')
+    doodle_lib_dir: bpy.props.StringProperty(
+        name='Doodle Library folder', subtype='DIR_PATH', default='',
+        description='Only needed without the Doodle Library add-on. Default: Documents/Talking Character App/blender-library')
     auto_update_check: bpy.props.BoolProperty(
         name='Check for updates when Blender starts', default=True,
         description='Looks at GitHub once per start (needs Allow Online Access). Nothing installs without your click')
@@ -99,6 +102,7 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         c.prop(self, 'vault_dir')
         c.prop(self, 'deliver_root')
         c.prop(self, 'rhubarb_path')
+        c.prop(self, 'doodle_lib_dir')
         c.prop(self, 'auto_update_check')
 
 
