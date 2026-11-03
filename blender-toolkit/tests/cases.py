@@ -303,6 +303,31 @@ def tween_and_ease():
     assert all(kp.interpolation == 'BEZIER' for fc in fcurves_of(o) for kp in fc.keyframe_points)
 
 
+    # anim offset: change the pose on one frame, every key moves by the same amount
+    C.scene.ctk_offset.span = 'ALL'
+    o.animation_data_clear()
+    o.location.x = 0; o.keyframe_insert('location', index=0, frame=1)
+    o.location.x = 10; o.keyframe_insert('location', index=0, frame=21)
+    C.scene.frame_set(11)
+    o.location.x += 3
+    assert bpy.ops.ctk.anim_offset() == {'FINISHED'}
+    ys = sorted(round(k.co.y, 4) for fc in fcurves_of(o) for k in fc.keyframe_points)
+    assert ys == [3.0, 13.0], ys
+    # around the playhead: the far key keeps most of its value
+    C.scene.ctk_offset.span = 'AROUND'; C.scene.ctk_offset.hold = 0; C.scene.ctk_offset.blend = 15
+    C.scene.frame_set(1)
+    o.location.x += 2
+    bpy.ops.ctk.anim_offset()
+    ys = [k.co.y for fc in fcurves_of(o) for k in sorted(fc.keyframe_points, key=lambda k: k.co.x)]
+    assert abs(ys[0] - 5.0) < 1e-4 and abs(ys[1] - 13.0) < 1e-4, ys
+    # live mode through the update handler
+    C.scene.ctk_offset.span = 'ALL'; C.scene.ctk_offset.live = True
+    o.location.x += 1
+    C.view_layer.update()
+    ys2 = [k.co.y for fc in fcurves_of(o) for k in sorted(fc.keyframe_points, key=lambda k: k.co.x)]
+    assert [round(y, 4) for y in ys2] == [6.0, 14.0], ys2
+    C.scene.ctk_offset.live = False
+
 def _voice_wav(path, seconds=3.0):
     import wave
     import numpy as np

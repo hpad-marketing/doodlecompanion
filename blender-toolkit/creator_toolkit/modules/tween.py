@@ -1,5 +1,7 @@
-"""Tweening and easing: breakdown slider, ease presets, stepped/smooth switch (AnimAide-style)."""
+"""Tweening and easing: breakdown slider, ease presets, key the pose, and anim offset
+(change the pose on one frame and the same change carries across the existing keys)."""
 import bpy
+from bpy.app.handlers import persistent
 from ..compat import fcurves_of
 
 LABEL, ICON, GROUP = 'Tween + ease', 'IPO_EASE_IN_OUT', 'Animation'
@@ -137,12 +139,156 @@ class CTK_OT_key_pose(bpy.types.Operator):
         return {'FINISHED'}
 
 
-CLASSES = (CTK_OT_breakdown, CTK_OT_ease, CTK_OT_key_pose)
+
+# ---------------- anim offset ----------------
+OFFSET_RANGES = [('ALL', 'Every key', 'The change moves every key of the selection'),
+                 ('PREVIEW', 'Frame range', 'Only keys inside the preview range (or the scene range)'),
+                 ('AROUND', 'Around the playhead', 'Full change near the playhead, fading out over the blend frames')]
+
+
+class CTK_OffsetProps(bpy.types.PropertyGroup):
+    live: bpy.props.BoolProperty(name='Anim offset', default=False,
+                                 description='While on, moving the selection offsets its existing keys instead of making new ones')
+    span: bpy.props.EnumProperty(name='Affect', items=OFFSET_RANGES, default='ALL')
+    hold: bpy.props.IntProperty(name='Full', default=0, min=0, max=10000,
+                                description='Frames on each side of the playhead that get the full change')
+    blend: bpy.props.IntProperty(name='Blend', default=10, min=0, max=10000,
+                                 description='Frames over which the change fades out after that')
+
+
+def _smooth(t):
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+def offset_weight(scene, x, f):
+    p = scene.ctk_offset
+    if p.span == 'ALL':
+        return 1.0
+    if p.span == 'PREVIEW':
+        a = scene.frame_preview_start if scene.use_preview_range else scene.frame_start
+        b = scene.frame_preview_end if scene.use_preview_range else scene.frame_end
+        return 1.0 if a - 0.01 <= x <= b + 0.01 else 0.0
+    d = abs(x - f) - p.hold
+    if d <= 0:
+        return 1.0
+    if p.blend <= 0:
+        return 0.0
+    return 1.0 - _smooth(d / p.blend)
+
+
+def _current(owner, fc):
+    try:
+        v = owner.path_resolve(fc.data_path)
+    except Exception:
+        return None
+    try:
+        return float(v[fc.array_index])
+    except TypeError:
+        try:
+            return float(v)
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+
+def offset_pairs(context):
+    out = []
+    for owner, prefix in _targets(context):
+        for fc in fcurves_of(owner):
+            if prefix and not fc.data_path.startswith(prefix):
+                continue
+            if not prefix and fc.data_path.startswith('pose.bones'):
+                continue
+            if fc.lock or fc.mute or len(fc.keyframe_points) == 0:
+                continue
+            out.append((owner, fc))
+    return out
+
+
+def apply_offset(context, eps=1e-6):
+    """Shift keys by (pose now - animation at this frame). Returns how many curves moved."""
+    scene = context.scene
+    f = scene.frame_current + scene.frame_subframe
+    moved = 0
+    for owner, fc in offset_pairs(context):
+        now = _current(owner, fc)
+        if now is None:
+            continue
+        delta = now - fc.evaluate(f)
+        if abs(delta) <= eps:
+            continue
+        for kp in fc.keyframe_points:
+            w = offset_weight(scene, kp.co.x, f)
+            if w <= 0:
+                continue
+            d = delta * w
+            kp.co.y += d
+            kp.handle_left.y += d
+            kp.handle_right.y += d
+        fc.update()
+        moved += 1
+    return moved
+
+
+_busy = [False]
+
+
+@persistent
+def _offset_handler(scene, depsgraph=None):
+    p = getattr(scene, 'ctk_offset', None)
+    if not p or not p.live or _busy[0] or bpy.app.is_job_running('RENDER'):
+        return
+    ctx = bpy.context
+    if getattr(ctx, 'scene', None) is not scene:
+        return
+    _busy[0] = True
+    try:
+        apply_offset(ctx)
+    except Exception:
+        pass
+    finally:
+        _busy[0] = False
+
+
+class CTK_OT_anim_offset(bpy.types.Operator):
+    """Carry the change you just made on this frame across the selection's existing keys"""
+    bl_idname = 'ctk.anim_offset'
+    bl_label = 'Offset keys by this change'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        n = apply_offset(context)
+        self.report({'INFO'}, f'Offset {n} curves' if n else 'Nothing changed on this frame')
+        return {'FINISHED'}
+
+
+def draw_offset(layout, context):
+    p = context.scene.ctk_offset
+    box = layout.box()
+    row = box.row(align=True)
+    row.scale_y = 1.2
+    row.prop(p, 'live', toggle=True, icon='MOD_OFFSET')
+    row.operator('ctk.anim_offset', text='', icon='CHECKMARK')
+    box.prop(p, 'span', text='')
+    if p.span == 'AROUND':
+        r = box.row(align=True)
+        r.prop(p, 'hold')
+        r.prop(p, 'blend')
+    if p.live and context.scene.tool_settings.use_keyframe_insert_auto:
+        box.label(text='Turn off auto-key while offsetting', icon='ERROR')
+
+
+CLASSES = (CTK_OT_breakdown, CTK_OT_ease, CTK_OT_key_pose, CTK_OffsetProps, CTK_OT_anim_offset)
 
 _km = []
 
 
 def register_extra():
+    bpy.types.Scene.ctk_offset = bpy.props.PointerProperty(type=CTK_OffsetProps)
+    if _offset_handler not in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.append(_offset_handler)
     kc = bpy.context.window_manager.keyconfigs.addon
     if kc:
         for space, name in (('EMPTY', 'Object Mode'), ('EMPTY', 'Pose')):
@@ -152,6 +298,10 @@ def register_extra():
 
 
 def unregister_extra():
+    if _offset_handler in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(_offset_handler)
+    if hasattr(bpy.types.Scene, 'ctk_offset'):
+        del bpy.types.Scene.ctk_offset
     for km, kmi in _km:
         try:
             km.keymap_items.remove(kmi)
@@ -173,3 +323,4 @@ def draw(layout, context):
     for k, label, *_ in EASES:
         grid.operator('ctk.ease', text=label).kind = k
     layout.operator('ctk.key_pose', icon='KEYINGSET')
+    draw_offset(layout, context)
