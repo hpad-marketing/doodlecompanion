@@ -38,13 +38,21 @@ def setting(node, prop, value, menu=None):
         s = next((s for s in node.inputs if s.name == n and s.type == 'MENU'), None)
         if s is None:
             continue
+        err = ''
         for cand in (value, value.replace('_', ' ').title(), value.title(), value.capitalize(),
                      value.split('_')[-1].title(), value.split('_')[0].title()):
             try:
                 s.default_value = cand
                 return
-            except (TypeError, ValueError):
-                continue
+            except (TypeError, ValueError) as e:
+                err = str(e)
+        # last try: match the menu's own spellings, ignoring case and punctuation ('NGONS' -> 'N-gons')
+        import re
+        key = re.sub('[^a-z0-9]', '', value.lower())
+        for opt in re.findall(r"'([^']*)'", err.split('not found in', 1)[-1]):
+            if re.sub('[^a-z0-9]', '', opt.lower()) == key:
+                s.default_value = opt
+                return
     raise AttributeError('cannot set %s=%s on %s' % (prop, value, node.bl_idname))
 
 

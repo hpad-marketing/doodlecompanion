@@ -864,3 +864,57 @@ def ink_and_radial():
     sw = next(m for m in mats if m['ctk_radial'] == 'SWIRL')
     assert sw.node_tree.animation_data and sw.node_tree.animation_data.drivers
 
+
+
+def _eval_mesh(o):
+    dg = C.evaluated_depsgraph_get()
+    e = o.evaluated_get(dg)
+    me = e.to_mesh()
+    vs = [tuple(v.co) for v in me.vertices]
+    e.to_mesh_clear()
+    return vs
+
+
+@case
+def procedural_text():
+    from creator_toolkit.modules import text52, _nodes
+    fresh()
+    sc = C.scene
+    tw = text52.add_text(C, 'TYPEWRITER', 'Hello there')
+    m = tw.modifiers[text52.MOD]
+    _nodes.set_input(m, 'Start frame', 1); _nodes.set_input(m, 'Duration (frames)', 20)
+    sc.frame_set(1); n0 = len(_eval_mesh(tw))
+    sc.frame_set(11); n1 = len(_eval_mesh(tw))
+    sc.frame_set(30); n2 = len(_eval_mesh(tw))
+    assert n0 == 0 < n1 < n2, (n0, n1, n2)
+    wv = text52.add_text(C, 'WAVE', 'Wavy')
+    sc.frame_set(1); a = _eval_mesh(wv); sc.frame_set(7); b = _eval_mesh(wv)
+    assert a and len(a) == len(b) and a != b
+    ac = text52.add_text(C, 'ALONG_CURVE', 'Round we go')
+    sc.frame_set(1); vs = _eval_mesh(ac)
+    assert vs and max(v[1] for v in vs) - min(v[1] for v in vs) > 1.0, 'letters should follow the arc'
+    if not text52.new_52():
+        print('  (commas and word pop skipped: needs 5.2)')
+        return
+    ct = text52.add_text(C, 'COUNTER')
+    cm = ct.modifiers[text52.MOD]
+    _nodes.set_input(cm, 'Duration (frames)', 20)
+    ref = text52.add_text(C, 'TYPEWRITER', '10,000 followers')
+    rm = ref.modifiers[text52.MOD]; _nodes.set_input(rm, 'Duration (frames)', 1); _nodes.set_input(rm, 'Start frame', -10)
+    ref2 = text52.add_text(C, 'TYPEWRITER', '0 followers')
+    _nodes.set_input(ref2.modifiers[text52.MOD], 'Duration (frames)', 1); _nodes.set_input(ref2.modifiers[text52.MOD], 'Start frame', -10)
+    sc.frame_set(1)
+    assert len(_eval_mesh(ct)) == len(_eval_mesh(ref2)), 'counter starts at 0'
+    sc.frame_set(40)
+    shape = lambda o: sorted((round(v[0], 3), round(v[1], 3)) for v in _eval_mesh(o))
+    assert shape(ct) == shape(ref), 'counter should read exactly 10,000 followers'
+    _nodes.set_input(cm, 'To', 1234567.0)
+    _nodes.set_input(rm, 'Text', '1,234,567 followers')
+    ct.update_tag(); ref.update_tag()
+    assert shape(ct) == shape(ref), 'counter should read 1,234,567 followers'
+    wd = text52.add_text(C, 'WORDS', 'one two three')
+    _nodes.set_input(wd.modifiers[text52.MOD], 'Depth', 0.1)
+    sc.frame_set(1); v1 = _eval_mesh(wd)
+    sc.frame_set(80); v2 = _eval_mesh(wd)
+    span = lambda vs: max(v[0] for v in vs) - min(v[0] for v in vs) if vs else 0
+    assert span(v1) < span(v2) and len({round(v[2], 3) for v in v2}) >= 2, 'words pop and have depth'
