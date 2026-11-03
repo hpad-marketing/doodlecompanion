@@ -152,3 +152,109 @@ def light_rigs():
     name = rig.children[0].name
     assert bpy.ops.ctk.light_solo(name=name) == {'FINISHED'}
     assert bpy.ops.ctk.light_solo(name=name) == {'FINISHED'}
+
+
+def select_only(o):
+    for s in C.selected_objects:
+        s.select_set(False)
+    o.select_set(True)
+    C.view_layer.objects.active = o
+
+
+@case
+def rig_builder_and_springs():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.4, depth=2, location=(0, 0, 1))
+    body = C.active_object
+    body.name = 'Body'
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.subdivide(number_cuts=8)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    p = C.scene.ctk_rig
+    p.use_ears = True
+    p.use_tail = True
+    select_only(body)
+    assert bpy.ops.ctk.rig_markers() == {'FINISHED'}
+    assert bpy.data.objects.get('M:ear.L')
+    assert bpy.ops.ctk.rig_build() == {'FINISHED'}
+    rig = bpy.data.objects['Body Rig']
+    names = set(rig.pose.bones.keys())
+    for n in ('hips', 'head', 'upper_arm.R', 'IK_foot.L', 'ear_tip.R', 'tail.3'):
+        assert n in names, (n, names)
+    assert body.parent == rig and len(body.vertex_groups) > 5
+    assert 'IK arm L' in rig.keys()
+    # FK/IK driver works
+    rig['IK arm L'] = 0.0
+    rig.update_tag(); C.view_layer.update()
+    assert rig.pose.bones['forearm.L'].constraints['CTK IK'].influence == 0.0
+    # springs: move the head and check the ear lags then settles
+    select_only(rig)
+    bpy.ops.object.mode_set(mode='POSE')
+    head = rig.pose.bones['head']
+    head.rotation_mode = 'XYZ'
+    sc = C.scene
+    sc.frame_start, sc.frame_end = 1, 40
+    head.rotation_euler = (0, 0, 0); head.keyframe_insert('rotation_euler', frame=1)
+    head.rotation_euler = (0, 0.8, 0); head.keyframe_insert('rotation_euler', frame=5)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    lags = []
+    for f in range(1, 41):
+        sc.frame_set(f)
+        lags.append(abs(rig.pose.bones['ear_tip.L'].get('ctk_L', [1, 0, 0, 0])[0] - 1))
+    assert max(lags[3:10]) > 1e-4, lags
+    assert lags[-1] < max(lags), lags
+    select_only(rig)
+    assert bpy.ops.ctk.spring_bake() == {'FINISHED'}
+    assert rig.pose.bones['ear.L'].get('ctk_spring_baked')
+
+
+@case
+def mocap_retarget():
+    rig = bpy.data.objects['Body Rig']
+    # make a fake source skeleton with Mixamo names by duplicating our rig and renaming
+    src = rig.copy(); src.data = rig.data.copy(); src.animation_data_clear()
+    C.scene.collection.objects.link(src)
+    ren = {'hips': 'mixamorig:Hips', 'chest': 'mixamorig:Spine2', 'head': 'mixamorig:Head',
+           'upper_arm.L': 'mixamorig:LeftArm', 'forearm.L': 'mixamorig:LeftForeArm'}
+    for a, b in ren.items():
+        src.data.bones[a].name = b
+    for pb in src.pose.bones:
+        for c in list(pb.constraints):
+            pb.constraints.remove(c)
+    pb = src.pose.bones['mixamorig:LeftArm']
+    pb.rotation_mode = 'XYZ'
+    pb.rotation_euler = (0, 0, 0); pb.keyframe_insert('rotation_euler', frame=1)
+    pb.rotation_euler = (0.9, 0, 0); pb.keyframe_insert('rotation_euler', frame=10)
+    from creator_toolkit.modules.mocap import retarget
+    bmap, rng = retarget(C, src, rig, 1, 10)
+    assert bmap.get('upper_arm.L') == 'mixamorig:LeftArm', bmap
+    C.scene.frame_set(10)
+    C.view_layer.update()
+    a = (src.matrix_world @ src.pose.bones['mixamorig:LeftArm'].tail)
+    b = (rig.matrix_world @ rig.pose.bones['upper_arm.L'].tail)
+    assert (a - b).length < 1e-3, (a, b)
+
+
+@case
+def thing_rigs():
+    bpy.ops.mesh.primitive_cube_add(location=(5, 0, 0)); door = C.active_object
+    C.scene.cursor.location = (4, 0, 0)
+    assert bpy.ops.ctk.thing_rig(kind='HINGE', axis='Z') == {'FINISHED'}
+    piv = C.active_object
+    piv['open'] = 1.0
+    piv.update_tag(); C.view_layer.update()
+    assert abs(piv.rotation_euler.z - 1.9199) < 1e-3, piv.rotation_euler
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.5, depth=0.2, location=(8, 0, 0.5)); wh = C.active_object
+    assert bpy.ops.ctk.thing_rig(kind='WHEEL', axis='X') == {'FINISHED'}
+    ctl = C.active_object
+    ctl.location.y += 3.14159 * 0.5 * 2
+    ctl.update_tag(); C.view_layer.update()
+    assert abs(abs(wh.rotation_euler.x) - 6.2832) < 0.01, wh.rotation_euler
+    bpy.ops.mesh.primitive_cube_add(location=(0, 6, 0)); sq = C.active_object
+    for k in ('SQUASH', 'BEND', 'LOOK'):
+        select_only(sq)
+        assert bpy.ops.ctk.thing_rig(kind=k) == {'FINISHED'}, k
+    bpy.ops.curve.primitive_bezier_circle_add(radius=3); cv = C.active_object
+    bpy.ops.mesh.primitive_cube_add(size=0.3); car = C.active_object
+    cv.select_set(True)
+    assert bpy.ops.ctk.thing_rig(kind='FOLLOW', frames=50) == {'FINISHED'}
