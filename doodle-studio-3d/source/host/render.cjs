@@ -10,10 +10,13 @@ const BLENDER_GUESSES = [
   'C:\\Program Files\\Blender Foundation\\Blender 4.5\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 4.4\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 5.0\\blender.exe',
+  'C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe',
+  'C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe',
 ];
 
 module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
-  let job = null;
+  let job = null, last = null;
+  const remember = j => { last = { id: j.id, state: j.state, rules: j.rules || null, detail: j.detail || null, output: j.video || j.out || null, at: new Date(j.ended).toISOString() }; };
   const queue = [];
   const blender = () => [settings.get().blender, ...BLENDER_GUESSES].find(p => p && fs.existsSync(p));
   const libraryDir = () => settings.get().libraryDir;
@@ -255,7 +258,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
       const j = { id: `${base(req.name)} carousel`, name: req.name, req, scene, frames: req.slides.length, frame: 0, frameBase: -1e9, state: 'rendering', rules: null, started: Date.now(), shots: [] };
       job = j;
       runCarousel(j).catch(e => { j.state = 'failed'; j.detail = String(e && e.message || e); }).finally(() => {
-        j.ended = Date.now(); notify(j); job = null;
+        j.ended = Date.now(); remember(j); notify(j); job = null;
         next();
       });
       return j;
@@ -267,6 +270,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     runJob(j).catch(e => { j.state = 'failed'; j.detail = String(e && e.message || e); }).finally(() => {
       j.ended = Date.now();
       learn(j);
+      remember(j);
       notify(j);
       job = null;
       next();
@@ -283,6 +287,8 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
 
   // ---- Blender versions: a new Blender is used only after it renders a test frame
   const ROOT = 'C:\\Program Files\\Blender Foundation';
+  // '5.10' sorts after '5.9' (parseFloat would put it before 5.2)
+  const vnum = v => { const m = String(v).match(/(\d+)\.(\d+)/); return m ? Number(m[1]) * 1000 + Number(m[2]) : -1; };
   function findBlenders() {
     const found = [];
     try {
@@ -296,7 +302,7 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     if (custom && fs.existsSync(custom) && !found.some(f => f.path === custom)) found.push({ path: custom, version: '?' });
     const verified = settings.get().blenderVerified || {};
     return found.map(f => ({ ...f, verified: verified[f.path] || null, inUse: f.path === blender() }))
-      .sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
+      .sort((a, b) => vnum(b.version) - vnum(a.version));
   }
 
   function verify(exe, dataDir) {
@@ -357,10 +363,11 @@ module.exports = ({ appDir, settings, notify, onIdle = () => {} }) => {
     rate: () => settings.get().renderRate || {},
     busy: () => !!job || queue.length > 0,
     status() {
-      if (!job) return { state: 'idle', queued: queue.length };
+      // idle also says how the last job ended, so a caller polling over MCP sees a failed render
+      if (!job) return { state: 'idle', queued: queue.length, ...(last ? { last } : {}) };
       const el = (Date.now() - job.started) / 1000;
-      const eta = job.frame > 2 ? Math.round(el / job.frame * (job.frames - job.frame)) : null;
-      return { state: job.state, id: job.id, step: job.step, frame: Math.min(job.frame, job.frames), frames: job.frames, eta, queued: queue.length };
+      const eta = job.frame > 2 ? Math.round(el / job.frame * (job.frames - job.frame)) : null;  // seconds
+      return { state: job.state, id: job.id, step: job.step, frame: Math.min(job.frame, job.frames), frames: job.frames, eta, etaMin: eta == null ? null : Math.round(eta / 6) / 10, queued: queue.length };
     },
     cancel() {
       if (!job) return { message: 'Nothing is rendering' };

@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 doodle-studio-3d/source/devout/
 doodle-studio-3d/source/mcp_test.png
+doodle-studio-3d/source/results.json

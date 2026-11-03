@@ -253,11 +253,29 @@ export class Stage {
     }
     return inks;
   }
-  // hex and colours from the palette, nothing for plain mustard
-  paintParts(root, hex, colours, accent, flower) {
-    const inks = this.segment(root, flower);
-    this.setFill(root, this.fillFor(hex, null, colours));
-    if (flower) for (const c of inks) c.material = accent ? this.fillFor(accent) : this.inkMats.ink;
+  // hex and colours from the palette (none for plain mustard); over: this piece's parts chosen by hand
+  paintParts(root, hex, colours, accent, flower, over) {
+    const inks = this.segment(root, flower), o = over || {}, base = hex || '#E0A64B', list = colours || [base];
+    const cols = Array.from({ length: PARTS }, (_, i) => o[i] || (i || !o[0] ? (colours ? list[i % list.length] : base) : o[0]));
+    this.setFill(root, hex || Object.keys(o).length ? this.fillFor(o[0] || base, null, cols) : this.fill);
+    const centre = o.c || accent;
+    if (flower) for (const c of inks) c.material = centre ? this.fillFor(centre) : this.inkMats.ink;
+    root.userData.cols = { cols: [o[0] || base, ...cols.slice(1)], centre };
+  }
+  // what the Materials list shows: every piece and prop in the shot, its parts and their colours now
+  pieceList() {
+    const out = [];
+    const row = (root, name, extra, flower) => {
+      let n = 1;
+      root.traverse(o => { const a = o.userData.isFill && o.geometry?.getAttribute?.('part'); if (a) for (let i = 0; i < a.count; i++) n = Math.max(n, a.getX(i) + 1); });
+      const c = root.userData.cols, label = i => (flower ? ['Petals', 'Stems'][i] : n > 1 ? (i ? 'Part ' + (i + 1) : 'Main') : 'Colour') || 'Part ' + (i + 1);
+      const parts = Array.from({ length: Math.min(n, PARTS) }, (_, i) => ({ key: String(i), label: label(i), colour: c?.cols[i] || '#E0A64B' }));
+      if (flower) parts.push({ key: 'c', label: 'Centres', colour: c?.centre || '#1F1F1D' });
+      out.push({ name, parts, ...extra });
+    };
+    this.setGroup?.traverse(o => { const u = o.userData; if (u.ds_prop && !u.ds_shell && !u.ds_on && o.visible) row(o, u.dsl_label || u.ds_prop, { piece: u.ds_prop }, /flower/.test(u.dsl_model || u.ds_prop)); });
+    this.items.forEach((r, i) => { if (r?.cat === 'prop' || r?.cat === 'scenery') row(r.obj, this.ctx.rows().get(r.id)?.name || r.id, { item: i }, /flower/.test(r.id)); });
+    return out;
   }
   setFill(root, m) { root.traverse(o => { if (o.userData.isFill) o.material = m; }); }
   // one object's outline as a percent of Bunny's line; 0 takes it off
@@ -325,7 +343,7 @@ export class Stage {
     if (paintSig !== this.paintSig && this.setGroup) {
       this.paintSig = paintSig;
       const set = paint?.set;
-      this.setGroup.traverse(o => { const u = o.userData; if (!u.ds_prop) return; if (u.ds_shell) this.setFill(o, set ? this.fillFor(set.wall, set) : this.fill); else { const hex = set?.piece(u.ds_prop); this.paintParts(o, hex, hex && set.colours(hex), set?.accent, /flower/.test(u.dsl_model || u.ds_prop)); } });
+      this.setGroup.traverse(o => { const u = o.userData; if (!u.ds_prop) return; if (u.ds_shell) this.setFill(o, set ? this.fillFor(set.wall, set) : this.fill); else { const hex = set?.piece(u.ds_prop); this.paintParts(o, hex, hex && set.colours(hex), set?.accent, /flower/.test(u.dsl_model || u.ds_prop), paint?.parts?.[u.ds_prop]); } });
       this.view.scene.background.set(set ? set.ceiling : MUSTARD);
     }
     for (const who of [this.view, ...(this.view.actors || [])]) who.setColours(paint?.char?.body, paint?.char?.outfit);
@@ -343,8 +361,8 @@ export class Stage {
         rec.obj.traverse(o => { o.userData.item = i; });
         this.root.add(rec.obj);
       }
-      const fill = paint?.item(it) || null;
-      if (rec.fill !== fill) { rec.fill = fill; const c = paint?.itemParts(it); this.paintParts(rec.obj, fill, c?.colours, c?.accent, /flower/.test(it.id)); }
+      const fill = (paint?.item(it) || '') + JSON.stringify(it.parts || null);
+      if (rec.fill !== fill) { rec.fill = fill; const c = paint?.itemParts(it); this.paintParts(rec.obj, paint?.item(it) || null, c?.colours, c?.accent, /flower/.test(it.id), it.parts); }
       const ink = noInk.item?.(it) ? 0 : it.ink ?? 100;
       if (rec.ink !== ink) { rec.ink = ink; this.setInk(rec.obj, ink); }
       const end = it.until ?? (kind === 'react' ? it.frame + REACT_FRAMES : kind === 'story' && STORY_FRAMES[it.id.split(':')[1]] ? it.frame + STORY_FRAMES[it.id.split(':')[1]] : length);

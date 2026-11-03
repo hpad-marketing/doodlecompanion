@@ -59,7 +59,7 @@ global.setInterval = () => 0;
   ok(fs.readFileSync(path.join(res2, 'main.cjs'), 'utf8') === 'main v3', 'v3 files installed');
   ok(asked === 1, 'no second dialog stacked on the open one');
   answer({ response: 1 }); await first;
-  fs.writeFileSync(path.join(T2, '.update', 'lock'), '');
+  fs.writeFileSync(path.join(T2, '.update', 'lock'), String(process.pid));
   // the late answer must not have freed anything a newer check holds; a fresh check now sees the lock
   r = await u2.check();
   ok(r === 'busy', 'lock held by someone else is respected: ' + r);

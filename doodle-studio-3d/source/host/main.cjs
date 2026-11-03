@@ -211,8 +211,8 @@ const api = {
   async 'read-png'({ path: p }) { return { data: fs.readFileSync(insideRenders(p)).toString('base64') }; },
   async 'write-png'({ path: p, data }) { const f = insideRenders(p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f }; },
   async 'write-file'({ path: p, data }) {
-    if (!/[.](webm|mp4|png|json|txt|wav|srt|csv)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
-    const f = insideRenders(p, ['.webm', '.mp4', '.png', '.json', '.txt', '.wav', '.srt', '.csv']); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
+    if (!/[.](webm|mp4|png|json|txt|wav|srt|csv|mid|mp3|ogg|flac|m4a|aac)$/i.test(String(p))) throw Error('Only video, image, sound and text files');
+    const f = insideRenders(p, ['.webm', '.mp4', '.png', '.json', '.txt', '.wav', '.srt', '.csv', '.mid', '.mp3', '.ogg', '.flac', '.m4a', '.aac']); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(String(data), 'base64')); return { path: f };
   },
   // scene audio: any voice or music file the user picks
   async 'pick-audio'() {
@@ -241,6 +241,26 @@ const api = {
     return { text: fs.readFileSync(p, 'utf8') };
   },
   async 'ref-video'({ path: p }) { return require('./server.cjs').registerRef(p); },
+  // Music workspace: the General MIDI instruments that do not come with the app download once
+  // (FluidR3 GM, CC-BY 3.0, rendered by gleitz/midi-js-soundfonts) into DoodleStudio3D\sounds
+  async 'music-sounds'() {
+    const root = path.join(dataDir, 'sounds', 'fluidr3'), sounds = {};
+    try { for (const n of fs.readdirSync(root)) { const d = path.join(root, n); if (fs.statSync(d).isDirectory()) { const notes = fs.readdirSync(d).filter(f => f.endsWith('.mp3')).map(f => f.slice(0, -4)); if (notes.length) sounds[n] = notes; } } } catch {}
+    return { sounds };
+  },
+  async 'music-get-sound'({ name }) {
+    const names = JSON.parse(fs.readFileSync(path.join(appDir, 'ui', 'vendor', 'sounds', 'fluidr3', 'names.json'), 'utf8'));
+    if (!/^[a-z0-9_]+$/.test(String(name)) || !names.includes(name)) throw Error('Unknown instrument ' + name);
+    const dir = path.join(dataDir, 'sounds', 'fluidr3', name); fs.mkdirSync(dir, { recursive: true });
+    let notes = 0;
+    for (let o = 1; o <= 7; o++) for (const n of ['C', 'Eb', 'Gb', 'A']) {
+      const f = path.join(dir, `${n}${o}.mp3`);
+      if (fs.existsSync(f) && fs.statSync(f).size > 0) { notes++; continue; }
+      try { const r = await net.fetch(`https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/${name}-mp3/${n}${o}.mp3`); if (r.ok) { fs.writeFileSync(f, Buffer.from(await r.arrayBuffer())); notes++; } } catch {}
+    }
+    if (!notes) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} throw Error('Could not download it. Check the internet connection and try again.'); }
+    return { name, notes };
+  },
   async 'read-audio'({ path: p }) {
     if (!/[.](wav|mp3|m4a|aac|ogg|flac)$/i.test(String(p))) throw Error('Not an audio file');
     if (fs.statSync(p).size > 300e6) throw Error('Audio file over 300 MB');
@@ -344,21 +364,46 @@ const api = {
   },
 };
 
+// crash-proofing: a stray error in the main process is logged (crash.log next to settings.json)
+// instead of stopping the app, so the window, the autosave and the MCP keep running
+const crashLog = what => e => { try { fs.appendFileSync(path.join(dataDir, 'crash.log'), `${new Date().toISOString()} ${what}: ${(e && e.stack) || e}\n`); } catch {} };
+process.on('uncaughtException', crashLog('uncaught'));
+process.on('unhandledRejection', crashLog('unhandled rejection'));
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { if (main) { if (main.isMinimized()) main.restore(); main.focus(); } });
   ipcMain.handle('ds3d:check-updates', () => updates ? updates.check(true) : 'unavailable');
   ipcMain.on('ds3d:close-window', () => { allowClose = true; main?.close(); });
   app.whenReady().then(async () => {
+    // calls waiting on the editor page; if the page dies they are answered at once instead of hanging
+    const pending = new Set();
     const call = js => new Promise((ok, fail) => {
       if (!main || main.isDestroyed()) return fail(Error('The Doodle Studio 3D window is closed'));
+      if (main.webContents.isCrashed() || main.webContents.isLoading()) return fail(Error('ds3d is not defined (the editor page is reloading)'));
+      const entry = {}; pending.add(entry);
+      const done = f => v => { pending.delete(entry); f(v); };
+      ok = done(ok); fail = done(fail); entry.fail = fail;
       // the renderer's own error message comes back (Electron otherwise reports only 'Script failed to execute')
       main.webContents.executeJavaScript(`Promise.resolve().then(() => (${js})).then(v => ({ ok: v }), e => ({ err: String((e && e.message) || e) }))`)
         .then(r => (r && 'err' in r ? fail(Error(r.err)) : ok(r && r.ok)), fail);
     });
     const mcp = require('./mcp.cjs')({ call, api });
     api['mcp-replay'] = ({ name, args }) => mcp.replay(name, args);
-    await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models') } });
+    // the old copy may still be closing after an update restart: give the port a few seconds
+    for (let tries = 0; ; tries++) {
+      try {
+        await require('./server.cjs')({ root: path.join(appDir, 'ui'), port: PORT, api, mcp, statics: { lib: () => settings.get().libraryDir, models: () => path.join(dataDir, 'models'), sounds: () => path.join(dataDir, 'sounds') } });
+        break;
+      } catch (e) {
+        if (e.code !== 'EADDRINUSE' || tries >= 8) {
+          dialog.showErrorBox('Doodle Studio 3D could not start', e.code === 'EADDRINUSE' ? `Another program is using port ${PORT}, which Doodle Studio 3D needs. It may be another copy still open: close it, or restart the PC, then open Doodle Studio 3D again.` : String(e.message || e));
+          app.quit();
+          return;
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
     let saved = {};
     try { saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'window.json'), 'utf8')); } catch {}
     const valid = saved.bounds && screen.getAllDisplays().some(d => saved.bounds.x < d.workArea.x + d.workArea.width && saved.bounds.x + saved.bounds.width > d.workArea.x);
@@ -383,6 +428,19 @@ else {
       const wa = (other || primary).workArea, w = Math.min(1100, wa.width), hh = Math.min(1300, wa.height);
       return { action: 'allow', overrideBrowserWindowOptions: { x: wa.x + Math.round((wa.width - w) / 2), y: wa.y + Math.round((wa.height - hh) / 2), width: w, height: hh, title: 'Doodle Studio 3D: viewport', icon, backgroundColor: '#E0A64B', autoHideMenuBar: true,
         webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } } };
+    });
+    // the editor page crashed or was killed: log it and reload, so the MCP answers again and the
+    // autosave's recovery file brings the scene back. At most 3 reloads in 5 minutes, so a page that
+    // crashes on load can't loop forever.
+    const reloads = [];
+    main.webContents.on('render-process-gone', (e, d) => {
+      crashLog('editor page gone')(d && d.reason);
+      for (const p of [...pending]) p.fail(Error('Render frame was disposed: the editor page stopped and is reloading'));
+      if (!d || d.reason === 'clean-exit' || main.isDestroyed()) return;
+      const now = Date.now(); while (reloads.length && now - reloads[0] > 5 * 60000) reloads.shift();
+      if (reloads.length >= 3) return void dialog.showErrorBox('Doodle Studio 3D', 'The editor keeps crashing. Your scene is in the recovery file: close and reopen the app. Details are in crash.log in ' + dataDir);
+      reloads.push(now);
+      setTimeout(() => { if (!main.isDestroyed()) main.loadURL(`http://127.0.0.1:${PORT}/`).catch(crashLog('reload')); }, 1000);
     });
     main.webContents.on('did-create-window', w => { w.removeMenu(); w.webContents.on('will-navigate', e => e.preventDefault()); });
     main.on('close', e => {

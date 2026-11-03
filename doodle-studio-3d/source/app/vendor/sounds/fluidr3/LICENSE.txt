@@ -1,0 +1,5 @@
+FluidR3 General MIDI instrument samples (FluidR3_GM.sf2 by Frank Wen and contributors),
+rendered to MP3 by Benjamin Gleitzman: https://github.com/gleitz/midi-js-soundfonts
+Released under the Creative Commons Attribution 3.0 license:
+https://creativecommons.org/licenses/by/3.0/us/
+Doodle Studio 3D bundles a subset (every third semitone, octaves 1-7) and resamples between them.

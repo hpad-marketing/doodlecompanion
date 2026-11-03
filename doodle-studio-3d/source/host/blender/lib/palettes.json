@@ -14,13 +14,14 @@
     "#E0A64B"
    ],
    "accent": "#E0A64B",
-   "ambient": "#FFF1D6"
+   "ambient": "#FFF1D6",
+   "outfit": "#1F1F1D"
   },
   {
    "id": "sunbaked",
    "name": "Sunbaked",
    "theory": "Analogous warm: sand, apricot and terracotta, neighbours on the wheel",
-   "character": "#E0A64B",
+   "character": "#E39A5A",
    "ink": "#2A1A14",
    "wall": "#F0D3A0",
    "floor": "#C0704A",
@@ -32,13 +33,14 @@
     "#D9855B"
    ],
    "accent": "#8E3B2E",
-   "ambient": "#FFE8CC"
+   "ambient": "#FFE8CC",
+   "outfit": "#8E3B2E"
   },
   {
    "id": "teal-coral",
    "name": "Teal & coral",
    "theory": "Complementary: teal walls against warm coral and mustard",
-   "character": "#E0A64B",
+   "character": "#2D6766",
    "ink": "#1C2B2B",
    "wall": "#3F8A87",
    "floor": "#EFE0C8",
@@ -50,13 +52,14 @@
     "#F2D3B3"
    ],
    "accent": "#F25C45",
-   "ambient": "#E4FFFB"
+   "ambient": "#E4FFFB",
+   "outfit": "#F07F64"
   },
   {
    "id": "playroom",
    "name": "Playroom",
    "theory": "Triadic: mustard, cobalt and berry, evenly spaced",
-   "character": "#E0A64B",
+   "character": "#7C93C9",
    "ink": "#1F1F2A",
    "wall": "#F3E6C8",
    "floor": "#3D5A98",
@@ -68,13 +71,14 @@
     "#7C93C9"
    ],
    "accent": "#C43C6B",
-   "ambient": "#F2F0FF"
+   "ambient": "#F2F0FF",
+   "outfit": "#E0A64B"
   },
   {
    "id": "dusk",
    "name": "Dusk",
    "theory": "Split-complementary: mustard against violet and blue-violet",
-   "character": "#E0A64B",
+   "character": "#B9A9E6",
    "ink": "#15121F",
    "wall": "#5B4B8A",
    "floor": "#2E2A4F",
@@ -86,13 +90,14 @@
     "#B9A9E6"
    ],
    "accent": "#F2C14E",
-   "ambient": "#CFC6FF"
+   "ambient": "#CFC6FF",
+   "outfit": "#D9744F"
   },
   {
    "id": "sage",
    "name": "Sage",
    "theory": "Monochrome: one green in light, mid and deep values",
-   "character": "#E0A64B",
+   "character": "#3F5A3B",
    "ink": "#1E2A1C",
    "wall": "#A9BFA0",
    "floor": "#6F8A68",
@@ -104,13 +109,14 @@
     "#7A9671"
    ],
    "accent": "#3F5A3B",
-   "ambient": "#F0FFEA"
+   "ambient": "#F0FFEA",
+   "outfit": "#CFDDC8"
   },
   {
    "id": "nursery",
    "name": "Nursery",
    "theory": "Pastel tetradic: pink, mint, butter and periwinkle at high value",
-   "character": "#E0A64B",
+   "character": "#9BB7E6",
    "ink": "#3A3340",
    "wall": "#F6D6DE",
    "floor": "#BFE3D8",
@@ -122,7 +128,8 @@
     "#BFE3D8"
    ],
    "accent": "#9BB7E6",
-   "ambient": "#FFF6F8"
+   "ambient": "#FFF6F8",
+   "outfit": "#F4B8C5"
   },
   {
    "id": "midnight",
@@ -140,13 +147,14 @@
     "#3A6B91"
    ],
    "accent": "#F2C14E",
-   "ambient": "#9DB7FF"
+   "ambient": "#9DB7FF",
+   "outfit": "#3A6B91"
   },
   {
    "id": "forest",
    "name": "Forest",
    "theory": "Analogous greens with bark",
-   "character": "#E0A64B",
+   "character": "#CFE1B9",
    "ink": "#1F1F1D",
    "wall": "#2F5D50",
    "floor": "#1E2F23",
@@ -158,13 +166,14 @@
     "#CFE1B9"
    ],
    "accent": "#F2C14E",
-   "ambient": "#EAF5E0"
+   "ambient": "#EAF5E0",
+   "outfit": "#6A994E"
   },
   {
    "id": "ocean",
    "name": "Ocean",
    "theory": "Analogous blues with a coral pop",
-   "character": "#E0A64B",
+   "character": "#BFE7EE",
    "ink": "#1F1F1D",
    "wall": "#1F6F8B",
    "floor": "#0B2F4A",
@@ -176,13 +185,14 @@
     "#BFE7EE"
    ],
    "accent": "#FF7F6E",
-   "ambient": "#E0F6FB"
+   "ambient": "#E0F6FB",
+   "outfit": "#FF7F6E"
   },
   {
    "id": "candy",
    "name": "Candy",
    "theory": "Triadic pastels turned up",
-   "character": "#E0A64B",
+   "character": "#FF6FA8",
    "ink": "#1F1F1D",
    "wall": "#FFC2D9",
    "floor": "#7A4EAB",
@@ -194,13 +204,14 @@
     "#B98CFF"
    ],
    "accent": "#FF3E86",
-   "ambient": "#FFF3F8"
+   "ambient": "#FFF3F8",
+   "outfit": "#FF3E86"
   },
   {
    "id": "retro",
    "name": "Retro 70s",
    "theory": "Warm complementary, orange and teal",
-   "character": "#E0A64B",
+   "character": "#D9622B",
    "ink": "#1F1F1D",
    "wall": "#E8C39E",
    "floor": "#5B3A29",
@@ -212,13 +223,14 @@
     "#8C4A2F"
    ],
    "accent": "#D9622B",
-   "ambient": "#FFF1DC"
+   "ambient": "#FFF1DC",
+   "outfit": "#8C4A2F"
   },
   {
    "id": "neon",
    "name": "Neon night",
    "theory": "Dark base with electric accents",
-   "character": "#E0A64B",
+   "character": "#FFE53B",
    "ink": "#1F1F1D",
    "wall": "#1A1033",
    "floor": "#0B0620",
@@ -230,13 +242,14 @@
     "#5C7CFA"
    ],
    "accent": "#21E6C1",
-   "ambient": "#C7B8FF"
+   "ambient": "#C7B8FF",
+   "outfit": "#5C7CFA"
   },
   {
    "id": "earth",
    "name": "Earth",
    "theory": "Muted clay, ochre and olive",
-   "character": "#E0A64B",
+   "character": "#B5651D",
    "ink": "#1F1F1D",
    "wall": "#C9A27C",
    "floor": "#5A4634",
@@ -248,13 +261,14 @@
     "#D2B48C"
    ],
    "accent": "#C1440E",
-   "ambient": "#FBEFE0"
+   "ambient": "#FBEFE0",
+   "outfit": "#8A9A5B"
   },
   {
    "id": "ice",
    "name": "Ice",
    "theory": "Cool monochrome with a pink spark",
-   "character": "#E0A64B",
+   "character": "#5F7FA3",
    "ink": "#1F1F1D",
    "wall": "#CFE3F2",
    "floor": "#8FA9C4",
@@ -266,13 +280,14 @@
     "#5F7FA3"
    ],
    "accent": "#F27A9B",
-   "ambient": "#F5FAFF"
+   "ambient": "#F5FAFF",
+   "outfit": "#A9C7E0"
   },
   {
    "id": "mono",
    "name": "Mono grey",
    "theory": "Greys only: the shapes do the work",
-   "character": "#E0A64B",
+   "character": "#F2F2F2",
    "ink": "#1F1F1D",
    "wall": "#BDBDBD",
    "floor": "#6E6E6E",
@@ -284,7 +299,8 @@
     "#F2F2F2"
    ],
    "accent": "#3C3C3C",
-   "ambient": "#FFFFFF"
+   "ambient": "#FFFFFF",
+   "outfit": "#3C3C3C"
   }
  ]
 }

@@ -209,6 +209,7 @@ export class BunnyRig {
   }
 
   pose(values = {}) {
+    this.serial = (this.serial || 0) + 1;   // the viewport skips re-posing only while nobody else posed the rig
     values = earSpread(values);
     const A = this.A;
     A.clear();

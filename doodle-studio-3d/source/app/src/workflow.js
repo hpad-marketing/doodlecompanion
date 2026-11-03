@@ -121,6 +121,7 @@ export function popOut(ctx) {
   return true;
 }
 export const popOpen = () => !!(pop && !pop.closed);
+export const popSizeNow = () => (pop && !pop.closed ? pop.innerWidth + 'x' + pop.innerHeight : '');
 export function popDraw(src) {
   if (!pop || pop.closed) return 0;
   const t = performance.now(), c = pop.document.getElementById('mirror');

@@ -82,7 +82,7 @@ House preferences that apply to every animation:
 
 Doodle Studio 3D updates itself every hour from GitHub and keeps the previous version for rollback. Tools › Check for updates runs a check now. An update that would break either MCP (2D or 3D) rolls itself back.
 
-When a new Blender version is picked, the app renders a test frame first. It only switches if that frame passes. Blender 4.5 and 5.0 both work.
+When a new Blender version is picked, the app renders a test frame first. It only switches if that frame passes. Blender 4.5 LTS, 5.0, 5.1 and 5.2 all work: shot and stage renders and the version test pass on each (bpy 4.5.15, 5.0.1, 5.1.2 and 5.2.3, 1 Nov). On 5.2, outfits need the library's updated outfit scripts. The app finds 4.4, 4.5, 5.0, 5.1 and 5.2 in the usual install folder, and 4.5 LTS stays the safe default. If you installed the Doodle Library add-on in Blender itself, renders use that copy, so update it along with the app.
 
 ### The screen
 
@@ -91,7 +91,7 @@ When a new Blender version is picked, the app renders a test frame first. It onl
 - **Timeline / dope sheet:** keys, markers, the audio waveform, and the graph editor when it's on.
 - **Side panels:** Pose, Face, Camera, Library (character, stage, outfit, mouth set, motions, props, effects).
 - **Favourites bar:** horizontal and editable. Ctrl+K opens the command search for anything else.
-- **View menu:** dark mode, fps meter, pop the viewport out to the Samsung screen (the Kamvas stays primary), saved layouts.
+- **View menu:** dark mode, fps meter (frames a second and how many the 3D view actually drew: it redraws only when something changes; View › Always redraw the 3D view turns that off), pop the viewport out to the Samsung screen (the Kamvas stays primary), saved layouts.
 
 ### Your first shot in ten minutes
 
@@ -156,10 +156,10 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - Watch out: the Frog has no ear acting. Give him brows, eye darts and body instead.
 
 **Co-stars.** Up to five more characters in a shot (six on stage with the lead). The render keeps bodies from touching with an eased push-apart.
-- How: Shot › Co-stars…; `cast action=add|place|key|copy|motion|remove|list`.
+- How: Shot › Co-stars…; `cast action=add|place|key|copy|motion|remove|list`. In the dialog, library motions are moving picture cards: search or pick a family, click a card, then Play from the playhead (double-click plays it at once).
 - Fits: dialogue, reactions, a chorus, a crowd of named characters.
 - Also try: `cast action=copy {mirror:true}` makes an instant mirror dance partner. Two Bunnies make an inner-voice or angel-and-devil argument.
-- Watch out: camera presets and Look at camera follow the lead. For OTS shots, place the co-star first, then pick `view: ots-l` or `ots-r`.
+- Watch out: camera presets and Look at camera follow the lead. For OTS shots, place the co-star first, then pick `view: ots-l` or `ots-r`. The default side-by-side spot gives a poor OTS (his back at the frame edge, and a "0% in frame" warning). A tested start: put the co-star across from the lead (`cast action=place {index: 0, x: -0.4, y: -1.4, turn: 180}`), then `apply_camera_preset {view: "ots-l", target: "group"}`, and check a still.
 
 ### 3.2 Posing and acting
 
@@ -224,6 +224,7 @@ Each entry covers: **what it does · how (UI / MCP) · where it fits · also try
 - 233 mocap clips (CMU and Mesh2Motion: walks, runs, everyday actions, sports, idles, dance, gestures).
 - 37 performance moves made for Bunny: rapper, talker, singer, storyteller gestures (air quotes, counting, "anyway" wave, thumb over the shoulder, "this small"), and low- and high-angle staging.
 - How: Library tab › Motions; `library_list {category: motion, query}`, then `library_use {id, frame, mirror, blend}`.
+- Watch out: a motion longer than the shot makes the shot longer (a 108-frame clip turns a 40-frame shot into 108). Set the length back with `set_shot {length}` afterwards, or pick a shorter clip (each row lists its frames). The 757 count is the PC library; a library without the mocap and performance packs (like the cloud copy) lists 408.
 - Fits: start every shot from a motion and then adjust it. It's faster and cheaper than hand-keying.
 - Also try: mocap walks with a different face per stretch. The performance moves work for any confident talker, not just rap.
 - Watch out: clips with lots of arm movement were filtered out, because his head blocks raised arms. That's why walks dominate the mocap set.
@@ -284,6 +285,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 - Placement on the thirds: center, left, right
 - 44 eased moves: push-in, pull-out, pans, whips, crane, arcs, orbit, vertigo, handheld, follow…
 - How: Camera menu; `apply_camera_preset {target, size, angle, view, placement, move, seconds, frame}`; `{list:true}` returns every id.
+- Watch out (MCP): a size, angle or view sets the camera **at the playhead**; `frame` only says where a `move` starts. To frame a shot at frame 30, `goto {frame: 30}` first. Target, size, angle and placement stay from the last call, so send all of them every time.
 - Fits: fast coverage. Wide to set the place, mid for talk, close for the punchline.
 - With co-stars on stage, frame the wide with `target: group`. A preset that cuts a co-star off returns a warning, and the render blocks a co-star under 60% in frame (over-the-shoulder views are exempt).
 - Watch out: from a medium shot inward, Bunny's head is wider than a 9:16 frame and crops slightly at the sides. Eyes stay in frame except in the extreme close-up.
@@ -320,7 +322,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 - plus more
 
 **Stage controls.**
-- How: Library tab › Stage; `set_stage {stage: {set, setProps, time, sky, shadows, halftone, outfit, accessories, mouthSet}, shotOnly}`.
+- How: Library tab › Stage; `set_stage {stage: {set, setProps, time, sky, shadows, halftone, outfit, accessories, mouthSet}, shotOnly}`. `set` takes the room name (`bedroom`) or the library id (`set-bedroom`); a name that isn't a set is refused with a pointer to `library_list {category: "set"}`. `library_use {id: "set-…"}` does the same job.
 - Time of day: day, golden, night (lamps switch on).
 - Sky: day, sunset, stars, storm. The storm sky darkens everything under it, so mustard reads brown. Check a still before committing to it on a bright, happy beat.
 - `setProps {"rug": false}` hides pieces. Declutter by default.
@@ -341,7 +343,7 @@ Typical flow: block in stepped, spline it, then breakdowns and overlap, then fix
 
 ### 3.8 Props
 
-**90 props modelled in 3D with real grips, plus 124 asset-pack pieces.** The packs include:
+**90 props modelled in 3D with real grips, plus 124 asset-pack pieces.** `library_list {category: "prop"}` returns 106: the 90 plus the 16 pack pieces you hold in a hand. The packs include:
 - reveal props that open
 - explainer boards
 - signs and placards with typed words
@@ -363,7 +365,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.9 Wardrobe
 
 **Outfits.** Raincoat, track jacket, zip hoodie (plus the default hoodie), all brand black with ochre detail strokes. **Accessories:** bow tie, square glasses, necktie.
-- How: Library tab; `set_stage {stage: {outfit, accessories}}` or `library_use {id: outfit-…}`.
+- How: Stage › Wardrobe shows each outfit and accessory front-on, worn by the lead (Blender renders in app/cards; re-make them with tools/wardrobe_cards.cjs when the clothing studio adds a piece); `set_stage {stage: {outfit, accessories}}` or `library_use {id: outfit-…}`.
 - Fits: weather (raincoat), a sporty bit (track jacket), a formal bit (bow tie, tie), a nerdy narrator (glasses).
 - Also try: change the outfit with `shotOnly` for time skips ("three days later").
 - Watch out: cloth only simulates in full renders. Previews skip it.
@@ -399,7 +401,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.13 Words on screen
 
 - **Captions** in EN and HI, word-by-word highlight (opt-in), SRT import and export.
-  - How: `post action=caption|captions|caption_lang|highlight|srt_import|srt_export|clear_captions`.
+  - How: `post action=caption|captions|caption_lang|highlight|srt_import|srt_export|clear_captions`. A caption's `frame` counts from the start of its shot, not the scene.
 - **Freeze-frame name labels** in ink text, with no box: `story2 action=freeze_label {text, frame, seconds}`.
 - **Chapter cards** from "Chapter:" markers: `story2 action=chapter_cards`. **YouTube chapters file:** `story action=chapters`.
 
@@ -436,7 +438,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 | One frame | `render {still}` | a PNG |
 | The whole scene, joined | `render_scene` | Unchanged shots are reused |
 | Half-size preview without cloth | add `preview:true` to either | |
-| Progress | `render_status` | |
+| Progress | `render_status` | `frame`/`frames`, `eta` in seconds and `etaMin` in minutes; once idle, `last` says how the last job ended (`state: "failed"` with `detail` and its checks folder). Always read `last` after a render: a failed one is not an error from `render`, which only queues the job |
 | Presets (Reel, Short, YouTube 16:9, draft) | `production action=preset` | |
 | Time estimate | `production action=estimate` | |
 | Overnight batch (sleeps the PC when done) | `production action=batch` | |
@@ -460,7 +462,7 @@ Watch out: 85 of 90 props are clean in hand. The cake, lantern, light bulb, skat
 ### 3.17 Babble voice (typed lines, cute gibberish)
 
 Type what a character says and they "speak" it as cozy-game style gibberish. Every sound is made from scratch in the app (a pulse voice through three vowel filters plus breath), so nothing is sampled, and the same line always sounds the same. Bunny is high and bright, the Koala low, slow and breathy, the Frog croaky with a wobble.
-- How: the Audio workspace (File › Babble voice opens it). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at playhead**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`.
+- How: the Audio workspace (File › Babble voice opens it). Pick who speaks and a mood, type the line, press **Hear it**, then **Add at playhead**. MCP: `babble action=add {text, frame, who, mood}`, `babble action=voice {character, style, pitch, speed, range, breath, croak}`. `who` is `"lead"` for the lead character, or a co-star. Over MCP the styles are `syllables`, `letters` and `tones` (Chirps on the card is `tones`).
 - What you get: one scene voice file (`work\audio\<Scene>_babble_<tag>.wav`) mixed over your recorded voice if there is one, mouth keys on every syllable for the speaker (lead or co-star), and timed captions that follow the caption rules.
 - Styles: Syllables (one sound per syllable, most speech-like), Letters (a blip per letter, chattery), Chirps (pure beeps). Set per character; a line can override it.
 - Punctuation acts: `?` lifts the end, `!` punches it, `.` drops it, commas pause.
@@ -486,9 +488,32 @@ The Materials tab (the last tab) dresses the shot in a material instead of the f
 - **Brand guards, all switchable:** Keep Bunny mustard (on), outfits take the palette's ink (near-black), the body outline is off for textured looks and on for Ink & Mustard (the Ink outline button switches it; face lines always stay), and lit looks cast no shadows unless you turn on Cast shadows.
 - **Light for lit looks** (every shot): key, fill, ambient, height, side and softness. Defaults: key 3.2, fill 0.3, ambient 0.5, height 28°, side 40°, softness 0.5, no shadows.
 - **Look add-ons** (for example ClayDoh): drop the add-on's folder or .zip into the Doodle Library's `looks` folder, or install it in Blender. It shows up as cards; the first click renders one test frame of Bunny wearing it, and only a look that passes can be picked. If it is later missing on a PC, that target renders Ink & Mustard and the log says so. The recipe an add-on needs is in `blender/addons/doodle_looks/CONTRACT.md`.
-- MCP: `materials action=list`, `materials action=apply {target, look, addon, params, palette, ink, keepCharacter, color, scope, item}`, `materials action=clear {target}`, `materials action=light {key, fill, ambient, height, angle, softness, shadows}`.
+- MCP: `materials action=list` (use each look's and palette's `id`, such as `clay` or `teal-coral`, not the card title or the add-on `key`), `materials action=apply {target, look, addon, params, palette, ink, keepCharacter, color, scope, item}`, `materials action=clear {target}`, `materials action=light {key, fill, ambient, height, angle, softness, shadows}`.
 
 ---
+
+### Reel templates and script to scene
+
+Two ways to get a first-draft reel in one step. Both make a **new 9:16 scene** you can then change like any other.
+
+- **File › New reel from a template…** shows five picture cards: *Storytime: hook to twist*, *3 things you did not know*, *Myth vs fact*, *POV skit with a co-star* and *Hot take*. Pick one and type your lines. Leave a line empty and its example plays instead, with a **Fill:** marker on that shot telling you what to write there.
+- **File › Script to scene…** takes a pasted script, with one line per shot:
+  - `KOALA: line` or `FROG: line` gives the line to a co-star, who joins every shot.
+  - `[shrug]`, `[points]`, `[cheer]`, `[lean in]` or `[sigh]` picks the gesture. `[shocked]`, `[proud]` or any other mood name picks the face and the voice mood.
+  - `[wide]`, `[close-up]`, `[push in]`, `[snap zoom]` and `[low angle]` steer the camera.
+  - `*word*` puts that word on screen as a key-word headline.
+  - `# Section` starts a section, and `HEADLINE: text` gives the next shot a headline of its own.
+  - A long line with several sentences is cut into shots of up to 16 words each.
+- **What each shot gets:**
+  - The camera frames whoever is speaking (Everyone on a two-hander's opening shot) at eye level. A slow push in, a quick push on the hook or a snap zoom on a shock gives each shot its energy. A low angle appears only on a hero ending, and there is never any roll.
+  - The face, read from the words, and a gesture that lands on the first word, holds and then settles. Every gesture passes the arm-in-head check on Bunny, the Koala and the Frog.
+  - Blinks and ear twitches.
+  - Babble voice with lip sync and captions. Each shot is made long enough for its line.
+  - A key-word headline in Impact capitals at the top of the safe zone. The camera rises, staying level, so the ears sit below the headline.
+  - Captions low in the safe zone, below the face.
+  - The last frame loops back to the opening pose.
+- **Voice choice:** *Babble voice with lip sync* (the default), or *Captions only*, which leaves **Say:** markers on each shot. When the real voice is recorded, import it (File › Import audio) and run lip sync so the mouth follows it.
+- MCP: `reels action=templates`, `reels action=fill {template, fills: {slot: line}, voice}`, `reels action=script {text, voice, headlines: marked|hook|all|off}`, `reels action=plan` (shows the plan and builds nothing), `reels action=headline {text, frame, seconds}`, `reels action=headlines`, `reels action=clear_headlines`. A new scene asks for a yes when there are unsaved changes (`force: true`).
 
 ## 4. Cross-uses: made for one thing, great for another
 
@@ -600,14 +625,17 @@ As of build 20261030-195859. The live list is `doodle-studio/stress-3d/BUGS.md`.
 - **"Blender was not found":** set it under Render › Blender location, or run `production action=fix {fix: pick-blender}`.
 - **Open in Blender: the button stays on "Blender opening…"** Blender is still building the shot (long shots take longer). If it never goes live, read `work\blender-live\<Scene>_<shot>\blender.log`.
 - **"Needs a yes first":** the call would replace unsaved work. Ask the user, then repeat it with `force: true`.
+- **A render "finished" but there is no video:** read `render_status` → `last`. A failed job shows `state: "failed"` and the checks folder; the cause is at the end of its `blender.log`.
+- **`production action=moderator_pass`** is left over from the retired moderator gate. Don't use it; preflight and the built-in rules replace it.
 
 ---
 
 ## 8. Appendix: every MCP tool
 
+The full reference, with every tool's arguments, is the **MCP tool reference** at the end of this guide. The app writes it from its own tool list when the guide opens (and `get_guide` adds it for assistants; `get_guide section="tool reference"` returns only that part), so it always matches the build you have. A call with a missing or wrong argument comes back with a plain sentence that names the argument and what it should be.
 These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` for the full argument schemas.
 
-`babble`, `blocks`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
+`babble`, `reels`, `get_state`, `list_controls`, `set_values`, `key`, `delete_key`, `set_ease`, `goto`, `get_guide`, `set_shot`, `add_shot`, `select_shot`, `move_shot`, `delete_shot`, `new_scene`, `open_scene`, `save_as`, `undo`, `redo`, `save`, `render`, `render_scene`, `render_status`, `apply_camera_preset`, `carousel`, `set_idle`, `set_character`, `library_list`, `library_use`, `remove_item`, `blender_live`, `set_stage`, `storyboard`, `mirror_pose`, `blend_poses`, `set_shot_look`, `materials`, `add_marker`, `save_version`, `set_autosave`, `anim_tool`, `anim2`, `audio`, `story`, `story2`, `post`, `cast`, `drawings`, `powers`, `features`, `production`, `workflow`.
 
 ### Control ids
 
@@ -624,8 +652,44 @@ These are the 48 tools on build 20261030-192645. Ask the app with `tools/list` f
 
 ## Light, shadows and outlines
 
-Stage › Set & light › Shadows turns light and shadow on for the whole scene, characters included. It is off by default: the doodle look is flat. The lighting presets (Classic, Soft, Dramatic, Rim, Overhead, Rembrandt, Loop, Butterfly, Split, Clamshell, High key, Low key, Silhouette, Under light, plus any you save) put a key, a fill and a back light round whoever is selected, or whatever you pick under Centre on, and they follow it as it moves. The sliders show live in the 3D view. Blender builds the same lights in the render, using the Tri-lighting add-on's TriLamp lights if it is installed. A plain background has no floor to catch a shadow.
+Stage › Light › Shadows turns light and shadow on for the whole scene, characters included. It is off by default: the doodle look is flat. The lighting presets (Classic, Soft, Dramatic, Rim, Overhead, Rembrandt, Loop, Butterfly, Split, Clamshell, High key, Low key, Silhouette, Under light, plus any you save) put a key, a fill and a back light round whoever is selected, or whatever you pick under Centre on, and they follow it as it moves. The sliders show live in the 3D view. Blender builds the same lights in the render, using the Tri-lighting add-on's TriLamp lights if it is installed. A plain background has no floor to catch a shadow.
 
 Click anything in the Stage to get the Outline strip over the 3D view: 100% is Bunny's line, 40% thins it (the park's flowers read much better), 0 takes it off. It is saved with the scene and used in the render. Materials › Outlines: on / off does the same for a whole target in any look, and the colours stay. Face lines always stay.
 
-A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). Materials › Character colours sets Bunny and the outfit to a palette colour or any colour. Brand mustard and black stay the default.
+A palette paints a model part by part: parts of the same shape share a colour and each shape takes the palette's next one, so a flower has its own stems, petals and centres. Materials › Colours › + Your palette makes your own: a colour picker for each role, pasted hex codes, or an imported file (.ase, .aco, .gpl, .pal, .hex, .txt, .json). A palette dresses the characters too: Whole scene recolours everything. Materials › Character colours overrides Bunny or the outfit by hand, and Palette goes back. Materials › Flat colour is pure flat palette colour with no light. Materials › Pieces and parts lists everything in the shot with a colour for each part. Timeline › Length sets how long the shot runs, in frames or seconds.
+
+## Speech bubbles
+
+Library › Speech bubbles has 14 animated presets: Talk, Whisper, Think, Surprise and Shaky bubbles, Star burst, Letter slam, Boing, Zoom, Splat and Drift bursts, and Stepped, Name tab and Doodle dialogue boxes for subtitles. Every one pops in from small with an overshoot (Soft, Bouncy or Snap) and sizes to its text.
+
+- Add one: drag a card onto the timeline or the Stage, or double-click it to add it at the playhead. Each bubble is its own layer with one block you can move, trim, cut, hide and isolate.
+- Type: double-click the bubble on the Stage, or use the text box in the panel. Enter starts a new line. Esc or clicking away keeps it.
+- Place: a speech bubble sits above its speaker and the tail stays on them from every side. Drag it anywhere round them. Pull the round handle to make it wider or narrower, and the words reflow.
+- Time: set Seconds, or set Ends with to the Babble line or the voice. The Babble choice says the text as a Babble line, and moving the block moves the line. Speak it does the same.
+- Stay off the face keeps it inside the Instagram safe zone and off the eyes and mouth. Turn it off to place a bubble exactly. Follow the character off keeps it where it is.
+- Colours are mustard or ink, in Bunny's line weight, with no shadows. Bubbles show on the Stage and in the final render, not in Blender's live view.
+- MCP: `bubbles` action=presets|list|add|set|match|remove|clear. `blocks` lists them as layers `b:<id>`.
+
+## Music workspace (MiniLab 3 and any MIDI keyboard)
+
+The **Music** tab is a small studio for the scene's soundtrack. Plug in the Arturia MiniLab 3 (or any USB MIDI keyboard) and it works straight away. You don't need Arturia's software or a driver. Windows lets only one app use a MIDI device at a time, so close Arturia MIDI Control Center, Analog Lab and any DAW first. The light at the top right says **MiniLab 3** once the app can see it. **Big studio** fills the whole window, and Esc leaves it.
+
+**How a song is built.** A song is made of *loops* (the columns: Intro, Verse, Chorus…) and *tracks* (the rows: Drums, Bass, Keys…). Each cell is one track's part in one loop. **Song order** lays the loops out under the animation. With **Fill scene** on, the song repeats so it lasts the whole scene. **Fit tempo to scene** changes the tempo so the song ends exactly when the scene does.
+
+**Playing live.** Every key, pad and strip plays the instant you touch it. Keys play the selected track, and pads play the drum track. Under Help me play you'll find **Scale lock** (every key plays a note in the key, so nothing sounds wrong), **Chords** (one finger plays a chord), the **Arpeggiator** (hold a chord and it plays as a pattern in time) and **Note repeat** (hold a pad for rolls). The sustain pedal works. **Type to play** turns the computer keys A W S E D F T G Y H U J K into notes.
+
+**Looping.** In **Loop** mode, press **Rec**. After the count-in, the loop keeps cycling and every pass adds a new layer on top. Pads land on the drums and keys land on the selected track. Add a **New layer** or change the track's sound between passes to stack instruments. **Undo layer** removes the last pass. **Capture** keeps what you just played even if Record was off. **Snap timing** pulls recorded notes onto the grid.
+
+**Editing.** Click a cell to edit it. Instrument tracks open a piano roll: click to add a note, drag to move it, drag its right end to stretch it, right-click to delete it, and drag in the velocity lane to change loudness. Drum tracks open a step grid (Shift-click adds an accent). The tools are Quantize (full or 50%), Humanize, Transpose, Legato, Louder/Softer, **Write chords** (ten progressions in three styles) and **Write a beat** (eight drum styles).
+
+**Sounds.** There are 128 recorded General MIDI instruments (FluidR3, CC-BY 3.0). 24 come with the app; the rest download once with **Get** (about 0.6 MB each). There are also 15 synths made in the app, six drum kits (808, 909, lo-fi, 8-bit, acoustic and *Doodle* with boing/pop/whoosh/thud for animation hits) and **Bunny, Koala and Frog sing** ("ooh/la" at the note you play). Your own WAV or MP3 can be played across the keys or put on the pads of the *Your own samples* kit.
+
+**Mixer & effects.** Each track has volume, pan, mute, solo, a meter and its own effect chain, then everything goes through the master. There are 19 effects: reverb, echo, ping-pong, chorus, phaser, filter sweep, low/high-pass, auto-wah, distortion, bit crusher, tremolo, vibrato, pitch shift, widener, EQ, compressor, pump (sidechain feel) and limiter.
+
+**MiniLab & mapping.** The MiniLab is drawn on screen and lights up as you play. Every knob, fader and pad has a picker for what it does: Bunny's pose and camera controls, track or master volume, filter, reverb or echo amount, swing, tempo, or any app action. **Learn** maps anything, including single keys: pick a job, press Learn, then move or press the control. **Pads do** switches the pads between Drums, App actions (play, record, capture, key the pose, next shot, undo…), Faces and Launch loops. **Split the keys** gives the left hand its own track. **Set up my MiniLab** learns your unit's knob and fader numbers in about 20 seconds; the factory numbers are already filled in.
+
+**Music → animation.** **Animate to the beat** keys head nods, ear bounces, body bobs, squash, sway or camera punch-ins on every hit of a track, or only the kick. It uses the exact note times, so nothing is guessed from audio. **The character sings** keys the mouth on every note. **Puppet mode** lets you perform the character: keys open the mouth by how hard you play, pads switch faces, the mod strip nods and the pitch strip turns the head. With **Record keys** on, press Space and perform, and every move becomes a normal key.
+
+**Into the video.** Space plays the animation and the song follows it. The timeline shows a **Song** row with the loops and bar lines. **Bounce to the music bed** writes a WAV into the scene's work\music folder and makes it the music bed, which dips under the voice and goes into the render. If you change the song later, the next render bounces it again by itself. **Export WAV**, **stems** (one WAV per track) and **MIDI** are under Bounce & files. **Import MIDI** brings in any .mid file as tracks with the closest sounds.
+
+**For assistants:** the `music` MCP tool does all of this (`status`, `sounds`, `add_track`, `add_notes`, `progression`, `drums`, `set`, `bounce`, `beat_moves`, `sing`, `map`…). Times are in beats from the start of a loop. Notes are written as C4, F#3 or MIDI numbers; on drum tracks use pad 0–15 or a pad name (Kick, Snare, Clap, Closed hat…).

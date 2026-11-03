@@ -111,6 +111,10 @@ async function until(fn, ms = 8000) { const t = Date.now(); let v; while (Date.n
     ok(br.stage?.sun?.rot, 'and goes to the render');
   } else console.log('note: this set has no DSL_Sun');
 
+  // another character is another file: the open Blender loads it
+  await ev(() => ds3d.setCharacter('koala'));
+  v = await until(() => inBlender(dir, 'import mirror\nresult = [mirror.S["ctx"]["source_blend"], len([o for o in bpy.data.objects if o.type == "ARMATURE"])]').then(r => (/koala\.blend$/.test(r[0]) && r[1] >= 1 ? r : null)).catch(() => null), 60000);
+  ok(!!v, 'switching character in the app switches it in Blender: ' + JSON.stringify(v));
   // stop: Blender is told and the button goes back
   await p.click('#blender-live');
   ok(await until(async () => (await p.textContent('#blender-live')).includes('Open in Blender')), 'clicking the live button stops the link');

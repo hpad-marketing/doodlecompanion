@@ -13,8 +13,29 @@ import sys
 from . import index, paths
 
 
-def _script(name):
+BUNDLED = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfit_scripts')
+_dir = None
+
+
+def _scripts_dir():
+    """The library's own copy of the clothing studio scripts, unless it predates the
+    Blender 5.2 fix (gn_values: nodes-modifier inputs are no longer ID properties there).
+    Then the patched copy bundled with this add-on is used, all four scripts together."""
+    global _dir
+    if _dir:
+        return _dir
     d = paths.lib_path('outfits')
+    try:
+        with open(os.path.join(d, 'apply_outfit.py'), encoding='utf-8') as f:
+            fixed = 'def gn_values' in f.read()
+    except OSError:
+        fixed = False
+    _dir = d if fixed else BUNDLED
+    return _dir
+
+
+def _script(name):
+    d = _scripts_dir()
     if not os.path.isfile(os.path.join(d, name + '.py')):
         raise RuntimeError('%s.py is missing from the library outfits folder.' % name)
     if d not in sys.path:

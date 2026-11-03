@@ -7,6 +7,8 @@ keeps only the current state, draws the strokes at the same screen-constant
 width as the body outline, boils them, and wraps everything onto the head.
 """
 import bpy
+
+import compat
 import json
 from mathutils import Vector
 from mathutils.geometry import tessellate_polygon
@@ -79,8 +81,8 @@ def _int_attr(g, name):
 
 def _cmp_int(g, a, b, op='EQUAL'):
     n = g.node('FunctionNodeCompare', data_type='INT', operation=op)
-    ia = [s for s in n.inputs if s.identifier == 'A_INT'][0]
-    ib = [s for s in n.inputs if s.identifier == 'B_INT'][0]
+    ia = next((s for s in n.inputs if s.identifier == 'A_INT'), None) or compat.sock(n.inputs, 'A')   # 5.2: only the live pair
+    ib = next((s for s in n.inputs if s.identifier == 'B_INT'), None) or compat.sock(n.inputs, 'B')
     for sock, v in ((ia, a), (ib, b)):
         if isinstance(v, int):
             sock.default_value = v
@@ -313,16 +315,16 @@ def build_face(lib_path, S, coll, head_cage, cam, ink_mat):
     mod = face.modifiers.new('DS Face', 'NODES')
     mod.node_group = face_group()
     ids = {s.name: s.identifier for s in mod.node_group.interface.items_tree if getattr(s, 'in_out', None) == 'INPUT'}
-    mod[ids['Fills']] = fills
-    mod[ids['Strokes']] = strokes
-    mod[ids['Offsets']] = offs
-    mod[ids['Head Surface']] = proxy
-    mod[ids['Camera']] = cam
-    mod[ids['Material']] = ink_mat
+    compat.gn_set(mod, ids['Fills'], fills)
+    compat.gn_set(mod, ids['Strokes'], strokes)
+    compat.gn_set(mod, ids['Offsets'], offs)
+    compat.gn_set(mod, ids['Head Surface'], proxy)
+    compat.gn_set(mod, ids['Camera'], cam)
+    compat.gn_set(mod, ids['Material'], ink_mat)
     settings = settings_object()
-    _drive(mod, f'["{ids["Orthographic"]}"]', cam.data, 'type', expr="v == 1", id_type='CAMERA')
-    _drive(mod, f'["{ids["Ortho Scale"]}"]', cam.data, 'ortho_scale', id_type='CAMERA')
-    fc = mod.driver_add(f'["{ids["Sensor / Focal"]}"]')
+    _drive(*compat.gn_socket(mod, ids["Orthographic"]), cam.data, 'type', expr="v == 1", id_type='CAMERA')
+    _drive(*compat.gn_socket(mod, ids["Ortho Scale"]), cam.data, 'ortho_scale', id_type='CAMERA')
+    fc = compat.gn_driver_add(mod, ids["Sensor / Focal"])
     d = fc.driver
     d.type = 'SCRIPTED'
     for nm, path in (('s', 'sensor_width'), ('f', 'lens')):
@@ -332,8 +334,8 @@ def build_face(lib_path, S, coll, head_cage, cam, ink_mat):
         v.targets[0].id = cam.data
         v.targets[0].data_path = path
     d.expression = 's / f'
-    _drive(mod, f'["{ids["Ink Fraction"]}"]', settings, '["ink_px"]', expr='v / 1920')
-    _drive(mod, f'["{ids["Boil Amount"]}"]', settings, '["boil"]')
-    _drive(mod, f'["{ids["Boil Fraction"]}"]', settings, '["boil_px"]', expr='v / 1920')
-    _drive(mod, f'["{ids["Boil Step"]}"]', settings, '["boil_step"]')
+    _drive(*compat.gn_socket(mod, ids["Ink Fraction"]), settings, '["ink_px"]', expr='v / 1920')
+    _drive(*compat.gn_socket(mod, ids["Boil Amount"]), settings, '["boil"]')
+    _drive(*compat.gn_socket(mod, ids["Boil Fraction"]), settings, '["boil_px"]', expr='v / 1920')
+    _drive(*compat.gn_socket(mod, ids["Boil Step"]), settings, '["boil_step"]')
     return face, proxy, mod, ids, L

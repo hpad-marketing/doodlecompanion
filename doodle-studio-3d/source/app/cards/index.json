@@ -1,0 +1,26 @@
+{
+ "bunny": {
+  "accessory-bowtie": "cards/bunny/accessory-bowtie.png",
+  "accessory-glasses_square": "cards/bunny/accessory-glasses_square.png",
+  "accessory-necktie": "cards/bunny/accessory-necktie.png",
+  "outfit-raincoat": "cards/bunny/outfit-raincoat.png",
+  "outfit-track": "cards/bunny/outfit-track.png",
+  "outfit-ziphoodie": "cards/bunny/outfit-ziphoodie.png"
+ },
+ "koala": {
+  "accessory-bowtie": "cards/koala/accessory-bowtie.png",
+  "accessory-glasses_square": "cards/koala/accessory-glasses_square.png",
+  "accessory-necktie": "cards/koala/accessory-necktie.png",
+  "outfit-raincoat": "cards/koala/outfit-raincoat.png",
+  "outfit-track": "cards/koala/outfit-track.png",
+  "outfit-ziphoodie": "cards/koala/outfit-ziphoodie.png"
+ },
+ "frog": {
+  "accessory-bowtie": "cards/frog/accessory-bowtie.png",
+  "accessory-glasses_square": "cards/frog/accessory-glasses_square.png",
+  "accessory-necktie": "cards/frog/accessory-necktie.png",
+  "outfit-raincoat": "cards/frog/outfit-raincoat.png",
+  "outfit-track": "cards/frog/outfit-track.png",
+  "outfit-ziphoodie": "cards/frog/outfit-ziphoodie.png"
+ }
+}

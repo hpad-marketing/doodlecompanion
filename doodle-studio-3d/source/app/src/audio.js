@@ -6,6 +6,7 @@ import { mouthsFor, VISEME } from './vocals.js';
 export { VISEME };
 
 let ctxA = null, buf = null, bufPath = null, src = null, env = null, envKey = '';
+let music = null, musicPath = null, musicSrc = null, musicLevel = 0.35, musicEnv = null, lastScrub = 0;
 const ac = () => (ctxA ||= new AudioContext());
 
 export async function loadAudio(api, path) {
@@ -25,7 +26,11 @@ export function envelope(fps) {
   if (!buf) return null;
   const key = bufPath + '|' + fps;
   if (env && envKey === key) return env;
-  const ch = buf.getChannelData(0), per = buf.sampleRate / fps, n = Math.ceil(buf.duration * fps);
+  env = loudness(buf, fps); envKey = key;
+  return env;
+}
+function loudness(b, fps) {
+  const ch = b.getChannelData(0), per = b.sampleRate / fps, n = Math.ceil(b.duration * fps);
   const out = new Float32Array(n);
   let max = 1e-6;
   for (let f = 0; f < n; f++) {
@@ -36,17 +41,43 @@ export function envelope(fps) {
     max = Math.max(max, out[f]);
   }
   for (let f = 0; f < n; f++) out[f] /= max;
-  env = out; envKey = key;
-  return env;
+  return out;
 }
 
+// the music bed: heard while you work and shown on its own timeline row
+export async function loadMusic(api, path, level = 0.35) {
+  musicLevel = level;
+  if (!path) { music = null; musicPath = null; musicEnv = null; return null; }
+  if (musicPath === path && music) return music;
+  const { data } = await api('read-audio', { path });
+  music = await ac().decodeAudioData(Uint8Array.from(atob(data), c => c.charCodeAt(0)).buffer);
+  musicPath = path; musicEnv = null;
+  return music;
+}
+export const musicInfo = () => (music ? { path: musicPath, seconds: +music.duration.toFixed(2) } : null);
+function source(b, level) {
+  const s = ac().createBufferSource(), g = ac().createGain();
+  s.buffer = b; g.gain.value = level; s.connect(g); g.connect(ac().destination);
+  return s;
+}
 export function play(atSeconds) {
   stop();
-  if (!buf || atSeconds >= buf.duration) return;
-  src = ac().createBufferSource();
-  src.buffer = buf;
-  src.connect(ac().destination);
-  src.start(0, Math.max(0, atSeconds));
+  if (buf && atSeconds < buf.duration) { src = source(buf, 1); src.start(0, Math.max(0, atSeconds)); }
+  if (music && atSeconds < music.duration) { musicSrc = source(music, musicLevel); musicSrc.start(0, Math.max(0, atSeconds)); }
+}
+// a short slice under the playhead while it is dragged, faded so it never clicks
+export function scrub(atSeconds, length = 0.09) {
+  const now = performance.now();
+  if (now - lastScrub < 45) return;
+  lastScrub = now;
+  ac().resume?.();
+  for (const [b, level] of [[buf, 1], [music, musicLevel]]) {
+    if (!b || atSeconds < 0 || atSeconds >= b.duration) continue;
+    const c = ac(), s = c.createBufferSource(), g = c.createGain(), t = c.currentTime;
+    s.buffer = b; s.connect(g); g.connect(c.destination);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.008); g.gain.setValueAtTime(level, t + length - 0.012); g.gain.linearRampToValueAtTime(0, t + length);
+    s.start(t, atSeconds, length);
+  }
 }
 // the scene audio as a live track, for the playblast recorder
 export function streamFrom(atSeconds) {
@@ -98,20 +129,20 @@ export function processVoice(spans, fps) {
   }
   return out;
 }
-export function stop() { try { src?.stop(); } catch {} src = null; }
+export function stop() { try { src?.stop(); } catch {} try { musicSrc?.stop(); } catch {} src = null; musicSrc = null; }
 
 // waveform strip for one shot of the scene (scene frames from..from+length)
-export function waveform(fps, from, length, ppf) {
-  const e = envelope(fps);
+export function waveform(fps, from, length, ppf, ofMusic = false) {
+  const e = ofMusic ? (music ? (musicEnv ||= loudness(music, fps)) : null) : envelope(fps);
   if (!e) return null;
   const c = document.createElement('canvas');
-  c.width = Math.max(1, Math.round(length * ppf)); c.height = 22;
+  c.width = Math.max(1, Math.round(length * ppf)); c.height = 40;
   c.className = 'wave';
   const g = c.getContext('2d');
   g.fillStyle = getComputedStyle(document.body).getPropertyValue('--fg') || '#1F1F1D';
   for (let f = 0; f < length; f++) {
-    const v = e[from + f] || 0, hh = Math.max(1, v * 20);
-    g.fillRect(f * ppf, 11 - hh / 2, Math.max(1, ppf - 1), hh);
+    const v = e[from + f] || 0, hh = Math.max(1, v * 38);
+    g.fillRect(f * ppf, 20 - hh / 2, Math.max(1, ppf - 1), hh);
   }
   return c;
 }

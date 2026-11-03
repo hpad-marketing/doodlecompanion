@@ -5,7 +5,7 @@
 //
 // Data: scene.materials = { layers: { scene, character, set, props }, light } for every shot;
 // shot.materials.layers[k] overrides one target for one shot (null = clear it for this shot);
-// item.material = a layer for one prop. A layer: { look, addon, params, palette, ink, keepCharacter, color }.
+// item.material = a layer for one prop. A layer: { look, addon, params, palette, ink, color, bunny, outfit }.
 import { myPalettes, dropPalette, paletteMaker } from './palettes.js';
 import { MATERIAL_TARGETS, materialsOf } from './project.js';
 
@@ -55,7 +55,7 @@ const lookName = (layer) => {
 };
 
 // textured looks have no body outline unless it is switched on; the flat look keeps it unless switched off
-export const inkOn = (layer, look) => layer.ink != null ? layer.ink !== false : !!(look?.flat ?? true);
+export const inkOn = (layer, look) => layer.ink != null ? layer.ink !== false : (look?.id ?? 'ink-mustard') === 'ink-mustard';
 
 // which targets have their outline off, as the render does it (lib/materials.py): the 3D view follows
 const outlineOff = L => !!L?.look && (L.ink != null ? L.ink === false : L.look !== 'ink-mustard');
@@ -74,18 +74,19 @@ const pieceColour = (pal, key) => {
 };
 export function stagePaint(m, items, api, ready) {
   const l = m?.layers || {};
-  if (!Object.values(l).some(Boolean) && !items.some(it => it.material)) return null;
+  const parts = m?.parts || {};
+  if (!Object.values(l).some(Boolean) && !items.some(it => it.material || it.parts) && !Object.keys(parts).length) return null;
   if (!cache) { loadLooks(api).then(ready, () => {}); return null; }
   const pal = L => { const brand = cache.palettes.find(p => p.id === 'brand'); return typeof L.palette === 'object' && L.palette ? { ...brand, ...L.palette } : cache.palettes.find(p => p.id === (L.palette || 'brand')) || brand; };
-  const S = l.set || l.scene, P = pal(S || {});
+  const S = l.set || l.scene || (Object.keys(parts).length ? { palette: 'brand' } : null), P = pal(S || {});
   const set = S ? { wall: S.color || P.wall, floor: S.color || P.floor, ceiling: S.color || P.ceiling, piece: id => S.color || pieceColour(P, id) } : null;
   const item = it => { const L = it.material || l.props || l.scene; return L ? L.color || pieceColour(pal(L), it.id) : null; };
   // a model's parts take the palette in turn, from its own colour (Painter.segment in lib/materials.py)
   const turn = (p, hex) => { const list = p.pieces || [], i = list.indexOf(hex); return list.length < 2 ? null : list.map((_, n) => list[(Math.max(i, 0) + n) % list.length]); };
   const itemParts = it => { const L = it.material || l.props || l.scene; if (!L) return null; const p = pal(L), hex = pieceColour(p, it.id); return { colours: turn(p, hex), accent: turn(p, hex) && p.accent }; };
-  const C = l.character || l.scene;
-  return { set: set && { ...set, accent: turn(P, P.pieces?.[0]) && P.accent, colours: hex => turn(P, S.color ? pieceColour(P, 'x') : hex) }, item, itemParts, char: C && { body: C.bunny, outfit: C.outfit },
-    sig: JSON.stringify([S?.palette, S?.color, l.props, l.scene?.palette]) };
+  const C = l.character || l.scene, cp = C && pal(C);
+  return { parts, set: set && { ...set, accent: turn(P, P.pieces?.[0]) && P.accent, colours: hex => turn(P, S.color ? pieceColour(P, 'x') : hex) }, item, itemParts, char: C && { body: C.bunny || cp.character, outfit: C.outfit || (cp.outfit !== cp.ink ? cp.outfit : null) },
+    sig: JSON.stringify([S?.palette, S?.color, l.props, l.scene?.palette, C?.palette, parts]) };
 }
 
 export function setLayer(ctx, target, patch, label = 'Material') {
@@ -163,6 +164,27 @@ export function materialsPanel(ctx) {
     h('button', { class: 'mat-pal mat-pal-new', 'aria-expanded': String(!!ui.makePal), title: 'Pick your own colours, paste hex codes, or import a palette file', onclick: () => { ui.makePal = !ui.makePal; ctx.rebuild(); } }, h('span', {}, '+ Your palette'), h('small', {}, 'Picker, hex or file'))),
     ui.makePal ? paletteMaker(ctx, cache.palettes.find(p => p.id === palId) || (typeof layer.palette === 'object' && layer.palette) || cache.palettes[0], p => { ui.makePal = false; usePal(p); }) : '');
 
+  // every piece and prop in the shot, part by part: no need to find it in the 3D view
+  const pieces = ctx.pieces();
+  if (pieces.length) {
+    const put = (row, key, hex, label) => {
+      ctx.pushUndo(label);
+      const sc = ctx.scene(), hold = row.item != null ? ctx.project().items[row.item] : ((sc.materials ||= {}).parts ||= {});
+      const own = row.item != null ? (hold.parts ||= {}) : (hold[row.piece] ||= {});
+      if (hex) own[key] = hex; else delete own[key];
+      if (!Object.keys(own).length) { if (row.item != null) delete hold.parts; else { delete hold[row.piece]; if (!Object.keys(hold).length) delete sc.materials.parts; } }
+      ctx.changed(); ctx.rebuild();
+    };
+    root.append(h('h3', {}, 'Pieces and parts'), h('p', { class: 'hint' }, 'Change one part of one thing here, for the whole scene. Colours you pick win over the palette.'),
+      h('div', { class: 'part-list' }, ...pieces.map(row => {
+        const mine = (row.item != null ? ctx.project().items[row.item]?.parts : ctx.scene().materials?.parts?.[row.piece]) || {};
+        return h('div', { class: 'part-row' }, h('b', {}, row.name), ...row.parts.map(p => {
+          const c = h('input', { type: 'color', value: p.colour, 'aria-label': row.name + ' ' + p.label, title: row.name + ' ' + p.label });
+          c.addEventListener('change', () => put(row, p.key, c.value.toUpperCase(), row.name + ' colour'));
+          return h('label', { class: 'part' }, c, h('span', {}, p.label));
+        }), Object.keys(mine).length ? h('button', { title: 'Back to the palette', onclick: () => { for (const k of Object.keys(mine)) put(row, k, null, 'Reset ' + row.name); } }, 'Reset') : '');
+      })));
+  }
   // 4. this look's settings, and the switches every look has
   const params = cur?.params || [];
   const P = layer.params || {};
@@ -188,21 +210,20 @@ export function materialsPanel(ctx) {
       h('button', { 'aria-pressed': String(inkOn(layer, cur)), title: 'The ink outline around bodies, set and props on this target, in any look: the colours stay. Face lines always stay. Textured looks start without it. The 3D view follows.', onclick: () => set({ ink: !inkOn(layer, cur), look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, 'Outlines') }, inkOn(layer, cur) ? 'Outlines: on' : 'Outlines: off'),      h('label', { class: 'row', title: 'Paint this target\'s main colour; its other parts keep the palette' }, 'One colour', colour),
       layer.color ? h('button', { onclick: () => { const q = { ...layer }; delete q.color; set({ ...q, color: undefined }, 'Palette colours'); } }, 'Use palette colours') : null,
       h('button', { title: 'Back to Ink & Mustard for this target', onclick: () => set(null, 'Ink & Mustard') }, 'Reset'),
-      h('button', { class: 'primary', title: 'Render the frame at the playhead in Blender to see the material for real (Ctrl+Shift+R)', onclick: () => ctx.renderFrame() }, 'Preview this frame'),
-      h('button', { title: 'Open the shot in Blender, live: the material shows in Blender\'s own view', onclick: () => ctx.openBlender() }, 'Open in Blender')));
+      h('button', { class: 'primary', title: 'Render the frame at the playhead in Blender to see the material for real (Ctrl+Shift+R)', onclick: () => ctx.renderFrame() }, 'Preview this frame'),));
 
   // Bunny and the outfit: palette swatches, any colour, or the brand mustard and black
   if (ui.target === 'scene' || ui.target === 'character') {
     const pal = cache.palettes.find(p => p.id === palId) || (typeof layer.palette === 'object' && layer.palette) || cache.palettes[0];
-    const colours = [...new Set([pal.character, pal.accent, ...(pal.pieces || []), pal.wall, pal.ink])];
+    const colours = [...new Set([pal.character, pal.outfit, pal.accent, ...(pal.pieces || []), pal.wall, '#E0A64B', '#1F1F1D'])];
     const picker = (label, key, brand) => {
       const any = h('input', { type: 'color', value: layer[key] || brand, 'aria-label': label + ': any colour' });
       any.addEventListener('change', () => set({ [key]: any.value, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, label));
       return h('div', { class: 'row mat-row' }, h('span', { class: 'sub-label', style: 'min-width:64px' }, label),
-        h('button', { 'aria-pressed': String(!layer[key]), title: 'The brand colour', onclick: () => { const q = { ...layer }; delete q[key]; set({ ...q, [key]: undefined }, label); } }, 'Brand'),
+        h('button', { 'aria-pressed': String(!layer[key]), title: 'Follow the palette picked above', onclick: () => { const q = { ...layer }; delete q[key]; set({ ...q, [key]: undefined }, label); } }, 'Palette'),
         ...colours.map(c => h('button', { class: 'swatch', 'aria-pressed': String(layer[key] === c), title: c, 'aria-label': label + ' ' + c, style: 'background:' + c + ';width:30px', onclick: () => set({ [key]: c, look: layer.look || 'ink-mustard', addon: layer.addon || 'doodle_looks' }, label) })), any);
     };
-    root.append(h('h3', {}, 'Character colours'), picker('Bunny', 'bunny', '#E0A64B'), picker('Outfit', 'outfit', '#1F1F1D'));
+    root.append(h('h3', {}, 'Character colours'), h('p', { class: 'hint' }, 'A palette dresses the characters too. Pick a colour here only to change them by hand; Palette goes back to it. Mustard and black are always in the row.'), picker('Bunny', 'bunny', pal.character), picker('Outfit', 'outfit', pal.outfit || pal.ink));
   }
   // 5. light for lit looks (scene-wide)
   const L = ctx.scene().materials?.light || {};
@@ -217,7 +238,7 @@ export function materialsPanel(ctx) {
     return h('label', { class: 'ctl' }, h('span', { class: 'name' }, label), r, n);
   };
   root.append(h('h3', {}, 'Light for lit looks (every shot)'), h('div', { class: 'mat-ctls' }, ...LIGHT.map(lightCtl)),
-  h('p', { class: 'hint' }, 'For clay, vinyl, felt, paper and ceramic. A lighting preset in Stage › Set & light replaces these lights.'));
+  h('p', { class: 'hint' }, 'For clay, vinyl, felt, paper and ceramic. A lighting preset in Stage › Light replaces these lights.'));
 
   // 6. look add-ons
   const extra = cache.looks.filter(l => l.source !== 'built-in');
@@ -242,7 +263,7 @@ export async function testLook(ctx, l) {
   }, 3000);
 }
 
-// MCP: materials { action: list | apply | clear | light, target, look, addon, params, palette, ink, keepCharacter, color, bunny, outfit, scope, item }
+// MCP: materials { action: list | apply | clear | light, target, look, addon, params, palette, ink, color, bunny, outfit, scope, item }
 export async function mcp(ctx, a = {}) {
   await loadLooks(ctx.api, a.action === 'list');
   const act = a.action || 'list';
@@ -268,7 +289,7 @@ export async function mcp(ctx, a = {}) {
     if (look.status === 'untested') { testLook(ctx, look); throw Error(`${look.name} is being tested in Blender first (about a minute); apply it again after`); }
     if (a.palette && typeof a.palette === 'string' && !cache.palettes.some(p => p.id === a.palette)) throw Error(`palette is one of ${cache.palettes.map(p => p.id).join(', ')}`);
     const patch = { look: look.id, addon };
-    for (const k of ['params', 'palette', 'ink', 'keepCharacter', 'color', 'bunny', 'outfit']) if (a[k] !== undefined) patch[k] = a[k];
+    for (const k of ['params', 'palette', 'ink', 'color', 'bunny', 'outfit']) if (a[k] !== undefined) patch[k] = a[k];
     const layer = setLayer(ctx, target, patch, `Material: ${look.name}`);
     ctx.rebuild();
     return { ok: true, target, layer, now: current(ctx) };

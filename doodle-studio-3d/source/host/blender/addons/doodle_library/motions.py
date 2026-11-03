@@ -117,20 +117,21 @@ def _key_pose(arm, frame, bones, face=True):
                 fb.keyframe_insert(f'["{k}"]', frame=frame, group='face')
 
 
+def action_curves(act):
+    """Every F-curve of an action: Action.fcurves on 4.x, the layered channelbags on 5.x
+    (5.0 removed Action.fcurves)."""
+    if act is None:
+        return []
+    if hasattr(act, 'fcurves'):
+        return list(act.fcurves)
+    return [fc for layer in act.layers for strip in layer.strips for bag in strip.channelbags for fc in bag.fcurves]
+
+
 def _fcurves(arm):
     ad = arm.animation_data
     if not ad or not ad.action:
         return []
-    act = ad.action
-    try:
-        return list(act.fcurves)
-    except Exception:
-        out = []
-        for layer in act.layers:
-            for strip in layer.strips:
-                for bag in strip.channelbags:
-                    out += list(bag.fcurves)
-        return out
+    return action_curves(ad.action)
 
 
 def insert_ds(item_id, start=None, include_camera=False, fix_clipping=True, mirror=False):
@@ -223,10 +224,7 @@ def insert_action(item, start=None):
     with bpy.data.libraries.load(path, link=False) as (src, dst):
         dst.actions = [item['datablock']]
     act = dst.actions[0]
-    try:
-        src_curves = list(act.fcurves)
-    except Exception:
-        src_curves = [fc for l in act.layers for s in l.strips for b in s.channelbags for fc in b.fcurves]
+    src_curves = action_curves(act)
     f0 = min((kp.co[0] for fc in src_curves for kp in fc.keyframe_points), default=0)
     arm.animation_data_create()
     if not arm.animation_data.action:
@@ -260,11 +258,7 @@ def save_action(name, frame_range=None, category='My motions', tags=()):
     act = src.copy()
     if frame_range:
         a, b = frame_range
-        try:
-            curves = list(act.fcurves)
-        except Exception:
-            curves = []
-        for fc in curves:
+        for fc in action_curves(act):  # 5.x: the copy's channelbags (was skipped, so the range was ignored)
             for kp in reversed(list(fc.keyframe_points)):
                 if not (a <= kp.co[0] <= b):
                     fc.keyframe_points.remove(kp)

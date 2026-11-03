@@ -34,6 +34,7 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await ev(() => ds3d.setValues({ armL: 10 }, 0, true));
   await p.click('#menubar .menu > button:has-text("File")');
   await p.click('#menubar button:has-text("Versions…")');
+  await p.waitForSelector('.ds-modal .ds-list button', { timeout: 5000 }).catch(() => {});   // the list arrives from the host after the dialog opens
   ok(await p.locator('.ds-modal .ds-list button').count() === 1, 'Versions dialog lists it');
   await p.click('.ds-modal .ds-list button');
   await p.waitForTimeout(300);

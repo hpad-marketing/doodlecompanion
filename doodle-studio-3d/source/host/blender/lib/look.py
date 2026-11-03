@@ -7,6 +7,8 @@ set on the BUNNY_settings object).
 """
 import bpy
 
+import compat
+
 INK_HEX = '#1F1F1D'
 MUSTARD_HEX = '#E0A64B'
 
@@ -273,13 +275,13 @@ def apply_ink(ob, cam, mats, outline=True, seed=0.0):
     mod = ob.modifiers.new('DS Ink', 'NODES')
     mod.node_group = ink_group()
     ids = {s.name: s.identifier for s in mod.node_group.interface.items_tree if getattr(s, 'in_out', None) == 'INPUT'}
-    mod[ids['Camera']] = cam
-    mod[ids['Outline Material']] = mats['shell']
-    mod[ids['Outline']] = outline
-    mod[ids['Seed']] = seed
-    _drive(mod, f'["{ids["Orthographic"]}"]', cam.data, 'type', expr="v == 1", id_type='CAMERA')
-    _drive(mod, f'["{ids["Ortho Scale"]}"]', cam.data, 'ortho_scale', id_type='CAMERA')
-    fc = mod.driver_add(f'["{ids["Sensor / Focal"]}"]')
+    compat.gn_set(mod, ids['Camera'], cam)
+    compat.gn_set(mod, ids['Outline Material'], mats['shell'])
+    compat.gn_set(mod, ids['Outline'], outline)
+    compat.gn_set(mod, ids['Seed'], seed)
+    _drive(*compat.gn_socket(mod, ids["Orthographic"]), cam.data, 'type', expr="v == 1", id_type='CAMERA')
+    _drive(*compat.gn_socket(mod, ids["Ortho Scale"]), cam.data, 'ortho_scale', id_type='CAMERA')
+    fc = compat.gn_driver_add(mod, ids["Sensor / Focal"])
     d = fc.driver
     d.type = 'SCRIPTED'
     for nm, path in (('s', 'sensor_width'), ('f', 'lens')):
@@ -289,8 +291,8 @@ def apply_ink(ob, cam, mats, outline=True, seed=0.0):
         v.targets[0].id = cam.data
         v.targets[0].data_path = path
     d.expression = 's / f'
-    _drive(mod, f'["{ids["Ink Fraction"]}"]', settings, '["ink_px"]', expr='v / 1920')
-    _drive(mod, f'["{ids["Boil Amount"]}"]', settings, '["boil"]')
-    _drive(mod, f'["{ids["Boil Fraction"]}"]', settings, '["boil_px"]', expr='v / 1920')
-    _drive(mod, f'["{ids["Boil Step"]}"]', settings, '["boil_step"]')
+    _drive(*compat.gn_socket(mod, ids["Ink Fraction"]), settings, '["ink_px"]', expr='v / 1920')
+    _drive(*compat.gn_socket(mod, ids["Boil Amount"]), settings, '["boil"]')
+    _drive(*compat.gn_socket(mod, ids["Boil Fraction"]), settings, '["boil_px"]', expr='v / 1920')
+    _drive(*compat.gn_socket(mod, ids["Boil Step"]), settings, '["boil_step"]')
     return mod
