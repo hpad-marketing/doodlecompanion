@@ -31,6 +31,19 @@ def clear():
                 block.remove(b)
 
 
+def _room_scale(row, obs):
+    import importlib.util
+    f = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'addons', 'doodle_library', 'truescale.py')
+    spec = importlib.util.spec_from_file_location('ds_truescale', f)
+    ts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ts)
+    roots = [o for o in obs if o.parent is None and o.type == 'MESH']
+    if not roots:
+        return 1.0
+    bb = roots[0].bound_box
+    return ts.factor(row['id'], max(max(v[i] for v in bb) - min(v[i] for v in bb) for i in range(3)))
+
+
 def load(row):
     f = os.path.join(LIB, row['file'])
     name = row.get('datablock') or row['id']
@@ -72,6 +85,12 @@ def load(row):
 def export(row):
     clear()
     obs = load(row)
+    if row['category'] == 'prop':   # the editor shows placed props at true scale (truescale.py)
+        k = _room_scale(row, obs)
+        if k != 1.0:
+            for o in obs:
+                if o.parent is None:
+                    o['ds_room_scale'] = k
     out = os.path.join(OUT, row['id'] + '.glb')
     tmp = out + '.tmp.glb'
     bpy.ops.export_scene.gltf(filepath=tmp, export_format='GLB', use_selection=True, export_yup=False, export_extras=True,

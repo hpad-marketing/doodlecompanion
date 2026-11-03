@@ -232,8 +232,13 @@ def place(items, log):
                 side = hold if hold in ('L', 'R') else None
                 ob = dl.insert(it['id'], frame=f, hold=False, location=it.get('at'))
                 if hold and ob is not None:
-                    fit_to_hand(ob, side or 'R', log)
                     from doodle_library import grips
+                    try:   # held props take the cartoon size first (user: "Mix by use", 2026-11-03)
+                        from doodle_library import truescale
+                        truescale.set_use(ob, True, bool(grips._pack_grip(ob.get('dsl_id', ''))) and not str(ob.get('dsl_id', '')).startswith('prop-'))
+                    except ImportError:
+                        pass
+                    fit_to_hand(ob, side or 'R', log)
                     grips.attach(ob, side=side, frame=f)
                 if ob is not None:
                     ob['ds_item'] = idx   # the editor's item index (the live Blender link maps moves back by it)
@@ -242,8 +247,8 @@ def place(items, log):
                     import math
                     if it.get('rot'):
                         ob.rotation_euler = tuple(math.radians(float(a)) for a in it['rot'])
-                    if it.get('scale'):
-                        ob.scale = tuple(float(a) for a in it['scale'])
+                    if it.get('scale'):   # on top of the room (true) size the prop came in at
+                        ob.scale = tuple(float(a) * b for a, b in zip(it['scale'], ob.scale))
                 if ob is not None and it.get('until') is not None:
                     for v, fr in ((True, f), (False, int(it['until']) + 2)):
                         ob.hide_render = not v

@@ -19,7 +19,7 @@ module.exports = ({ libraryDir, cacheDir, command, log = () => {} }) => {
   function stamp(row) {
     try { return Math.round(fs.statSync(path.join(libraryDir(), row.file)).mtimeMs); } catch { return 0; }
   }
-  const nameOf = row => `${safe(row.id)}--${stamp(row)}.glb`;
+  const nameOf = row => `${safe(row.id)}--${stamp(row)}-s2.glb`;   // -s2: props carry ds_room_scale (2026-11-03)
 
   function pump() {
     if (running || !queue.size) return;
