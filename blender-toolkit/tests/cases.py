@@ -636,3 +636,62 @@ def physics_52():
         pts = ev_pts(pony)
         tips.append((pts[9] - pts[0]).x)  # tip relative to root: lags when the body moves
     assert max(abs(t) for t in tips) > 0.02, tips
+
+
+def _test_wav():
+    import numpy as np, wave, tempfile
+    p = os.path.join(tempfile.mkdtemp(), 'beat.wav'); sr = 44100
+    t = np.arange(sr * 2) / sr
+    sig = np.where(t < 1, np.sin(2 * np.pi * 80 * t), np.sin(2 * np.pi * 5000 * t)) * 0.8
+    w = wave.open(p, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
+    w.writeframes((sig * 32767).astype('<i2').tobytes()); w.close()
+    return p
+
+
+@case
+def music_kit():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import music
+    from creator_toolkit.compat import strips
+    sc = C.scene
+    sc.render.fps = 24
+    sc.frame_start, sc.frame_end = 1, 48
+    p = _test_wav()
+    strips(sc).new_sound('beat', p, 1, 1)
+    # bones: works in every version
+    arm = bpy.data.armatures.new('A'); ob = bpy.data.objects.new('A', arm); sc.collection.objects.link(ob)
+    C.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = arm.edit_bones.new('ear.L'); eb.head = (0, 0, 0); eb.tail = (0, 0, 1)
+    bpy.ops.object.mode_set(mode='POSE')
+    n = music.bop_bones(C, [ob.pose.bones['ear.L']], 20, 'Bass')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    assert n == 48
+    sc.frame_set(10); a = ob.pose.bones['ear.L'].rotation_euler.x
+    sc.frame_set(40); b = ob.pose.bones['ear.L'].rotation_euler.x
+    assert a > b + 0.1, (a, b)  # bass in the first second only
+    if not music.available():
+        print('  (visualizer skipped: needs 5.2)')
+        return
+    for k, *_ in music.LOOKS:
+        assert bpy.ops.ctk.visualizer(look=k) == {'FINISHED'}, k
+    def size(o):
+        e = o.evaluated_get(C.evaluated_depsgraph_get())
+        zs = [v.co.z for v in e.data.vertices]
+        return (max(zs) - min(zs)) if zs else 0
+    bars = next(o for o in sc.objects if o.name.startswith('Visualizer Bars'))
+    sc.frame_set(12); loud = size(bars)
+    assert loud > 0.3, loud
+    for o in sc.objects:
+        if o.name.startswith('Visualizer'):
+            assert size(o) > 0, o.name
+    bpy.ops.mesh.primitive_cube_add(location=(5, 0, 0))
+    cube = C.active_object
+    m = bpy.data.materials.new('C'); m.use_nodes = True; cube.data.materials.append(m)
+    for how, *_ in music.REACTS:
+        assert bpy.ops.ctk.react(how=how) == {'FINISHED'}, how
+    bpy.ops.ctk.react(how='SCALE')
+    sc.frame_set(12)
+    e = cube.evaluated_get(C.evaluated_depsgraph_get())
+    assert max(v.co.x for v in e.data.vertices) > 1.05
+    assert 'ctk_glow' in e.data.attributes and 'CTK glow' in m.node_tree.nodes
