@@ -86,6 +86,8 @@ sc.frame_start = 1
 sc.frame_end = n
 sc.render.resolution_x = int(shot.get('width', 1080))
 sc.render.resolution_y = int(shot.get('height', 1920))
+if '--scale' in opts:   # set now: the ink line pass sizes its strokes from the real output size
+    sc.render.resolution_percentage = int(opts[opts.index('--scale') + 1])
 sc.render.film_transparent = flag('--transparent')
 for k, v in (shot.get('settings') or {}).items():
     if k in settings.keys():
@@ -288,7 +290,8 @@ if stage_items is not None and not LIVE:
     try:
         sc.frame_set(1)
         _scenery, _ = rules_scene.classify(arm, cast, objs.values())
-        constraints.props_on_floor([o for o in _scenery if o.dimensions.z >= 0.08], arm.matrix_world.translation.z, log)
+        # small props the user placed (a 7 cm apple on a table) rest too; tiny set dressing is left alone
+        constraints.props_on_floor([o for o in _scenery if o.dimensions.z >= 0.08 or o.get('ds_item') is not None], arm.matrix_world.translation.z, log)
     except Exception as e:
         print('rules: props on floor skipped:', e, flush=True)
 
