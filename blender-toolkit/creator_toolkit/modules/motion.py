@@ -122,6 +122,9 @@ class CTK_OT_motion_preset(bpy.types.Operator):
     order: bpy.props.EnumProperty(name='Stagger order', items=[('X', 'Left to right', ''), ('Z', 'Bottom to top', ''),
                                                                ('Y', 'Front to back', ''), ('RANDOM', 'Random', '')])
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
     def execute(self, context):
         obs = [o for o in context.selected_objects if o.type != 'ARMATURE']
         if not obs:
@@ -145,6 +148,7 @@ CLASSES = (CTK_OT_motion_preset,)
 
 def draw(layout, context):
     grid = layout.grid_flow(columns=2, align=True)
+    grid.operator_context = 'EXEC_DEFAULT'  # buttons run at once; the Shift+Alt+M shortcut asks first
     for k, n in PRESETS:
         grid.operator('ctk.motion_preset', text=n).kind = k
     layout.label(text='Starts at the playhead. Tweak in the Adjust panel', icon='INFO')

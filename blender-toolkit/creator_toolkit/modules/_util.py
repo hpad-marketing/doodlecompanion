@@ -11,7 +11,7 @@ def addon_prefs():
 
 def vault_dir():
     p = addon_prefs()
-    d = (p.vault_dir if p and p.vault_dir else '') or os.path.join(os.path.expanduser('~'), 'Documents', 'Creator Vault')
+    d = (p.vault_dir if p and p.vault_dir else '') or os.environ.get('CTK_VAULT_DIR') or os.path.join(os.path.expanduser('~'), 'Documents', 'Creator Vault')
     d = bpy.path.abspath(d)
     os.makedirs(d, exist_ok=True)
     return d

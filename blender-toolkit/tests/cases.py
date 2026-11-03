@@ -442,3 +442,112 @@ def gp_kit():
     cd = bpy.data.cameras.new('c'); cam = bpy.data.objects.new('c', cd); C.scene.collection.objects.link(cam)
     cam.location = (0, -6, 0); cam.rotation_euler = (1.5708, 0, 0); C.scene.camera = cam
     assert bpy.ops.ctk.gp_ink3d(source='SCENE') == {'FINISHED'}
+
+
+@case
+def node_tidy():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.mesh.primitive_cube_add()
+    o = C.active_object
+    m = bpy.data.materials.new('T'); m.use_nodes = True; o.data.materials.append(m)
+    nt = m.node_tree
+    tex = nt.nodes.new('ShaderNodeTexNoise'); ramp = nt.nodes.new('ShaderNodeValToRGB'); junk = nt.nodes.new('ShaderNodeMath')
+    for n in (tex, ramp, junk):
+        n.location = (500, 500)
+    nt.links.new(tex.outputs[0], ramp.inputs[0])
+    nt.links.new(ramp.outputs[0], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    assert bpy.ops.ctk.node_tidy() == {'FINISHED'}
+    assert tex.location.x < ramp.location.x < nt.nodes['Principled BSDF'].location.x < nt.nodes['Material Output'].location.x
+    assert bpy.ops.ctk.node_clean() == {'FINISHED'}
+    assert junk.name not in nt.nodes
+    for n in nt.nodes:
+        n.select = True
+    assert bpy.ops.ctk.node_frame(label='Look') == {'FINISHED'}
+    assert any(n.type == 'FRAME' for n in nt.nodes)
+
+
+@case
+def pie_and_updates():
+    import creator_toolkit as ctk
+    from creator_toolkit.modules import updates
+    assert hasattr(bpy.types, 'CTK_MT_pie')
+    assert updates._v('1.2.10') > updates._v('1.2.9') and updates.installed_version() == '1.0.0'
+    assert bpy.ops.ctk.keydial_text() == {'FINISHED'} and 'Shift+Q' in bpy.data.texts['Keydial shortcuts'].as_string()
+    km = bpy.context.window_manager.keyconfigs.addon
+    if km:
+        names = [k.idname for m in km.keymaps for k in m.keymap_items]
+        assert 'wm.call_menu_pie' in names
+
+
+@case
+def deliver_panel():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import deliver
+    sc = C.scene
+    d = sc.ctk_deliver
+    d.project = 'Test Reel'; d.fmt = 'Reel 9:16 (1080x1920)'
+    for c, *_ in deliver.COLOURS:
+        d.colour = c
+        assert bpy.ops.ctk.deliver_setup() == {'FINISHED'}, c
+    assert (sc.render.resolution_x, sc.render.resolution_y) == (1080, 1920)
+    assert sc.render.image_settings.file_format == 'FFMPEG' and sc.render.ffmpeg.codec in ('H264', 'H265')
+    assert 'Test Reel_v001' in sc.render.filepath and '/work/renders' in sc.render.filepath.replace('\\', '/')
+    d.preview = True
+    bpy.ops.ctk.deliver_setup()
+    assert sc.render.resolution_percentage == 50 and '_preview' in sc.render.filepath
+    d.preview = False
+    bpy.ops.ctk.deliver_setup()
+    assert sc.render.resolution_percentage == 100
+    d.output = 'PNG'
+    bpy.ops.ctk.deliver_setup()
+    assert sc.render.image_settings.file_format == 'PNG'
+    folder, name = deliver.project_dir(sc)
+    work = os.path.join(folder, 'work', 'renders')
+    open(os.path.join(work, name + '_v007.mp4'), 'w').write('x')
+    assert bpy.ops.ctk.deliver_final() == {'FINISHED'} and os.path.exists(os.path.join(folder, name + '.mp4'))
+    deliver.save_queue([{'id': '1', 'file': '/x/a.blend', 'scene': 'S', 'start': 1, 'end': 9, 'status': 'waiting'}])
+    cmd = deliver.command(deliver.queue()[0], 'blender')
+    assert cmd == ['blender', '-b', '/x/a.blend', '-S', 'S', '-s', '1', '-e', '9', '-a'], cmd
+    assert bpy.ops.ctk.queue_clear(everything=True) == {'FINISHED'} and deliver.queue() == []
+
+
+@case
+def turntable_and_sheet():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.mesh.primitive_monkey_add()
+    from creator_toolkit.modules import turntable
+    assert bpy.ops.ctk.turntable(seconds=2, mode='ORBIT') == {'FINISHED'}
+    sc = C.scene
+    cam = sc.camera
+    sc.frame_set(sc.frame_start); a = cam.matrix_world.translation.copy()
+    sc.frame_set(sc.frame_start + 15); b = cam.matrix_world.translation.copy()
+    assert (a - b).length > 0.5 and sc.frame_end == sc.frame_start + 2 * sc.render.fps - 1
+    assert bpy.ops.ctk.turntable(seconds=2, mode='SPIN') == {'FINISHED'}
+    assert bpy.ops.ctk.clay(on=True) == {'FINISHED'} and C.view_layer.material_override
+    bpy.ops.ctk.clay(on=False)
+    import tempfile
+    tmp = tempfile.mkdtemp()
+    paths = []
+    for i, col in enumerate([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)]):
+        im = bpy.data.images.new('t%d' % i, 20, 10)
+        im.pixels[:] = col * 200
+        p = os.path.join(tmp, 't%d.png' % i); im.filepath_raw = p; im.file_format = 'PNG'; im.save(); paths.append(p)
+    out = turntable.contact_sheet(paths, os.path.join(tmp, 'sheet.png'), columns=2, gap=4)
+    im = bpy.data.images.load(out)
+    assert tuple(im.size) == (2 * 20 + 3 * 4, 2 * 10 + 3 * 4), tuple(im.size)
+
+
+@case
+def starter_templates():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import templates
+    for k, *_ in templates.KINDS:
+        assert bpy.ops.ctk.template_new(kind=k) == {'FINISHED'}, k
+        sc = bpy.data.scenes[-1] if not C.window else C.scene
+    sc = next(s for s in bpy.data.scenes if s.name.startswith('Social reel'))
+    assert sc.render.resolution_y == 1920 and 'IG safe zone' in [o.name for o in sc.objects] and sc.camera
+    sz = sc.objects['IG safe zone']; assert sz.hide_render
+    p = templates.save_mine(sc, 'My reel')
+    assert os.path.exists(p) and 'My reel' in templates.my_templates()
+    s2 = templates.load_mine('My reel')
+    assert s2.render.resolution_y == 1920

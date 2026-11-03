@@ -9,6 +9,7 @@ os.environ.setdefault('CTK_TEST', '1')
 a = bpy.context.preferences.addons.new(); a.module = 'creator_toolkit'
 ctk.register()
 tmp = tempfile.mkdtemp()
+os.environ['CTK_VAULT_DIR'] = os.path.join(tmp, 'vault'); os.environ['CTK_DELIVER_ROOT'] = os.path.join(tmp, 'projects')
 p = bpy.context.preferences.addons['creator_toolkit'].preferences
 p.vault_dir = os.path.join(tmp, 'vault'); p.deliver_root = os.path.join(tmp, 'projects')
 fails = []

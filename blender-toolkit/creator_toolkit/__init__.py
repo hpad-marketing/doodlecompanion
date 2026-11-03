@@ -86,6 +86,9 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         name='Projects folder', subtype='DIR_PATH',
         description='Deliver panel makes <Project>\\ and <Project>\\work\\ here',
         default='')
+    auto_update_check: bpy.props.BoolProperty(
+        name='Check for updates when Blender starts', default=True,
+        description='Looks at GitHub once per start (needs Allow Online Access). Nothing installs without your click')
     rhubarb_path: bpy.props.StringProperty(
         name='Rhubarb Lip Sync (optional)', subtype='FILE_PATH',
         description='rhubarb.exe gives sharper lip sync. Without it, Lip sync reads loudness', default='')
@@ -96,6 +99,7 @@ class CTK_Prefs(bpy.types.AddonPreferences):
         c.prop(self, 'vault_dir')
         c.prop(self, 'deliver_root')
         c.prop(self, 'rhubarb_path')
+        c.prop(self, 'auto_update_check')
 
 
 def prefs():
