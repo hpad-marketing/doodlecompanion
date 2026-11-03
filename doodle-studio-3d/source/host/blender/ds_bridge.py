@@ -90,7 +90,7 @@ if '--scale' in opts:   # set now: the ink line pass sizes its strokes from the 
     sc.render.resolution_percentage = int(opts[opts.index('--scale') + 1])
 sc.render.film_transparent = flag('--transparent')
 for k, v in (shot.get('settings') or {}).items():
-    if k in settings.keys():
+    if k in settings.keys() or k == 'line_noise':   # line_noise: hand-drawn wobble 0..1 (lib/inklines.py)
         settings[k] = v
 for k, v in (shot.get('ik') or {}).items():
     limb, side = k.split('.')

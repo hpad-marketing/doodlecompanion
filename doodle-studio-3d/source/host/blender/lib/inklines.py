@@ -484,9 +484,88 @@ def build(scene, px):
     out_sock = o
     if hasattr(mix, 'use_alpha'):
         mix.use_alpha = False
+    try:
+        out_sock = wobble(scene, T, out_sock) or out_sock
+    except Exception as e:   # no noise is better than no picture
+        print('line noise: skipped (%s)' % e, flush=True)
     T.L.new(out_sock, comp.inputs[0])
     tree[TAG] = r
     return r
+
+
+NOISE_PX = 6.0      # line noise travel at full noise, px on a 1920-pixel frame
+NOISE_WAVE = 140.0  # one wobble along a line, same units (Doodle Studio drawings: WAVE_PX_1920)
+NOISE_DEFAULT = 0.5
+
+
+def _settings_val(key, default):
+    s = bpy.data.objects.get('BUNNY_settings')
+    try:
+        return float(s[key]) if s is not None and key in s.keys() else default
+    except (TypeError, ValueError):
+        return default
+
+
+def wobble(scene, T, src):
+    """Hand-drawn line noise (user, 2026-11-03: "add noise to strokes"). The finished drawing is
+    nudged a few pixels by smooth noise, the same on screen at any distance, redrawn every
+    boil_step frames like the 2D studio's boil. Fills move with their lines, so nothing
+    tears or gaps. line_noise 0 turns it off."""
+    n = max(0.0, min(1.0, _settings_val('line_noise', NOISE_DEFAULT)))
+    r = scene.render
+    out_h = max(r.resolution_x, r.resolution_y) * r.resolution_percentage / 100.0
+    amp = n * NOISE_PX * out_h / 1920.0
+    if amp < 0.3:
+        return None
+    wave = NOISE_WAVE * out_h / 1920.0
+    step = max(1, int(_settings_val('boil_step', 3)))
+    disp = T.node('CompositorNodeDisplace')
+    T.L.new(src, disp.inputs[0])
+    if 'Extension X' in disp.inputs:             # Blender 5.x: displacement in pixels
+        for k in ('Extension X', 'Extension Y'):
+            disp.inputs[k].default_value = 'Extend'
+        co = T.node('CompositorNodeImageCoordinates')
+        T.L.new(src, co.inputs[0])
+        v = T.node('ShaderNodeVectorMath', operation='SCALE')
+        T.L.new(co.outputs['Pixel'], v.inputs[0])
+        v.inputs['Scale'].default_value = 1.0 / wave
+        nz = T.node('ShaderNodeTexNoise', noise_dimensions='4D')
+        nz.inputs['Scale'].default_value = 1.0
+        nz.inputs['Detail'].default_value = 1.0
+        T.L.new(v.outputs[0], nz.inputs['Vector'])
+        c = T.node('ShaderNodeVectorMath', operation='SUBTRACT')
+        T.L.new(nz.outputs['Color'], c.inputs[0])
+        c.inputs[1].default_value = (0.5, 0.5, 0.5)
+        a = T.node('ShaderNodeVectorMath', operation='SCALE')
+        T.L.new(c.outputs[0], a.inputs[0])
+        a.inputs['Scale'].default_value = 2.0 * amp
+        T.L.new(a.outputs[0], disp.inputs['Displacement'])
+        sock, val = nz.inputs['W'], lambda i: i * 1.37
+    else:                                        # Blender 4.x: a cloud texture
+        tex = bpy.data.textures.get('DS Line Noise') or bpy.data.textures.new('DS Line Noise', 'CLOUDS')
+        tex.cloud_type = 'COLOR'
+        tex.noise_depth = 1
+        tex.noise_scale = 2.0 * wave / out_h
+        tx = T.node('CompositorNodeTexture')
+        tx.texture = tex
+        c = T.node('CompositorNodeMixRGB', blend_type='SUBTRACT')
+        c.inputs[0].default_value = 1.0
+        T.L.new(tx.outputs['Color'], c.inputs[1])
+        c.inputs[2].default_value = (0.5, 0.5, 0.5, 1.0)
+        T.L.new(c.outputs[0], disp.inputs['Vector'])
+        disp.inputs['X Scale'].default_value = disp.inputs['Y Scale'].default_value = 2.0 * amp
+        sock, val = tx.inputs['Offset'], lambda i: (i * 1.37, i * 0.71, 0.0)
+    # stepped redraws: keys, not drivers (compositor drivers hang Blender on exit)
+    f0, f1 = scene.frame_start, scene.frame_end
+    for f in range(f0, f1 + 1, step):
+        sock.default_value = val((f - f0) // step)
+        sock.keyframe_insert('default_value', frame=f)
+    ad = T.t.animation_data
+    for fc in (ad.action.fcurves if ad and ad.action and hasattr(ad.action, 'fcurves') else []):
+        for kp in fc.keyframe_points:
+            kp.interpolation = 'CONSTANT'
+    disp[TAG] = 1
+    return disp.outputs[0]
 
 
 def ink_rgba():

@@ -183,7 +183,7 @@ export function toBridgeShot(project, allIds, faceNames, character, stage = {}, 
     v.cam = cam;
     frames.push(v);
   }
-  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3, ...(project.ink && project.ink !== 100 ? { ink_px: +(12.73 * project.ink / 100).toFixed(3) } : {}), ink_follow: { thin: 2, same: 0, grow: 1 }[inkModeOf(project)] } };
+  const out = { fps: project.fps, width: project.width, height: project.height, frames, settings: { boil_step: 3, ...(project.ink && project.ink !== 100 ? { ink_px: +(12.73 * project.ink / 100).toFixed(3) } : {}), ink_follow: { thin: 2, same: 0, grow: 1 }[inkModeOf(project)], ...(project.inkNoise != null ? { line_noise: project.inkNoise / 100 } : {}) } };
   // Bunny-only shots with no stage stay byte-identical to older builds, so their render cache holds
   if (character && character !== 'bunny') out.character = character;
   if (Object.keys(stage).length) out.stage = stage;
