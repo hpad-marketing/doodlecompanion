@@ -918,3 +918,106 @@ def procedural_text():
     sc.frame_set(80); v2 = _eval_mesh(wd)
     span = lambda vs: max(v[0] for v in vs) - min(v[0] for v in vs) if vs else 0
     assert span(v1) < span(v2) and len({round(v[2], 3) for v in v2}) >= 2, 'words pop and have depth'
+
+
+SRT = """1
+00:00:00,000 --> 00:00:01,500
+Hello
+
+2
+00:00:01,500 --> 00:00:04,000
+this caption has quite a few words in it
+
+3
+00:00:04,000 --> 00:00:05,000
+<i>bye</i>
+"""
+
+
+def _render_vse(sc, path):
+    import numpy as np
+    sc.render.use_sequencer = True
+    sc.render.filepath = path
+    sc.render.image_settings.file_format = 'PNG'
+    bpy.ops.render.render(write_still=True)
+    img = bpy.data.images.load(path, check_existing=False)
+    w, h = img.size
+    px = np.array(img.pixels[:]).reshape(h, w, 4)
+    bpy.data.images.remove(img)
+    return px
+
+
+@case
+def captions_and_looks():
+    import tempfile
+    from creator_toolkit.modules import vse52
+    fresh()
+    sc = C.scene
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 1080, 1920, 100
+    sc.render.fps = 24
+    tmp = tempfile.mkdtemp()
+    p = os.path.join(tmp, 'talk.srt')
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(SRT)
+    assert len(vse52.parse_subs(SRT)) == 3
+    made = vse52.import_subs(sc, p, 'Ink on mustard')
+    assert [s.text for s in made] == ['Hello', 'this caption has quite a few words in it', 'bye']
+    assert made[1].frame_final_start == sc.frame_start + 36 and made[1].frame_final_duration == 60
+    assert made[0].wrap_width == 1.0 and made[1].wrap_width < 1.0
+    assert made[0].use_box and abs(made[0].location[1] - 0.30) < 1e-6
+    assert made[0].font_size == round(0.042 * 1920)
+    vse52.save_style(made[0], 'My test style')
+    assert 'My test style' in vse52.styles()
+    for s in made:
+        s.select = True
+    assert bpy.ops.ctk.caption_style(style='Mustard outline') == {'FINISHED'}
+    assert made[2].use_outline and not made[2].use_box
+    if not vse52.looks_available():
+        print('  (looks skipped: needs 5.2)')
+        return
+    import numpy as np
+    sc.render.resolution_x, sc.render.resolution_y = 96, 96
+    sc.view_settings.view_transform = 'Standard'
+    for s in list(vse52.all_strips(sc.sequence_editor)):
+        vse52.strips_of(sc.sequence_editor).remove(s)
+    ed = sc.sequence_editor
+    col = ed.strips.new_effect(name='Plate', type='COLOR', channel=1, frame_start=1, length=10)
+    col.color = (0.95, 0.7, 0.4)
+    sc.frame_set(2)
+    base = _render_vse(sc, os.path.join(tmp, 'base.png'))
+    for k, *_ in vse52.LOOKS:
+        if k == 'STICKER':
+            continue
+        m = vse52.add_look(col, k)
+        px = _render_vse(sc, os.path.join(tmp, k + '.png'))
+        assert np.abs(px - base).max() > 0.02, ('look did nothing', k)
+        col.modifiers.remove(m)
+    # halftone gives ink and cream only
+    vse52.add_look(col, 'HALFTONE')
+    px = _render_vse(sc, os.path.join(tmp, 'ht.png'))
+    assert px[..., 0].min() < 0.2 and px[..., 0].max() > 0.85
+    col.modifiers.clear()
+    # vignette: corners darker than the centre
+    vse52.add_look(col, 'VIGNETTE')
+    px = _render_vse(sc, os.path.join(tmp, 'vg.png'))
+    assert px[2, 2, :3].sum() < px[48, 48, :3].sum() * 0.8
+    col.modifiers.clear()
+    # sticker: a disc with alpha gets a border ring outside it
+    im = bpy.data.images.new('disc', 96, 96, alpha=True)
+    yy, xx = np.mgrid[0:96, 0:96]
+    a = (((xx - 48) ** 2 + (yy - 48) ** 2) < 20 ** 2).astype(float)
+    rgba = np.stack([a * 0.2, a * 0.5, a * 0.9, a], -1)
+    im.pixels[:] = rgba.ravel()
+    dp = os.path.join(tmp, 'disc.png'); im.filepath_raw = dp; im.file_format = 'PNG'; im.save()
+    ist = ed.strips.new_image(name='Disc', filepath=dp, channel=3, frame_start=1)
+    ist.frame_final_duration = 10
+    col.mute = True
+    vse52.add_look(ist, 'STICKER')
+    sc.render.film_transparent = True
+    px = _render_vse(sc, os.path.join(tmp, 'st.png'))
+    ring = px[48, 48 + 26]   # 6px outside the disc edge: border
+    far = px[48, 48 + 47]    # far outside: glow fading or empty
+    assert ring[3] > 0.9 and ring[0] > 0.8, ring
+    assert px[48, 48, 2] > 0.6, 'inside keeps the image'
+    tree = vse52.sticker_render(sc)
+    assert sc.compositing_node_group == tree and sc.render.film_transparent
