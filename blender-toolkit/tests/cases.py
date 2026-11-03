@@ -585,3 +585,54 @@ def doodle_library_browser():
         except RuntimeError:
             pass
     del os.environ['DSL_LIBRARY']
+
+
+@case
+def physics_52():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import physics52 as ph
+    if not ph.available():
+        print('  (skipped: needs 5.2)')
+        return
+    sc = C.scene
+    a = bpy.data.objects.new('A', None); b = bpy.data.objects.new('B', None)
+    for o, l in ((a, (-1, 0, 2)), (b, (1, 0, 2))):
+        sc.collection.objects.link(o); o.location = l
+    def ev_pts(ob):
+        e = ob.evaluated_get(C.evaluated_depsgraph_get())
+        if ob.type == 'CURVES':
+            return [e.matrix_world @ p.position for p in e.data.points]
+        return [e.matrix_world @ v.co for v in e.data.vertices]
+    for k in ph.ROPES:
+        sc.frame_set(1)
+        bpy.ops.object.select_all(action='DESELECT')
+        a.select_set(True); b.select_set(True); C.view_layer.objects.active = b
+        assert bpy.ops.ctk.rope(kind=k) == {'FINISHED'}, k
+    rope = next(o for o in sc.objects if o.get('ctk_rope') == 'ROPE')
+    sc.frame_set(1)
+    p0 = ev_pts(rope)
+    assert abs(p0[0].x + 1) < 0.05 and abs(p0[0].z - 2) < 0.05, p0[0]  # pinned at A, not doubled
+    b.keyframe_insert('location', frame=1); b.location.z += 1.0; b.keyframe_insert('location', frame=6)
+    for f in range(2, 16):
+        sc.frame_set(f)
+    p1 = ev_pts(rope)
+    mid = len(p1) // 2
+    assert (p1[mid] - p0[mid]).length > 0.1, ('rope does not follow', p0[mid], p1[mid])
+    assert abs(p1[0].x + 1) < 0.05 and abs(p1[-1].z - 3) < 0.1, ('pins', p1[0], p1[-1])
+    bpy.ops.mesh.primitive_cube_add(location=(4, 0, 1))
+    body = C.active_object
+    for k in ph.CLOTHS:
+        C.view_layer.objects.active = body
+        assert bpy.ops.ctk.cloth_preset(kind=k) == {'FINISHED'}, k
+    for k in ph.HAIRS:
+        C.view_layer.objects.active = body
+        assert bpy.ops.ctk.hair_preset(kind=k) == {'FINISHED'}, k
+    pony = next(o for o in sc.objects if o.name.startswith('Ponytail'))
+    sc.frame_set(1)
+    body.keyframe_insert('location', frame=1); body.location.x += 1.5; body.keyframe_insert('location', frame=8)
+    tips = []
+    for f in range(1, 12):
+        sc.frame_set(f)
+        pts = ev_pts(pony)
+        tips.append((pts[9] - pts[0]).x)  # tip relative to root: lags when the body moves
+    assert max(abs(t) for t in tips) > 0.02, tips
