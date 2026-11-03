@@ -16,9 +16,9 @@ from . import compat  # noqa: F401
 
 _NAMES = [
     'vault', 'doodle', 'cleanimport', 'material', 'style', 'palette', 'lights',
-    'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'playback', 'lipsync', 'physics52', 'smear52',
+    'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'playback', 'lipsync', 'stopmo', 'physics52', 'smear52',
     'kinetic', 'camera', 'music', 'gnkit', 'shapes52', 'looks52', 'text52', 'gpkit', 'nodetidy',
-    'deliver', 'vse52', 'templates', 'turntable', 'speed', 'pie', 'updates',
+    'deliver', 'bake', 'vse52', 'templates', 'turntable', 'speed', 'pie', 'updates',
 ]
 
 MODULES = []
@@ -59,7 +59,9 @@ def _doodle_master():
             'sections': [{'label': m.LABEL, 'draw': _section_draw(m), 'space': 'VIEW_3D', 'closed': True}
                          for m in mods],
         })
-    return {'tools': tools}
+    from .modules import bake as _bake
+    # Export in the Master Launcher bakes every live effect first; Unbake puts them back
+    return {'tools': tools, 'bake': {'bake': _bake.bake, 'unbake': _bake.unbake}}
 
 
 def draw_module(mod, layout, context):

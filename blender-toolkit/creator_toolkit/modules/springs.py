@@ -134,31 +134,51 @@ class CTK_OT_spring_bake(bpy.types.Operator):
 
     def execute(self, context):
         sc = context.scene
-        rigs = _rigs(sc)
-        if not rigs:
+        done = bake(sc, sc.frame_start, sc.frame_end)
+        if not done:
             self.report({'WARNING'}, 'No springy bones in this scene')
             return {'CANCELLED'}
-        keys = {}
-        _last['frame'] = None
-        for f in range(sc.frame_start, sc.frame_end + 1):
-            sc.frame_set(f)
-            for rig in rigs:
-                for pb in _springs(rig):
-                    keys.setdefault((rig.name, pb.name), []).append((f, pb.rotation_mode, tuple(pb.rotation_quaternion), tuple(pb.rotation_euler)))
-        for (rn, bn), rows in keys.items():
-            pb = bpy.data.objects[rn].pose.bones[bn]
-            for f, mode, q, e in rows:
-                if mode == 'QUATERNION':
-                    pb.rotation_quaternion = q
-                    pb.keyframe_insert('rotation_quaternion', frame=f)
-                else:
-                    pb.rotation_euler = e
-                    pb.keyframe_insert('rotation_euler', frame=f)
-            pb['ctk_spring_baked'] = 1
-            if 'ctk_L' in pb:
-                del pb['ctk_L']
-        self.report({'INFO'}, f'Baked {len(keys)} bones')
+        self.report({'INFO'}, f'Baked {len(done)} bones')
         return {'FINISHED'}
+
+
+def bake(sc, f0, f1):
+    """Key the spring motion from f0 to f1. Returns [[rig, bone], ...] that were baked."""
+    rigs = _rigs(sc)
+    if not rigs:
+        return []
+    keep = sc.frame_current
+    keys = {}
+    _last['frame'] = None
+    for f in range(f0, f1 + 1):
+        sc.frame_set(f)
+        for rig in rigs:
+            for pb in _springs(rig):
+                keys.setdefault((rig.name, pb.name), []).append((f, pb.rotation_mode, tuple(pb.rotation_quaternion), tuple(pb.rotation_euler)))
+    for (rn, bn), rows in keys.items():
+        pb = bpy.data.objects[rn].pose.bones[bn]
+        for f, mode, q, e in rows:
+            if mode == 'QUATERNION':
+                pb.rotation_quaternion = q
+                pb.keyframe_insert('rotation_quaternion', frame=f)
+            else:
+                pb.rotation_euler = e
+                pb.keyframe_insert('rotation_euler', frame=f)
+        pb['ctk_spring_baked'] = 1
+        if 'ctk_L' in pb:
+            del pb['ctk_L']
+    sc.frame_set(keep)
+    return [list(k) for k in keys]
+
+
+def unbake_flags(pairs):
+    for rn, bn in pairs:
+        o = bpy.data.objects.get(rn)
+        pb = o.pose.bones.get(bn) if o and o.pose else None
+        if pb is not None and 'ctk_spring_baked' in pb:
+            del pb['ctk_spring_baked']
+    _state.clear()
+    _last['frame'] = None
 
 
 class CTK_OT_spring_reset(bpy.types.Operator):

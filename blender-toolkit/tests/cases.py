@@ -1021,3 +1021,67 @@ def captions_and_looks():
     assert px[48, 48, 2] > 0.6, 'inside keeps the image'
     tree = vse52.sticker_render(sc)
     assert sc.compositing_node_group == tree and sc.render.film_transparent
+
+
+@case
+def stopmotion_and_bake():
+    import json
+    import creator_toolkit as ctk
+    from creator_toolkit.modules import stopmo, bake, camera, physics52
+    from creator_toolkit.compat import fcurves_of
+    fresh()
+    sc = C.scene
+    sc.frame_start, sc.frame_end = 1, 24
+    o = cube('Mover')
+    o.location.x = 0; o.keyframe_insert('location', index=0, frame=1)
+    o.location.x = 10; o.keyframe_insert('location', index=0, frame=21)
+    cam = bpy.data.objects.new('Cam', bpy.data.cameras.new('Cam')); sc.collection.objects.link(cam); sc.camera = cam
+    cam.location = (0, -10, 2)
+    lamp = bpy.data.objects.new('Lamp', bpy.data.lights.new('Lamp', 'POINT')); sc.collection.objects.link(lamp)
+    lamp.data.energy = 100.0
+    def at(f, fn):
+        sc.frame_set(f); return fn()
+    smooth = [at(f, lambda: o.location.x) for f in range(1, 8)]
+    p = sc.ctk_stopmo
+    p.step, p.jitter, p.flicker = 2, 0.02, 0.3
+    assert bpy.ops.ctk.stopmo(on=True) == {'FINISHED'}
+    xs = [at(f, lambda: o.location.x) for f in range(1, 8)]
+    assert abs(xs[0] - xs[1]) < 0.05 and abs(xs[2] - xs[3]) < 0.05 and xs[2] - xs[1] > 0.1, xs
+    cz = [at(f, lambda: cam.location.z) for f in range(1, 9)]
+    assert abs(cz[0] - cz[1]) < 1e-6 and len({round(z, 5) for z in cz}) > 1, 'camera jitters, held on twos'
+    en = [at(f, lambda: lamp.data.energy) for f in range(1, 9)]
+    assert len({round(e, 3) for e in en}) > 1, 'lights flicker'
+    # bake through the launcher hook, token must survive JSON
+    hook = ctk.DOODLE_MASTER['bake']
+    before = [at(f, lambda: (o.location.x, cam.location.z, lamp.data.energy)) for f in range(1, 25)]
+    tok = json.loads(json.dumps(hook['bake'](sc, 1, 24)))
+    assert not any(len(fc.modifiers) for idb in (o, cam, lamp.data) for fc in fcurves_of(idb))
+    after = [at(f, lambda: (o.location.x, cam.location.z, lamp.data.energy)) for f in range(1, 25)]
+    assert all(abs(a - b) < 1e-4 for r1, r2 in zip(before, after) for a, b in zip(r1, r2)), 'baked = what you saw'
+    assert not stopmo.is_on(sc)
+    hook['unbake'](sc, tok)
+    assert stopmo.is_on(sc)
+    assert any(m.type == 'STEPPED' for fc in fcurves_of(o) for m in fc.modifiers)
+    again = [at(f, lambda: (o.location.x, cam.location.z, lamp.data.energy)) for f in range(1, 25)]
+    assert all(abs(a - b) < 1e-4 for r1, r2 in zip(before, again) for a, b in zip(r1, r2)), 'unbake restores'
+    assert not any(a.name.endswith('(before bake)') for a in bpy.data.actions)
+    assert bpy.ops.ctk.stopmo(on=False) == {'FINISHED'}
+    back = [at(f, lambda: o.location.x) for f in range(1, 8)]
+    assert all(abs(a - b) < 1e-5 for a, b in zip(back, smooth)), 'stop motion off = smooth again'
+    assert abs(at(5, lambda: cam.location.z) - 2.0) < 1e-6 and abs(lamp.data.energy - 100.0) < 1e-4
+    assert not any(m for fc in fcurves_of(o) for m in fc.modifiers)
+    # camera shake bakes and comes back too
+    camera.add_shake(cam, list(camera.SHAKES)[0])
+    assert bpy.ops.ctk.bake_all() == {'FINISHED'} and bake.is_baked(sc)
+    assert not any(len(fc.modifiers) for fc in fcurves_of(cam))
+    assert bpy.ops.ctk.unbake_all() == {'FINISHED'}
+    assert any(m.type == 'NOISE' for fc in fcurves_of(cam) for m in fc.modifiers)
+    # simulations get cached, then freed
+    if physics52.available():
+        a = bpy.data.objects.new('A', None); b = bpy.data.objects.new('B', None)
+        for e, l in ((a, (-1, 0, 2)), (b, (1, 0, 2))):
+            sc.collection.objects.link(e); e.location = l
+        rope = physics52.make_rope(C, a, b)
+        t = bake.bake(sc, 1, 6)
+        assert rope.name in t['sims'], t
+        bake.unbake(sc)
