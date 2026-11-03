@@ -45,6 +45,23 @@ def _outlined(ob):
     return any(md.type == 'NODES' and md.name in INK_MODS and md.show_render for md in ob.modifiers)
 
 
+SET_BIAS = 1.0   # strokes; 0.3 lets shells cover creases, 4.5 buries them in the wall
+
+
+def _hull_bias(ob):
+    """A set piece's outline shell is pushed a few strokes away from the camera (Depth Bias 4.5)
+    so it never covers its own creases. Against a wall, or standing on a table, that push buries
+    the shell in the surface behind it and the outline thins out or breaks (user, 2026-11-03:
+    "lines still breaking"). With the seam pass on, a short push is enough."""
+    from compat import gn_get, gn_set
+    for md in ob.modifiers:
+        if md.type != 'NODES' or md.name not in INK_MODS or md.node_group is None:
+            continue
+        ids = {i.name: i.identifier for i in md.node_group.interface.items_tree if getattr(i, 'in_out', None) == 'INPUT'}
+        if 'Depth Bias' in ids and (gn_get(md, ids['Depth Bias'], 0.0) or 0.0) > SET_BIAS:
+            gn_set(md, ids['Depth Bias'], SET_BIAS)
+
+
 def wanted(shot=None, scene=None):
     if shot is not None and shot.get('inkLines') is False:
         return False
@@ -63,6 +80,8 @@ def tag_materials(scene):
         # an outlined object, or a black part of a character (its parent or rig has the ink)
         ob['ds_line'] = 1.0 if _outlined(ob) else 0.0
         ob['ds_char'] = 1.0 if _is_character(ob) else 0.0
+        if ob['ds_line'] and not ob['ds_char']:
+            _hull_bias(ob)
         rig = _rig(ob)
         # whole numbers below 2048: render passes may be stored as half floats
         ob['ds_oid'] = float(100 * (_hash(rig.name if rig else ob.name) % 19))
