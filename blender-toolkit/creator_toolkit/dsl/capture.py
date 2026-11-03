@@ -107,7 +107,7 @@ def on_depsgraph(scene, depsgraph=None):
                 and not ob.library and ob.name in scene.objects:
             _pending.add(ob.name)
             if not bpy.app.timers.is_registered(_style_later):
-                bpy.app.timers.register(_style_later, first_interval=0.01)
+                bpy.app.timers.register(_style_later, first_interval=0.01, persistent=True)
 
 
 _pending = set()

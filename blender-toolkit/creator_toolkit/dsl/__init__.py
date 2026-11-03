@@ -68,7 +68,7 @@ def register():
     capture.register()
     gpu.register()
     bpy.app.handlers.load_post.append(on_load)
-    bpy.app.timers.register(_first_refresh, first_interval=0.5)
+    bpy.app.timers.register(_first_refresh, first_interval=0.5, persistent=True)
 
 
 def unregister():
