@@ -17,6 +17,7 @@ copyright = ["2026 HPAD Marketing"]
 
 [permissions]
 files = "Save and load your asset vault, presets, renders and audio files"
+network = "Check for Toolkit updates and open online asset libraries"
 
 [build]
 paths_exclude_pattern = ["__pycache__/", "/.git/", "*.zip"]
