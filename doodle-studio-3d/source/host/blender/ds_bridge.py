@@ -97,7 +97,9 @@ for k, v in (shot.get('ik') or {}).items():
 PIVOT_Z = 4.145 * S
 BASE_ORTHO = 17.07 * S
 INK_BASE = float(settings['ink_px']) if 'ink_px' in settings.keys() else 12.73
-INK_FOLLOW = bool((shot.get('settings') or {}).get('ink_follow', 1))
+# one stroke weight at every distance and angle (user, 2026-11-03); ink_follow: 1 brings back
+# the 2D studio's drawing-style ink that grows as the camera moves in
+INK_FOLLOW = bool((shot.get('settings') or {}).get('ink_follow', 0))
 
 
 def ink_for_camera():
@@ -337,6 +339,14 @@ try:
     lights.apply(shot, cam, arm, lambda m: print(m, flush=True), out_dir)
 except Exception as e:   # nor does a light
     print('lights: skipped:', e, flush=True)
+# lines where parts meet (a cushion on a seat, a cup on a table) at the outline's own width,
+# from depth and part ids, so no angle or light can hide them (lib/inklines.py)
+if not previz:
+    try:
+        import inklines
+        inklines.apply(shot, lambda m: print(m, flush=True))
+    except Exception as e:   # the hull alone still draws
+        print('ink lines: skipped:', e, flush=True)
 
 # a cut is a cut: hold every key up to the cut so motion blur never smears across it
 cut_frames = {int(round(t * fps)) + 1 for t in shot.get('cuts', [])}
