@@ -320,12 +320,18 @@ class CTK_OT_rig_pick(bpy.types.Operator):
         context.view_layer.objects.active = rig
         if context.mode != 'POSE':
             bpy.ops.object.mode_set(mode='POSE')
-        for b in rig.data.bones:
-            if not self.extend:
-                b.select = False
+        def sel(name, on):
+            pb = rig.pose.bones.get(name)
+            if pb is not None and hasattr(pb, 'select'):  # 5.x: selection lives on pose bones
+                pb.select = on
+            elif name in rig.data.bones:
+                rig.data.bones[name].select = on
+        if not self.extend:
+            for b in rig.data.bones:
+                sel(b.name, False)
         b = rig.data.bones.get(self.bone)
         if b:
-            b.select = True
+            sel(b.name, True)
             rig.data.bones.active = b
         return {'FINISHED'}
 

@@ -183,6 +183,12 @@ def rig_builder_and_springs():
         assert n in names, (n, names)
     assert body.parent == rig and len(body.vertex_groups) > 5
     assert 'IK arm L' in rig.keys()
+    # picker selects bones (5.x keeps selection on pose bones)
+    select_only(rig)
+    assert bpy.ops.ctk.rig_pick(bone='head') == {'FINISHED'}
+    pbh = rig.pose.bones['head']
+    assert (pbh.select if hasattr(pbh, 'select') else rig.data.bones['head'].select)
+    bpy.ops.object.mode_set(mode='OBJECT')
     # FK/IK driver works
     rig['IK arm L'] = 0.0
     rig.update_tag(); C.view_layer.update()
@@ -759,3 +765,40 @@ def blobs_smoke_soft():
     e = trail.evaluated_get(C.evaluated_depsgraph_get()); z1 = max(v.co.z for v in e.data.vertices)
     sc.frame_set(30); e = trail.evaluated_get(C.evaluated_depsgraph_get())
     assert n1 > 50 and abs(max(v.co.z for v in e.data.vertices) - z1) > 1e-3
+
+
+@case
+def speed_trails():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    from creator_toolkit.modules import smear52
+    if not smear52.available():
+        print('  (speed lines skipped: needs 5.2)')
+        return
+    sc = C.scene
+    arm = bpy.data.armatures.new('A'); ob = bpy.data.objects.new('A', arm); sc.collection.objects.link(ob)
+    C.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = arm.edit_bones.new('hand'); eb.head = (0, 0, 0); eb.tail = (0, 0, 1)
+    bpy.ops.object.mode_set(mode='POSE')
+    pb = ob.pose.bones['hand']
+    pb.rotation_mode = 'XYZ'
+    pb.rotation_euler.x = 0; pb.keyframe_insert('rotation_euler', frame=1)
+    pb.rotation_euler.x = 2.5; pb.keyframe_insert('rotation_euler', frame=8)
+    if hasattr(pb, 'select'):
+        pb.select = True
+    else:
+        arm.bones['hand'].select = True
+    assert bpy.ops.ctk.speed_trail() == {'FINISHED'}
+    bpy.ops.object.mode_set(mode='OBJECT')
+    tr = next(o for o in sc.objects if o.name.startswith('Speed trail'))
+    counts = []
+    for f in range(1, 16):
+        sc.frame_set(f)
+        e = tr.evaluated_get(C.evaluated_depsgraph_get())
+        counts.append(len(e.data.vertices))
+    assert max(counts[2:8]) > 12, counts
+    e = tr.evaluated_get(C.evaluated_depsgraph_get())
+    zs = [v.co for v in e.data.vertices]
+    print('  trail radius range', min(v.length for v in zs), max(v.length for v in zs), 'frames', counts)
+    assert all(abs(v.length - 1.0) < 0.2 for v in zs), 'trail is not at the bone tip'
+    assert counts[-1] == 0 or min(v.length for v in zs) > 0.9  # trail fades once the hand stops
