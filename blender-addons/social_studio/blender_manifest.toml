@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+
+id = "social_studio"
+version = "1.0.0"
+name = "Social Studio"
+tagline = "Turn a character scene into a ready-to-post reel"
+maintainer = "HPAD <marketing@hpad.co.in>"
+type = "add-on"
+tags = ["Animation", "Render", "Sequencer"]
+blender_version_min = "4.5.0"
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 HPAD", "Fonts: Bangers, Patrick Hand, Anton (SIL Open Font License)"]
+
+[permissions]
+files = "Reads your audio, clips and screenshots; writes renders and post folders"
+network = "Only if you schedule a post with Postiz, after you confirm"
