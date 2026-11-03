@@ -91,5 +91,5 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.operator('ctk.mirror_pose', icon='MOD_MIRROR')
     if hasattr(ts, 'anim_mirror_object'):
-        layout.prop(ts, 'anim_mirror_object', text='Mirror around')
-        layout.prop(ts, 'anim_mirror_bone', text='Mirror bone')
+        row.prop(ts, 'anim_mirror_object', text='')
+        row.prop(ts, 'anim_mirror_bone', text='')

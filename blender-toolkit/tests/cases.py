@@ -38,10 +38,21 @@ def doodle_master_dict():
 def draw_every_module():
     import creator_toolkit as ctk
 
+    bad = []
+
     class FakeLayout:
         def __getattr__(self, k):
             def f(*a, **kw):
+                if k in ('prop', 'template_icon_view') and len(a) >= 2 and isinstance(a[1], str):
+                    data, name = a[0], a[1]
+                    ok = name.startswith('["') or hasattr(data, name)
+                    if not ok:
+                        bad.append((type(data).__name__, name))
                 if k in ('operator',):
+                    if a and isinstance(a[0], str):
+                        mod, op = a[0].split('.')
+                        if not hasattr(getattr(bpy.ops, mod), op):
+                            bad.append(('op', a[0]))
                     class P:
                         def __setattr__(s, a, b): pass
                     return P()
@@ -49,6 +60,17 @@ def draw_every_module():
             return f
     for m in ctk.MODULES:
         m.draw(FakeLayout(), C)
+    from creator_toolkit.dsl import ui
+    for cls in ui.CLASSES:
+        if hasattr(cls, 'bl_space_type') and hasattr(cls, 'draw'):
+            class Self:
+                layout = FakeLayout()
+            try:
+                cls.draw(Self(), C)
+            except Exception as e:  # panels may need library files; layout errors are what we check
+                if 'layout' in str(e):
+                    raise
+    assert not bad, bad
 
 
 @case
@@ -498,8 +520,9 @@ def node_tidy():
     nt.links.new(ramp.outputs[0], nt.nodes['Principled BSDF'].inputs['Base Color'])
     assert bpy.ops.ctk.node_tidy() == {'FINISHED'}
     assert tex.location.x < ramp.location.x < nt.nodes['Principled BSDF'].location.x < nt.nodes['Material Output'].location.x
+    junk_name = junk.name
     assert bpy.ops.ctk.node_clean() == {'FINISHED'}
-    assert junk.name not in nt.nodes
+    assert junk_name not in nt.nodes
     for n in nt.nodes:
         n.select = True
     assert bpy.ops.ctk.node_frame(label='Look') == {'FINISHED'}
@@ -511,7 +534,7 @@ def pie_and_updates():
     import creator_toolkit as ctk
     from creator_toolkit.modules import updates
     assert hasattr(bpy.types, 'CTK_MT_pie')
-    assert updates._v('1.2.10') > updates._v('1.2.9') and updates.installed_version() == '1.0.0'
+    assert updates._v('1.2.10') > updates._v('1.2.9') and updates.installed_version() == '1.1.0'
     assert bpy.ops.ctk.keydial_text() == {'FINISHED'} and 'Shift+Q' in bpy.data.texts['Keydial shortcuts'].as_string()
     km = bpy.context.window_manager.keyconfigs.addon
     if km:
@@ -610,6 +633,7 @@ def doodle_library_browser():
     bpy.data.objects.remove(cub)
     from creator_toolkit.modules import doodle
     doodle._cache['mtime'] = None
+    doodle._previews().clear()
     p = C.scene.ctk_doodle
     p.category = 'prop'
     items = doodle._items(p, C)
@@ -1085,3 +1109,93 @@ def stopmotion_and_bake():
         t = bake.bake(sc, 1, 6)
         assert rope.name in t['sims'], t
         bake.unbake(sc)
+
+
+@case
+def powers_cloud_boil_hold():
+    from creator_toolkit.modules import wordcloud, boil3d, stopmo, bake
+    fresh()
+    sc = C.scene
+    sc.frame_start, sc.frame_end = 1, 12
+    cam = bpy.data.objects.new('Cam', bpy.data.cameras.new('Cam')); sc.collection.objects.link(cam); sc.camera = cam
+    cam.location = (0, -8, 1); cam.rotation_euler = (1.5708, 0, 0)
+    # word cloud: biggest word first, nothing overlaps, brand colours only
+    txt = 'doodle doodle doodle bunny bunny ink mustard mustard mustard mustard reels reels the and of'
+    root = wordcloud.build(C, txt, limit=10)
+    kids = [o for o in sc.objects if o.parent == root]
+    assert kids[0].data.body == 'mustard' and 'the' not in [k.data.body for k in kids], [k.data.body for k in kids]
+    C.view_layer.update()
+    sc.frame_set(60)
+    boxes = []
+    for k in kids:
+        from mathutils import Vector
+        pts = [k.matrix_world @ Vector(c) for c in k.bound_box]
+        boxes.append((min(p.x for p in pts), min(p.z for p in pts), max(p.x for p in pts), max(p.z for p in pts)))
+    for i in range(len(boxes)):
+        for j in range(i + 1, len(boxes)):
+            a, b = boxes[i], boxes[j]
+            assert a[2] <= b[0] + 1e-3 or b[2] <= a[0] + 1e-3 or a[3] <= b[1] + 1e-3 or b[3] <= a[1] + 1e-3, (i, j)
+    cols = {tuple(round(c, 3) for c in m.diffuse_color[:3]) for k in kids for m in k.data.materials}
+    assert len(cols) == 2, cols
+    sc.frame_set(1)
+    assert kids[-1].scale.x < 0.01, 'later words pop in later'
+    # mesh boil moves the surface on each step and holds between
+    fresh()
+    sc = C.scene
+    sc.frame_start, sc.frame_end = 1, 12
+    o = cube('Boiled')
+    boil3d.add_boil(o, 0.01, 2)
+    assert o.modifiers[0].name == boil3d.BOIL
+    def v0(f):
+        sc.frame_set(f)
+        dg = C.evaluated_depsgraph_get()
+        return tuple(o.evaluated_get(dg).data.vertices[0].co)
+    a, b, c = v0(2), v0(3), v0(4)
+    assert a == b and b != c, (a, b, c)
+    assert max(abs(x) for x in c) < 1.1
+    # stop motion holds procedural geometry nodes and models boil
+    o2 = cube('Wavy', loc=(3, 0, 0))
+    mod = o2.modifiers.new('Wave', 'WAVE')
+    p = sc.ctk_stopmo
+    p.step, p.hold, p.boil_models = 2, True, True
+    stopmo.switch_on(sc)
+    assert o2.modifiers[-1].name == boil3d.HOLD and o2.modifiers[0].name == boil3d.BOIL
+    zs = []
+    for f in range(1, 8):
+        sc.frame_set(f)
+        dg = C.evaluated_depsgraph_get()
+        zs.append(round(o2.evaluated_get(dg).data.vertices[0].co.z, 5))
+    assert zs[1] == zs[0] and zs[3] == zs[2] and zs[2] != zs[1], zs
+    t = bake.bake(sc, 1, 8)
+    assert 'Wavy' in t['sims'], t
+    bake.unbake(sc)
+    stopmo.switch_off(sc)
+    assert not any(m.name in (boil3d.HOLD, boil3d.BOIL) for m in o2.modifiers)
+
+
+@case
+def doodle_powers_and_library():
+    from creator_toolkit.modules import powers
+    from creator_toolkit import dsl
+    from creator_toolkit.dsl import lighting, text3d
+    fresh()
+    sc = C.scene
+    cam = bpy.data.objects.new('Cam', bpy.data.cameras.new('Cam')); sc.collection.objects.link(cam); sc.camera = cam
+    cam.location = (0, -6, 1.2); cam.rotation_euler = (1.5, 0, 0)
+    assert dsl._active.get('on'), 'the Doodle tab comes with the Toolkit'
+    cube('Prop', size=0.5)
+    for kind in ('AUTOINK', 'JELLY', 'CROWD', 'SCATTER', 'LIQUID', 'FISHEYE'):
+        assert bpy.ops.ctk.power(kind=kind) == {'FINISHED'}, kind
+    assert any(o.name.startswith('DS_scatter') for o in sc.objects)
+    assert any(o.name.startswith('DS_puddle') for o in sc.objects)
+    lighting.lightning(10)
+    text3d.text_group()
+    lib = os.environ.get('DSL_LIBRARY')
+    if lib and os.path.isdir(lib):  # the real library files (not in this public repo)
+        C.preferences.addons['creator_toolkit'].preferences.doodle_lib_dir = lib
+        from creator_toolkit.dsl import fx, storytime
+        for k in ('confetti', 'rain', 'snow', 'fireworks'):
+            fx.add_effect(k, frame=1)
+        lighting.set_time('night')
+        storytime.chat([('them', 'hi'), ('me', 'hello')], frame=1)
+        storytime.end_screen(frame=1)

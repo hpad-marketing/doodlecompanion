@@ -149,5 +149,6 @@ CLASSES = (CTK_OT_clean_selected, CTK_OT_import_clean)
 
 
 def draw(layout, context):
-    layout.operator('ctk.import_clean', icon='IMPORT')
-    layout.operator('ctk.clean_selected', icon='BRUSH_DATA')
+    row = layout.row(align=True)
+    row.operator('ctk.import_clean', icon='IMPORT')
+    row.operator('ctk.clean_selected', icon='BRUSH_DATA')

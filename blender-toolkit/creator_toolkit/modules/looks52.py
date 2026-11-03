@@ -353,11 +353,12 @@ def draw(layout, context):
     m = o.active_material if o else None
     if has_ink(m):
         nt = m.node_tree
-        col = layout.column(align=True)
-        col.prop(nt.nodes['CTK ink contact'].inputs['Length'], 'default_value', text='Contact width')
-        col.prop(nt.nodes['CTK ink silhouette'].inputs[1], 'default_value', text='Silhouette edge (lower = thicker)')
-        col.prop(nt.nodes['CTK ink colour'].inputs['Color'], 'default_value', text='')
-    layout.label(text='Radial backdrop')
+        row = layout.row(align=True)
+        row.prop(nt.nodes['CTK ink contact'].inputs['Length'], 'default_value', text='Contact')
+        row.prop(nt.nodes['CTK ink silhouette'].inputs[1], 'default_value', text='Edge')
+        row.prop(nt.nodes['CTK ink colour'].inputs['Color'], 'default_value', text='')
+        layout.label(text='Lower Edge = thicker outline', icon='INFO')
+    layout.label(text='Radial backdrop', icon='MESH_CIRCLE')
     grid = layout.grid_flow(columns=3, align=True)
     for k, label, *_ in PATTERNS:
         grid.operator('ctk.radial_backdrop', text=label).pattern = k

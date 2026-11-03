@@ -232,9 +232,9 @@ CLASSES = (CTK_OT_mocap_import, CTK_OT_retarget_selected, CTK_OT_pose_save, CTK_
 
 
 def draw(layout, context):
-    col = layout.column(align=True)
-    col.operator('ctk.mocap_import', icon='IMPORT')
-    col.operator('ctk.retarget_selected', icon='ARMATURE_DATA')
+    row = layout.row(align=True)
+    row.operator('ctk.mocap_import', icon='IMPORT')
+    row.operator('ctk.retarget_selected', icon='ARMATURE_DATA')
     layout.label(text='Free mocap: mixamo.com (FBX, without skin)', icon='URL')
     row = layout.row(align=True)
     row.operator('ctk.pose_save', icon='ADD')

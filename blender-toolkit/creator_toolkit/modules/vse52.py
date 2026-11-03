@@ -525,12 +525,12 @@ CLASSES = (CTK_OT_caption_style, CTK_OT_caption_save, CTK_OT_subs_import, CTK_OT
 
 
 def draw(layout, context):
-    layout.label(text='Captions')
     row = layout.row(align=True)
+    row.label(text='Captions', icon='FONT_DATA')
     row.operator('ctk.subs_import', icon='IMPORT')
-    row.operator_menu_enum('ctk.caption_style', 'style', text='Style', icon='FONT_DATA')
-    layout.operator('ctk.caption_save', icon='FILE_TICK')
-    layout.label(text='Looks')
+    row.operator_menu_enum('ctk.caption_style', 'style', text='Style')
+    row.operator('ctk.caption_save', text='', icon='FILE_TICK')
+    layout.label(text='Video looks', icon='SEQUENCE')
     if not looks_available():
         layout.label(text='Needs Blender 5.2', icon='INFO')
         return

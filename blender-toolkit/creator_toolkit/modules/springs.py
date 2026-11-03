@@ -212,10 +212,10 @@ def draw(layout, context):
     row.operator('ctk.spring_toggle', text='Make springy', icon='FORCE_HARMONIC').on = True
     row.operator('ctk.spring_toggle', text='Not springy').on = False
     if pb and pb.get('ctk_spring'):
-        col = layout.column(align=True)
-        col.prop(pb, '["ctk_stiffness"]', text='Stiffness', slider=True)
-        col.prop(pb, '["ctk_damping"]', text='Damping', slider=True)
-        col.prop(pb, '["ctk_gravity"]', text='Droop')
+        row = layout.row(align=True)
+        row.prop(pb, '["ctk_stiffness"]', text='Stiffness', slider=True)
+        row.prop(pb, '["ctk_damping"]', text='Damping', slider=True)
+        row.prop(pb, '["ctk_gravity"]', text='Droop')
     rig = context.active_object
     if rig and rig.type == 'ARMATURE':
         layout.prop(rig, '["ctk_springs_on"]', text='Springs on') if 'ctk_springs_on' in rig else \

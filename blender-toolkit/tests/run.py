@@ -20,7 +20,9 @@ def t(name, fn):
         fails.append(name); print('FAIL', name); traceback.print_exc()
 sys.path.insert(0, HERE)
 import cases  # noqa
+only = os.environ.get('CTK_ONLY')
 for name, fn in cases.CASES:
-    t(name, fn)
+    if not only or name in only.split(','):
+        t(name, fn)
 ctk.unregister()
 print('VERSION', bpy.app.version_string, 'FAILS', len(fails), fails)
