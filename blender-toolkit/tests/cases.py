@@ -328,6 +328,15 @@ def tween_and_ease():
     assert [round(y, 4) for y in ys2] == [6.0, 14.0], ys2
     C.scene.ctk_offset.live = False
 
+    # silhouette view round trip (scene shading has the same settings as a viewport)
+    from creator_toolkit.modules import tween
+    sh = C.scene.display.shading
+    sh.light = 'STUDIO'; sh.color_type = 'MATERIAL'; sh.show_cavity = True
+    assert tween.silhouette(sh, True, 'test')
+    assert sh.light == 'FLAT' and sh.color_type == 'SINGLE' and not sh.show_cavity
+    assert tween.silhouette(sh, False, 'test')
+    assert sh.light == 'STUDIO' and sh.color_type == 'MATERIAL' and sh.show_cavity
+
 def _voice_wav(path, seconds=3.0):
     import wave
     import numpy as np
@@ -827,3 +836,31 @@ def speed_trails():
     print('  trail radius range', min(v.length for v in zs), max(v.length for v in zs), 'frames', counts)
     assert all(abs(v.length - 1.0) < 0.2 for v in zs), 'trail is not at the bone tip'
     assert counts[-1] == 0 or min(v.length for v in zs) > 0.9  # trail fades once the hand stops
+
+
+@case
+def ink_and_radial():
+    from creator_toolkit.modules import looks52
+    if not looks52.ink_available():
+        print('  skipped: needs 5.2'); return
+    fresh()
+    o = cube('Inked')
+    m = bpy.data.materials.new('Body'); m.use_nodes = True; o.data.materials.append(m)
+    select_only(o)
+    assert bpy.ops.ctk.ink_add() == {'FINISHED'}
+    assert looks52.has_ink(m)
+    out = looks52._output(m.node_tree)
+    assert out.inputs['Surface'].links[0].from_node.name == 'CTK ink mix'
+    assert bpy.ops.ctk.ink_add() == {'FINISHED'}  # twice = still one ink
+    assert sum(1 for n in m.node_tree.nodes if n.get('ctk_ink')) == 7
+    assert bpy.ops.ctk.ink_remove() == {'FINISHED'}
+    assert not looks52.has_ink(m)
+    assert out.inputs['Surface'].links[0].from_node.bl_idname == 'ShaderNodeBsdfPrincipled'
+    C.scene.render.engine = 'BLENDER_EEVEE' if 'BLENDER_EEVEE' in [e.identifier for e in C.scene.render.bl_rna.properties['engine'].enum_items] else C.scene.render.engine
+    for k, *_ in looks52.PATTERNS:
+        assert bpy.ops.ctk.radial_backdrop(pattern=k, spin=0.5 if k == 'SWIRL' else 0.0) == {'FINISHED'}, k
+    mats = [m for m in bpy.data.materials if m.get('ctk_radial')]
+    assert len(mats) == 5, [m.name for m in mats]
+    sw = next(m for m in mats if m['ctk_radial'] == 'SWIRL')
+    assert sw.node_tree.animation_data and sw.node_tree.animation_data.drivers
+

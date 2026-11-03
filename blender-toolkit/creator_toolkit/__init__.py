@@ -17,7 +17,7 @@ from . import compat  # noqa: F401
 _NAMES = [
     'vault', 'doodle', 'cleanimport', 'material', 'style', 'palette', 'lights',
     'rig', 'thingrig', 'springs', 'mocap', 'motion', 'tween', 'playback', 'lipsync', 'physics52', 'smear52',
-    'kinetic', 'camera', 'music', 'gnkit', 'shapes52', 'gpkit', 'nodetidy',
+    'kinetic', 'camera', 'music', 'gnkit', 'shapes52', 'looks52', 'gpkit', 'nodetidy',
     'deliver', 'templates', 'turntable', 'speed', 'pie', 'updates',
 ]
 

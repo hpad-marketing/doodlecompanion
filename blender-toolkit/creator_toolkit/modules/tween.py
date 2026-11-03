@@ -280,7 +280,84 @@ def draw_offset(layout, context):
         box.label(text='Turn off auto-key while offsetting', icon='ERROR')
 
 
-CLASSES = (CTK_OT_breakdown, CTK_OT_ease, CTK_OT_key_pose, CTK_OffsetProps, CTK_OT_anim_offset)
+# ---------------- silhouette view ----------------
+SIL_SHADING = {'type': 'SOLID', 'light': 'FLAT', 'color_type': 'SINGLE', 'background_type': 'VIEWPORT',
+               'show_cavity': False, 'show_object_outline': False, 'show_shadows': False,
+               'show_xray': False, 'show_specular_highlight': False, 'show_backface_culling': False}
+SIL_INK, SIL_BG = '#1F1F1D', '#E0A64B'
+_sil_store = {}
+
+
+def _srgb(h):
+    h = h.lstrip('#')
+    return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def silhouette(shading, on, key, overlay=None):
+    """Flat ink shapes on mustard for pose checks; on=False puts back what was there."""
+    if on:
+        keep = {k: getattr(shading, k) for k in SIL_SHADING if hasattr(shading, k)}
+        keep['single_color'] = tuple(shading.single_color)
+        keep['background_color'] = tuple(shading.background_color)
+        if overlay is not None:
+            keep['_overlays'] = overlay.show_overlays
+        _sil_store[key] = keep
+        for k, v in SIL_SHADING.items():
+            if hasattr(shading, k):
+                try:
+                    setattr(shading, k, v)
+                except Exception:
+                    pass
+        shading.single_color = _srgb(SIL_INK)
+        shading.background_color = _srgb(SIL_BG)
+        if overlay is not None:
+            overlay.show_overlays = False
+        return True
+    keep = _sil_store.pop(key, None)
+    if not keep:
+        return False
+    if overlay is not None and '_overlays' in keep:
+        overlay.show_overlays = keep.pop('_overlays')
+    keep.pop('_overlays', None)
+    # type first so the solid-only settings stick
+    for k in sorted(keep, key=lambda k: k != 'type'):
+        try:
+            setattr(shading, k, keep[k])
+        except Exception:
+            pass
+    return True
+
+
+def _views(context):
+    scr = context.screen
+    return [a.spaces.active for a in (scr.areas if scr else []) if a.type == 'VIEW_3D']
+
+
+def silhouette_on(context):
+    return any(sp.as_pointer() in _sil_store for sp in _views(context))
+
+
+class CTK_OT_silhouette(bpy.types.Operator):
+    """Silhouette view: every object as a flat ink shape on mustard, to read poses at a glance. Click again to go back"""
+    bl_idname = 'ctk.silhouette'
+    bl_label = 'Silhouette'
+
+    def execute(self, context):
+        views = _views(context)
+        if not views:
+            self.report({'WARNING'}, 'No 3D viewport here')
+            return {'CANCELLED'}
+        turn_on = not silhouette_on(context)
+        for sp in views:
+            silhouette(sp.shading, turn_on, sp.as_pointer(), sp.overlay)
+        for a in context.screen.areas:
+            if a.type == 'VIEW_3D':
+                a.tag_redraw()
+        return {'FINISHED'}
+
+
+CLASSES = (CTK_OT_breakdown, CTK_OT_ease, CTK_OT_key_pose, CTK_OffsetProps, CTK_OT_anim_offset,
+           CTK_OT_silhouette)
 
 _km = []
 
@@ -322,5 +399,11 @@ def draw(layout, context):
     grid = layout.grid_flow(columns=3, align=True)
     for k, label, *_ in EASES:
         grid.operator('ctk.ease', text=label).kind = k
-    layout.operator('ctk.key_pose', icon='KEYINGSET')
+    row = layout.row(align=True)
+    row.operator('ctk.key_pose', icon='KEYINGSET')
+    try:
+        on = silhouette_on(context)
+    except Exception:
+        on = False
+    row.operator('ctk.silhouette', icon='HIDE_ON' if on else 'HIDE_OFF', depress=on)
     draw_offset(layout, context)
