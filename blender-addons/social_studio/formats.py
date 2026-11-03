@@ -304,7 +304,9 @@ def cast_files():
     tca = os.path.join(os.path.expanduser('~'), 'Documents', 'Talking Character App')
     dirs = [bpy.path.abspath(p.cast_dir)] if p and p.cast_dir else []
     dirs += [os.environ.get('SS_CAST_DIR', ''), os.path.join(tca, 'animal-cast'), os.path.join(tca, 'blender-cast'),
-             os.path.join(tca, 'blender-bunny', 'animal-cast')]
+             os.path.join(tca, 'blender-bunny', 'animal-cast'),
+             os.path.join(os.path.expanduser('~'), 'Documents', 'DeepInDoodles', 'Doodle Studio 3D', 'resources', 'app',
+                          'blender', 'chars')]
     out = {}
     for d in [d for d in dirs if d and os.path.isdir(d)]:
         for f in sorted(os.listdir(d)):
