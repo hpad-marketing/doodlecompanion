@@ -258,3 +258,84 @@ def thing_rigs():
     bpy.ops.mesh.primitive_cube_add(size=0.3); car = C.active_object
     cv.select_set(True)
     assert bpy.ops.ctk.thing_rig(kind='FOLLOW', frames=50) == {'FINISHED'}
+
+
+@case
+def motion_presets():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    obs = []
+    for i in range(3):
+        bpy.ops.mesh.primitive_cube_add(location=(i * 3, 0, 0))
+        obs.append(C.active_object)
+    for o in obs:
+        o.select_set(True)
+    from creator_toolkit.modules.motion import PRESETS
+    for k, _ in PRESETS:
+        C.scene.frame_set(1)
+        assert bpy.ops.ctk.motion_preset(kind=k, duration=20, stagger=4) == {'FINISHED'}, k
+    C.scene.frame_set(1)
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.mesh.primitive_cube_add(location=(0, 8, 0)); o = C.active_object
+    assert bpy.ops.ctk.motion_preset(kind='POP_IN', duration=10, stagger=0) == {'FINISHED'}
+    C.scene.frame_set(1); assert o.scale.x < 0.01
+    C.scene.frame_set(11); assert abs(o.scale.x - 1) < 1e-4
+
+
+@case
+def tween_and_ease():
+    bpy.ops.mesh.primitive_cube_add(location=(0, 20, 0)); o = C.active_object
+    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); C.view_layer.objects.active = o
+    o.location.x = 0; o.keyframe_insert('location', index=0, frame=1)
+    o.location.x = 10; o.keyframe_insert('location', index=0, frame=21)
+    C.scene.frame_set(11)
+    assert bpy.ops.ctk.breakdown('EXEC_DEFAULT', factor=0.25) == {'FINISHED'}
+    C.scene.frame_set(1); C.scene.frame_set(11)
+    assert abs(o.location.x - 2.5) < 1e-3, o.location.x
+    for k in ('SNAP', 'OVERSHOOT', 'SMOOTH'):
+        assert bpy.ops.ctk.ease(kind=k, only_selected_keys=False) == {'FINISHED'}
+    from creator_toolkit.compat import fcurves_of
+    assert all(kp.interpolation == 'BEZIER' for fc in fcurves_of(o) for kp in fc.keyframe_points)
+
+
+def _voice_wav(path, seconds=3.0):
+    import wave
+    import numpy as np
+    rate = 16000
+    t = np.arange(int(rate * seconds)) / rate
+    env = (np.sin(t * 2 * np.pi * 2.5) > 0).astype(float) * (0.3 + 0.7 * (np.sin(t * 2 * np.pi * 0.7) > 0))
+    sig = env * (np.sin(t * 2 * np.pi * 180) + 0.4 * np.sign(np.sin(t * 2 * np.pi * 2200)) * (t % 1 > 0.5))
+    pcm = (sig / np.abs(sig).max() * 30000).astype(np.int16)
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(pcm.tobytes())
+
+
+@case
+def lip_sync():
+    import tempfile
+    p = os.path.join(tempfile.mkdtemp(), 'voice.wav')
+    _voice_wav(p)
+    bpy.ops.mesh.primitive_plane_add(location=(0, 30, 0)); m = C.active_object
+    m.shape_key_add(name='Basis')
+    for n in ('rest', 'closed', 'mid', 'open', 'wide', 'round', 'oo'):
+        m.shape_key_add(name=n)
+    lp = C.scene.ctk_lip
+    lp.source = 'FILE'; lp.filepath = p; lp.target = 'SHAPEKEYS'
+    assert bpy.ops.ctk.lipsync() == {'FINISHED'}
+    kb = m.data.shape_keys.key_blocks
+    from creator_toolkit.compat import fcurves_of
+    ad = m.data.shape_keys.animation_data
+    assert ad and ad.action, 'no keys'
+    # property target for 2D swaps
+    lp.target = 'PROPERTY'; lp.mapping = 'X=0, A=1, B=2, C=3, D=4, E=5, F=6, G=7, H=8'
+    assert bpy.ops.ctk.lipsync() == {'FINISHED'}
+    vals = set()
+    for f in range(1, 80):
+        C.scene.frame_set(f)
+        vals.add(m.get('mouth'))
+    assert len(vals) >= 3, vals
+    # sound strip source
+    se = C.scene.sequence_editor_create()
+    from creator_toolkit.compat import strips
+    strips(C.scene).new_sound('v', p, 1, 10)
+    lp.source = 'STRIPS'
+    assert bpy.ops.ctk.lipsync() == {'FINISHED'}
