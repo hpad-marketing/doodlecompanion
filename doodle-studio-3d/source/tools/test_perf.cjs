@@ -8,7 +8,11 @@ const port = 54298, S = path.join(__dirname, '..');
 const dev = spawn('node', [path.join(S, 'tools/dev.cjs'), String(port)], { stdio: 'ignore', env: { ...process.env, DSL_LIBRARY: process.env.DSL_LIBRARY || path.join(S, '..', 'lib') } });
 const ok = (c, m) => { console.log(c ? 'ok  ' : 'FAIL', m); if (!c) process.exitCode = 1; };
 // budgets (software GL in CI is far slower than the RTX 5080, so the GPU draw itself is reported, not budgeted)
-const BUDGET = { idleDrawsPerSec: 2, samePoseMs: 0.5, gotoMs: 3, sigMs: 0.5 };
+// CPU costs are set for the PC; shared CI machines run the same code about twice as slowly
+// (timeline step about 3.3 ms there, about 1.8 ms on a dev machine), so CI doubles the time budgets. The draw-count
+// budget measures behaviour, not speed, and stays the same everywhere.
+const SLOW = process.env.CI ? 2 : 1;
+const BUDGET = { idleDrawsPerSec: 2, samePoseMs: 0.5 * SLOW, gotoMs: 3 * SLOW, sigMs: 0.5 * SLOW };
 (async () => {
   await new Promise(r => setTimeout(r, 900));
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
