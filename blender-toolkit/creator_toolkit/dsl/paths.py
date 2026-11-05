@@ -68,6 +68,21 @@ def bunny_module(name):
     d = os.path.join(bunny_dir(), 'lib')
     if not os.path.isdir(d):
         raise RuntimeError('3D Bunny not found at %s (set it in the add-on preferences)' % bunny_dir())
-    if d not in sys.path:
+    shipped = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bunny', 'lib')
+    if os.path.isdir(shipped) and os.path.normcase(shipped) != os.path.normcase(d) and shipped not in sys.path:
+        # the Toolkit ships a copy of the Bunny's code: whichever is newer goes first, and the other
+        # still supplies modules the first lacks (an older Bunny folder has no powers.py)
+        def age(folder):
+            try:
+                return os.path.getmtime(os.path.join(folder, 'look.py'))
+            except OSError:
+                return 0
+        first, second = (shipped, d) if age(shipped) > age(d) else (d, shipped)
+        for x in (first, second):
+            if x in sys.path:
+                sys.path.remove(x)
+        sys.path[0:0] = [first]
+        sys.path.append(second)
+    elif d not in sys.path:
         sys.path.insert(0, d)
     return __import__(name)

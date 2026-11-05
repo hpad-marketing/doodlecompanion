@@ -8,6 +8,7 @@ import bmesh
 import bpy
 from mathutils import Matrix, Vector
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Ropes, cloth + hair', 'MOD_CLOTH', 'Animation'
 ASSET = os.path.join('assets', 'nodes', 'geometry_nodes_dynamics_assets.blend')
@@ -397,11 +398,11 @@ def draw(layout, context):
         layout.label(text='Needs Blender 5.2 (node physics)', icon='INFO')
         return
     layout.label(text='Select 2 objects:')
-    g = layout.grid_flow(columns=2, align=True)
+    g = uxfit.flow(layout, context, [v[0] for v in ROPES.values()], most=2)
     for k, v in ROPES.items():
         g.operator('ctk.rope', text=v[0]).kind = k
     layout.label(text='On the active object:')
-    g = layout.grid_flow(columns=2, align=True)
+    g = uxfit.flow(layout, context, [v[0] for v in CLOTHS.values()], most=2)
     for k, v in CLOTHS.items():
         g.operator('ctk.cloth_preset', text=v[0]).kind = k
     for k, v in HAIRS.items():
@@ -415,4 +416,4 @@ def draw(layout, context):
         for m in o.modifiers:
             if m.type == 'NODES' and m.name.endswith(' sim') and m.name.startswith('CTK '):
                 draw_modifier_inputs(layout.box(), m)
-    layout.label(text='CPU: preview at low Quality, cache before rendering', icon='INFO')
+    uxfit.wrap(layout, context, 'CPU: preview at low Quality, cache before rendering', icon='INFO')

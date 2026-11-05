@@ -5,6 +5,7 @@ import tempfile
 import threading
 import urllib.request
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Updates', 'URL', 'Setup'
 FEED = 'https://raw.githubusercontent.com/hpad-marketing/doodlecompanion/main/blender-toolkit/release/latest.json'
@@ -132,12 +133,11 @@ def register_extra():
 
 
 def draw(layout, context):
-    row = layout.row(align=True)
-    row.label(text='Installed: ' + installed_version())
-    row.operator('ctk.update_check', icon='FILE_REFRESH')
+    layout.label(text='Installed: ' + installed_version(), icon='CHECKMARK')
+    layout.operator('ctk.update_check', icon='FILE_REFRESH')
     info = STATE.get('latest')
     if info and _v(info['version']) > _v(installed_version()):
-        row.operator('ctk.update_install', icon='IMPORT')
+        layout.operator('ctk.update_install', icon='IMPORT')
     if STATE['status']:
-        layout.label(text=STATE['status'][:80])
-    row.operator('ctk.update_from_file', text='', icon='FILE_ARCHIVE')
+        uxfit.wrap(layout, context, STATE['status'])
+    layout.operator('ctk.update_from_file', text='Install from a zip file', icon='FILE_ARCHIVE')

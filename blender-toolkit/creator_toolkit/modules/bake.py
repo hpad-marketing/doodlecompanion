@@ -9,6 +9,7 @@ The buttons here do the same by hand."""
 import json
 import bpy
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Bake for export', 'FILE_CACHE', 'Output'
 KEY = 'ctk_baked'
@@ -220,4 +221,4 @@ def draw(layout, context):
         row.operator('ctk.unbake_all', icon='LOOP_BACK')
     else:
         row.operator('ctk.bake_all', icon='FILE_CACHE')
-    layout.label(text='Export from the Launcher bakes this for you', icon='INFO')
+    uxfit.wrap(layout, context, 'Export from the Launcher bakes this for you', icon='INFO')

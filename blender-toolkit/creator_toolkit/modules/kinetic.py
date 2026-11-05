@@ -4,6 +4,7 @@ import bpy
 from mathutils import Vector
 from . import motion
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Kinetic type + logo reveals', 'FONT_DATA', 'Motion design'
 STYLES = [('TYPEWRITER', 'Typewriter', ''), ('SLIDE_UP', 'Slide up', ''), ('POP', 'Pop', ''),
@@ -264,7 +265,7 @@ CLASSES = (CTK_OT_kinetic_text, CTK_OT_logo_reveal)
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in STYLES], most=2)
     for k, label, _ in STYLES:
         op = grid.operator('ctk.kinetic_text', text=label)
         op.style = k

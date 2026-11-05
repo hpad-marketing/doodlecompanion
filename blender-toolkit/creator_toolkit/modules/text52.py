@@ -6,6 +6,7 @@ Counters can write thousands with commas ("10,000 followers") on Blender 5.2. Wo
 import bpy
 from . import _util
 from ._nodes import Tree, O, I, set_input, setting, draw_modifier_inputs
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Procedural text', 'FONT_DATA', 'Motion design'
 
@@ -357,4 +358,4 @@ def draw(layout, context):
     if o and MOD in o.modifiers:
         draw_modifier_inputs(layout.box(), o.modifiers[MOD])
     if not new_52():
-        layout.label(text='Commas, fonts and word pop need Blender 5.2', icon='INFO')
+        uxfit.wrap(layout, context, 'Commas, fonts and word pop need Blender 5.2', icon='INFO')

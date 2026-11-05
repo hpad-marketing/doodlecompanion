@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
-  "zip_url": "https://raw.githubusercontent.com/hpad-marketing/doodlecompanion/main/blender-toolkit/release/creator_toolkit-1.1.0.zip",
-  "notes": "The whole Doodle Library (Doodle tab), Doodle Studio 3D powers, word clouds, line boil on 3D models, stop motion for procedural animation and simulations, and a tidier, more horizontal layout on every panel."
+  "version": "1.1.2",
+  "zip_url": "https://raw.githubusercontent.com/hpad-marketing/doodlecompanion/main/blender-toolkit/release/creator_toolkit-1.1.2.zip",
+  "notes": "Roomier panels that fit a narrow sidebar: button names never cut short, long notes wrap, button sets reflow. Video looks stay off in Blender 5.0, where they crashed. Doodle powers work again when an older 3D Bunny folder is on the PC."
 }

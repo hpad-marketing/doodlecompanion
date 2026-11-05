@@ -1,6 +1,7 @@
 """Node tidying: lay out messy node trees in clean columns, frame and clear unused nodes.
 Also switches on Blender's bundled Node Wrangler."""
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Node tidy', 'NODETREE', 'Procedural & 2D'
 
@@ -196,9 +197,9 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.operator('ctk.node_tidy', icon='ALIGN_JUSTIFY')
     row.operator('ctk.node_tidy', text='Selected').selected_only = True
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Frame selected', 'Remove unused nodes', 'Node Wrangler'], most=3, icon=True)
     row.operator('ctk.node_frame', icon='OBJECT_HIDDEN')
     row.operator('ctk.node_clean', icon='TRASH')
-    row.operator('ctk.node_wrangler', text='', icon='NODETREE')
+    row.operator('ctk.node_wrangler', text='Node Wrangler', icon='NODETREE')
     if not (context.space_data and context.space_data.type == 'NODE_EDITOR'):
         layout.label(text='Here it tidies the active object\'s materials and node setups', icon='INFO')

@@ -11,6 +11,7 @@ import os
 import re
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Captions + video looks', 'SEQUENCE', 'Output'
 
@@ -43,6 +44,10 @@ def new_text_strip(ed, name, channel, start, length):
 
 
 def looks_available():
+    # Blender 5.0 has the Compositor strip modifier too, but adding it to a strip crashes 5.0
+    # (seq::time_strip_length_get); the looks are tested on 5.2, so they stay 5.2 and later.
+    if bpy.app.version < (5, 2, 0):
+        return False
     try:
         return 'COMPOSITOR' in [e.identifier for e in
                                 bpy.types.StripModifiers.bl_rna.functions['new'].parameters['type'].enum_items]
@@ -525,16 +530,17 @@ CLASSES = (CTK_OT_caption_style, CTK_OT_caption_save, CTK_OT_subs_import, CTK_OT
 
 
 def draw(layout, context):
+    layout.label(text='Captions', icon='FONT_DATA')
     row = layout.row(align=True)
-    row.label(text='Captions', icon='FONT_DATA')
-    row.operator('ctk.subs_import', icon='IMPORT')
-    row.operator_menu_enum('ctk.caption_style', 'style', text='Style')
-    row.operator('ctk.caption_save', text='', icon='FILE_TICK')
+    row.operator('ctk.subs_import', text='Import subtitles', icon='IMPORT')
+    row = layout.row(align=True)
+    row.operator_menu_enum('ctk.caption_style', 'style', text='Caption style')
+    row.operator('ctk.caption_save', text='Save style', icon='FILE_TICK')
     layout.label(text='Video looks', icon='SEQUENCE')
     if not looks_available():
         layout.label(text='Needs Blender 5.2', icon='INFO')
         return
-    grid = layout.grid_flow(columns=4, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in LOOKS], most=4)
     for k, label, _ in LOOKS:
         grid.operator('ctk.strip_look', text=label).look = k
     layout.operator('ctk.sticker_render', icon='OUTLINER_OB_IMAGE')

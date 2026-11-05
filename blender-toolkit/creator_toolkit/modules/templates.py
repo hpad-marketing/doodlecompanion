@@ -5,6 +5,7 @@ import os
 import bpy
 from mathutils import Vector
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Starter templates', 'SCENE_DATA', 'Output'
 
@@ -280,9 +281,9 @@ CLASSES = (CTK_OT_template_new, CTK_OT_template_save, CTK_OT_template_load)
 
 
 def draw(layout, context):
-    g = layout.grid_flow(columns=2, align=True)
+    g = uxfit.flow(layout, context, [str(_t[1]) for _t in KINDS], most=2)
     for k, l, _ in KINDS:
         g.operator('ctk.template_new', text=l).kind = k
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Save as my template', 'My templates'], most=2, icon=True)
     row.operator('ctk.template_save', icon='FILE_TICK')
     row.operator('ctk.template_load', icon='FILE_FOLDER')

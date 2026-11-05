@@ -5,6 +5,7 @@ import bpy
 from mathutils import Vector
 from . import motion
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Camera moves + shake', 'VIEW_CAMERA', 'Motion design'
 MOVES = [('PUSH_IN', 'Push in'), ('PULL_OUT', 'Pull out'), ('ORBIT', 'Orbit'), ('DOLLY_ZOOM', 'Dolly zoom'),
@@ -271,13 +272,13 @@ CLASSES = (CTK_OT_camera_move, CTK_OT_camera_shake, CTK_OT_beat_markers, CTK_OT_
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in MOVES], most=2)
     for k, n in MOVES:
         op = grid.operator('ctk.camera_move', text=n)
         op.kind = k
         op.bpm = float(context.scene.get('ctk_bpm', 0.0))
     layout.label(text='Shake', icon='FORCE_TURBULENCE')
-    grid = layout.grid_flow(columns=3, align=True)
+    grid = uxfit.flow(layout, context, [str(_t) for _t in SHAKES], most=3)
     for k in SHAKES:
         grid.operator('ctk.camera_shake', text=k).preset = k
     row = layout.row(align=True)

@@ -6,6 +6,7 @@ import math
 import bpy
 from . import _util
 from ._nodes import Tree, O, I, set_input, draw_modifier_inputs
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Blobs, smoke + soft toys', 'META_BALL', 'Procedural & 2D'
 SMOKES = [('TRAIL', 'Smoke trail', 'A rising column of puffs'), ('STEAM', 'Steam', 'Thin wisps from a cup or pot'),
@@ -360,7 +361,7 @@ def draw(layout, context):
         row = layout.row(align=True)
         row.operator('ctk.blob', icon='META_BALL')
         row.operator('ctk.blob_apply', icon='MESH_DATA')
-        g = layout.grid_flow(columns=2, align=True)
+        g = uxfit.flow(layout, context, [str(_t[1]) for _t in SMOKES], most=2)
         for k, l, _ in SMOKES:
             g.operator('ctk.toon_smoke', text=l).kind = k
     else:

@@ -4,6 +4,7 @@ import bpy
 from mathutils import Vector
 from ..compat import gp_data_new
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Grease Pencil kit', 'GREASEPENCIL', 'Procedural & 2D'
 
@@ -345,9 +346,9 @@ def draw(layout, context):
     row.operator('ctk.gp_ink3d', icon='MOD_LINEART')
     o = _gp(context)
     if not o:
-        layout.label(text='Select a drawing for effects and fills')
+        uxfit.wrap(layout, context, 'Select a drawing for effects and fills')
         return
-    g = layout.grid_flow(columns=2, align=True)
+    g = uxfit.flow(layout, context, [str(_t[1]) for _t in (('DRAW_ON', 'Draw on'), ('BOIL', 'Line boil'), ('POP', 'Pop in'), ('EVEN', 'Even lines'))], most=2)
     for k, l in (('DRAW_ON', 'Draw on'), ('BOIL', 'Line boil'), ('POP', 'Pop in'), ('EVEN', 'Even lines')):
         g.operator('ctk.gp_effect', text=l).kind = k
     row = layout.row(align=True)

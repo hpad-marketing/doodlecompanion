@@ -10,6 +10,7 @@ curves and takes them away again when switched off. Your keys never change. Touc
 import json
 import bpy
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Stop-motion mode', 'RENDER_ANIMATION', 'Animation'
 TAG = 'ctk_stopmo_state'  # JSON text on the scene while stop motion is on
@@ -211,9 +212,9 @@ def draw(layout, context):
     row.prop(p, 'step', text='On')
     row.prop(p, 'jitter')
     row.prop(p, 'flicker', text='Flicker')
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Line boil', 'Procedural', 'Boil models'], most=3)
     row.prop(p, 'boil', text='Line boil', toggle=True)
     row.prop(p, 'hold', text='Procedural', toggle=True)
     row.prop(p, 'boil_models', text='Boil models', toggle=True)
     if on:
-        layout.label(text='Changed a setting? Turn on again to apply', icon='INFO')
+        uxfit.wrap(layout, context, 'Changed a setting? Turn on again to apply', icon='INFO')

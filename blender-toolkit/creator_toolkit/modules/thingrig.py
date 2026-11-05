@@ -2,6 +2,7 @@
 import math
 import bpy
 from mathutils import Vector
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Rig a Thing', 'CON_TRACKTO', 'Rigging'
 
@@ -158,7 +159,7 @@ CLASSES = (CTK_OT_thing_rig,)
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in KINDS], most=2)
     for k, label in KINDS:
         grid.operator('ctk.thing_rig', text=label).kind = k
     o = context.active_object

@@ -2,6 +2,7 @@
 import math
 import bpy
 from mathutils import Vector
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Light rigs', 'LIGHT', 'Look'
 RIG = 'CTK Light Rig'
@@ -137,7 +138,7 @@ CLASSES = (CTK_OT_light_rig, CTK_OT_light_solo, CTK_OT_light_select)
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t) for _t in PRESETS], most=2)
     for k in PRESETS:
         grid.operator('ctk.light_rig', text=k).preset = k
     root = bpy.data.objects.get(RIG)

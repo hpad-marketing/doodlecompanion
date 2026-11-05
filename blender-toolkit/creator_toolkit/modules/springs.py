@@ -2,6 +2,7 @@
 import bpy
 from bpy.app.handlers import persistent
 from mathutils import Vector, Matrix, Quaternion
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Spring bones', 'FORCE_HARMONIC', 'Rigging'
 _state = {}  # (rig, bone) -> [pos, vel]
@@ -219,7 +220,7 @@ def draw(layout, context):
     rig = context.active_object
     if rig and rig.type == 'ARMATURE':
         layout.prop(rig, '["ctk_springs_on"]', text='Springs on') if 'ctk_springs_on' in rig else \
-            layout.label(text='Springs play live; bake before export', icon='INFO')
+            uxfit.wrap(layout, context, 'Springs play live; bake before export', icon='INFO')
     row = layout.row(align=True)
     row.operator('ctk.spring_bake', icon='KEYFRAME')
     row.operator('ctk.spring_reset', icon='FILE_REFRESH', text='')

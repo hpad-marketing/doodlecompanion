@@ -9,6 +9,7 @@ with everything else. It uses a simulation zone, so play from the start once; Ba
 caches it."""
 import bpy
 from . import _nodes as N
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Boil + hold for 3D', 'MOD_NOISE', 'Procedural & 2D'
 BOIL, HOLD = 'CTK Mesh boil', 'CTK Stop-motion hold'
@@ -177,4 +178,4 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.operator('ctk.hold3d', text='Hold on 2s', icon='RENDER_ANIMATION')
     row.operator('ctk.hold3d', text='', icon='X').off = True
-    layout.label(text='Stop-motion mode can do both for the whole scene', icon='INFO')
+    uxfit.wrap(layout, context, 'Stop-motion mode can do both for the whole scene', icon='INFO')

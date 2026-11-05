@@ -1,6 +1,7 @@
 """Geometry Nodes toolkit: one-click node setups with sliders (no node editing needed)."""
 import bpy
 from ._nodes import Tree, O, I, draw_modifier_inputs, set_input
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Geometry Nodes kit', 'GEOMETRY_NODES', 'Procedural & 2D'
 
@@ -321,7 +322,7 @@ CLASSES = (CTK_OT_gn_add,)
 
 
 def draw(layout, context):
-    g = layout.grid_flow(columns=2, align=True)
+    g = uxfit.flow(layout, context, [str(_t[1]) for _t in KINDS], most=2)
     for k, l, _ in KINDS:
         g.operator('ctk.gn_add', text=l).kind = k
     obj = context.active_object

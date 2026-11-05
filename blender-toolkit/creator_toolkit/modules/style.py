@@ -1,6 +1,7 @@
 """Style Switcher: flat, cel toon, ink, comic halftone, clay, paper and doodle on any model."""
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Style Switcher', 'SHADING_TEXTURE', 'Look'
 STYLES = [('FLAT', 'Flat colour', ''), ('CEL', 'Cel toon', ''), ('INK', 'Ink outline only', ''),
@@ -205,11 +206,11 @@ CLASSES = (CTK_OT_style_apply, CTK_OT_style_revert)
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in STYLES], most=2)
     for k, label, _ in STYLES:
         grid.operator('ctk.style_apply', text=label).style = k
     row = layout.row(align=True)
     row.operator('ctk.style_revert', icon='LOOP_BACK')
     op = row.operator('ctk.style_revert', text='Revert scene')
     op.whole_scene = True
-    layout.label(text='Line weight and colour: see the Adjust panel after applying', icon='INFO')
+    uxfit.wrap(layout, context, 'Line weight and colour: see the Adjust panel after applying', icon='INFO')

@@ -1,5 +1,6 @@
 """Pie menu (Shift+Q in the 3D view) + a Keydial cheat sheet."""
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Pie menu + Keydial', 'PROPERTIES', 'Setup'
 
@@ -94,6 +95,6 @@ def unregister_extra():
 
 
 def draw(layout, context):
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Open pie (Shift+Q)', 'Keydial cheat sheet'], most=2, icon=True)
     row.operator('wm.call_menu_pie', text='Open pie (Shift+Q)', icon='PROPERTIES').name = 'CTK_MT_pie'
     row.operator('ctk.keydial_sheet', icon='EVENT_K')
