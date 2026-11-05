@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
 id = "creator_toolkit"
-version = "1.1.0"
+version = "1.1.2"
 name = "Creator Toolkit"
-tagline = "Assets, looks, rigs, motion, camera and delivery tools in one place"
+tagline = "Assets, looks, rigs, motion, camera and delivery in one place"
 maintainer = "HPAD Marketing"
 type = "add-on"
 website = "https://github.com/hpad-marketing/doodlecompanion"
@@ -16,7 +16,7 @@ license = ["SPDX:GPL-3.0-or-later"]
 copyright = ["2026 HPAD Marketing"]
 
 [permissions]
-files = "Save and load your asset vault, presets, renders, audio files and the Doodle Library"
+files = "Asset vault, presets, renders, audio and the Doodle Library"
 network = "Check for Toolkit updates and open online asset libraries"
 
 [build]

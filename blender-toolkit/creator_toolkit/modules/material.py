@@ -1,6 +1,7 @@
 """Master Material: one slider shader for plastic, metal, clay, fabric, glass, paper, rubber and toon."""
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Master Material', 'MATERIAL', 'Look'
 GROUP_NAME = 'CTK Master Surface'
@@ -260,5 +261,5 @@ def draw(layout, context):
             col.prop(n.inputs[k], 'default_value', text=k, slider=k != 'Bump Size')
         layout.operator('ctk.material_save_preset', icon='ADD')
     else:
-        layout.label(text='Select an object to see its sliders', icon='INFO')
+        uxfit.wrap(layout, context, 'Select an object to see its sliders', icon='INFO')
     layout.operator('ctk.material_convert', icon='FILE_REFRESH')

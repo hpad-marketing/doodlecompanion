@@ -3,6 +3,7 @@
 import bpy
 from bpy.app.handlers import persistent
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Tween + ease', 'IPO_EASE_IN_OUT', 'Animation'
 
@@ -277,7 +278,7 @@ def draw_offset(layout, context):
         r.prop(p, 'hold')
         r.prop(p, 'blend')
     if p.live and context.scene.tool_settings.use_keyframe_insert_auto:
-        box.label(text='Turn off auto-key while offsetting', icon='ERROR')
+        uxfit.wrap(box, context, 'Turn off auto-key while offsetting', icon='ERROR')
 
 
 # ---------------- silhouette view ----------------
@@ -391,12 +392,12 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.scale_y = 1.3
     row.operator('ctk.breakdown', text='Breakdown slider (Shift+Alt+E)', icon='IPO_EASE_IN_OUT')
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, [str(_t[1]) for _t in ((0.0, '0'), (0.25, '¼'), (0.5, '½'), (0.75, '¾'), (1.0, '1'))], most=5)
     row.operator_context = 'EXEC_DEFAULT'
     for v, label in ((0.0, '0'), (0.25, '¼'), (0.5, '½'), (0.75, '¾'), (1.0, '1')):
         o = row.operator('ctk.breakdown', text=label)
         o.factor = v
-    grid = layout.grid_flow(columns=3, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in EASES], most=3)
     for k, label, *_ in EASES:
         grid.operator('ctk.ease', text=label).kind = k
     row = layout.row(align=True)

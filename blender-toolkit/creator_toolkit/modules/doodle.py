@@ -7,6 +7,7 @@ import importlib
 import json
 import os
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Doodle Library', 'OUTLINER_OB_GROUP_INSTANCE', 'Assets'
 
@@ -195,7 +196,7 @@ def draw(layout, context):
     p = context.scene.ctk_doodle
     if not rows():
         layout.label(text='Doodle Library not found', icon='ERROR')
-        layout.label(text='Set its folder in the add-on preferences')
+        uxfit.wrap(layout, context, 'Set its folder in the add-on preferences')
         return
     row = layout.row(align=True)
     row.prop(p, 'category', text='')
@@ -206,4 +207,4 @@ def draw(layout, context):
     if p.category == 'prop':
         row.prop(p, 'hold')
     row.operator('ctk.doodle_insert', icon='ADD')
-    layout.label(text='Effects, lighting, storytime and more: Doodle tab', icon='INFO')
+    uxfit.wrap(layout, context, 'Effects, lighting, storytime and more: Doodle tab', icon='INFO')

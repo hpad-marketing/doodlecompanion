@@ -5,6 +5,7 @@ import os
 import bpy
 from . import _util
 from ._nodes import Tree, O, I, set_input, draw_modifier_inputs
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Music visualizer + react', 'SOUND', 'Motion design'
 LOOKS = [('BARS', 'Bars', 'Equalizer bars'), ('RINGS', 'Ring', 'Bars around a circle'),
@@ -422,11 +423,11 @@ def draw(layout, context):
     if not available():
         layout.label(text='Visualizers need Blender 5.2', icon='INFO')
     else:
-        g = layout.grid_flow(columns=2, align=True)
+        g = uxfit.flow(layout, context, [str(_t[1]) for _t in LOOKS], most=2)
         for k, l, _ in LOOKS:
             g.operator('ctk.visualizer', text=l).look = k
         layout.label(text='Selected objects:')
-        g = layout.grid_flow(columns=4, align=True)
+        g = uxfit.flow(layout, context, [str(_t[1]) for _t in REACTS], most=4)
         for k, l, _ in REACTS:
             g.operator('ctk.react', text=l).how = k
     layout.operator('ctk.bop_bones', icon='BONE_DATA')

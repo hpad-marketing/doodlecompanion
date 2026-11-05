@@ -4,6 +4,7 @@ import subprocess
 import bpy
 from . import _util
 from ..compat import strips_all, fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Lip sync', 'SPEAKER', 'Animation'
 # Rhubarb mouth letters: A closed (M,B,P), B slightly open, C open (eh), D wide (aa), E round (oh),
@@ -241,4 +242,4 @@ def draw(layout, context):
     r.operator('ctk.lipsync', icon='SPEAKER')
     pr = _util.addon_prefs()
     if pr and not pr.rhubarb_path:
-        layout.label(text='Sharper sync: add rhubarb.exe in Preferences', icon='INFO')
+        uxfit.wrap(layout, context, 'Sharper sync: add rhubarb.exe in Preferences', icon='INFO')

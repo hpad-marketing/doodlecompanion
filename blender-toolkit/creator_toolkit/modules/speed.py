@@ -1,6 +1,7 @@
 """Heavy scene / Final switch: one click makes a big scene light to work in, one click puts
 every setting back for the final render."""
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Heavy scene switch', 'MEMORY', 'Setup'
 
@@ -89,4 +90,4 @@ def draw(layout, context):
     row.operator('ctk.heavy_scene', text='Light working mode', icon='MEMORY', depress=on).on = True
     row.operator('ctk.heavy_scene', text='Final quality', icon='RENDER_STILL', depress=not on).on = False
     if on:
-        layout.label(text='Remember: switch to Final before rendering', icon='ERROR')
+        uxfit.wrap(layout, context, 'Remember: switch to Final before rendering', icon='ERROR')

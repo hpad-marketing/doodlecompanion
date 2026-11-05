@@ -5,6 +5,7 @@ gone when it stops. Works with the Simple Rig Builder or any armature."""
 import bpy
 from . import _util
 from ._nodes import Tree, O, I, set_input, draw_modifier_inputs
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Speed lines from bones', 'MOD_CURVE', 'Animation'
 
@@ -172,7 +173,7 @@ CLASSES = (CTK_OT_speed_trail, CTK_OT_speed_trail_bake)
 
 def draw(layout, context):
     if not available():
-        layout.label(text='Needs Blender 5.2 (Bone Info node)', icon='INFO')
+        uxfit.wrap(layout, context, 'Needs Blender 5.2 (Bone Info node)', icon='INFO')
         return
     row = layout.row(align=True)
     row.operator('ctk.speed_trail', icon='MOD_CURVE')

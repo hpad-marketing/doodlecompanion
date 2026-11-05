@@ -6,6 +6,7 @@ import bpy.utils.previews
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
 
 from . import index, paths, sets, style
+from .. import uxfit
 
 _previews = None
 _enum_cache = {}
@@ -183,7 +184,7 @@ class DSL_PT_library(DSLPanel, bpy.types.Panel):
             L.label(text=paths.library_root())
             L.operator('dsl.prefs', text='Set the library folder', icon='PREFERENCES')
             return
-        L.row().prop(wm, 'dsl_category', expand=True)
+        L.grid_flow(row_major=True, columns=uxfit.columns(context, ['Accessories', 'Scenery', '2D cards'], 4), even_columns=True, align=True).prop(wm, 'dsl_category', expand=True)
         row = L.row(align=True)
         row.prop(wm, 'dsl_search', text='', icon='VIEWZOOM')
         row.prop(wm, 'dsl_sub', text='')
@@ -208,16 +209,17 @@ class DSL_PT_library(DSLPanel, bpy.types.Panel):
         if extra:
             col.label(text=' · '.join(extra))
         desc = it.get('description') or ''
-        for line in _wrap(desc, 46)[:4]:
-            col.label(text=line)
+        uxfit.wrap(col, context, desc, inset=1)
         cat = it['category']
-        opts = L.row(align=True)
         if cat == 'motion' and it['kind'] == 'ds':
-            opts.prop(wm, 'dsl_opt_fix', toggle=True)
-            opts.prop(wm, 'dsl_opt_mirror', toggle=True)
-            opts.prop(wm, 'dsl_opt_camera', toggle=True)
+            sw = uxfit.flow(L, context, ['Fix clipping', 'Mirror', 'Camera moves'], most=3)
+            sw.prop(wm, 'dsl_opt_fix', toggle=True)
+            sw.prop(wm, 'dsl_opt_mirror', toggle=True)
+            sw.prop(wm, 'dsl_opt_camera', toggle=True)
         elif cat == 'prop':
-            opts.prop(wm, 'dsl_opt_hold', toggle=True)
+            L.prop(wm, 'dsl_opt_hold', toggle=True)
+        opts = L.row(align=True)
+        opts.scale_y = 1.3
         label = {'motion': 'Insert at playhead', 'expression': 'Key face at playhead', 'mouth_set': 'Use these mouths', 'outfit': 'Wear this', 'accessory': 'Wear',
                  'prop': 'Add prop', 'scenery': 'Add to scene', 'card': 'Add card'}.get(cat, 'Insert')
         opts.operator('dsl.insert', text=label, icon='ADD').item_id = it['id']
@@ -225,7 +227,7 @@ class DSL_PT_library(DSLPanel, bpy.types.Panel):
             opts.operator('dsl.undress', text='', icon='LOOP_BACK')
         elif cat == 'accessory':
             opts.operator('dsl.take_off', text='', icon='X').item_id = it['id']
-        row = L.row(align=True)
+        row = uxfit.flow(L, context, ['Save motion', 'Save face', 'Save selection'], most=3, icon=True)
         row.operator('dsl.save_motion', text='Save motion', icon='ACTION')
         row.operator('dsl.save_face', text='Save face', icon='USER')
         row.operator('dsl.save_selection', text='Save selection', icon='OBJECT_DATA')
@@ -240,7 +242,7 @@ class DSL_PT_background(DSLPanel, bpy.types.Panel):
         L.prop(wm, 'dsl_set', text='')
         if wm.dsl_set_props:
             box = L.box()
-            grid = box.grid_flow(row_major=True, columns=2, even_columns=True, align=True)
+            grid = uxfit.flow(box, context, [it.name for it in wm.dsl_set_props], most=2)
             for it in wm.dsl_set_props:
                 grid.prop(it, 'on', text=it.name, toggle=False)
             row = box.row(align=True)
@@ -283,7 +285,7 @@ class DSL_PT_object(DSLPanel, bpy.types.Panel):
         g = bool(context.scene.get('dsl_collision_guard', False))
         row.operator('dsl.collision_guard', text='Live guard', icon='CHECKBOX_HLT' if g else 'CHECKBOX_DEHLT', depress=g)
         if not ob or ob.name.startswith('BUNNY_'):
-            L.label(text='Select a prop, text or scenery piece')
+            uxfit.wrap(L, context, 'Select a prop, text or scenery piece')
             return
         mod = text3d.text_modifier(ob)
         if mod:
@@ -322,7 +324,7 @@ class DSL_PT_object(DSLPanel, bpy.types.Panel):
         if kind:
             box = L.box()
             box.label(text='In hand: %s grip (%s)' % (kind, ob.get('dsl_held_side', '')), icon='VIEW_PAN')
-            box.label(text='G and R stay inside what the real grip allows')
+            uxfit.wrap(box, context, 'G and R stay inside what the real grip allows')
             r = box.row(align=True)
             r.operator('dsl.check_grip', text='Check grip', icon='CHECKMARK')
             r.operator('dsl.release', text='Let go', icon='UNLINKED')
@@ -342,7 +344,7 @@ class DSL_PT_life(DSLPanel, bpy.types.Panel):
     def draw(self, context):
         L = self.layout
         now = context.scene.get('dsl_time', 'day')
-        row = L.row(align=True)
+        row = uxfit.flow(L, context, [str(_t) for _t in ('day', 'golden', 'night')], most=4)
         row.label(text='Time')
         for t in ('day', 'golden', 'night'):
             row.operator('dsl.time', text=t.capitalize(), depress=(now == t)).kind = t
@@ -375,7 +377,7 @@ class DSL_PT_look(DSLPanel, bpy.types.Panel):
         if not bs:
             L.label(text='Open or link Bunny3D.blend first')
             return
-        row = L.row(align=True)
+        row = uxfit.flow(L, context, [str(_t[1]) for _t in (('ink_px', 'Ink px'), ('boil', 'Boil'), ('boil_step', 'Step'))], most=4)
         for k, t in (('ink_px', 'Ink px'), ('boil', 'Boil'), ('boil_step', 'Step')):
             if k in bs.keys():
                 row.prop(bs, '["%s"]' % k, text=t)

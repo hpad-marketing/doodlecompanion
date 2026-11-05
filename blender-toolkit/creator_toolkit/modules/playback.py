@@ -1,5 +1,6 @@
 """Animator playback helpers: loop / ping-pong / stop, jump by seconds or beats, mirror keys."""
 import bpy
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Playback helpers', 'PLAY', 'Animation'
 LOOPS = [('INFINITE', 'Loop', ''), ('BOUNCE', 'Ping-pong', ''), ('STOP_END_FRAME', 'Stop at end', ''),
@@ -80,10 +81,10 @@ CLASSES = (CTK_OT_loop_mode, CTK_OT_jump, CTK_OT_mirror_pose)
 def draw(layout, context):
     sc = context.scene
     if hasattr(sc, 'playback_loop_mode'):
-        row = layout.row(align=True)
+        row = uxfit.flow(layout, context, [str(_t[1]) for _t in LOOPS], most=4)
         for k, l, _ in LOOPS:
             row.operator('ctk.loop_mode', text=l, depress=sc.playback_loop_mode == k).mode = k
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, [str(_t[2]) for _t in ((-1, 'BEAT', '‹ beat'), (1, 'BEAT', 'beat ›'), (-1, 'SECOND', '‹ 1s'), (1, 'SECOND', '1s ›'))], most=4)
     for amt, unit, txt in ((-1, 'BEAT', '‹ beat'), (1, 'BEAT', 'beat ›'), (-1, 'SECOND', '‹ 1s'), (1, 'SECOND', '1s ›')):
         op = row.operator('ctk.jump', text=txt)
         op.amount, op.unit = amt, unit

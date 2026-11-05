@@ -3,6 +3,7 @@ import math
 import random
 import bpy
 from ..compat import fcurves_of
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Motion presets', 'ANIM', 'Animation'
 PRESETS = [('POP_IN', 'Pop in'), ('POP_OUT', 'Pop out'), ('BOUNCE_IN', 'Bounce in'), ('SLIDE_IN', 'Slide in'),
@@ -147,8 +148,8 @@ CLASSES = (CTK_OT_motion_preset,)
 
 
 def draw(layout, context):
-    grid = layout.grid_flow(columns=2, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in PRESETS], most=2)
     grid.operator_context = 'EXEC_DEFAULT'  # buttons run at once; the Shift+Alt+M shortcut asks first
     for k, n in PRESETS:
         grid.operator('ctk.motion_preset', text=n).kind = k
-    layout.label(text='Starts at the playhead. Tweak in the Adjust panel', icon='INFO')
+    uxfit.wrap(layout, context, 'Starts at the playhead. Tweak in the Adjust panel', icon='INFO')

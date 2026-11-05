@@ -8,6 +8,7 @@ import subprocess
 import threading
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Deliver + render queue', 'RENDER_ANIMATION', 'Output'
 
@@ -353,14 +354,14 @@ def draw(layout, context):
     row = layout.row(align=True)
     row.prop(d, 'project')
     row.prop(d, 'preview', toggle=True)
-    row = layout.row(align=True)
-    row.prop(d, 'fmt', text='')
-    row.prop(d, 'colour', text='')
-    row.prop(d, 'output', text='')
-    row = layout.row(align=True)
+    col = layout.column(align=True)
+    col.prop(d, 'fmt', text='Size')
+    col.prop(d, 'colour', text='Colour')
+    col.prop(d, 'output', text='File')
+    row = uxfit.flow(layout, context, ['Set up render', 'Render now'], most=2, icon=True)
     row.operator('ctk.deliver_setup', icon='PREFERENCES')
     row.operator('ctk.deliver_render', icon='RENDER_ANIMATION')
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Make it the final', 'Open folder'], most=2, icon=True)
     row.operator('ctk.deliver_final', icon='CHECKMARK')
     row.operator('ctk.deliver_open', icon='FILE_FOLDER')
     box = layout.box()
@@ -369,8 +370,8 @@ def draw(layout, context):
     for j in q[-6:]:
         box.label(text=f"{os.path.basename(j['file'])} · {j['scene']} · {j['status']}")
     row = box.row(align=True)
-    row.operator('ctk.queue_add', icon='ADD')
-    row.operator('ctk.queue_run', icon='PLAY')
+    row.operator('ctk.queue_add', text='Add', icon='ADD')
+    row.operator('ctk.queue_run', text='Run', icon='PLAY')
     row.operator('ctk.queue_clear', text='', icon='TRASH')
     if RUN['log']:
         box.label(text=RUN['log'])

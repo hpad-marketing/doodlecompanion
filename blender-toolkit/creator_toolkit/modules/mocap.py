@@ -3,6 +3,7 @@ import os
 import bpy
 from mathutils import Matrix, Quaternion
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Mocap + pose library', 'ARMATURE_DATA', 'Rigging'
 
@@ -232,11 +233,11 @@ CLASSES = (CTK_OT_mocap_import, CTK_OT_retarget_selected, CTK_OT_pose_save, CTK_
 
 
 def draw(layout, context):
-    row = layout.row(align=True)
+    row = uxfit.flow(layout, context, ['Import mocap onto rig', 'Retarget from selected'], most=2, icon=True)
     row.operator('ctk.mocap_import', icon='IMPORT')
     row.operator('ctk.retarget_selected', icon='ARMATURE_DATA')
-    layout.label(text='Free mocap: mixamo.com (FBX, without skin)', icon='URL')
+    uxfit.wrap(layout, context, 'Free mocap: mixamo.com (FBX, without skin)', icon='URL')
     row = layout.row(align=True)
     row.operator('ctk.pose_save', icon='ADD')
     row.operator('ctk.pose_flip', icon='MOD_MIRROR')
-    layout.label(text='Apply saved poses from the Asset Browser', icon='ASSET_MANAGER')
+    uxfit.wrap(layout, context, 'Apply saved poses from the Asset Browser', icon='ASSET_MANAGER')

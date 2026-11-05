@@ -534,7 +534,7 @@ def pie_and_updates():
     import creator_toolkit as ctk
     from creator_toolkit.modules import updates
     assert hasattr(bpy.types, 'CTK_MT_pie')
-    assert updates._v('1.2.10') > updates._v('1.2.9') and updates.installed_version() == '1.1.0'
+    assert updates._v('1.2.10') > updates._v('1.2.9') and updates.installed_version() == '1.1.2'
     assert bpy.ops.ctk.keydial_text() == {'FINISHED'} and 'Shift+Q' in bpy.data.texts['Keydial shortcuts'].as_string()
     km = bpy.context.window_manager.keyconfigs.addon
     if km:

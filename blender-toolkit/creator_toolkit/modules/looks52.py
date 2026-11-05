@@ -8,6 +8,7 @@ Radial backdrops: sunbursts, petals, mandalas, speed rings and swirls from the R
 node, in your palette colours, optionally spinning."""
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Ink + radial backdrops', 'SHADING_RENDERED', 'Look'
 
@@ -344,7 +345,7 @@ CLASSES = (CTK_OT_ink_add, CTK_OT_ink_remove, CTK_OT_radial)
 
 def draw(layout, context):
     if not ink_available():
-        layout.label(text='Needs Blender 5.2 (Raycast and Radial Tiling nodes)', icon='INFO')
+        uxfit.wrap(layout, context, 'Needs Blender 5.2 (Raycast and Radial Tiling nodes)', icon='INFO')
         return
     row = layout.row(align=True)
     row.operator('ctk.ink_add', icon='GREASEPENCIL')
@@ -359,6 +360,6 @@ def draw(layout, context):
         row.prop(nt.nodes['CTK ink colour'].inputs['Color'], 'default_value', text='')
         layout.label(text='Lower Edge = thicker outline', icon='INFO')
     layout.label(text='Radial backdrop', icon='MESH_CIRCLE')
-    grid = layout.grid_flow(columns=3, align=True)
+    grid = uxfit.flow(layout, context, [str(_t[1]) for _t in PATTERNS], most=3)
     for k, label, *_ in PATTERNS:
         grid.operator('ctk.radial_backdrop', text=label).pattern = k

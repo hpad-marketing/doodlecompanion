@@ -3,6 +3,7 @@ import os
 import uuid
 import bpy
 from . import _util
+from .. import uxfit
 
 LABEL, ICON, GROUP = 'Asset Vault', 'ASSET_MANAGER', 'Assets'
 LIB_NAME = 'Creator Vault'
@@ -286,7 +287,7 @@ def draw(layout, context):
     row.operator('ctk.vault_add_library', icon='ASSET_MANAGER')
     row.operator('ctk.vault_open', text='', icon='FILE_FOLDER')
     if online_supported():
-        row = layout.row(align=True)
+        row = uxfit.flow(layout, context, ['Prepare online Vault', 'Connect online Vault'], most=2, icon=True)
         row.operator('ctk.vault_publish', icon='WORLD')
         row.operator('ctk.vault_online', icon='URL')
-    layout.label(text='Tip: right-click an object › Save to Vault', icon='INFO')
+    uxfit.wrap(layout, context, 'Tip: right-click an object › Save to Vault', icon='INFO')
