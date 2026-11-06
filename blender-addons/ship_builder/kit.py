@@ -5,6 +5,7 @@ fourth wall (camera side) at y = 0.
 """
 import math
 import random
+import zlib
 import bpy
 import bmesh
 from mathutils import Vector, Matrix
@@ -196,46 +197,112 @@ def bolt(loc, normal, c):
 
 
 # ---------------------------------------------------------------- walls
+def rivets(points, normal, c, name="Rivets", r=0.0065):
+    """Many rivet heads as ONE object (a riveted seam is hundreds of heads)."""
+    if not points:
+        return None
+    n = Vector(normal).normalized()
+    q = Vector((0, 0, 1)).rotation_difference(n).to_matrix().to_4x4()
+    bm = bmesh.new()
+    for p in points:
+        geom = bmesh.ops.create_cone(bm, cap_ends=True, segments=8, radius1=r, radius2=r * 0.7, depth=0.004)
+        bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector(p)) @ q, verts=geom["verts"])
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(M.brushed_steel("SB Bolt Steel", (0.5, 0.48, 0.45, 1), 0.35))
+    ob = bpy.data.objects.new(name, me)
+    c.objects.link(ob)
+    return ob
+
+
+def _breaks(L, rng, lo, hi, forced=()):
+    """Cut 0..L into uneven spans between lo and hi long, always cutting at forced points."""
+    cuts = sorted({0.0, L} | {round(f, 4) for f in forced if 0.05 < f < L - 0.05})
+    out = []
+    for a, b in zip(cuts, cuts[1:]):
+        x = a
+        while b - x > hi:
+            w = rng.uniform(lo, hi)
+            if b - (x + w) < lo:  # don't leave a sliver
+                w = (b - x) / 2
+            out.append((x, x + w))
+            x += w
+        if b - x > 1e-3:
+            out.append((x, b))
+    return out
+
+
 def wall(room, origin, u, v, width, height, normal, pal_key="panel", panel=(1.0, 0.75),
-         skip=None, name="Wall", trim_start=0.0, trim_end=0.0):
-    """A wall face made of real inset panels over a dark backing.
+         skip=None, name="Wall", trim_start=0.0, trim_end=0.0, holes=(), flat=()):
+    """A hand-built looking wall: uneven columns, uneven bands, different plate
+    types side by side, over a dark backing.
 
     origin: bottom-left corner. u: unit vector along the width, v: up.
-    normal: points into the room. skip(i, j) -> True leaves a hole (doors, windows).
+    normal: points into the room. holes: (u0, u1, z0, z1) openings in wall
+    coordinates (doors, windows); the layout always breaks on their edges.
+    flat: (u0, u1) spans where only flush plates go (door leaves slide there).
+    skip(i, j, pw, ph) is still honoured for older callers.
     """
     u, v, n = Vector(u), Vector(v), Vector(normal)
     pal = room.pal
+    rng = random.Random(zlib.crc32(f"{room.name}|{name}".encode()))  # same wall every build
     parts = []
     backing = M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6)
     rot = Matrix((u, v, n)).transposed().to_euler()
-    nx, ny = max(1, round(width / panel[0])), max(1, round(height / panel[1]))
-    pw, ph = width / nx, height / ny
     gap = 0.008
-    for i in range(nx):
-        for j in range(ny):
-            if skip and skip(i, j, pw, ph):
+    forced_u = [x for h in holes for x in (h[0], h[1])] + [trim_start, width - trim_end]
+    cols = _breaks(width, rng, panel[0] * 0.45, panel[0] * 1.45, forced_u)
+    kick = rng.uniform(0.18, 0.32)
+    for (a0, a1) in cols:
+        if a1 - a0 < 0.02:
+            continue
+        mid = (a0 + a1) / 2
+        flat_here = any(f0 - 0.01 < mid < f1 + 0.01 for f0, f1 in flat)
+        hz = [z for h in holes if h[0] - 0.01 < mid < h[1] + 0.01 for z in (h[2], h[3])]
+        rows = _breaks(height, rng, panel[1] * 0.6, panel[1] * 2.2, [kick] + hz)
+        for (b0, b1) in rows:
+            cz = (b0 + b1) / 2
+            if any(h[0] - 0.01 < mid < h[1] + 0.01 and h[2] - 0.01 < cz < h[3] + 0.01 for h in holes):
                 continue
-            key = pal_key
-            if j == 0:
-                key = "hull"  # kick plate
-            # trim: the first/last column is narrowed so it stops short of a meeting wall
-            ts = trim_start if i == 0 else 0.0
-            te = trim_end if i == nx - 1 else 0.0
-            pwi = pw - ts - te
-            c0 = Vector(origin) + u * (pw * (i + 0.5) + (ts - te) / 2) + v * (ph * (j + 0.5))
+            if skip and skip(mid / max(a1 - a0, 1e-3) - 0.5, cz / max(b1 - b0, 1e-3) - 0.5, a1 - a0, b1 - b0):
+                continue
+            ts = max(0.0, trim_start - a0) if a0 < trim_start else 0.0
+            te = max(0.0, a1 - (width - trim_end)) if a1 > width - trim_end else 0.0
+            pwi, ph = (a1 - a0) - ts - te, b1 - b0
+            if pwi < 0.03:
+                continue
+            c0 = Vector(origin) + u * ((a0 + a1) / 2 + (ts - te) / 2) + v * cz
             bk = box(f"{name} Backing", (pwi, ph, 0.05), c0 - n * 0.04, backing, room.shell, bevel=0)
             bk.rotation_euler = rot
-            depth = 0.03 + (0.012 if (i + j) % 3 == 0 and j > 0 else 0)
-            p = box(f"{name} Panel", (pwi - gap, ph - gap, depth), (0, 0, 0), pal[key], room.shell, bevel=0.006)
-            p.rotation_euler = Matrix((u, v, n)).transposed().to_euler()
+            key = "hull" if b1 <= kick + 1e-3 else (pal_key if rng.random() > 0.18 else rng.choice(("hull", "accent", pal_key)))
+            depth = 0.03 if flat_here else rng.choice((0.03, 0.03, 0.036, 0.042))
+            p = box(f"{name} Panel", (pwi - gap, ph - gap, depth), (0, 0, 0), pal[key], room.shell, bevel=rng.choice((0.004, 0.006, 0.01)))
+            p.rotation_euler = rot
             p.location = c0 + n * (depth / 2 - 0.015)
             parts.append(p)
-            if DETAIL["level"] >= 2:
-                for a in (-1, 1):
-                    for b in (-1, 1):
-                        bolt(c0 + u * a * (pwi / 2 - 0.035) + v * b * (ph / 2 - 0.035) + n * (depth - 0.013), n, room.dress)
-            if DETAIL["level"] >= 3 and RNG.random() < 0.18 and j > 0:
-                vent(room, c0 + n * (depth - 0.012), u, v, n, pwi * 0.55, ph * 0.35)
+            if DETAIL["level"] < 2:
+                continue
+            front = depth - 0.015
+            style = rng.random()
+            pts = []
+            hu, hv = pwi / 2 - 0.03, ph / 2 - 0.03
+            if style < 0.35:          # four corners
+                pts = [(a * hu, b * hv) for a in (-1, 1) for b in (-1, 1)]
+            elif style < 0.6:         # riveted seams top and bottom
+                k = max(2, int(pwi / 0.07))
+                pts = [(-hu + 2 * hu * i / (k - 1), b * hv) for i in range(k) for b in (-1, 1)]
+            elif style < 0.75:        # riveted all round
+                k, m = max(2, int(pwi / 0.08)), max(2, int(ph / 0.08))
+                pts = [(-hu + 2 * hu * i / (k - 1), b * hv) for i in range(k) for b in (-1, 1)]
+                pts += [(a * hu, -hv + 2 * hv * j / (m - 1)) for j in range(1, m - 1) for a in (-1, 1)]
+            elif style < 0.85:        # centre line, a plate hung on one rail
+                k = max(2, int(pwi / 0.12))
+                pts = [(-hu + 2 * hu * i / (k - 1), 0.0) for i in range(k)]
+            if pts:
+                rv = rivets([c0 + u * x + v * y + n * (front + 0.0015) for x, y in pts], n, room.dress, f"{name} Rivets")
+                rv.parent = p  # riveted to its plate: wear moves them together
+                rv.matrix_parent_inverse = p.matrix_basis.inverted()
     return parts
 
 

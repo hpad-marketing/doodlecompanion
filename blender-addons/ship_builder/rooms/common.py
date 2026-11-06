@@ -24,19 +24,24 @@ def any_of(*tests):
     return (lambda i, j, pw, ph: any(t(i, j, pw, ph) for t in tests)) if tests else None
 
 
+def _flat(holes):
+    """Door holes reach the floor: their sliding leaves need flush plates beside them."""
+    return [(h[0] - 0.62, h[1] + 0.62) for h in holes if h[2] < 0.12]
+
+
 def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", panel=(1.0, 0.75), chamfer=0.0):
     W, D, H = room.W, room.D, room.H
     room.chamfer = chamfer
     K.floor(room)
     # back wall: origin bottom-left at (-W/2, D), u = +x, normal = -y
     K.wall(room, (-W / 2, D, 0), (1, 0, 0), (0, 0, 1), W, H, (0, -1, 0), pal_key, panel,
-           any_of(*[opening(r) for r in back_holes]), "Back")
+           None, "Back", holes=back_holes, flat=_flat(back_holes))
     # left wall: origin at (-W/2, 0), u = +y, normal = +x
     K.wall(room, (-W / 2, 0, 0), (0, 1, 0), (0, 0, 1), D, H, (1, 0, 0), pal_key, panel,
-           any_of(*[opening(r) for r in left_holes]), "Left", trim_end=0.045)
+           None, "Left", holes=left_holes, flat=_flat(left_holes), trim_end=0.045)
     # right wall: origin at (W/2, D), u = -y, normal = -x
     K.wall(room, (W / 2, D, 0), (0, -1, 0), (0, 0, 1), D, H, (-1, 0, 0), pal_key, panel,
-           any_of(*[opening(r) for r in right_holes]), "Right", trim_start=0.045)
+           None, "Right", holes=right_holes, flat=_flat(right_holes), trim_start=0.045)
     # corner posts hide panel ends
     for x in (() if chamfer else (-W / 2 + 0.08, W / 2 - 0.08)):
         K.box("Corner Post", (0.16, 0.16, H), (x, D - 0.08, H / 2), room.pal["hull"], room.shell, bevel=0.01)

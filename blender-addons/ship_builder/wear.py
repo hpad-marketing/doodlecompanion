@@ -133,7 +133,7 @@ def _attached(room, panel):
     """Dressing that sits on a wall panel's face (bolts, vents), in its own slab."""
     inv = panel.matrix_world.inverted()
     hx, hy = panel.dimensions.x / 2, panel.dimensions.y / 2
-    out = []
+    out = [c for c in panel.children_recursive if c.type == "MESH"]  # rivets ride on their plate
     for ob in room.dress.objects:
         p = inv @ ob.matrix_world.translation
         if abs(p.x) <= hx + 0.005 and abs(p.y) <= hy + 0.005 and -0.03 < p.z < 0.07:
