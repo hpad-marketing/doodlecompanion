@@ -302,93 +302,376 @@
     "states": [
       {
         "label": "Calm face",
-        "set": {}
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
       },
       {
         "label": "Happy",
         "set": {
+          "eyes_blink": 0.0,
           "eyes_happy": 1.0,
-          "mouth_smile": 1.0
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 1.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Sad",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
           "eyes_sad": 1.0,
-          "mouth_frown": 0.8
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.8,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Cross",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
           "eyes_angry": 1.0,
-          "mouth_wavy": 0.8
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.8,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Surprised",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
           "eyes_wide": 1.0,
-          "mouth_oh": 1.0
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 1.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "In love",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
           "eyes_heart": 1.0,
-          "mouth_smile": 0.7
+          "eyes_x": 0.0,
+          "mouth_smile": 0.7,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Broken",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
           "eyes_x": 1.0,
-          "mouth_wavy": 1.0
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 1.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Talking",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.3,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
           "talk": 1.0,
-          "mouth_smile": 0.3
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       },
       {
-        "label": "Screen: scan",
+        "label": "Screen scan",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 1.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
           "screen_mode": 1,
-          "scan": 1.0
+          "screen_value": 0.7
         }
       },
       {
-        "label": "Screen: low battery",
+        "label": "Screen low battery",
         "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
           "screen_mode": 2,
           "screen_value": 0.15
         }
       },
       {
-        "label": "Screen: error",
+        "label": "Screen error",
         "set": {
-          "screen_mode": 3
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 3,
+          "screen_value": 0.7
         }
       },
       {
-        "label": "Screen: sticker gallery",
+        "label": "Screen loading",
         "set": {
-          "screen_mode": 6
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 4,
+          "screen_value": 0.6
         }
       },
       {
-        "label": "Screen: sleep",
+        "label": "Screen arrow",
         "set": {
-          "screen_mode": 7
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 5,
+          "screen_value": 0.25
+        }
+      },
+      {
+        "label": "Screen sticker gallery",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 6,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Screen sleep",
+        "set": {
+          "eyes_blink": 1.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 7,
+          "screen_value": 0.7
         }
       },
       {
         "label": "Work lights on",
         "set": {
-          "lamps": 1.0
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 1.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Rest face again",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
         }
       }
     ],
@@ -398,9 +681,9 @@
       "strut_spring.Lf",
       "sprocket_wheel.L",
       "tow_hook_hook",
-      "sticker_ringed_planet",
       "bin_lid_plate",
-      "turret"
+      "turret",
+      "sticker_0_ringed_planet"
     ]
   },
   "stage_camera": {
