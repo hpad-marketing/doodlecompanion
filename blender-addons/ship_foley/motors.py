@@ -124,6 +124,11 @@ def stop_clunks(arm_label, js, prof, fps, f0):
     return out
 
 
+def _lp_noise(rng, n, hz):
+    x = S._lowpass(rng.standard_normal(n), hz)
+    return x / (np.max(np.abs(x)) + 1e-12)
+
+
 def _env(times, vals, n, t0):
     t = t0 + np.arange(n) / S.RATE
     return np.interp(t, times, vals, left=0.0, right=0.0)
@@ -157,7 +162,11 @@ def render_group(js, prof, duration, strain=(), seed=0, level=1.0):
         size_pitch = 1.0 / max(j.size, 0.15) ** 0.9
         f = base * size_pitch * (0.7 + 3.2 * x) * (1 + rng.uniform(-0.04, 0.04))
         phase = 2 * math.pi * np.cumsum(f) / S.RATE
-        whine = sum(np.sin(k * phase) / k ** 1.15 for k in range(1, 7))
+        # real motors aren't clean tones: jitter the phase and roughen the level
+        jit = _lp_noise(rng, n, 30.0)
+        phase = phase + 0.6 * jit
+        whine = sum(np.sin(k * phase) / k ** 1.15 for k in range(1, 7)) * (1 + 0.5 * _lp_noise(rng, n, 60.0))
+        whine = 0.6 * whine + 0.9 * S._bandnoise(rng, n, float(np.median(f)) * 2.2, q=1.5)
         teeth = 9 + ji % 5
         mesh = 1.0 + 0.45 * np.sign(np.sin(phase * teeth / 3.0)) * np.abs(np.sin(phase * teeth / 3.0)) ** 4
         load = (mass * j.load / 100.0) ** 0.3 * strain_env if j.group.startswith("leg") else (mass * j.load / 100.0) ** 0.3

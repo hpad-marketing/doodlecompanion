@@ -85,11 +85,14 @@ def contact_time(h):
     return min(max(tau, 0.00008), 0.02)
 
 
-def _modes(mat, size, hollow, rng, n_max=12):
+def _modes(mat, size, hollow, rng, n_max=12, solid=False):
+    """Modal ring of a body. A few strong low modes give it its pitch; a dense
+    cloud of weak, short, random modes above them makes it sound like a solid
+    lump of metal instead of a clean bell or an empty tube."""
     p = MATERIALS[mat]
     f0 = p["k"] / max(size, 0.01) * (1.0 - 0.25 * hollow)
     f0 = min(max(f0, 45.0), 7000.0)
-    t60 = p["t60"] * (1.0 + 1.2 * hollow)
+    t60 = p["t60"] * (1.0 + 1.2 * hollow) * (0.3 if solid else 1.0)
     out = []
     for i, r in enumerate(p["ratios"][:n_max]):
         f = f0 * r * (1.0 + rng.uniform(-0.035, 0.035))
@@ -97,7 +100,13 @@ def _modes(mat, size, hollow, rng, n_max=12):
             break
         amp = rng.uniform(0.55, 1.0) / math.sqrt(i + 1)
         decay = t60 / (1.0 + 0.6 * i) * rng.uniform(0.85, 1.15)
-        out.append((f, amp, decay))
+        out.append((f, amp * 0.6, decay))
+    dense = 36 if p["hard"] > 0.5 else 16
+    for k in range(dense):
+        f = f0 * math.exp(rng.uniform(math.log(1.3), math.log(max(9000.0 / f0, 1.5))))
+        if f > 15000:
+            continue
+        out.append((f, rng.uniform(0.08, 0.3), min(t60, 0.25) * rng.uniform(0.15, 0.5)))
     return out
 
 
@@ -149,18 +158,20 @@ def _thud(h, n, t, rng):
     share = min(max(math.log10(max(m, 0.1)) / 2.0, 0.03), 1.1)
     f_start = min(max(150.0 * (max(m, 0.5) / 20.0) ** -0.3, 32.0), 190.0)
     f_end = f_start * 0.65
-    dur = 0.05 + 0.14 * min(share, 1.0)
+    dur = 0.035 + 0.05 * min(share, 1.0)     # a punch, not a drum ring
     freq = f_end + (f_start - f_end) * np.exp(-t / (dur * 0.6))
     phase = 2 * math.pi * np.cumsum(freq) / RATE
     body = np.sin(phase) * np.exp(-t / dur)
     rumble = _lowpass(rng.standard_normal(n), f_start * 1.4) * np.exp(-t / (dur * 0.7))
     rumble /= np.max(np.abs(rumble)) + 1e-12
     soft = MATERIALS[h.b_mat]["hard"]
-    out = share * (0.8 * body + 0.35 * rumble) * (0.35 + 0.65 * soft)
+    out = share * (0.45 * body + 0.8 * rumble) * (0.35 + 0.65 * soft)
     if m > 60:   # the whole frame of a heavy droid booms under the deck
         boom_f = 30.0 + 25.0 * (60.0 / m) ** 0.5
-        boom = np.sin(2 * math.pi * boom_f * t * (1 - 0.15 * t)) * (1 - np.exp(-t / 0.006)) * np.exp(-t / 0.22)
-        out += min((m - 60) / 120.0, 1.0) * 0.9 * boom
+        boom = np.sin(2 * math.pi * boom_f * t * (1 - 0.15 * t)) * (1 - np.exp(-t / 0.004)) * np.exp(-t / 0.07)
+        bn = _lowpass(rng.standard_normal(n), 120.0) * np.exp(-t / 0.06)
+        bn /= np.max(np.abs(bn)) + 1e-12
+        out += min((m - 60) / 120.0, 1.0) * (0.45 * boom + 0.6 * bn)
     return out
 
 
@@ -175,8 +186,8 @@ def _settle(h, gain, rng):
     hiss = _bandnoise(rng, n, 3000 + rng.uniform(-400, 400), q=0.7) * env
     f = 95 + 40 * (120.0 / max(m, 10)) ** 0.4
     creak_ph = 2 * math.pi * np.cumsum(f * (1 + 0.04 * np.sin(2 * math.pi * 23 * t))) / RATE
-    creak = (np.sin(creak_ph) + 0.4 * np.sin(2 * creak_ph)) * (1 - np.exp(-t / 0.05)) * np.exp(-t / 0.12)
-    out = lvl * (0.6 * hiss + 0.5 * creak)
+    creak = (np.sin(creak_ph) + 0.4 * np.sin(2 * creak_ph)) * (1 - np.exp(-t / 0.05)) * np.exp(-t / 0.08)
+    out = lvl * (0.7 * hiss + 0.25 * creak)
     pre = np.zeros(int(0.025 * RATE))
     return np.concatenate([pre, out])
 
@@ -201,18 +212,16 @@ def _rattle(h, gain, rng, room_wet, room_rt60):
     return out
 
 
-def _room(x, rng, rt60=0.45, wet=0.12):
-    """A small steel room: a few early reflections and a short damped tail."""
+def _room(x, rng, rt60=0.3, wet=0.06):
+    """A small steel room: a short, diffuse, damped tail (no discrete echoes,
+    which comb-filter the hit and make it sound hollow)."""
     if wet <= 0:
         return x
     n_ir = int(rt60 * RATE)
     t = np.arange(n_ir) / RATE
     ir = rng.standard_normal(n_ir) * np.exp(-6.91 * t / rt60)
     ir = _lowpass(ir, 5500.0)
-    for d, g in ((0.007, 0.5), (0.011, 0.38), (0.017, 0.3), (0.023, 0.22)):
-        i = int(d * RATE)
-        if i < n_ir:
-            ir[i] += g * 6
+    ir[:int(0.004 * RATE)] *= np.linspace(0, 1, int(0.004 * RATE))   # diffuse onset, no comb-filter taps
     ir /= np.sqrt(np.sum(ir * ir)) + 1e-12
     out = np.zeros(len(x) + n_ir - 1)
     L = 1 << int(math.ceil(math.log2(len(out))))
@@ -222,7 +231,7 @@ def _room(x, rng, rt60=0.45, wet=0.12):
     return y + wet * out
 
 
-def render(h, room_wet=0.12, room_rt60=0.45):
+def render(h, room_wet=0.06, room_rt60=0.3):
     """Float32 mono samples at RATE for one Hit."""
     rng = np.random.default_rng(zlib.crc32(h.key().encode()))
     if h.kind == "slide":
@@ -230,7 +239,7 @@ def render(h, room_wet=0.12, room_rt60=0.45):
     gain = loudness(h) * 10 ** (rng.uniform(-1.5, 1.5) / 20)
     tau = contact_time(h)
     b_modes = _modes(h.b_mat, h.b_size, h.b_hollow, rng)
-    a_modes = _modes(h.a_mat, h.a_size, 0.3 if h.a_mat.startswith("metal") else 0.0, rng, 8)
+    a_modes = _modes(h.a_mat, h.a_size, 0.0, rng, 8, solid=h.kind in ("step", "bump"))
     longest = max([d for _, _, d in b_modes + a_modes] + [0.12])
     dur = min(longest * 1.1 + 0.15, 3.0)
     n = int(dur * RATE)
@@ -238,6 +247,14 @@ def render(h, room_wet=0.12, room_rt60=0.45):
 
     sig = _bank(b_modes, tau, n, t) + 0.55 * _bank(a_modes, tau, n, t)
     sig /= np.max(np.abs(sig)) + 1e-12
+    sig *= 0.6
+    # the body of the hit: a dense crunch of noise, darker for heavy hits,
+    # which is what makes a stomp sound solid rather than ringing
+    body_c = min(max(2600.0 * (max(h.mass, 0.5) / 20.0) ** -0.3 * (0.6 + 0.6 * min(h.speed, 1.5)), 250.0), 6000.0)
+    body = _lowpass(rng.standard_normal(n), body_c)
+    body *= (1 - np.exp(-t / 0.0015)) * np.exp(-t / (0.012 + 0.02 * min(h.mass / 100.0, 1.5)))
+    body /= np.max(np.abs(body)) + 1e-12
+    sig = sig + 0.9 * body * MATERIALS[h.b_mat]["hard"] ** 0.5
 
     # the strike itself carries the attack; slow hits barely click
     click = _strike(tau, n) * (0.25 + 0.5 * min(h.speed / 1.5, 1.0))

@@ -56,7 +56,7 @@ def distance_gain(dist, ref=3.0):
     return min(1.0, (ref / max(dist, 0.1)) ** 0.8)
 
 
-def bake(events, scene=None, master=1.0, room_wet=0.12, room_rt60=0.45, offscreen=0.6):
+def bake(events, scene=None, master=1.0, room_wet=0.06, room_rt60=0.3, offscreen=0.6):
     """Write WAVs and lay the strips. Returns (strips made, json path)."""
     scene = scene or bpy.context.scene
     fps = scene.render.fps / scene.render.fps_base
@@ -99,7 +99,7 @@ def mixdown(path, scene=None):
     return path
 
 
-def bake_motors(motors, events, scene=None, master=1.0, room_wet=0.08):
+def bake_motors(motors, events, scene=None, master=1.0, room_wet=0.05):
     """One motor track per droid limb group, laid from the shot's first frame.
     The leg that just landed strains: its motors swell as it takes the weight."""
     scene = scene or bpy.context.scene
@@ -127,7 +127,7 @@ def bake_motors(motors, events, scene=None, master=1.0, room_wet=0.08):
             if float(np.max(np.abs(x))) < 1e-4:
                 continue
             rng = np.random.default_rng(gi)
-            x = S._room(x.astype(float), rng, 0.4, room_wet)
+            x = S._room(x.astype(float), rng, 0.3, room_wet)
             path = os.path.join(d, "motor_%s_%s_%d_%d.wav" % (bpy.path.clean_name(name), g, f0, f1))
             S.write_wav(path, x)
             strip = col.new_sound(("%s%s motors %s" % (PREFIX, prof["label"], g))[:60], path, ch, f0)

@@ -28,7 +28,7 @@ from . import profiles, synth, detect, place, live, motors
 PROFILE_ITEMS = [(k, v["label"], "%d kg" % v["mass_kg"]) for k, v in profiles.DROIDS.items()]
 
 
-def bake_scene(scene=None, substeps=2, master=1.0, room_wet=0.12, include_props=True, report=None,
+def bake_scene(scene=None, substeps=2, master=1.0, room_wet=0.06, include_props=True, report=None,
                motors_on=True, motor_level=1.0):
     scene = scene or bpy.context.scene
     mot = {} if motors_on else None
@@ -42,7 +42,7 @@ def bake_scene(scene=None, substeps=2, master=1.0, room_wet=0.12, include_props=
 class FOLEY_Settings(bpy.types.PropertyGroup):
     master: bpy.props.FloatProperty(name="Loudness", default=1.0, min=0.0, max=4.0,
                                     description="Overall level of every contact sound")
-    room: bpy.props.FloatProperty(name="Room", default=0.12, min=0.0, max=0.6,
+    room: bpy.props.FloatProperty(name="Room", default=0.06, min=0.0, max=0.6,
                                   description="How much small-steel-room echo each sound carries")
     substeps: bpy.props.IntProperty(name="Precision", default=2, min=1, max=6,
                                     description="Samples per frame when looking for contacts (more = finer timing, slower)")
