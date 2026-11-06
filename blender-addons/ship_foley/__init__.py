@@ -23,15 +23,19 @@ import os
 
 import bpy
 
-from . import profiles, synth, detect, place, live
+from . import profiles, synth, detect, place, live, motors
 
 PROFILE_ITEMS = [(k, v["label"], "%d kg" % v["mass_kg"]) for k, v in profiles.DROIDS.items()]
 
 
-def bake_scene(scene=None, substeps=2, master=1.0, room_wet=0.12, include_props=True, report=None):
+def bake_scene(scene=None, substeps=2, master=1.0, room_wet=0.12, include_props=True, report=None,
+               motors_on=True, motor_level=1.0):
     scene = scene or bpy.context.scene
-    events = detect.scan(scene, substeps=substeps, include_props=include_props, report=report)
+    mot = {} if motors_on else None
+    events = detect.scan(scene, substeps=substeps, include_props=include_props, report=report, motors_out=mot)
     made, js = place.bake(events, scene, master=master, room_wet=room_wet)
+    if mot:
+        made += place.bake_motors(mot, events, scene, master=master * motor_level)
     return events, made, js
 
 
@@ -42,6 +46,10 @@ class FOLEY_Settings(bpy.types.PropertyGroup):
                                   description="How much small-steel-room echo each sound carries")
     substeps: bpy.props.IntProperty(name="Precision", default=2, min=1, max=6,
                                     description="Samples per frame when looking for contacts (more = finer timing, slower)")
+    motors: bpy.props.BoolProperty(name="Motors", default=True,
+                                   description="Joint motors whir and whine as parts turn, and clunk when they stop hard")
+    motor_level: bpy.props.FloatProperty(name="Motor level", default=1.0, min=0.0, max=4.0,
+                                         description="Loudness of the joint motors against the contact sounds")
     props: bpy.props.BoolProperty(name="Props", default=True,
                                   description="Loose props make sounds when they land, get set down or slide")
 
@@ -55,7 +63,8 @@ class FOLEY_OT_bake(bpy.types.Operator):
     def execute(self, context):
         st = context.scene.ship_foley
         msgs = []
-        events, made, js = bake_scene(context.scene, st.substeps, st.master, st.room, st.props, msgs.append)
+        events, made, js = bake_scene(context.scene, st.substeps, st.master, st.room, st.props, msgs.append,
+                                      st.motors, st.motor_level)
         counts = {}
         for e in events:
             counts[e["kind"]] = counts.get(e["kind"], 0) + 1
@@ -119,6 +128,9 @@ def _draw(self, context):
     row = lay.row(align=True)
     row.prop(st, "substeps")
     row.prop(st, "props", toggle=True)
+    row = lay.row(align=True)
+    row.prop(st, "motors", toggle=True)
+    row.prop(st, "motor_level", text="Level")
     ob = context.active_object
     if ob is not None and ob.type == "ARMATURE":
         prof = detect.profile_for(ob)

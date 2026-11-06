@@ -15,10 +15,13 @@ import os
 import zlib
 
 import bpy
+import numpy as np
 
 from . import synth as S
+from . import motors as MO
 
-CHANNELS = {"step": 24, "bump": 24, "grab": 25, "release": 25, "place": 26, "slide": 27}
+CHANNELS = {"step": 24, "bump": 24, "grab": 25, "release": 25, "clunk": 25, "place": 26, "slide": 27}
+MOTOR_CH = 28
 PREFIX = "FX "
 
 
@@ -94,3 +97,44 @@ def mixdown(path, scene=None):
         bpy.ops.sound.mixdown(filepath=path, check_existing=False, container="WAV", codec="PCM",
                               format="S16", mixrate=S.RATE, split_channels=False)
     return path
+
+
+def bake_motors(motors, events, scene=None, master=1.0, room_wet=0.08):
+    """One motor track per droid limb group, laid from the shot's first frame.
+    The leg that just landed strains: its motors swell as it takes the weight."""
+    scene = scene or bpy.context.scene
+    col = _strips(scene)
+    d = cache_dir()
+    made = 0
+    ch = MOTOR_CH
+    for name, m in motors.items():
+        prof, js, f0, f1, fps = m["prof"], m["joints"], m["f0"], m["f1"], m["fps"]
+        dur = (f1 - f0 + 1) / fps
+        mine = [e for e in events if e["who"] == prof["label"]]
+        pan = sum(e["pan"] for e in mine) / len(mine) if mine else 0.0
+        dist = min((e["dist"] for e in mine), default=3.0)
+        groups = {}
+        for j in js:
+            groups.setdefault(j.group, []).append(j)
+        for gi, (g, gj) in enumerate(sorted(groups.items())):
+            side = g.split(".")[-1] if "." in g else None
+            strain = []
+            if g.startswith("leg"):
+                for e in mine:
+                    if e["kind"] in ("step", "bump") and (side is None or e["limb"].endswith(side)):
+                        strain.append((e["time"], min(0.6 * (prof["mass_kg"] / 120.0) ** 0.5 * (0.5 + e["hit"]["speed"]), 1.4)))
+            x = MO.render_group(gj, prof, dur, strain, seed=gi, level=master)
+            if float(np.max(np.abs(x))) < 1e-4:
+                continue
+            rng = np.random.default_rng(gi)
+            x = S._room(x.astype(float), rng, 0.4, room_wet)
+            path = os.path.join(d, "motor_%s_%s_%d_%d.wav" % (bpy.path.clean_name(name), g, f0, f1))
+            S.write_wav(path, x)
+            strip = col.new_sound(("%s%s motors %s" % (PREFIX, prof["label"], g))[:60], path, ch, f0)
+            ch = ch + 1 if ch < 40 else MOTOR_CH
+            strip.sound.use_mono = True
+            strip.volume = distance_gain(dist)
+            lr = {"L": 0.15, "R": -0.15}.get(side, 0.0)   # droid faces camera: its left is screen right
+            strip.pan = max(-1.0, min(1.0, pan + lr))
+            made += 1
+    return made

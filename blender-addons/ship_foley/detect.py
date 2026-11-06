@@ -27,6 +27,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 from . import profiles as P
+from . import motors as MO
 
 EPS_ON = 0.004       # metres: closer than this is touching
 EPS_OFF = 0.009      # metres: further than this has let go
@@ -360,7 +361,8 @@ def _cam_info(scene, p):
     return pan, dist, seen
 
 
-def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props=True, report=None):
+def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props=True, report=None,
+         motors_out=None):
     """Return the shot's contact events, sorted by time.
 
     Each event is a dict: frame (float), time, kind, who, limb, loc, pan,
@@ -408,6 +410,7 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
     steps = [(f, k / substeps) for f in range(f0, f1 + 1) for k in range(substeps)]
     dt = 1.0 / (fps * substeps)
     t_prev = None
+    motor_js = {a: MO.joints(a) for a in arms} if motors_out is not None else {}
     for f, sub in steps:
         if f == f1 and sub > 0:
             break
@@ -415,6 +418,8 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
         t = (f + sub - f0) / fps
         for s in movers:
             s.place(t, 1.0 / fps)
+        for a, js in motor_js.items():
+            MO.sample(a, js, t, 1.0 / fps)
         for pr, tr in zip(probes, tracks):
             p = pr.world()
             hit = _nearest(p, world, movers, pr.part if pr.limb == "prop" else None)
@@ -484,6 +489,13 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
     for pr, tr in zip(probes, tracks):
         _end_slide(scene, pr, tr, events, f0, fps, pr.world())
     events = _hold_signal(scene, arms, movers, events, f0, f1, fps)
+    for a, js in motor_js.items():
+        prof = profile_for(a)
+        clunks = MO.stop_clunks(prof["label"], js, prof, fps, f0)
+        for e in clunks:
+            e["pan"], e["dist"], e["on_screen"] = _cam_info(scene, Vector(e["loc"]))
+        events.extend(clunks)
+        motors_out[a.name] = dict(prof=prof, joints=js, f0=f0, f1=f1, fps=fps)
     scene.frame_set(keep)
     return merge(events)
 

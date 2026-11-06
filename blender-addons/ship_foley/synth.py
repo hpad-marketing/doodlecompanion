@@ -74,7 +74,7 @@ def loudness(h):
     how well the two materials turn the hit into sound."""
     rad = math.sqrt(MATERIALS[h.a_mat]["radiate"] * MATERIALS[h.b_mat]["radiate"])
     e = max(energy(h.mass, h.speed), 1e-9)
-    return A_REF * (e / E_REF) ** 0.32 * rad
+    return A_REF * (e / E_REF) ** 0.32 * rad * (max(h.mass, 0.05) / 120.0) ** 0.08
 
 
 def contact_time(h):
@@ -146,17 +146,59 @@ def _lowpass(x, cutoff):
 def _thud(h, n, t, rng):
     """Deck flex under a heavy impact: low, dropping in pitch, longer when heavy."""
     m = h.mass if h.b_mass is None else min(h.mass, h.b_mass * 4)
-    share = min(max(math.log10(max(m, 0.1)) / 2.4, 0.03), 0.95)
-    f_start = min(max(150.0 * (max(m, 0.5) / 20.0) ** -0.22, 38.0), 190.0)
-    f_end = f_start * 0.72
-    dur = 0.05 + 0.06 * share
+    share = min(max(math.log10(max(m, 0.1)) / 2.0, 0.03), 1.1)
+    f_start = min(max(150.0 * (max(m, 0.5) / 20.0) ** -0.3, 32.0), 190.0)
+    f_end = f_start * 0.65
+    dur = 0.05 + 0.14 * min(share, 1.0)
     freq = f_end + (f_start - f_end) * np.exp(-t / (dur * 0.6))
     phase = 2 * math.pi * np.cumsum(freq) / RATE
     body = np.sin(phase) * np.exp(-t / dur)
     rumble = _lowpass(rng.standard_normal(n), f_start * 1.4) * np.exp(-t / (dur * 0.7))
     rumble /= np.max(np.abs(rumble)) + 1e-12
     soft = MATERIALS[h.b_mat]["hard"]
-    return share * (0.8 * body + 0.35 * rumble) * (0.35 + 0.65 * soft)
+    out = share * (0.8 * body + 0.35 * rumble) * (0.35 + 0.65 * soft)
+    if m > 60:   # the whole frame of a heavy droid booms under the deck
+        boom_f = 30.0 + 25.0 * (60.0 / m) ** 0.5
+        boom = np.sin(2 * math.pi * boom_f * t * (1 - 0.15 * t)) * (1 - np.exp(-t / 0.006)) * np.exp(-t / 0.22)
+        out += min((m - 60) / 120.0, 1.0) * 0.9 * boom
+    return out
+
+
+def _settle(h, gain, rng):
+    """A heavy leg taking the body's weight: hydraulic hiss and a low creak
+    as the struts compress, just after the foot lands."""
+    m = h.mass
+    n = int(0.45 * RATE)
+    t = np.arange(n) / RATE
+    lvl = gain * 0.22 * min((m / 120.0) ** 0.5, 1.4)
+    env = (1 - np.exp(-t / 0.035)) * np.exp(-t / 0.16)
+    hiss = _bandnoise(rng, n, 3000 + rng.uniform(-400, 400), q=0.7) * env
+    f = 95 + 40 * (120.0 / max(m, 10)) ** 0.4
+    creak_ph = 2 * math.pi * np.cumsum(f * (1 + 0.04 * np.sin(2 * math.pi * 23 * t))) / RATE
+    creak = (np.sin(creak_ph) + 0.4 * np.sin(2 * creak_ph)) * (1 - np.exp(-t / 0.05)) * np.exp(-t / 0.12)
+    out = lvl * (0.6 * hiss + 0.5 * creak)
+    pre = np.zeros(int(0.025 * RATE))
+    return np.concatenate([pre, out])
+
+
+def _rattle(h, gain, rng, room_wet, room_rt60):
+    """Loose armour plates and fittings clattering for a moment after a big hit."""
+    e = energy(h.mass, h.speed)
+    count = int(min(e / 2.5, 7))
+    if count < 1:
+        return None
+    n = int(0.5 * RATE)
+    out = np.zeros(n)
+    for k in range(count):
+        d = rng.uniform(0.018, 0.16) * (1 + 0.2 * k)
+        sub = Hit("rattle", 0.4, rng.uniform(0.25, 0.8) * min(h.speed, 1.2), "metal_thin", rng.uniform(0.04, 0.09),
+                  "metal_thin", rng.uniform(0.12, 0.35), 0.6, seed=rng.integers(1 << 30))
+        x = render(sub, room_wet=0.0)
+        x = x / (np.max(np.abs(x)) + 1e-12) * gain * rng.uniform(0.12, 0.3) * math.exp(-d * 6)
+        i = int(d * RATE)
+        j = min(n, i + len(x))
+        out[i:j] += x[:j - i]
+    return out
 
 
 def _room(x, rng, rt60=0.45, wet=0.12):
@@ -212,12 +254,25 @@ def render(h, room_wet=0.12, room_rt60=0.45):
 
     if h.kind == "release":
         sig *= 0.5
+    if h.kind == "rattle":
+        sig = _lowpass(sig, 9000.0)
     # soft strikes lose their top end
     cutoff = min(16000.0, 4.0 / tau)
     if cutoff < 15000:
         sig = _lowpass(sig, cutoff)
     sig /= np.max(np.abs(sig)) + 1e-12
     sig *= gain
+
+    if h.kind in ("step", "bump", "place") and h.mass > 15:
+        extra = [_rattle(h, gain, rng, room_wet, room_rt60)]
+        if h.kind == "step" and h.mass > 30:
+            extra.append(_settle(h, gain, rng))
+        for x in extra:
+            if x is None:
+                continue
+            if len(x) > len(sig):
+                sig = np.concatenate([sig, np.zeros(len(x) - len(sig))])
+            sig[:len(x)] += x
 
     sig = _room(sig, rng, room_rt60, room_wet)
     pre = np.zeros(int(h.offset * RATE))
