@@ -1,0 +1,23 @@
+schema_version = "1.0.0"
+
+id = "creator_toolkit"
+version = "1.1.2"
+name = "Creator Toolkit"
+tagline = "Assets, looks, rigs, motion, camera and delivery in one place"
+maintainer = "HPAD Marketing"
+type = "add-on"
+website = "https://github.com/hpad-marketing/doodlecompanion"
+
+tags = ["Animation", "Rigging", "Material", "Render", "3D View"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 HPAD Marketing"]
+
+[permissions]
+files = "Asset vault, presets, renders, audio and the Doodle Library"
+network = "Check for Toolkit updates and open online asset libraries"
+
+[build]
+paths_exclude_pattern = ["__pycache__/", "/.git/", "*.zip"]

@@ -1,0 +1,229 @@
+// Scene audio (voice or music): imported once for the whole scene, played in sync with
+// the timeline, drawn as a waveform under the shot, rendered into the scene video, and
+// able to drive any control (music drives a bounce, the voice drives the ears...).
+
+import { mouthsFor, VISEME } from './vocals.js';
+export { VISEME };
+
+let ctxA = null, buf = null, bufPath = null, src = null, env = null, envKey = '';
+let music = null, musicPath = null, musicSrc = null, musicLevel = 0.35, musicEnv = null, lastScrub = 0;
+const ac = () => (ctxA ||= new AudioContext());
+
+export async function loadAudio(api, path) {
+  if (!path) { buf = null; bufPath = null; return null; }
+  if (bufPath === path && buf) return buf;
+  const { data } = await api('read-audio', { path });
+  const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+  buf = await ac().decodeAudioData(bytes.buffer);
+  bufPath = path;
+  env = null;
+  return buf;
+}
+export const audioInfo = () => (buf ? { path: bufPath, seconds: +buf.duration.toFixed(2) } : null);
+
+// loudness per video frame, 0..1 (RMS, normalised to the loudest frame)
+export function envelope(fps) {
+  if (!buf) return null;
+  const key = bufPath + '|' + fps;
+  if (env && envKey === key) return env;
+  env = loudness(buf, fps); envKey = key;
+  return env;
+}
+function loudness(b, fps) {
+  const ch = b.getChannelData(0), per = b.sampleRate / fps, n = Math.ceil(b.duration * fps);
+  const out = new Float32Array(n);
+  let max = 1e-6;
+  for (let f = 0; f < n; f++) {
+    let s = 0;
+    const a = Math.floor(f * per), b = Math.min(ch.length, Math.floor((f + 1) * per));
+    for (let i = a; i < b; i++) s += ch[i] * ch[i];
+    out[f] = Math.sqrt(s / Math.max(1, b - a));
+    max = Math.max(max, out[f]);
+  }
+  for (let f = 0; f < n; f++) out[f] /= max;
+  return out;
+}
+
+// the music bed: heard while you work and shown on its own timeline row
+export async function loadMusic(api, path, level = 0.35) {
+  musicLevel = level;
+  if (!path) { music = null; musicPath = null; musicEnv = null; return null; }
+  if (musicPath === path && music) return music;
+  const { data } = await api('read-audio', { path });
+  music = await ac().decodeAudioData(Uint8Array.from(atob(data), c => c.charCodeAt(0)).buffer);
+  musicPath = path; musicEnv = null;
+  return music;
+}
+export const musicInfo = () => (music ? { path: musicPath, seconds: +music.duration.toFixed(2) } : null);
+function source(b, level) {
+  const s = ac().createBufferSource(), g = ac().createGain();
+  s.buffer = b; g.gain.value = level; s.connect(g); g.connect(ac().destination);
+  return s;
+}
+export function play(atSeconds) {
+  stop();
+  if (buf && atSeconds < buf.duration) { src = source(buf, 1); src.start(0, Math.max(0, atSeconds)); }
+  if (music && atSeconds < music.duration) { musicSrc = source(music, musicLevel); musicSrc.start(0, Math.max(0, atSeconds)); }
+}
+// a short slice under the playhead while it is dragged, faded so it never clicks
+export function scrub(atSeconds, length = 0.09) {
+  const now = performance.now();
+  if (now - lastScrub < 45) return;
+  lastScrub = now;
+  ac().resume?.();
+  for (const [b, level] of [[buf, 1], [music, musicLevel]]) {
+    if (!b || atSeconds < 0 || atSeconds >= b.duration) continue;
+    const c = ac(), s = c.createBufferSource(), g = c.createGain(), t = c.currentTime;
+    s.buffer = b; s.connect(g); g.connect(c.destination);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.008); g.gain.setValueAtTime(level, t + length - 0.012); g.gain.linearRampToValueAtTime(0, t + length);
+    s.start(t, atSeconds, length);
+  }
+}
+// the scene audio as a live track, for the playblast recorder
+export function streamFrom(atSeconds) {
+  if (!buf) return null;
+  ac().resume?.();
+  const dest = ac().createMediaStreamDestination(), s = ac().createBufferSource();
+  s.buffer = buf; s.connect(dest); s.start(0, Math.max(0, atSeconds));
+  return { track: dest.stream.getAudioTracks()[0], stop: () => { try { s.stop(); } catch {} } };
+}
+// part of the scene audio (or a processed copy) as a 16-bit WAV, base64, for Shorts and voices
+export function wavBase64(from = 0, to = buf ? buf.duration : 0, source = buf) {
+  if (!source) return null;
+  const sr = source.sampleRate, ch = Math.min(2, source.numberOfChannels), a = Math.max(0, Math.floor(from * sr)), b = Math.min(source.length, Math.ceil(to * sr)), n = Math.max(0, b - a);
+  const d = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, t) => [...t].forEach((c, i) => d.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); d.setUint32(4, 36 + n * ch * 2, true); w(8, 'WAVEfmt '); d.setUint32(16, 16, true); d.setUint16(20, 1, true); d.setUint16(22, ch, true);
+  d.setUint32(24, sr, true); d.setUint32(28, sr * ch * 2, true); d.setUint16(32, ch * 2, true); d.setUint16(34, 16, true); w(36, 'data'); d.setUint32(40, n * ch * 2, true);
+  const data = [...Array(ch)].map((_, c) => source.getChannelData(c));
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) d.setInt16(44 + (i * ch + c) * 2, Math.max(-1, Math.min(1, data[c][a + i])) * 32767, true);
+  const bytes = new Uint8Array(d.buffer);
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+// opt-in character voices: a copy of the scene audio with some spans pitch-shifted
+// (a two-tap delay-line shifter, crossfaded) or ring-modulated for a robot
+export function processVoice(spans, fps) {
+  if (!buf || !spans.length) return null;
+  const sr = buf.sampleRate, out = new AudioBuffer({ length: buf.length, numberOfChannels: buf.numberOfChannels, sampleRate: sr });
+  const W = Math.round(sr * 0.045);
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const x = buf.getChannelData(c), y = out.getChannelData(c);
+    y.set(x);
+    const at = t => { const i = Math.floor(t), k = t - i; return i < 0 ? 0 : (x[i] || 0) * (1 - k) + (x[i + 1] || 0) * k; };
+    for (const sp of spans) {
+      const a = Math.max(0, Math.floor(sp.from / fps * sr)), b = Math.min(x.length, isFinite(sp.to) ? Math.floor(sp.to / fps * sr) : x.length);
+      const fade = Math.min(Math.round(sr * 0.01), Math.floor((b - a) / 2));
+      for (let i = a; i < b; i++) {
+        let v;
+        if (sp.factor === 'robot') v = x[i] * (0.6 + 0.4 * Math.sin(2 * Math.PI * 55 * i / sr)) * Math.sin(2 * Math.PI * 30 * i / sr) * 1.6;
+        else {
+          const ph = ((((i - a) * (1 - sp.factor)) / W) % 1 + 1) % 1, ph2 = (ph + 0.5) % 1;
+          const g1 = 1 - Math.abs(2 * ph - 1);
+          v = at(i - ph * W) * g1 + at(i - ph2 * W) * (1 - g1);
+        }
+        const e = Math.min(1, (i - a) / Math.max(1, fade), (b - 1 - i) / Math.max(1, fade));   // no clicks at the edges
+        y[i] = x[i] * (1 - e) + v * e;
+      }
+    }
+  }
+  return out;
+}
+export function stop() { try { src?.stop(); } catch {} try { musicSrc?.stop(); } catch {} src = null; musicSrc = null; }
+
+// waveform strip for one shot of the scene (scene frames from..from+length)
+export function waveform(fps, from, length, ppf, ofMusic = false) {
+  const e = ofMusic ? (music ? (musicEnv ||= loudness(music, fps)) : null) : envelope(fps);
+  if (!e) return null;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(length * ppf)); c.height = 40;
+  c.className = 'wave';
+  const g = c.getContext('2d');
+  g.fillStyle = getComputedStyle(document.body).getPropertyValue('--fg') || '#1F1F1D';
+  for (let f = 0; f < length; f++) {
+    const v = e[from + f] || 0, hh = Math.max(1, v * 38);
+    g.fillRect(f * ppf, 20 - hh / 2, Math.max(1, ppf - 1), hh);
+  }
+  return c;
+}
+
+// keys a control from the loudness: quiet = min, loud = max; every `step` frames, smoothed
+export function audioDrive(project, from, id, min, max, { step = 2, smooth = 2, gate = 0.08 } = {}, setKey) {
+  const e = envelope(project.fps);
+  if (!e) throw Error('Import audio for the scene first (File › Import audio…)');
+  let n = 0;
+  for (let f = 0; f < project.length; f += step) {
+    let s = 0, c = 0;
+    for (let k = -smooth; k <= smooth; k++) { const v = e[from + f + k]; if (v != null) { s += v; c++; } }
+    const v = c ? s / c : 0, t = v < gate ? 0 : (v - gate) / (1 - gate);
+    setKey(project, id, f, +(min + (max - min) * t).toFixed(2), 'linear');
+    n++;
+  }
+  return n;
+}
+
+// ---------------------------------------------------------------- lip sync
+// Speech mouths from the voice, per video frame (indices into face.speech:
+// 1 rest, 2 AI, 3 E, 4 O, 5 U, 6 WQ, 7 MBP, 8 FV, 9 L, 10 etc). One mouth per syllable, picked
+// from where the vowel's formants sit; the lips move at every syllable edge and rest in silence
+// (vocals.js syllableMouths). Over music the voice is estimated from the mix; a separated vocal
+// (stem) gives the cleanest read. engine 'classic' is the older loudness reader. No network.
+let lips = null, lipsKey = '', stemBuf = null, stemPath = null;
+export async function loadStem(api, path) {
+  if (!path) { stemBuf = null; stemPath = null; return null; }
+  if (stemPath === path && stemBuf) return stemBuf;
+  const { data } = await api('read-audio', { path });
+  const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+  stemBuf = await ac().decodeAudioData(bytes.buffer);
+  stemPath = path;
+  return stemBuf;
+}
+export function visemes(fps, { gate = 0.1, hold = 2, vocals = 'auto', engine = 'syllables', useStem = true } = {}) {
+  if (!buf) return null;
+  const st = useStem && stemBuf ? stemBuf : null;
+  const key = [bufPath, fps, gate, hold, vocals, engine, st ? stemPath : ''].join('|');
+  if (lips && lipsKey === key) return lips;
+  const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
+  const stem = st ? { x: mono(st), sr: st.sampleRate } : null;
+  lips = mouthsFor(L, R, buf.sampleRate, fps, { gate, hold, vocals, engine, stem });
+  lipsKey = key;
+  return lips;
+}
+function mono(b) {
+  if (b.numberOfChannels < 2) return b.getChannelData(0);
+  const l = b.getChannelData(0), r = b.getChannelData(1), o = new Float32Array(l.length);
+  for (let i = 0; i < o.length; i++) o[i] = (l[i] + r[i]) / 2;
+  return o;
+}
+// keys the mouth over one shot (scene frames from..from+project.length); returns the keys made
+export function lipsync(project, from, setKey, opts = {}) {
+  const v = visemes(project.fps, opts);
+  if (!v) throw Error('Import the voice for the scene first (File › Import audio…)');
+  const keep = (project.tracks.mouth || []).filter(k => k.f < 0 || k.f >= project.length);
+  project.tracks.mouth = keep;
+  let n = 0, last = -1;
+  for (let f = 0; f < project.length; f++) {
+    const m = v[from + f] ?? VISEME.rest;
+    if (m !== last) { setKey(project, 'mouth', f, m, 'hold'); last = m; n++; }
+  }
+  return n;
+}
+
+// ---- babble voice helpers (babblescene.js)
+// decode any audio file to its channels without replacing the scene audio
+export async function decodeChannels(api, path) {
+  const { data } = await api('read-audio', { path });
+  const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+  const b = await ac().decodeAudioData(bytes.buffer);
+  return { sr: b.sampleRate, channels: [...Array(Math.min(2, b.numberOfChannels))].map((_, c) => b.getChannelData(c)) };
+}
+export const outputRate = () => ac().sampleRate;
+// play raw samples once (the Babble preview); a new call stops the last one
+let prev = null;
+export function playSamples(samples, sr) {
+  try { prev?.stop(); } catch {}
+  const c = ac(); c.resume?.();
+  const b = c.createBuffer(1, samples.length, sr); b.copyToChannel(samples, 0);
+  prev = c.createBufferSource(); prev.buffer = b; prev.connect(c.destination); prev.start();
+  return samples.length / sr;
+}

@@ -1,0 +1,77 @@
+// Local server for Doodle Studio 3D: serves the editor and its /api (files, renders).
+// Bound to 127.0.0.1 only. The 2D Doodle Studio's ports (54183 etc.) are never touched.
+const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.mjs': 'text/javascript', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
+
+// reference videos the user picked: served by a random token, with Range requests so the
+// editor can seek them. Only files registered through ref-video are reachable.
+const refs = new Map();
+const VIDEO = { '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime' };
+function registerRef(file) {
+  const ext = path.extname(String(file)).toLowerCase();
+  if (!VIDEO[ext]) throw Error('Reference video must be mp4, m4v, webm or mov');
+  if (!fs.statSync(file).isFile()) throw Error('Not a file');
+  const token = require('node:crypto').randomBytes(12).toString('hex');
+  refs.set(token, file);
+  return { url: `/ref/${token}${ext}`, path: file };
+}
+async function serveRef(req, res, name) {
+  const file = refs.get(name.replace(/[.][a-z0-9]+$/i, ''));
+  if (!file) { res.writeHead(404); return res.end(); }
+  const size = (await fs.promises.stat(file)).size, type = VIDEO[path.extname(file).toLowerCase()];
+  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (!m) { res.writeHead(200, { 'content-type': type, 'content-length': size, 'accept-ranges': 'bytes' }); return fs.createReadStream(file).pipe(res); }
+  let a = m[1] === '' ? size - Number(m[2]) : Number(m[1]), b = m[1] !== '' && m[2] !== '' ? Number(m[2]) : size - 1;
+  a = Math.max(0, a); b = Math.min(size - 1, b);
+  if (a > b) { res.writeHead(416, { 'content-range': `bytes */${size}` }); return res.end(); }
+  res.writeHead(206, { 'content-type': type, 'content-length': b - a + 1, 'content-range': `bytes ${a}-${b}/${size}`, 'accept-ranges': 'bytes' });
+  fs.createReadStream(file, { start: a, end: b }).pipe(res);
+}
+
+module.exports = function start({ root, port = 54190, api = {}, mcp = null, statics = {} }) {
+  const server = http.createServer(async (req, res) => {
+    try {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.pathname === '/mcp' && mcp) {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        return mcp(req, res, body);
+      }
+      if (url.pathname.startsWith('/ref/')) return serveRef(req, res, url.pathname.slice(5));
+      if (url.pathname.startsWith('/api/')) {
+        // the editor's own calls: same-origin only
+        const o = req.headers.origin;
+        if (o && o !== `http://127.0.0.1:${port}`) { res.writeHead(403); return res.end('Forbidden origin'); }
+        const name = url.pathname.slice(5);
+        const fn = api[name];
+        if (!fn) { res.writeHead(404); return res.end('No such action: ' + name); }
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        let args = {};
+        try { args = body ? JSON.parse(body) : {}; } catch { res.writeHead(400, { 'content-type': 'text/plain' }); return res.end('Bad JSON for ' + name); }
+        const out = await fn(args, req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify(out ?? {}));
+      }
+      let p = path.normalize(decodeURIComponent(url.pathname)).replace(/^([/\\])+/, '');
+      if (!p) p = 'index.html';
+      // extra read-only folders, e.g. lib/ -> the Doodle Library's previews on this PC
+      const pre = Object.keys(statics).find(k => p.startsWith(k + path.sep) || p.startsWith(k + '/'));
+      const base = pre ? path.resolve(statics[pre]()) : root;
+      const file = pre ? path.join(base, p.slice(pre.length + 1)) : path.join(root, p);
+      if (!file.startsWith(base + path.sep) || (pre && !/[.](png|jpg|webp|ttf|glb|mp3)$/i.test(file))) { res.writeHead(403); return res.end(); }
+      const data = await fs.promises.readFile(file);
+      res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+      res.end(data);
+    } catch (e) {
+      // an error after the reply started (a dropped connection mid-stream) must not throw again
+      if (res.headersSent) { try { res.end(); } catch {} return; }
+      try { res.writeHead(e.code === 'ENOENT' ? 404 : 500, { 'content-type': 'text/plain' }); res.end(String((e && e.message) || e)); } catch {}
+    }
+  });
+  return new Promise((ok, fail) => {
+    server.once('error', e => fail(e.code === 'EADDRINUSE' ? Object.assign(Error(`Port ${port} on this PC is already in use, so Doodle Studio 3D and its MCP can't start. Another copy may still be closing: wait a few seconds and open it again, or restart the PC.`), { code: e.code }) : e));
+    server.listen(port, '127.0.0.1', () => { server.on('error', () => {}); ok(server); });
+  });
+};
+module.exports.registerRef = registerRef;

@@ -1,0 +1,62 @@
+#!/bin/bash
+# usage: ELECTRON=<electron binary> bash tools/smoke_electron.sh [build/app]
+APP=$(realpath "${1:-$(dirname "$0")/../build/app}")
+ELECTRON=${ELECTRON:-/home/claude/work/etest/node_modules/electron/dist/electron}
+mkdir -p /tmp/etest-home
+export HOME=/tmp/etest-home
+xvfb-run -a "$ELECTRON" --no-sandbox "$APP" > /tmp/etest-home/electron.log 2>&1 &
+EPID=$!
+for i in $(seq 1 40); do sleep 1; curl -s -m 2 -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_state","arguments":{}}}' > /tmp/etest-home/state.json && grep -q values /tmp/etest-home/state.json && break; done
+head -c 400 /tmp/etest-home/state.json; echo
+curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"set_values","arguments":{"values":{"armL":60},"key":true}}}' | head -c 200; echo
+call() { curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"tools/call\",\"params\":{\"name\":\"$1\",\"arguments\":$2}}" | head -c ${3:-300}; echo; }
+call set_shot '{"scene":"Smoke Scene"}' 120
+call add_shot '{"duplicate":false}' 200
+call move_shot '{"shot":"sh020","to":0}' 200
+call carousel '{"action":"snap","shot":"sh010","frame":5}' 300
+call carousel '{"action":"bubble","slide":0,"bubble":{"text":"Hi"}}' 300
+call apply_camera_preset '{"list":true}' 150
+call add_marker '{"frame":10,"note":"beat"}' 200
+call save_version '{"label":"smoke"}' 200
+call materials '{"action":"list"}' 300
+call materials '{"action":"apply","target":"set","look":"clay","palette":"sage"}' 300
+call storyboard '{}' 200
+call set_shot_look '{"horizonLock":true,"ink":120}' 200
+call anim_tool '{"action":"loop_check"}' 200
+call anim_tool '{"action":"onion","on":true}' 200
+call story '{"action":"retention"}' 200
+call set_character '{"character":"koala"}' 200
+call library_list '{"category":"motion","query":"wave","limit":2}' 300
+call library_use '{"id":"motion-wave-hello","frame":0}' 200
+call library_use '{"id":"prop-letter_envelope","hold":"R"}' 200
+call set_stage '{"stage":{"set":"bedroom","outfit":"raincoat"}}' 300
+curl -s -o /dev/null -w "library preview: %{http_code}\n" "http://127.0.0.1:54190/lib/previews/outfit/outfit-raincoat.png"
+curl -s -o /dev/null -w "library json blocked: %{http_code}\n" "http://127.0.0.1:54190/lib/library.json"
+call production '{"action":"change_log"}' 300
+call workflow '{"action":"rules","frame":0}' 200
+call workflow '{"action":"status","status":"polish"}' 200
+call production '{"action":"health"}' 300
+call production '{"action":"preflight"}' 200
+call anim2 '{"action":"ik","limb":"armR","offset":[0,-0.03,0.05]}' 200
+call anim2 '{"action":"balance"}' 200
+call anim2 '{"action":"path","what":"armR"}' 200
+call story2 '{"action":"beat_map"}' 200
+call story2 '{"action":"genre","genre":"comedy","frame":5}' 200
+call post '{"action":"captions"}' 200
+call post '{"action":"look","look":"vhs"}' 200
+call features '{"action":"measure"}' 200
+call features '{"action":"squash","kind":"land","frame":20}' 200
+call powers '{"action":"info"}' 200
+call powers '{"action":"scatter","kind":"grass","count":20}' 200
+call cast '{"action":"add","character":"koala"}' 200
+call cast '{"action":"list"}' 200
+curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}},{"jsonrpc":"2.0","id":2,"method":"tools/list"}]' | python3 -c "import json,sys;j=json.load(sys.stdin);print('update safety probe:', bool(j[0]['result']['serverInfo']) and len(j[1]['result']['tools'])>10)"
+curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":4,"method":"tools/list"}' | python3 -c "import json,sys;print([t['name'] for t in json.load(sys.stdin)['result']['tools']])"
+curl -s -X POST http://127.0.0.1:54190/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"save","arguments":{}}}' | head -c 300; echo
+call save_as '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy.ds3d"}' 300
+call open_scene '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy.ds3d","force":true}' 300
+call open_scene '{"path":"/tmp/etest-home/DeepInDoodles/Smoke Scene/work/Smoke Copy.txt","force":true}' 300
+curl -s -o /dev/null -w "evil origin: %{http_code}\n" -X POST http://127.0.0.1:54190/mcp -H 'origin: https://evil.example' -H 'content-type: application/json' -d '{}'
+kill $EPID; sleep 1; pkill -x electron 2>/dev/null; true
+grep -iv "dbus\|gpu\|libva\|viz\|vaapi\|ozone\|ERROR:bus" /tmp/etest-home/electron.log | head -20
+find /tmp/etest-home/Documents -type f | head

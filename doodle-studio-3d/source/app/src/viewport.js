@@ -1,0 +1,499 @@
+// Live 3D viewport: Bunny in the Doodle Studio look (flat mustard and ink,
+// screen-constant outline, the face drawn on the head) with a real camera.
+// Final frames come from Blender; this is the fast, interactive preview.
+import * as THREE from 'three';
+import { BunnyRig, decodeMesh, subdivide, STAGE_BODY_UNIT } from './rig.js';
+import { LIT, litPars, litBasic, shadowPass } from './lit.js';
+
+const FLOOR_PART = /_(leg|pelvis|shirt|hand|cuff)\.?[LR]?$/;   // what can reach the floor (as in Blender)
+
+export const INK = new THREE.Color('#1F1F1D');
+export const MUSTARD = new THREE.Color('#E0A64B');
+const INK_PX_1920 = 12.73;          // Blender's outline width on a 1920 px tall frame
+const MIN_INK_PX = 3;               // the ink never gets thinner than this many screen pixels in the 3D view
+const DEPTH_BIAS = 4.5;              // outline pushed away from the camera by this many ink widths
+
+export const outlineVS = `
+uniform float inkPx; uniform float inkK; uniform vec2 res; uniform float bias; uniform float ortho; uniform float worldPerPxOrtho;
+void main(){
+  vec4 vp = modelViewMatrix * vec4(position, 1.0);
+  vec3 vn = normalize(normalMatrix * normal);
+  float wpp = ortho > 0.5 ? worldPerPxOrtho : (2.0 * -vp.z / projectionMatrix[1][1]) / res.y;
+  vec3 away = ortho > 0.5 ? vec3(0.0, 0.0, -1.0) : normalize(vp.xyz);
+  vp.xyz += vn * inkPx * inkK * wpp + away * bias * inkPx * inkK * wpp;
+  gl_Position = projectionMatrix * vp;
+}`;
+export const outlineFS = `uniform vec3 color; void main(){ gl_FragColor = vec4(color, 1.0);
+#include <colorspace_fragment>
+}`;
+
+const headVS = `
+attribute vec3 restPos; attribute vec3 restNrm; attribute float faceMask;
+varying vec3 vRest; varying float vFront; varying vec3 vLitN; varying vec3 vLitP;
+void main(){
+  vRest = restPos;
+  vLitN = normalize(mat3(modelMatrix) * normal); vLitP = (modelMatrix * vec4(position, 1.0)).xyz;
+  vFront = faceMask * smoothstep(0.02, 0.25, -restNrm.y);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const headFS = `
+uniform sampler2D face; uniform vec4 box; uniform vec3 base; uniform vec3 ink;
+varying vec3 vRest; varying float vFront; varying vec3 vLitN; varying vec3 vLitP;
+${litPars}
+void main(){
+  vec2 uv = vec2((vRest.x - box.x) / (box.z - box.x), (vRest.z - box.y) / (box.w - box.y));
+  float a = 0.0;
+  if (vFront > 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0) a = texture2D(face, uv).a * step(0.5, vFront);
+  gl_FragColor = vec4(mix(mix(base, ink, litBand(normalize(vLitN), vLitP)), ink, a), 1.0);
+#include <colorspace_fragment>
+}`;
+
+// smooth vertex normals straight on the typed arrays (same result as three's computeVertexNormals
+// for indexed meshes, without a Vector3 per corner): the outline hull needs them on every pose
+function fastNormals(g) {
+  const pos = g.attributes.position.array, idx = g.index?.array;
+  if (!idx) { g.computeVertexNormals(); return; }
+  let na = g.attributes.normal;
+  if (!na || na.count !== g.attributes.position.count) { g.computeVertexNormals(); return; }
+  const n = na.array;
+  n.fill(0);
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = 3 * idx[t], b = 3 * idx[t + 1], c = 3 * idx[t + 2];
+    const ax = pos[a], ay = pos[a + 1], az = pos[a + 2];
+    const e1x = pos[b] - ax, e1y = pos[b + 1] - ay, e1z = pos[b + 2] - az;
+    const e2x = pos[c] - ax, e2y = pos[c + 1] - ay, e2z = pos[c + 2] - az;
+    // (c - b) x (a - b), as three does
+    const cbx = e2x - e1x, cby = e2y - e1y, cbz = e2z - e1z, abx = -e1x, aby = -e1y, abz = -e1z;
+    const x = cby * abz - cbz * aby, y = cbz * abx - cbx * abz, z = cbx * aby - cby * abx;
+    n[a] += x; n[a + 1] += y; n[a + 2] += z;
+    n[b] += x; n[b + 1] += y; n[b + 2] += z;
+    n[c] += x; n[c + 1] += y; n[c + 2] += z;
+  }
+  for (let i = 0; i < n.length; i += 3) {
+    const l = Math.hypot(n[i], n[i + 1], n[i + 2]) || 1;
+    n[i] /= l; n[i + 1] /= l; n[i + 2] /= l;
+  }
+  na.needsUpdate = true;
+}
+
+export class Viewport {
+  constructor(canvas, data) {
+    this.canvas = canvas;
+    this.data = data;
+    this.rig = new BunnyRig(data);
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.scene = new THREE.Scene();
+    this.scene.background = MUSTARD.clone();
+    this.camera = new THREE.PerspectiveCamera(30, 9 / 16, 0.01, 200);
+    this.camera.up.set(0, 0, 1);
+    this.cam = { yaw: 0, pitch: 4, dist: 3.0, lens: 50, roll: 0, tx: 0, ty: 0, tz: 0.52 };
+    this.aspect = 9 / 16;
+    this.inkScale = 1;
+    this.faceState = { expression: 0, gaze: 0, mouth: 0, blink: 0 };
+    this.meshes = data.meshes.map(decodeMesh);
+    this.objects = [];
+    this.outlineUniforms = { inkPx: { value: 8 }, res: { value: new THREE.Vector2(1, 1) }, bias: { value: DEPTH_BIAS },
+      ortho: { value: 0 }, worldPerPxOrtho: { value: 0.001 }, color: { value: INK.clone() }, inkK: { value: 1 } };
+    this.buildFace();
+    this.buildBunny();
+    this.buildStage();
+    this.pose({});
+  }
+
+  // ---------- Bunny
+  buildBunny() {
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+    const headBone = this.data.skinBones.indexOf('head');
+    // the Frog's eyes sit on its rigid eye bumps, which the ear bones carry
+    const faceBones = new Set([headBone, ...(this.data.ear_width_lock ? this.data.skinBones.flatMap((n, i) => /^DEF-ear/.test(n) ? [i] : []) : [])]);
+    for (const m of this.meshes) {
+      const g = new THREE.BufferGeometry();
+      const pos = subdivide(m, m.cage);
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+      g.setIndex(new THREE.BufferAttribute(m.index, 1));
+      // per-vertex colour from the part's material slots
+      const col = new Float32Array(m.count * 3);
+      for (let i = 0; i < m.count; i++) {
+        const c = (m.materials[m.material[i]] || m.materials[0] || '').includes('ink') ? INK : MUSTARD;
+        col[3 * i] = c.r; col[3 * i + 1] = c.g; col[3 * i + 2] = c.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      g.computeVertexNormals();
+      let mat;
+      if (m.name === 'BUNNY_head') {
+        g.setAttribute('restPos', new THREE.BufferAttribute(pos.slice(), 3));
+        g.setAttribute('restNrm', new THREE.BufferAttribute(g.getAttribute('normal').array.slice(), 3));
+        // face only on the part of the head the head bone owns (never on the ears)
+        const cageMask = new Float32Array(m.cageCount * 3);
+        for (let v = 0; v < m.cageCount; v++) {
+          let w = 0;
+          for (let k = 0; k < 4; k++) if (faceBones.has(m.skinIndex[4 * v + k])) w += m.skinWeight[4 * v + k];
+          cageMask[3 * v] = w;
+        }
+        const sub = subdivide(m, cageMask);
+        const mask = new Float32Array(m.count);
+        for (let i = 0; i < m.count; i++) mask[i] = sub[3 * i] > 0.98 ? 1 : 0;
+        g.setAttribute('faceMask', new THREE.BufferAttribute(mask, 1));
+        mat = new THREE.ShaderMaterial({ vertexShader: headVS, fragmentShader: headFS,
+          uniforms: { ...LIT, face: { value: this.faceTex }, box: { value: this.faceBox }, base: { value: MUSTARD.clone() }, ink: { value: INK.clone() } } });
+      } else {
+        mat = litBasic(new THREE.MeshBasicMaterial({ vertexColors: true }));
+      }
+      const mesh = new THREE.Mesh(g, mat);
+      mesh.frustumCulled = false;
+      mesh.layers.enable(1);   // casts in the shadow pass (lit.js)
+      this.group.add(mesh);
+      let outline = null;
+      if (m.outline) {
+        outline = new THREE.Mesh(g, new THREE.ShaderMaterial({ vertexShader: outlineVS, fragmentShader: outlineFS,
+          uniforms: { ...this.outlineUniforms, inkK: this.inkK ||= { value: 1 } }, side: THREE.BackSide }));
+        outline.frustumCulled = false;
+        this.group.add(outline);
+      }
+      this.objects.push({ m, g, mesh, outline, buf: pos });
+    }
+  }
+
+  // a palette's colours for the body and the outfit; nothing for the brand mustard and black
+  setColours(body, outfit) {
+    const key = (body || '') + '|' + (outfit || '');
+    if (key === (this.colKey || '|')) return;
+    this.colKey = key;
+    const B = body ? new THREE.Color(body) : MUSTARD, F = outfit ? new THREE.Color(outfit) : INK;
+    for (const o of this.objects) {
+      const worn = /_(shirt|sleeve|cuff|hood|pelvis)/.test(o.m.name), col = o.g.attributes.color;
+      for (let i = 0; i < o.m.count; i++) {
+        const c = (o.m.materials[o.m.material[i]] || o.m.materials[0] || '').includes('ink') ? (worn ? F : INK) : B;
+        col.setXYZ(i, c.r, c.g, c.b);
+      }
+      col.needsUpdate = true;
+      o.mesh.material.uniforms?.base?.value.copy(B);
+    }
+  }
+
+  // Bunny, the Koala or the Frog: same rig code, their own rest data, meshes and faces
+  setCharacter(data) {
+    this.skull = null;
+    if (data === this.data) return;
+    this.scene.remove(this.group);
+    for (const o of this.objects) { o.g.dispose(); o.mesh.material.dispose(); o.outline?.material.dispose(); }
+    this.faceTex.dispose();
+    this.data = data;
+    this.rig = new BunnyRig(data);
+    this.meshes = data.meshes.map(decodeMesh);
+    this.objects = [];
+    this._faceInk = 0; this.colKey = null;
+    this.faceState = { expression: 0, gaze: 0, mouth: 0, blink: 0 };
+    this.buildFace();
+    this.buildBunny();
+    this.grid.position.z = data.floor_z || 0;
+    this.pose(this.values || {});
+  }
+
+  // ---------- co-stars: more characters on the same rig code, each in its own group on the floor
+  setCostars(list) {   // [{ data, values, x, y, turn }]
+    this.actors ||= [];
+    while (this.actors.length > list.length) this._dropActor(this.actors.pop());
+    list.forEach((c, i) => {
+      let a = this.actors[i];
+      if (!a || a.data !== c.data) { if (a) this._dropActor(a); a = this.actors[i] = this._actor(c.data); }
+      a.group.position.set(c.x, c.y, 0);
+      a.group.rotation.set(0, 0, (c.turn || 0) * Math.PI / 180);
+      a.pose(c.values || {});
+    });
+  }
+  // world points on a body's surface (every `step`th vertex); actor = a co-star, else the lead
+  bodyPoints(actor = null, step = 9) {
+    const who = actor || this, out = [];
+    who.group.updateMatrixWorld();
+    for (const o of who.objects) for (let i = 0; i < o.buf.length; i += 3 * step) out.push(new THREE.Vector3(o.buf[i], o.buf[i + 1], o.buf[i + 2]).applyMatrix4(who.group.matrixWorld));
+    return out;
+  }
+  // how much of each co-star the camera sees (0..1) and whether it stands in front of the lead
+  costarFraming() {
+    this.camera.updateMatrixWorld();
+    const camPos = this.camera.position, lead = this.bodyPoints(null, 40), d0 = lead.reduce((n, p) => n + p.distanceTo(camPos), 0) / Math.max(1, lead.length);
+    return (this.actors || []).map((a, index) => {
+      const pts = this.bodyPoints(a), d = pts.reduce((n, p) => n + p.distanceTo(camPos), 0) / Math.max(1, pts.length);
+      const inside = pts.filter(p => { const q = p.clone().project(this.camera); return q.z < 1 && Math.abs(q.x) <= 1 && Math.abs(q.y) <= 1; }).length;
+      return { index, share: +(inside / Math.max(1, pts.length)).toFixed(3), foreground: d < d0 - 0.2 };
+    });
+  }
+  _actor(data) {
+    const a = Object.create(Viewport.prototype);
+    Object.assign(a, { data, lead: this, scene: this.scene, outlineUniforms: this.outlineUniforms, rig: new BunnyRig(data), meshes: data.meshes.map(decodeMesh), objects: [],
+      faceState: { expression: 0, gaze: 0, mouth: 0, blink: 0 }, _faceInk: this._faceInk });
+    a.buildFace();
+    a.buildBunny();
+    return a;
+  }
+  _dropActor(a) {
+    this.scene.remove(a.group);
+    for (const o of a.objects) { o.g.dispose(); o.mesh.material.dispose(); o.outline?.material.dispose(); }
+    a.faceTex.dispose();
+  }
+
+  // the pose key: the values plus everything else that moves the drawn body (floor lift follows the ink width)
+  poseKey(values) {
+    const g = this.group?.position;
+    return JSON.stringify(values) + '|' + (this.floorCollision !== false) + '|' + this.inkWorld().toFixed(5) + '|' + (g ? g.x + ',' + g.y : '');
+  }
+
+  pose(values) {
+    // same pose as last time and nobody else posed the rig since: the buffers are already right
+    const key = this.poseKey(values);
+    if (key === this._poseKey && this.rig.serial === this._poseSerial) { this.values = values; return; }
+    this.values = values;
+    this.rig.pose(values);
+    for (const o of this.objects) this.rig.deform(o.m, o.buf);
+    // floor collision, as in the render: nothing drawn, its ink stroke included, goes under the
+    // floor (z = 0); the body is raised just enough, the keyed values stay as they are
+    this.lift = 0;
+    if (this.floorCollision !== false) {
+      const d = this.inkWorld() + 0.001 - this.drawnLow();
+      if (d > 1e-4) {
+        this.lift = d;
+        this.rig.pose({ ...values, bodyY: Number(values.bodyY ?? 0) - d * STAGE_BODY_UNIT / this.rig.S });
+        for (const o of this.objects) this.rig.deform(o.m, o.buf);
+      }
+    }
+    // normals feed only the outline hull (fills are flat), so parts without an outline skip them
+    for (const o of this.objects) {
+      o.g.attributes.position.needsUpdate = true;
+      if (o.outline || !o.g.attributes.normal) fastNormals(o.g);
+    }
+    this._poseKey = key; this._poseSerial = this.rig.serial;
+    const fs = { expression: values.expression ?? 0, gaze: values.gaze ?? 0, mouth: values.mouth ?? 0, blink: values.blink ?? 0 };
+    if (Object.keys(fs).some(k => Math.round(fs[k]) !== this.faceState[k])) {
+      for (const k in fs) this.faceState[k] = Math.round(fs[k]);
+      this.drawFace();
+    }
+  }
+
+  // ---------- face: Doodle Studio's own drawings, in the head's front plane
+  buildFace() {
+    const F = this.data.face, S = this.data.S;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const it of F.items) for (const p of (it.pts || it.outer)) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
+    const pad = 0.6;
+    x0 -= pad; x1 += pad; z0 -= pad; z1 += pad;
+    this.faceBoxDS = [x0, z0, x1, z1];
+    this.faceBox = new THREE.Vector4(x0 * S, z0 * S, x1 * S, z1 * S);
+    this.faceCanvas = document.createElement('canvas');
+    this.faceCanvas.width = 2048;
+    this.faceCanvas.height = Math.round(2048 * (z1 - z0) / (x1 - x0));
+    this.faceTex = new THREE.CanvasTexture(this.faceCanvas);
+    this.faceTex.anisotropy = 4;
+    this.facePx = 0.1132;  // stroke width in Doodle Studio units (11.32 source px)
+  }
+
+  drawFace() {
+    const F = this.data.face, c = this.faceCanvas, ctx = c.getContext('2d');
+    const [x0, z0, x1, z1] = this.faceBoxDS;
+    const sx = c.width / (x1 - x0), sz = c.height / (z1 - z0);
+    const X = x => (x - x0) * sx, Z = z => c.height - (z - z0) * sz;   // canvas y runs down; the texture is flipped back by the sampler
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = ctx.strokeStyle = '#1F1F1D';
+    ctx.lineCap = ctx.lineJoin = 'round';
+    const { expression: e, gaze, mouth, blink } = this.faceState;
+    const eyesFace = blink > 0 ? 32 + blink : e;
+    const off = F.speech_offsets_px[e] || [0, 0];
+    const dx = off[0] * 0.01, dz = -off[1] * 0.01;
+    for (const it of F.items) {
+      const role = it.role;
+      let keep = false, sp = false;
+      if (role === 'eyes') keep = it.face === eyesFace && (it.gaze === -1 || it.gaze === gaze);
+      else if (role === 'mouth') keep = mouth === 0 && it.face === e;
+      else if (role === 'speech') { keep = mouth > 0 && it.speech === mouth; sp = true; }
+      if (!keep) continue;
+      const ox = sp ? dx : 0, oz = sp ? dz : 0;
+      const path = new Path2D();
+      const loop = (pts, close) => { pts.forEach((p, i) => (i ? path.lineTo : path.moveTo).call(path, X(p[0] + ox), Z(p[1] + oz))); if (close) path.closePath(); };
+      if (it.kind === 'fill') { loop(it.outer, true); for (const h of it.holes || []) loop(h, true); ctx.fill(path, 'evenodd'); }
+      else { loop(it.pts, it.closed); ctx.lineWidth = (it.width || 11.32) * 0.01 * sx * this.faceInkScale(); ctx.stroke(path); }
+    }
+    this.faceTex.needsUpdate = true;
+  }
+
+  // face strokes keep the outline's screen width, as Blender draws them
+  faceInkScale() {
+    return this._faceInk || 1;
+  }
+
+  // ---------- stage: floor grid for orientation (viewport only)
+  buildStage() {
+    const grid = new THREE.GridHelper(8, 32, 0x1F1F1D, 0x1F1F1D);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.z = this.data.floor_z || 0;
+    grid.material.transparent = true;
+    grid.material.opacity = 0.12;
+    this.grid = grid;
+    this.scene.add(grid);
+  }
+
+  // ---------- camera: same model as the Blender bridge (yaw, pitch, dist, lens, roll, target)
+  setCamera(c) {
+    Object.assign(this.cam, c);
+    const { yaw, pitch, dist, lens, roll, tx, ty, tz } = this.cam;
+    const r = Math.PI / 180;
+    const T = new THREE.Vector3(tx, ty, tz);
+    const d = new THREE.Vector3(Math.sin(yaw * r) * Math.cos(pitch * r), -Math.cos(yaw * r) * Math.cos(pitch * r), Math.sin(pitch * r));
+    const cam = this.camera;
+    cam.position.copy(T).addScaledVector(d, dist);
+    cam.up.set(0, 0, 1);
+    cam.lookAt(T);
+    cam.rotateZ(roll * r);
+    // Blender sensor fit AUTO on a portrait frame: the 36 mm sensor spans the long side (height)
+    const longSide = 36;
+    const vfov = 2 * Math.atan(longSide / 2 / lens) / r;
+    cam.fov = this.aspect < 1 ? vfov : 2 * Math.atan(Math.tan(vfov * r / 2) / this.aspect) / r;
+    cam.aspect = this.aspect;
+    cam.updateProjectionMatrix();
+  }
+
+  resize(w, h) {
+    this.renderer.setSize(w, h, false);
+    this.aspect = w / h;
+    this.size = [w, h];
+    this.setCamera({});
+  }
+
+  // live rule lights: arms or hands inside the skull, and the feet against the floor.
+  // The skull is an ellipsoid fitted to the head mesh in rest space (below the ears), so
+  // the test works for every character; Blender's silhouette check stays the final word.
+  ruleCheck() {
+    const A = n => this.rig.A.get(n) || new THREE.Matrix4();
+    const inv = A('head').clone().invert(), v = new THREE.Vector3();
+    const top = this.rig.bones.get('head')?.tailV.z ?? 0.74;
+    if (!this.skull) {
+      const head = this.objects.find(o => /_head$/.test(o.m.name));
+      if (!head) return null;
+      let z0 = 9, z1 = -9, r = 0;
+      for (let i = 0; i < head.buf.length; i += 3) {
+        v.set(head.buf[i], head.buf[i + 1], head.buf[i + 2]).applyMatrix4(inv);
+        if (v.z > top) continue;
+        z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); r = Math.max(r, Math.hypot(v.x, v.y));
+      }
+      this.skull = { cz: (z0 + z1) / 2, rz: (z1 - z0) / 2, r };
+    }
+    const k = this.skull, clips = [];
+    for (const o of this.objects) {
+      const m = /(hand|cuff|sleeve_fore|sleeve_up|arm)[^.]*\.(L|R)$/.exec(o.m.name);
+      if (!m) continue;
+      for (let i = 0; i < o.buf.length; i += 6) {
+        v.set(o.buf[i], o.buf[i + 1], o.buf[i + 2]).applyMatrix4(inv);
+        if ((v.x * v.x + v.y * v.y) / (k.r * k.r) + ((v.z - k.cz) * (v.z - k.cz)) / (k.rz * k.rz) < 0.92) { clips.push(o.m.name.replace(/^[A-Z]+_/, '')); break; }
+      }
+    }
+    // the floor is z = 0 (the set's floor too); at rest the doodle feet sit about 2 cm up
+    let low = 9;
+    for (const o of this.objects) if (/leg|foot|feet/.test(o.m.name)) for (let i = 2; i < o.buf.length; i += 3) low = Math.min(low, o.buf[i]);
+    return { clips, feet: +low.toFixed(3), belowFloor: low < -0.01, inAir: low > 0.045, lifted: +(this.lift || 0).toFixed(3) };
+  }
+
+  // lowest point of the parts that can touch the floor (body surface, group space)
+  drawnLow() {
+    let low = 9;
+    for (const o of this.objects) if (FLOOR_PART.test(o.m.name)) for (let i = 2; i < o.buf.length; i += 3) low = Math.min(low, o.buf[i]);
+    return low;
+  }
+  // the outline's width in metres at the feet (it is screen-constant, so it follows the camera)
+  inkWorld() {
+    const lead = this.lead || this, cam = lead.camera, h = lead.size?.[1] || 1920;
+    if (!cam || !lead.outlineUniforms) return 0.014;
+    const px = lead.outlineUniforms.inkPx.value || INK_PX_1920 * (h / 1920);
+    if (cam.isOrthographicCamera) return px * lead.outlineUniforms.worldPerPxOrtho.value;
+    const g = this.group ? this.group.position : new THREE.Vector3();
+    const d = cam.position.distanceTo(new THREE.Vector3(g.x, g.y, 0));
+    const pr = lead.renderer?.getPixelRatio?.() || 1;
+    return px * 2 * d * Math.tan(cam.fov * Math.PI / 360) / (h * pr);
+  }
+
+  // the middle of the posed head in world space (caption checks, rule lights)
+  // a point on the frame (0..1, y down) dropped onto the upright plane y = depth (Blender axes)
+  unproject(nx, ny, depth = 0) {
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(nx * 2 - 1, 1 - ny * 2), this.camera);
+    const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -depth), new THREE.Vector3());
+    return hit ? [+hit.x.toFixed(4), +hit.y.toFixed(4), +hit.z.toFixed(4)] : null;
+  }
+  headPoint() {
+    const b = this.rig.bones.get('head');
+    if (!b) return new THREE.Vector3(0, 0, 0.55);
+    const v = b.headV.clone().add(b.tailV).multiplyScalar(0.5).applyMatrix4(this.rig.A.get('head') || new THREE.Matrix4());
+    this.group.updateMatrixWorld();
+    return v.applyMatrix4(this.group.matrixWorld);
+  }
+
+  // ---------- draw on demand: one number for everything the next frame would show (camera, size,
+  // every object's place and visibility, buffer and texture versions, material values). When it
+  // matches the frame on screen, drawing again would show nothing new, so the GPU rests.
+  frameSig() {
+    const f32 = this._sigF || (this._sigF = new Float32Array(1)), i32 = this._sigI || (this._sigI = new Int32Array(f32.buffer));
+    let hsh = 0x811c9dc5 | 0;
+    const num = x => { f32[0] = typeof x === 'number' ? x : x ? 1 : 0; hsh = Math.imul(hsh ^ i32[0], 16777619); };
+    const val = v => {
+      if (v == null) return num(0);
+      if (typeof v === 'number' || typeof v === 'boolean') return num(v);
+      if (v.isTexture) { num(v.id); num(v.version); return; }
+      if (v.isColor) { num(v.r); num(v.g); num(v.b); return; }
+      if (v.isVector2 || v.isVector3 || v.isVector4) { num(v.x); num(v.y); num(v.z ?? 0); num(v.w ?? 0); return; }
+      if (v.isMatrix4 || v.isMatrix3) { for (const e of v.elements) num(e); return; }
+      if (Array.isArray(v)) { num(v.length); for (const x of v) val(x); }
+    };
+    const mat = m => {
+      if (!m) return;
+      num(m.id); num(m.version); num(m.visible); num(m.opacity); val(m.color); val(m.map); num(m.linewidth ?? 0);
+      if (m.uniforms) for (const k in m.uniforms) val(m.uniforms[k].value);
+    };
+    const cam = this.camera;
+    this.scene.updateMatrixWorld();
+    cam.updateMatrixWorld();
+    val(cam.matrixWorld); val(cam.projectionMatrix);
+    const [w, h] = this.size || [this.canvas.width, this.canvas.height];
+    num(w); num(h); num(this.renderer.getPixelRatio()); num(this.inkScale); val(this.scene.background);
+    for (const k in LIT) val(LIT[k].value);   // the shared light and shadow uniforms (lit.js)
+    this.scene.traverse(o => {
+      num(o.id); num(o.visible);
+      if (!o.visible) return;
+      if (o.isMesh || o.isLine || o.isPoints || o.isSprite) {
+        for (const e of o.matrixWorld.elements) num(e);
+        const g = o.geometry;
+        if (g) { num(g.id); for (const k in g.attributes) num(g.attributes[k].version); if (g.index) num(g.index.version); num(g.drawRange.start); num(g.drawRange.count); num(o.count ?? 0); if (o.instanceMatrix) num(o.instanceMatrix.version); }
+        Array.isArray(o.material) ? o.material.forEach(mat) : mat(o.material);
+      }
+    });
+    return hsh;
+  }
+
+  // draws only when something changed (or force); a slow heartbeat keeps anything missed from sticking
+  renderIfChanged(force = false) {
+    const now = performance.now();
+    const sig = this.frameSig();
+    if (!force && sig === this._drawnSig && now - (this._drawnAt || 0) < 1000) return false;
+    this.render();
+    // render() may redraw the face texture for the new ink width: that frame is already on screen
+    this._drawnSig = this.frameSig();
+    this._drawnAt = now;
+    return true;
+  }
+
+  render() {
+    const [w, h] = this.size || [this.canvas.width, this.canvas.height];
+    const pr = this.renderer.getPixelRatio();
+    this.outlineUniforms.res.value.set(w * pr, h * pr);
+    this.outlineUniforms.inkPx.value = Math.max(MIN_INK_PX * pr, INK_PX_1920 * (h * pr / 1920) * this.inkScale);
+    // face strokes: same screen width as the outline at the head's distance
+    const headDist = this.camera.position.distanceTo(new THREE.Vector3(0, -0.3, 0.55));
+    const wpp = 2 * headDist * Math.tan(this.camera.fov * Math.PI / 360) / (h * pr);
+    const want = (this.outlineUniforms.inkPx.value * wpp) / (0.1132 * this.data.S);
+    if (!this._faceInk || Math.abs(want / this._faceInk - 1) > 0.08) { this._faceInk = want; this.drawFace(); }
+    for (const a of this.actors || []) if (!a._faceInk || Math.abs(want / a._faceInk - 1) > 0.08) { a._faceInk = want; a.drawFace(); }
+    shadowPass(this);
+    this.renderer.render(this.scene, this.camera);
+  }
+}
