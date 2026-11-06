@@ -184,48 +184,53 @@ def planet(room, loc=(-40, 160, 30), radius=34, color=(0.55, 0.32, 0.18, 1), rin
     return ob
 
 
-def door(room, yc, x=None, name=None):
-    """Two-leaf pressure door in a right-wall opening, centred on yc.
+def door(room, yc, x=None, name=None, side="right"):
+    """Two-leaf pressure door in a side-wall opening, centred on yc.
 
-    The leaves slide sideways into pockets behind wide jambs, so a moving door never
-    passes through anything. Open/close with the "open" property (0..1) on the
-    door's control empty; the leaves follow through drivers, so it can be keyed.
+    side is "right" (wall at +W/2) or "left" (wall at -W/2). The leaves slide
+    sideways into pockets behind wide jambs, so a moving door never passes
+    through anything. Open/close with the "open" property (0..1) on the door's
+    control empty; the leaves follow through drivers, so it can be keyed.
     room.doors gets a socket entry, used to connect rooms into a ship."""
     W = room.W
     pal = room.pal
-    x = W / 2 if x is None else x
+    s = 1 if side == "right" else -1           # s points out through the wall
+    x = s * W / 2 if x is None else x
     did = name or f"{room.name} Door {len(getattr(room, 'doors', [])) + 1}"
     half, leaf_w, pocket = 0.74, 0.7385, 0.75
+    jf, jb = x - s * 0.32, x - s * 0.125         # jamb room face / back
+    lf_, lb = x - s * 0.12, x - s * 0.06        # leaf track
+    jc, jw = (jf + jb) / 2, abs(jb - jf)
+    lc, lw = (lf_ + lb) / 2, abs(lb - lf_)
     with K.piece(room, "Door", 0, 0):
-        jx0, jx1 = x - 0.32, x - 0.125          # jambs/lintel sit in front of the leaves
-        lx0, lx1 = x - 0.12, x - 0.06           # leaves run between jambs and wall panels
-        K.box("Door Lintel", (jx1 - jx0, 2 * (half + pocket), 0.3), ((jx0 + jx1) / 2, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
-        K.box("Door Header", (lx1 - lx0 + 0.004, 2 * half, 0.29), ((lx0 + lx1) / 2, yc, 2.1), pal["dark_steel"], room.shell, bevel=0.004)
+        K.box("Door Lintel", (jw, 2 * (half + pocket), 0.3), (jc, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
+        K.box("Door Header", (lw + 0.004, 2 * half, 0.29), (lc, yc, 2.1), pal["dark_steel"], room.shell, bevel=0.004)
         for sd in (-1, 1):
-            K.box("Door Jamb", (jx1 - jx0, pocket, 1.948), ((jx0 + jx1) / 2, yc + sd * (half + pocket / 2), 0.974), pal["hull"], room.shell, bevel=0.02)
-        back = K.box("Door Back", (0.04, 2 * half, 1.928), (x + 0.02, yc, 0.021 + 0.964), M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6), room.shell, bevel=0)
+            K.box("Door Jamb", (jw, pocket, 1.948), (jc, yc + sd * (half + pocket / 2), 0.974), pal["hull"], room.shell, bevel=0.02)
+        back = K.box("Door Back", (0.04, 2 * half, 1.928), (x + s * 0.02, yc, 0.021 + 0.964), M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6), room.shell, bevel=0)
         back["sb_door_back"] = did
-        K.box("Door Sill", (0.4, 2 * half - 0.006, 0.02), (x - 0.2, yc, 0.0105), M.hazard(), room.shell, bevel=0.003)
-        K.box("Door Hazard", (0.004, 2 * (half + pocket) - 0.02, 0.08), (jx0 - 0.0025, yc, 2.1), M.hazard(), room.shell, bevel=0.001, segs=1)
-        K.screen(room, (jx0 - 0.001, yc - half - pocket / 2, 1.3), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.16, 0.22, (0.4, 1.0, 0.5, 1), "ui", light=False, name="Door Keypad")
-        K.light_strip(room, (x - 0.3, yc, 2.29), 1.4, "Y", (0, 0, -1), (0.4, 1.0, 0.6, 1), 6, role="practical", width=0.02)
+        K.box("Door Sill", (0.4, 2 * half - 0.006, 0.02), (x - s * 0.2, yc, 0.0105), M.hazard(), room.shell, bevel=0.003)
+        K.box("Door Hazard", (0.004, 2 * (half + pocket) - 0.02, 0.08), (jf - s * 0.0025, yc, 2.1), M.hazard(), room.shell, bevel=0.001, segs=1)
+        K.screen(room, (jf - s * 0.001, yc - half - pocket / 2, 1.3), (0, -s, 0), (0, 0, 1), (-s, 0, 0), 0.16, 0.22, (0.4, 1.0, 0.5, 1), "ui", light=False, name="Door Keypad")
+        K.light_strip(room, (x - s * 0.3, yc, 2.29), 1.4, "Y", (0, 0, -1), (0.4, 1.0, 0.6, 1), 6, role="practical", width=0.02)
     # control + leaves (not part of the static piece: they move)
     ctl = bpy.data.objects.new(did, None)
     room.shell.objects.link(ctl)
     ctl.empty_display_type = "ARROWS"
     ctl.empty_display_size = 0.3
-    ctl.location = (x - 0.4, yc, 1.0)
+    ctl.location = (x - s * 0.4, yc, 1.0)
     ctl["open"] = 0.0
     ctl.id_properties_ui("open").update(min=0.0, max=1.0, soft_min=0.0, soft_max=1.0, description="0 closed, 1 open")
     ctl["sb_door"] = did
+    ctl["sb_door_side"] = side
     for sd in (-1, 1):
-        lf = K.box("Door Leaf", (lx1 - lx0, leaf_w, 1.924), ((lx0 + lx1) / 2, yc + sd * (half - leaf_w / 2 - 0.0005), 0.022 + 0.962), pal["warm"], room.shell, bevel=0.01)
+        lf = K.box("Door Leaf", (lw, leaf_w, 1.924), (lc, yc + sd * (half - leaf_w / 2 - 0.0005), 0.022 + 0.962), pal["warm"], room.shell, bevel=0.01)
         lf["sb_door"] = did
         lf["sb_group"] = f"door:{did}"
         if sd < 0:
-            win = K.box("Door Window", (lx1 - lx0 + 0.006, 0.12, 0.5), lf.location + Vector((0, 0.02, 0.45)), M.painted_metal("SB Door Slot", (0.01, 0.01, 0.01, 1), 0.2), room.shell, bevel=0.004)
-            win.parent = lf
-            win.matrix_parent_inverse = lf.matrix_world.inverted()
+            win = K.box("Door Window", (lw + 0.006, 0.12, 0.5), lf.location + Vector((0, 0.02, 0.45)), M.painted_metal("SB Door Slot", (0.01, 0.01, 0.01, 1), 0.2), room.shell, bevel=0.004)
+            win.parent = lf                      # rides the leaf: local offset, no inverse
+            win.location = (0.0, 0.02, 0.45)
             win["sb_group"] = f"door:{did}"
         rest = lf.location.y
         fc = lf.driver_add("location", 1)
@@ -238,12 +243,19 @@ def door(room, yc, x=None, name=None):
         drv.expression = f"{rest:.5f} + {sd * (leaf_w + 0.0105):.5f} * o"
     # invisible sweep volume: later passes (fixtures, wear) treat the whole path of
     # the sliding leaves as occupied, so an open door never hits anything either
-    sw = K.box("Door Sweep", (lx1 - lx0 + 0.003, 2 * (half + pocket), 1.93), ((lx0 + lx1) / 2, yc, 0.022 + 0.962), pal["hull"], room.shell, bevel=0)
+    sw = K.box("Door Sweep", (lw + 0.003, 2 * (half + pocket), 1.93), (lc, yc, 0.022 + 0.962), pal["hull"], room.shell, bevel=0)
     sw.hide_render = True
     sw.display_type = "WIRE"
     sw["sb_ghost"] = did
-    room.doors = getattr(room, "doors", []) + [dict(id=did, x=x, yc=yc, half=half, normal=(-1, 0, 0))]
+    room.doors = getattr(room, "doors", []) + [dict(id=did, x=x, yc=yc, half=half, side=side, normal=(-s, 0, 0))]
     return ctl
+
+
+def door_hole(room, yc, side="right", half=1.0, h=2.25):
+    """The shell opening for a door at yc, in that wall's own u coordinates."""
+    if side == "right":   # right wall runs -y from the back
+        return (room.D - yc - half, room.D - yc + half, 0.0, h)
+    return (yc - half, yc + half, 0.0, h)
 
 
 def set_door(ctl, value, frame=None):

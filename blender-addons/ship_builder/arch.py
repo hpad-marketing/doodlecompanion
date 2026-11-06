@@ -236,7 +236,7 @@ def intercom(room, P, u, v, n):
 def gauge(room, P, u, v, n):
     q = Vector((0, 0, 1)).rotation_difference(n).to_euler()
     K.cyl("Gauge Body", 0.075, 0.04, P + n * 0.02, room.pal["steel"], room.dress, verts=32, bevel=0.006, rot=q)
-    K.cyl("Gauge Face", 0.064, 0.004, P + n * 0.042, M.plastic("SB Gauge Face", (0.6, 0.57, 0.48, 1), 0.4), room.dress, verts=32, bevel=0, rot=q)
+    K.cyl("Gauge Face", 0.064, 0.004, P + n * 0.042, M.plastic("SB Gauge Face", (0.36, 0.34, 0.28, 1), 0.45), room.dress, verts=32, bevel=0, rot=q)
     nd = K.box("Gauge Needle", (0.004, 0.05, 0.002), P + n * 0.046 + v * 0.015, M.plastic("SB Needle Red", (0.5, 0.03, 0.02, 1), 0.4), room.dress, bevel=0, segs=1)
     nd.rotation_euler = (Matrix((u, v, n)).transposed() @ Matrix.Rotation(math.radians(random.uniform(-70, 70)), 3, "Z")).to_euler()
     K.cyl("Gauge Glass", 0.066, 0.003, P + n * 0.05, M.glass(), room.dress, verts=32, bevel=0, rot=q)

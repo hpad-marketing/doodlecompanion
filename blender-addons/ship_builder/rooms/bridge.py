@@ -12,7 +12,7 @@ from . import common as C
 from .. import wear as Wr
 from .. import arch as A
 
-INFO = {"label": "Command centre", "size": (9.0, 7.0, 3.6)}
+INFO = {"label": "Command centre", "size": (9.0, 7.0, 3.6), "doors": {"left": 1.5, "right": 4.0}}
 
 
 def keypad(room, loc, rot, cols=10, rows=3, key=0.022, gap=0.006, mat=None):
@@ -147,7 +147,9 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     room = K.Room(room_name, W, D, H)
     pal = room.pal
     # wide viewport: three panes across the back wall
-    C.shell(room, back_holes=[(1.0, 8.0, 0.9, 3.15)], right_holes=[(2.0, 4.0, 0.0, 2.25)], panel=(1.0, 0.75), chamfer=0.6)
+    dr = INFO["doors"]
+    C.shell(room, back_holes=[(1.0, 8.0, 0.9, 3.15)], left_holes=[C.door_hole(room, dr["left"], "left")],
+            right_holes=[C.door_hole(room, dr["right"], "right")], panel=(1.0, 0.75), chamfer=0.6)
     for i, cx in enumerate((-7 / 3, 0.0, 7 / 3)):  # three panes exactly filling the 7 m x 2.25 m opening
         C.window(room, (cx, D, 0.9 + 1.125), 7 / 3 - 0.244, 2.25 - 0.244, (0, -1, 0), frame=0.12, name=f"Viewport {i}", tilt=-6)
     K.ceiling(room, light_rows=2, color=(0.75, 0.85, 1.0, 1), power=18, cols=3, cove=0.5, cove_back=False, cove_color=(0.35, 0.8, 1.0, 1), cove_power=4)
@@ -164,13 +166,14 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     with K.piece(room, "Holo table", 0.03, 4):
         hologram(room, 0.0, 2.6, 1.55)
     # side stations: star map on the left, system wall on the right
-    K.screen(room, (-W / 2 + 0.04, 3.8, 1.75), (0, 1, 0), (0, 0, 1), (1, 0, 0), 2.4, 1.1, (0.35, 0.8, 1.0, 1), "map", name="Star Map", strength=1.4)
+    K.screen(room, (-W / 2 + 0.04, 4.35, 1.75), (0, 1, 0), (0, 0, 1), (1, 0, 0), 2.0, 1.1, (0.35, 0.8, 1.0, 1), "map", name="Star Map", strength=1.4)
     with K.piece(room, "Map console", 0.03, 2):
-        console(room, -W / 2 + 0.45, 3.8, 2.2, math.radians(-90), 0, (0.35, 0.8, 1.0, 1))
+        console(room, -W / 2 + 0.45, 4.35, 1.9, math.radians(-90), 0, (0.35, 0.8, 1.0, 1))
     for k, (yy, zz) in enumerate(((1.2, 1.7), (1.83, 1.7), (1.515, 2.2))):
         K.screen(room, (W / 2 - 0.04, yy, zz), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.55, 0.4, [(1.0, 0.65, 0.2, 1), (0.4, 1.0, 0.5, 1), (1.0, 0.3, 0.2, 1)][k], "ui", name="System Screen", strength=1.4)
-    # door on the right wall opening
-    C.door(room, D - 3.0)
+    # doors: left to the corridor, right onward (blank until a room docks there)
+    C.door(room, dr["left"], side="left")
+    C.door(room, dr["right"], side="right")
     # overhead conduits
     K.pipe(room, [(-W / 2 + 0.9, D - 0.075, H - 0.25), (-W / 2 + 1.0, D - 0.3, H - 0.25), (W / 2 - 1.0, D - 0.3, H - 0.25), (W / 2 - 0.9, D - 0.075, H - 0.25)], 0.04)
     for k in range(6):

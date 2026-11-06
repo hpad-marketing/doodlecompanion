@@ -148,7 +148,7 @@ def _panels(room):
 # ---------------------------------------------------------------- passes
 def nudge_pieces(room, col, rng, amount):
     groups = {}
-    for ob in bpy.data.objects:
+    for ob in room.root.all_objects:  # only this room: other rooms of a ship may already exist
         pid = ob.get("sb_piece")
         if pid and ob.name in col.local or (pid and ob.type in {"LIGHT", "EMPTY"}):
             groups.setdefault(pid, []).append(ob)

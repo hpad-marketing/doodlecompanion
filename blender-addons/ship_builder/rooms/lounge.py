@@ -15,7 +15,7 @@ from . import common as C
 from .. import wear as Wr
 from .. import arch as A
 
-INFO = {"label": "Oil lounge", "size": (7.0, 5.5, 3.0)}
+INFO = {"label": "Oil lounge", "size": (7.0, 5.5, 3.0), "doors": {"right": 1.5}}
 
 
 def couch(room, x, y, width=3.0, fab=None):
@@ -72,6 +72,7 @@ def mug(room, loc, mat, name="Mug"):
     h = K.box(f"{name} Handle", (0.012, 0.016, 0.06), (loc[0] + 0.05, loc[1], loc[2] + 0.05), mat, room.props, bevel=0.005)
     ob = K.join([m, h], name)
     inner = K.cyl(f"{name} Oil", 0.036, 0.004, (loc[0], loc[1], loc[2] + 0.08), M.liquid("SB Oil", (0.02, 0.012, 0.004, 1)), room.props, verts=32, bevel=0)
+    __import__("bpy").context.view_layer.update()  # fresh matrices, or the child lands twice as far out
     inner.parent = ob
     inner.matrix_parent_inverse = ob.matrix_world.inverted()
     K.rigid(ob, 0.35, friction=0.8)
@@ -90,10 +91,14 @@ def datapad(room, loc, rot=0.0):
     pad = K.box("Datapad", (0.24, 0.17, 0.012), (loc[0], loc[1], loc[2] + 0.006), room.pal["plastic"], room.props, bevel=0.006)
     pad.rotation_euler = (0, 0, rot)
     K.rigid(pad, 0.5, shape="BOX")
-    me_scr = K.screen(room, (loc[0], loc[1], loc[2] + 0.0122), (math.cos(rot), math.sin(rot), 0), (-math.sin(rot), math.cos(rot), 0), (0, 0, 1), 0.2, 0.13, (0.95, 0.65, 0.25, 1), "ui", light=False, name="Datapad Screen")
-    for o in [o for o in room.dress.objects if o.name.startswith("Datapad Screen")]:
-        o.parent = pad
-        o.matrix_parent_inverse = pad.matrix_world.inverted()
+    import bpy
+    before = set(bpy.data.objects)
+    K.screen(room, (loc[0], loc[1], loc[2] + 0.0122), (math.cos(rot), math.sin(rot), 0), (-math.sin(rot), math.cos(rot), 0), (0, 0, 1), 0.2, 0.13, (0.95, 0.65, 0.25, 1), "ui", light=False, name="Datapad Screen", strength=1.2, depth=0.002, margin=0.008)
+    bpy.context.view_layer.update()  # fresh matrices, or the screen lands twice as far out
+    for o in set(bpy.data.objects) - before:
+        if o.type == "MESH":
+            o.parent = pad
+            o.matrix_parent_inverse = pad.matrix_world.inverted()
     return pad
 
 
@@ -147,13 +152,13 @@ def build(room_name="Oil lounge", wear=1.0, wear_seed=1):
     room = K.Room(room_name, W, D, H)
     pal = room.pal
     win = (2.0, 5.0, 0.75, 2.25)  # along back wall from its left edge
-    C.shell(room, back_holes=[win], right_holes=[(3.0, 5.0, 0.0, 2.25)], chamfer=0.55)
+    C.shell(room, back_holes=[win], right_holes=[C.door_hole(room, INFO["doors"]["right"], "right")], chamfer=0.55)
     C.window(room, (-W / 2 + 3.5, D, 1.5), 3.0 - 0.244, 1.5 - 0.244, (0, -1, 0))
     K.ceiling(room, light_rows=2, color=(1.0, 0.82, 0.62, 1), power=35, cove=0.28, cove_color=(1.0, 0.62, 0.32, 1), cove_power=5)
     K.stencil(room, "DECK 3 - CREW LOUNGE", (-1.4, D - 0.035, 2.55), (math.radians(90), 0, 0), 0.11)
     K.stencil(room, "AIRLOCK 2 >", (W / 2 - 0.035, 3.4, 2.45), (math.radians(90), 0, math.radians(-90)), 0.09)
     K.stencil(room, "NO OIL PAST THIS LINE", (-W / 2 + 0.035, 4.9, 0.4), (math.radians(90), 0, math.radians(90)), 0.06)
-    C.door(room, 1.5)
+    C.door(room, INFO["doors"]["right"], side="right")
     # pipe runs along the back/ceiling edge and down the right corner
     zp = H - 0.38
     K.pipe(room, [(-2.7, D - 0.2, H - 0.19), (-2.6, D - 0.2, zp), (2.6, D - 0.2, zp), (2.7, D - 0.2, H - 0.19)], 0.045)

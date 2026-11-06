@@ -496,10 +496,12 @@ def point_glow(room, loc, color, power=5, radius=0.02, role="practical"):
     return lo
 
 
-def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", light=True, name="Screen", strength=3.0):
+def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", light=True, name="Screen", strength=3.0,
+           depth=0.05, margin=0.03):
+    """depth/margin size the bezel: a wall monitor is 5 cm deep, a datapad's glass is flush."""
     u, v, n = Vector(u), Vector(v), Vector(n)
     rot = Matrix((u, v, n)).transposed().to_euler()
-    bz = box(f"{name} Bezel", (w + 0.06, h + 0.06, 0.05), Vector(centre) + n * 0.025, room.pal["plastic"], room.dress, bevel=0.008)
+    bz = box(f"{name} Bezel", (w + 2 * margin, h + 2 * margin, depth), Vector(centre) + n * depth / 2, room.pal["plastic"], room.dress, bevel=min(0.008, depth * 0.4))
     bz.rotation_euler = rot
     me = bpy.data.meshes.new(name)
     bm = bmesh.new()
@@ -514,7 +516,7 @@ def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", ligh
     smat = M.screen(f"SB Screen {kind} {strength} {tuple(round(c, 2) for c in color)}", color, strength, kind)
     smat["sb_role"] = "screen"
     sc = _obj(name, me, room.dress, smat)
-    sc.location = Vector(centre) + n * 0.051
+    sc.location = Vector(centre) + n * (depth + 0.001)
     sc.rotation_euler = rot
     sc["sb_light"] = "screen"
     if light:
