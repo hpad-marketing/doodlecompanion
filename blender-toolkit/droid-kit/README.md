@@ -66,6 +66,7 @@ This makes the droid folder (`ref/`, `work/`, `work/versions/`, `work/stills/`),
 ## Model-lock checks
 
 - `tools/lock_sheet.py in.blend outdir [samples]`: turntable, hero poses, light states and close-ups as one sheet plus `manifest.json`, for the Approve/Fix page
+- `tools/fit_camera.py in.blend photo.jpg [pose]`: finds the camera that matches the reference photo and stores it in `reference.camera`
 - `tools/overlay.py in.blend photo.jpg out.png`: model at 50% over the reference photo, from `reference.camera`
 - `DROID=<id> python3 tools/status.py <droid_folder> --version vNN --note "what changed"`: rewrites `STATUS.md` and adds a line to `work/versions/CHANGES.md`
 

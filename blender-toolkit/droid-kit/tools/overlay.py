@@ -27,7 +27,7 @@ cam.data.shift_x, cam.data.shift_y = C.get('shift', (0, 0))
 sc.render.resolution_x, sc.render.resolution_y = W, H; sc.render.film_transparent = True; sc.cycles.samples = 12
 sc.render.use_motion_blur = False
 for o in bpy.data.objects:   # model only
-    if o.type in ('MESH', 'CURVE') and 'rig_bone' not in o and o.parent is None: o.hide_render = True
+    if (o.type == 'MESH' and 'rig_bone' not in o and o.parent is None) or o.type == 'VOLUME': o.hide_render = True   # keep hose curves
 tmp = out + '.model.png'; sc.render.filepath = tmp; bpy.ops.render.render(write_still=True)
 mdl = Image.open(tmp).convert('RGBA'); a = mdl.split()[3]
 blend_ = Image.composite(Image.blend(ref, mdl.convert('RGB'), 0.5), ref, a)

@@ -18,6 +18,10 @@ cam = sc.camera; cam.animation_data_clear(); cam.delta_location = (0, 0, 0); cam
 cam.data.dof.use_dof = False
 for o in bpy.data.collections.get('Dust_Steps', bpy.data.collections.new('_')).objects: o.hide_render = True
 parts = [o for o in bpy.data.objects if o.type == 'MESH' and 'rig_bone' in o]
+LS = kit.get('lock_sheet', {})
+HIDE = tuple(LS.get('hide', ['Prop_', 'dust_', 'Dust_', 'Haze_']))   # set dressing and dust that would block a panel
+for o in bpy.data.objects:
+    if o.name.startswith(HIDE): o.hide_render = True
 def bbox(objs):
     dg = bpy.context.evaluated_depsgraph_get(); pts = []
     for o in objs:
@@ -39,7 +43,7 @@ def frame_whole(az, el=12, lens=50):
     aim(c + Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e))) * d, c, lens)
 panels = []
 reset()
-for k, az in enumerate(range(0, 360, 45)):
+for k, az in enumerate(range(0, 360, 45) if LS.get('turntable', True) else []):
     frame_whole(az); panels.append({'group': 'Turntable', 'label': f'{az}°', 'file': shot(f'turn_{az:03d}')})
 P = json.loads(rig.get('pose_presets', '{}'))
 for name in kit.get('lock_sheet', {}).get('hero', list(P)):
@@ -72,11 +76,15 @@ for st in kit.get('lock_sheet', {}).get('states', []):
     aim(top + Vector((-0.4, -1.9, 0.25)), top, 55)
     panels.append({'group': 'Face & light states', 'label': st['label'], 'file': shot('state_' + st['label'].lower().replace(' ', '_'))})
 set_state({'led': 3, 'glow': 0})
-for nm in kit.get('lock_sheet', {}).get('closeups', []):
+for cu in LS.get('closeups', []):
+    nm, view = (cu, None) if isinstance(cu, str) else (cu['object'], cu.get('view'))   # view: optional camera direction from the part
     o = bpy.data.objects.get(nm)
     if not o: continue
     lo, hi = bbox([o]); c = (lo + hi) / 2; r = max((hi - lo).length, 0.12)
-    aim(c + Vector((-0.55, -1.0, 0.45)).normalized() * r * 3.2, c, 60)
+    blo, bhi = bbox(parts); out = c - (blo + bhi) / 2; out.z = 0   # default: look at the part from its outer side
+    side = out.normalized() if out.length > 0.15 else Vector((0, -1, 0))
+    d = Vector(view) if view else side + Vector((-0.35 * side.y, 0.35 * side.x, 0.45))
+    aim(c + d.normalized() * r * 3.2, c, 60)
     panels.append({'group': 'Close-ups', 'label': nm, 'file': shot('close_' + nm.replace('.', '_'), 540, 540)})
 json.dump({'droid': kit.get('name', ''), 'kit': kit.VERSION, 'panels': panels}, open(os.path.join(outdir, 'manifest.json'), 'w'), indent=1)
 # contact sheet
