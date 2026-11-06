@@ -32,7 +32,7 @@ DROID=rx07 blender -b --python kit/weather.py -- in.blend out.blend
 4. Detail (`kit/decals.py`, `kit/detail.py`, `kit/softbevel.py`), checked with `kit/detail_check.py`
 5. Weight and springs (`kit/weight.py`), emotive hooks (`kit/emotive.py`)
 6. World and stage (`kit/world.py`, `kit/scanfloor.py`, `kit/stage.py`)
-7. PC copy (`kit/pc_paths.py`) so scans load from the shared shelf instead of being packed
+7. Link the shared library (`materials/link_library.py`), then make the PC copy (`kit/pc_paths.py`): scans load from `//../_shared/textures/` instead of being packed, and `DROID_LIB=//../_shared/RB_Materials.blend` keeps the library path relative
 
 ## Hook contract
 
@@ -70,3 +70,7 @@ This makes the droid folder (`ref/`, `work/`, `work/versions/`, `work/stills/`),
 - `DROID=<id> python3 tools/status.py <droid_folder> --version vNN --note "what changed"`: rewrites `STATUS.md` and adds a line to `work/versions/CHANGES.md`
 
 One current file sits at the top of each droid folder. Older versions go to `work/versions/` with a one-line note.
+
+## GPU renders and nightly checks on Sushi
+
+Renders and tests go through the render queue at `DeepInDoodles\_queue` (format in its README): drop a job JSON with `blend`, `script`, `args`, `label` and `thread` into `jobs\`. Each droid with a check script gets a line in `_queue\nightly.json`. RX-07's current file is `DeepInDoodles\Robot\Robot_RX07.blend`.
