@@ -52,7 +52,7 @@ def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", p
     K.box("Skirting Right", (0.05, D, 0.12), (W / 2 - 0.06, D / 2, 0.06), room.pal["dark_steel"], room.shell, bevel=0.004)
 
 
-def window(room, centre, w, h, normal=(0, -1, 0), frame=0.12, name="Window"):
+def window(room, centre, w, h, normal=(0, -1, 0), frame=0.12, name="Window", tilt=-9):
     """Thick armoured window frame with double glass, set into a wall opening."""
     c, n = Vector(centre), Vector(normal)
     up = Vector((0, 0, 1))
@@ -69,6 +69,7 @@ def window(room, centre, w, h, normal=(0, -1, 0), frame=0.12, name="Window"):
     for k, z in enumerate((-0.1,)):
         g = K.box(f"{name} Glass", (w, h, 0.012), c + n * z, room.pal["glass"], room.shell, bevel=0.002)
         g.rotation_euler = rot
+        g.rotation_euler.rotate_axis("X", math.radians(tilt))  # armoured glass leans in
         g.visible_shadow = False
     # bolts around the frame
     if K.DETAIL["level"] >= 2:

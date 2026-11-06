@@ -177,3 +177,53 @@ def set_mood(mood, scene=None):
             sock.default_value = base * mul
         nd.inputs["Emission Color"].default_value = tuple(col or tuple(m.get("sb_color"))[:3]) + (1,)
     sc["sb_mood"] = mood
+
+
+def camera_finish(scene=None, bloom=0.35, vignette=0.25, aberration=0.004):
+    """Photographic finish in the compositor: soft bloom on bright fixtures,
+    a touch of lens dispersion and a gentle vignette. Safe to call twice."""
+    sc = scene or bpy.context.scene
+    ng = bpy.data.node_groups.get("SB Camera Finish")
+    if ng is None:
+        ng = bpy.data.node_groups.new("SB Camera Finish", "CompositorNodeTree")
+    ng.nodes.clear()
+    if not any(s.name == "Image" and s.in_out == "OUTPUT" for s in ng.interface.items_tree):
+        ng.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+    N, L = ng.nodes, ng.links
+    rl = N.new("CompositorNodeRLayers")
+    gl = N.new("CompositorNodeGlare")
+    gl.inputs["Type"].default_value = "Bloom"
+    gl.inputs["Threshold"].default_value = 1.0
+    gl.inputs["Strength"].default_value = bloom
+    gl.inputs["Size"].default_value = 0.6
+    L.new(rl.outputs["Image"], gl.inputs["Image"])
+    ld = N.new("CompositorNodeLensdist")
+    try:
+        ld.inputs["Dispersion"].default_value = aberration
+        ld.inputs["Distortion"].default_value = -0.008
+    except KeyError:
+        pass
+    L.new(gl.outputs["Image"], ld.inputs["Image"])
+    el = N.new("CompositorNodeEllipseMask")
+    el.inputs["Size"].default_value = (0.95, 1.1)
+    bl = N.new("CompositorNodeBlur")
+    try:
+        bl.inputs["Size"].default_value = (300, 300)
+    except (KeyError, TypeError):
+        pass
+    L.new(el.outputs["Mask"], bl.inputs["Image"])
+    mr = N.new("ShaderNodeMapRange")
+    mr.inputs[3].default_value = 1.0 - vignette
+    mr.inputs[4].default_value = 1.0
+    L.new(bl.outputs["Image"], mr.inputs[0])
+    mx = N.new("ShaderNodeMix")
+    mx.data_type = "RGBA"
+    mx.blend_type = "MULTIPLY"
+    mx.inputs[0].default_value = 1.0
+    L.new(ld.outputs["Image"], mx.inputs[6])
+    L.new(mr.outputs[0], mx.inputs[7])
+    out = N.new("NodeGroupOutput")
+    L.new(mx.outputs[2], out.inputs[0])
+    sc.compositing_node_group = ng
+    sc.render.use_compositing = True
+    return ng

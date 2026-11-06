@@ -9,6 +9,7 @@ bpy.ops.wm.open_mainfile(filepath=blend)
 from ship_builder import lighting as Li, physics as P
 sc = bpy.context.scene
 Li.render_setup(sc, preview=True)
+Li.camera_finish(sc)
 sc.cycles.samples = spp
 n = P.settle(sc)
 print('settled', n, 'props; contacts', P.contacts(sc))

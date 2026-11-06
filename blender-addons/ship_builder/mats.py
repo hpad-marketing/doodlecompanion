@@ -295,7 +295,7 @@ def deck_plate(name="SB Deck Plate", color=(0.075, 0.078, 0.08, 1), tile=1.0):
     stud = g.ramp(vor.outputs["Distance"], 0.22, 0.16)
     scuff = g.noise(1.4, 8, 0.65, vec=v)
     worn = g.ramp(scuff.outputs[0], 0.5, 0.7)
-    dirt = g.noise(5, 10, 0.7, vec=v)
+    dirt = g.noise(16, 10, 0.75, vec=v)
     col = g.mix(g.ramp(dirt.outputs[0], 0.4, 0.8), color, (0.11, 0.1, 0.09, 1))
     col = g.mix(g.math("MULTIPLY", worn, stud), col, (0.4, 0.4, 0.41, 1))
     col = g.mix(seam, col, (0.02, 0.02, 0.02, 1))
@@ -365,6 +365,8 @@ def fabric(name, color, sheen=0.6):
     g.link(v, w2.inputs["Vector"])
     w2.inputs["Scale"].default_value = 180
     weave = g.math("MULTIPLY", w1.outputs["Fac"], w2.outputs["Fac"])
+    fuzz = g.noise(900, 2, 0.5, vec=v)
+    weave = g.math("ADD", weave, g.math("MULTIPLY", fuzz.outputs[0], 0.5))
     lump = g.noise(3, 4, 0.5, vec=v)
     col = g.mix(g.ramp(lump.outputs[0], 0.35, 0.7), tuple(c * 0.8 for c in color[:3]) + (1,), color)
     edge, grime, smudge = _wear_masks(g)
@@ -375,7 +377,37 @@ def fabric(name, color, sheen=0.6):
     bsdf.inputs["Roughness"].default_value = 0.85
     bsdf.inputs["Sheen Weight"].default_value = sheen
     bsdf.inputs["Sheen Roughness"].default_value = 0.4
-    g._in(bsdf.inputs["Normal"], _bump(g, weave, 0.35, 0.0006))
+    g._in(bsdf.inputs["Normal"], _bump(g, weave, 0.6, 0.0008))
+    g.out(bsdf)
+    return m
+
+
+def rug(name="SB Rug", a=(0.09, 0.1, 0.095, 1), b=(0.32, 0.22, 0.1, 1)):
+    """Low-pile woven rug: border bands, worn centre, fibre bump."""
+    m, new = _get(name)
+    if not new:
+        return m
+    g = G(m)
+    v = g.coord((1, 1, 1))
+    tc = g.node("ShaderNodeTexCoord")
+    sep = g.node("ShaderNodeSeparateXYZ")
+    g.link(tc.outputs["Generated"], sep.inputs[0])
+    dx = g.math("ABSOLUTE", g.math("SUBTRACT", sep.outputs[0], 0.5))
+    dy = g.math("ABSOLUTE", g.math("SUBTRACT", sep.outputs[1], 0.5))
+    edge = g.math("MAXIMUM", dx, dy)
+    stripes = g.math("MULTIPLY", g.ramp(edge, 0.40, 0.405), g.ramp(edge, 0.445, 0.44))
+    col = g.mix(stripes, a, b)
+    wear = g.noise(1.2, 4, 0.5, vec=v)
+    col = g.mix(g.math("MULTIPLY", g.ramp(wear.outputs[0], 0.5, 0.75), 0.6), col, tuple(c * 1.6 for c in a[:3]) + (1,))
+    fib = g.noise(1400, 2, 0.5, vec=v)
+    grain = g.noise(160, 3, 0.6, vec=v)
+    h = g.math("ADD", fib.outputs[0], g.math("MULTIPLY", grain.outputs[0], 0.6))
+    col = g.mix(g.math("MULTIPLY", grain.outputs[0], 0.35), col, (0.02, 0.02, 0.02, 1), "MULTIPLY")
+    bsdf = g.node("ShaderNodeBsdfPrincipled")
+    g._in(bsdf.inputs["Base Color"], col)
+    bsdf.inputs["Roughness"].default_value = 0.95
+    bsdf.inputs["Sheen Weight"].default_value = 0.8
+    g._in(bsdf.inputs["Normal"], _bump(g, h, 0.8, 0.002))
     g.out(bsdf)
     return m
 

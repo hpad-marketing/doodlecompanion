@@ -15,6 +15,7 @@ rep = {}
 t = time.time(); room = lounge.build(); Li.space_world(); rep['build_s'] = round(time.time() - t, 1)
 sc = bpy.context.scene
 Li.render_setup(sc)
+Li.camera_finish(sc)
 sc.cycles.samples = spp
 rep['device'] = sc.cycles.device
 rep['settled'] = P.settle(sc); rep['contacts'] = P.contacts(sc)

@@ -93,12 +93,21 @@ def cyl(name, r, h, loc, mat, c, verts=32, rot=(0, 0, 0), bevel=0.004, cap_fill=
     return _finish(ob, min(bevel, r * 0.4, h * 0.4), 2, angle=50)
 
 
-def rounded(name, size, loc, mat, c, soft=2, rot=(0, 0, 0)):
+def rounded(name, size, loc, mat, c, soft=2, rot=(0, 0, 0), wrinkle=0.0):
     """Soft cushion-like block: a box with subdivision and a crease-free bevel."""
     ob = box(name, size, loc, mat, c, bevel=min(size) * 0.25, rot=rot, segs=4)
     s = ob.modifiers.new("Soft", "SUBSURF")
     s.levels = 1
-    s.render_levels = soft
+    s.render_levels = max(soft, 3)
+    if wrinkle and DETAIL["level"] >= 2:
+        tx = bpy.data.textures.get("SB Wrinkle") or bpy.data.textures.new("SB Wrinkle", "CLOUDS")
+        tx.noise_scale = 0.14
+        tx.noise_depth = 3
+        d = ob.modifiers.new("Wrinkles", "DISPLACE")
+        d.texture = tx
+        d.texture_coords = "GLOBAL"
+        d.strength = wrinkle
+        d.mid_level = 0.5
     return ob
 
 
@@ -385,7 +394,7 @@ def point_glow(room, loc, color, power=5, radius=0.02, role="practical"):
     return lo
 
 
-def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", light=True, name="Screen"):
+def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", light=True, name="Screen", strength=3.0):
     u, v, n = Vector(u), Vector(v), Vector(n)
     rot = Matrix((u, v, n)).transposed().to_euler()
     bz = box(f"{name} Bezel", (w + 0.06, h + 0.06, 0.05), Vector(centre) + n * 0.025, room.pal["plastic"], room.dress, bevel=0.008)
@@ -400,7 +409,7 @@ def screen(room, centre, u, v, n, w, h, color=(0.3, 0.85, 1, 1), kind="ui", ligh
     for l, uv in zip(me.loops, me.uv_layers[0].data):
         co = me.vertices[l.vertex_index].co
         uv.uv = (co.x / w + 0.5, co.y / h + 0.5)
-    smat = M.screen(f"SB Screen {kind} {tuple(round(c, 2) for c in color)}", color, 3.0, kind)
+    smat = M.screen(f"SB Screen {kind} {strength} {tuple(round(c, 2) for c in color)}", color, strength, kind)
     smat["sb_role"] = "screen"
     sc = _obj(name, me, room.dress, smat)
     sc.location = Vector(centre) + n * 0.051

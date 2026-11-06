@@ -18,7 +18,7 @@ INFO = {"label": "Oil lounge", "size": (7.0, 5.5, 3.0)}
 
 def couch(room, x, y, width=3.0, fab=None):
     pal = room.pal
-    fab = fab or M.fabric("SB Couch Fabric", (0.15, 0.05, 0.035, 1), 0.3)
+    fab = fab or M.fabric("SB Couch Fabric", (0.12, 0.055, 0.042, 1), 0.35)
     frame = M.brushed_steel("SB Couch Frame", (0.35, 0.35, 0.36, 1), 0.32)
     parts = []
     # steel sled frame
@@ -32,18 +32,20 @@ def couch(room, x, y, width=3.0, fab=None):
     cw = (width - 0.36) / n
     for i in range(n):
         cx = x - (width - 0.36) / 2 + cw * (i + 0.5)
-        s = K.rounded("Seat Cushion", (cw - 0.02, 0.78, 0.18), (cx, y - 0.06, 0.52), fab, room.dress)
+        s = K.rounded("Seat Cushion", (cw - 0.02, 0.78, 0.18), (cx, y - 0.06, 0.52), fab, room.dress, wrinkle=0.028)
         s.rotation_euler = (math.radians(-1.5 + i), 0, math.radians((i - 1) * 0.6))
-        b = K.rounded("Back Cushion", (cw - 0.03, 0.2, 0.5), (cx, y + 0.32, 0.82), fab, room.dress)
+        b = K.rounded("Back Cushion", (cw - 0.03, 0.2, 0.5), (cx, y + 0.32, 0.82), fab, room.dress, wrinkle=0.03)
         b.rotation_euler = (math.radians(-12 + i * 1.5), 0, 0)
         parts += [s, b]
+        # piping along the seat front edge
+        K.pipe(room, [(cx - (cw - 0.06) / 2, y - 0.45, 0.6), (cx + (cw - 0.06) / 2, y - 0.45, 0.6)], 0.007, fab, flanges=False, name="Piping")
     for sx in (-1, 1):
-        a = K.rounded("Couch Arm", (0.18, 0.95, 0.3), (x + sx * (width / 2 - 0.09), y, 0.58), fab, room.dress)
+        a = K.rounded("Couch Arm", (0.18, 0.95, 0.3), (x + sx * (width / 2 - 0.09), y, 0.58), fab, room.dress, wrinkle=0.018)
         parts.append(a)
     back = K.box("Couch Back Shell", (width, 0.12, 0.6), (x, y + 0.42, 0.72), pal["hull"], room.dress, bevel=0.02)
     parts.append(back)
     # a throw cushion, slightly slumped
-    t = K.rounded("Throw Cushion", (0.42, 0.14, 0.4), (x + width / 2 - 0.45, y + 0.12, 0.82), M.fabric("SB Cushion Mustard", (0.5, 0.32, 0.06, 1)), room.dress)
+    t = K.rounded("Throw Cushion", (0.42, 0.14, 0.4), (x + width / 2 - 0.45, y + 0.12, 0.82), M.fabric("SB Cushion Mustard", (0.42, 0.27, 0.06, 1)), room.dress, wrinkle=0.02)
     t.rotation_euler = (math.radians(-20), math.radians(12), math.radians(-14))
     for p in parts:
         K.rigid(p, passive=True, shape="MESH")
@@ -120,7 +122,7 @@ def oil_bar(room):
         K.cyl("Nozzle", 0.015, 0.16, (x + 0.15, yy, 1.32), pal["steel"], room.dress, verts=16, rot=(0, math.radians(90), 0))
         K.cyl("Tap", 0.012, 0.08, (x + 0.22, yy, 1.28), pal["dark_steel"], room.dress, verts=16)
         K.point_glow(room, (x + 0.04, yy, 1.47), (1.0, 0.6, 0.25), 3, role="practical")
-    K.screen(room, (x - 0.12 + 0.151, yc, 2.35), (0, 1, 0), (0, 0, 1), (1, 0, 0), 0.9, 0.22, (1.0, 0.6, 0.2, 1), "ticker", name="Bar Menu")
+    K.screen(room, (x - 0.12 + 0.151, yc, 2.35), (0, 1, 0), (0, 0, 1), (1, 0, 0), 0.9, 0.22, (1.0, 0.55, 0.18, 1), "ticker", name="Bar Menu", strength=0.9)
     # stools
     for k in range(3):
         yy = y0 + 0.5 + k * 1.0
@@ -177,7 +179,7 @@ def build(room_name="Oil lounge"):
         K.cable(room, (-2.5 + k * 1.2, D - 0.3, H - 0.3), (-1.9 + k * 1.2, D - 0.3, H - 0.3), 0.18 + 0.05 * (k % 2), 0.01 + 0.004 * (k % 3))
     # couch, rug, table, side pieces
     couch(room, 0.3, D - 0.75, 3.0)
-    rug = K.box("Rug", (2.6, 1.7, 0.012), (0.3, D - 2.15, 0.006), M.fabric("SB Rug", (0.12, 0.13, 0.12, 1), 0.3), room.dress, bevel=0.005)
+    rug = K.box("Rug", (2.6, 1.7, 0.012), (0.3, D - 2.15, 0.006), M.rug(), room.dress, bevel=0.005)
     coffee_table(room, 0.3, D - 2.05)
     side = K.box("Side Crate", (0.5, 0.5, 0.5), (2.25, D - 0.65, 0.25), pal["warm"], room.dress, bevel=0.02)
     K.rigid(side, passive=True, shape="BOX")
@@ -219,7 +221,7 @@ def build(room_name="Oil lounge"):
     for x in (-W / 2 + 0.3, W / 2 - 0.3):
         K.point_glow(room, (x, 0.6, 0.25), (1.0, 0.35, 0.1), 12, 0.03, role="emergency")
     C.planet(room, loc=(14, 150, -10), radius=30)
-    Li.haze(room, 0.008)
+    Li.haze(room, 0.012)
     Li.camera(room, "Wide master", 26, (0.9, -1.0, 1.25), (-0.3, D * 0.7, 1.0), 5.6)
     Li.camera(room, "Couch two-shot", 40, (0.6, 0.9, 1.25), (0.3, D - 0.75, 0.9), 2.8)
     Li.camera(room, "Bar single", 50, (0.6, 2.0, 1.4), (-W / 2 + 0.4, 3.2, 1.3), 2.0)
