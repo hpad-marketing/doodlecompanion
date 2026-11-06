@@ -167,7 +167,7 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     K.screen(room, (-W / 2 + 0.04, 3.8, 1.75), (0, 1, 0), (0, 0, 1), (1, 0, 0), 2.4, 1.1, (0.35, 0.8, 1.0, 1), "map", name="Star Map", strength=1.4)
     with K.piece(room, "Map console", 0.03, 2):
         console(room, -W / 2 + 0.45, 3.8, 2.2, math.radians(-90), 0, (0.35, 0.8, 1.0, 1))
-    for k, (yy, zz) in enumerate(((5.35, 1.7), (5.98, 1.7), (5.665, 2.2))):
+    for k, (yy, zz) in enumerate(((1.2, 1.7), (1.83, 1.7), (1.515, 2.2))):
         K.screen(room, (W / 2 - 0.04, yy, zz), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.55, 0.4, [(1.0, 0.65, 0.2, 1), (0.4, 1.0, 0.5, 1), (1.0, 0.3, 0.2, 1)][k], "ui", name="System Screen", strength=1.4)
     # door on the right wall opening
     C.door(room, D - 3.0)

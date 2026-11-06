@@ -46,7 +46,7 @@ class Collider:
         def walk(c):
             for ob in c.objects:
                 if ob.type in {"MESH", "CURVE", "FONT"} and not ob.get("sb_haze") and not ob.get("sb_fourth_wall") \
-                        and not any(ob.name.startswith(s) for s in SKIP_NAMES) and not ob.hide_render:
+                        and not any(ob.name.startswith(s) for s in SKIP_NAMES) and (not ob.hide_render or ob.get("sb_ghost")):
                     seen.append(ob)
             for ch in c.children:
                 walk(ch)

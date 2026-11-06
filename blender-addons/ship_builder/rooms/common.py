@@ -50,7 +50,8 @@ def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", p
     cut = chamfer + 0.12 if chamfer else 0.0
     # ... and leaves gaps where a door or floor-level opening cuts the wall
     def spans(L, holes, c0, c1):
-        cuts = sorted((h[0], h[1]) for h in holes if h[2] < 0.12)
+        # floor-level openings are doors: the skirting also clears their sliding pockets
+        cuts = sorted((h[0] - 0.55, h[1] + 0.55) for h in holes if h[2] < 0.12)
         out, s = [], c0
         for a, b in cuts:
             if a > s:
@@ -183,22 +184,70 @@ def planet(room, loc=(-40, 160, 30), radius=34, color=(0.55, 0.32, 0.18, 1), rin
     return ob
 
 
-def door(room, yc, x=None):
-    """Sliding pressure door set into a right-wall opening (2 m wide hole centred on yc).
-    Every part only touches its neighbours; nothing overlaps."""
+def door(room, yc, x=None, name=None):
+    """Two-leaf pressure door in a right-wall opening, centred on yc.
+
+    The leaves slide sideways into pockets behind wide jambs, so a moving door never
+    passes through anything. Open/close with the "open" property (0..1) on the
+    door's control empty; the leaves follow through drivers, so it can be keyed.
+    room.doors gets a socket entry, used to connect rooms into a ship."""
     W = room.W
     pal = room.pal
     x = W / 2 if x is None else x
-    dx = x - 0.136  # parts are 0.27 deep and stop 1 mm short of the door back
+    did = name or f"{room.name} Door {len(getattr(room, 'doors', [])) + 1}"
+    half, leaf_w, pocket = 0.74, 0.7385, 0.75
     with K.piece(room, "Door", 0, 0):
-        K.box("Door Lintel", (0.27, 2.0, 0.3), (dx, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
-        for s in (-1, 1):
-            K.box("Door Jamb", (0.27, 0.26, 1.928), (dx, yc + s * 0.87, 0.021 + 0.964), pal["hull"], room.shell, bevel=0.02)
-        K.box("Door Back", (0.04, 1.48, 1.928), (x + 0.02, yc, 0.021 + 0.964), M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6), room.shell, bevel=0)
-        for s in (-1, 1):
-            K.box("Door Panel", (0.06, 0.733, 1.925), (x - 0.06, yc + s * 0.3695, 0.0215 + 0.9625), pal["warm"], room.shell, bevel=0.01)
-        K.box("Door Window", (0.065, 0.12, 0.5), (x - 0.06, yc - 0.37, 1.45), M.painted_metal("SB Door Slot", (0.01, 0.01, 0.01, 1), 0.2), room.shell, bevel=0.004)
-        K.box("Door Hazard", (0.004, 1.98, 0.08), (x - 0.2725, yc, 2.1), M.hazard(), room.shell, bevel=0.001, segs=1)
-        K.box("Door Sill", (0.4, 1.47, 0.02), (x - 0.2, yc, 0.0105), M.hazard(), room.shell, bevel=0.003)
-        K.screen(room, (x - 0.035, yc - 1.15, 1.3), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.18, 0.24, (0.4, 1.0, 0.5, 1), "ui", light=False, name="Door Keypad")
+        jx0, jx1 = x - 0.32, x - 0.125          # jambs/lintel sit in front of the leaves
+        lx0, lx1 = x - 0.12, x - 0.06           # leaves run between jambs and wall panels
+        K.box("Door Lintel", (jx1 - jx0, 2 * (half + pocket), 0.3), ((jx0 + jx1) / 2, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
+        K.box("Door Header", (lx1 - lx0 + 0.004, 2 * half, 0.29), ((lx0 + lx1) / 2, yc, 2.1), pal["dark_steel"], room.shell, bevel=0.004)
+        for sd in (-1, 1):
+            K.box("Door Jamb", (jx1 - jx0, pocket, 1.948), ((jx0 + jx1) / 2, yc + sd * (half + pocket / 2), 0.974), pal["hull"], room.shell, bevel=0.02)
+        back = K.box("Door Back", (0.04, 2 * half, 1.928), (x + 0.02, yc, 0.021 + 0.964), M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6), room.shell, bevel=0)
+        back["sb_door_back"] = did
+        K.box("Door Sill", (0.4, 2 * half - 0.006, 0.02), (x - 0.2, yc, 0.0105), M.hazard(), room.shell, bevel=0.003)
+        K.box("Door Hazard", (0.004, 2 * (half + pocket) - 0.02, 0.08), (jx0 - 0.0025, yc, 2.1), M.hazard(), room.shell, bevel=0.001, segs=1)
+        K.screen(room, (jx0 - 0.001, yc - half - pocket / 2, 1.3), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.16, 0.22, (0.4, 1.0, 0.5, 1), "ui", light=False, name="Door Keypad")
         K.light_strip(room, (x - 0.3, yc, 2.29), 1.4, "Y", (0, 0, -1), (0.4, 1.0, 0.6, 1), 6, role="practical", width=0.02)
+    # control + leaves (not part of the static piece: they move)
+    ctl = bpy.data.objects.new(did, None)
+    room.shell.objects.link(ctl)
+    ctl.empty_display_type = "ARROWS"
+    ctl.empty_display_size = 0.3
+    ctl.location = (x - 0.4, yc, 1.0)
+    ctl["open"] = 0.0
+    ctl.id_properties_ui("open").update(min=0.0, max=1.0, soft_min=0.0, soft_max=1.0, description="0 closed, 1 open")
+    ctl["sb_door"] = did
+    for sd in (-1, 1):
+        lf = K.box("Door Leaf", (lx1 - lx0, leaf_w, 1.924), ((lx0 + lx1) / 2, yc + sd * (half - leaf_w / 2 - 0.0005), 0.022 + 0.962), pal["warm"], room.shell, bevel=0.01)
+        lf["sb_door"] = did
+        lf["sb_group"] = f"door:{did}"
+        if sd < 0:
+            win = K.box("Door Window", (lx1 - lx0 + 0.006, 0.12, 0.5), lf.location + Vector((0, 0.02, 0.45)), M.painted_metal("SB Door Slot", (0.01, 0.01, 0.01, 1), 0.2), room.shell, bevel=0.004)
+            win.parent = lf
+            win.matrix_parent_inverse = lf.matrix_world.inverted()
+            win["sb_group"] = f"door:{did}"
+        rest = lf.location.y
+        fc = lf.driver_add("location", 1)
+        drv = fc.driver
+        drv.type = "SCRIPTED"
+        v = drv.variables.new()
+        v.name = "o"
+        v.targets[0].id = ctl
+        v.targets[0].data_path = '["open"]'
+        drv.expression = f"{rest:.5f} + {sd * (leaf_w + 0.0105):.5f} * o"
+    # invisible sweep volume: later passes (fixtures, wear) treat the whole path of
+    # the sliding leaves as occupied, so an open door never hits anything either
+    sw = K.box("Door Sweep", (lx1 - lx0 + 0.003, 2 * (half + pocket), 1.93), ((lx0 + lx1) / 2, yc, 0.022 + 0.962), pal["hull"], room.shell, bevel=0)
+    sw.hide_render = True
+    sw.display_type = "WIRE"
+    sw["sb_ghost"] = did
+    room.doors = getattr(room, "doors", []) + [dict(id=did, x=x, yc=yc, half=half, normal=(-1, 0, 0))]
+    return ctl
+
+
+def set_door(ctl, value, frame=None):
+    """Open (1) or close (0) a door; with frame, the state is keyed there."""
+    ctl["open"] = float(value)
+    if frame is not None:
+        ctl.keyframe_insert('["open"]', frame=frame)
