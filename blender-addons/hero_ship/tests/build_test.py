@@ -1,6 +1,6 @@
 """Build the ship in a fresh scene, run the collision audit through every
 moving part's range, and optionally render check views.
-usage: python build_test.py -- <out_prefix> [views] [--audit]"""
+usage: python build_test.py -- <out_prefix> [views] [--audit] [--set guns=1,gun_yaw=30]"""
 import sys, os, math, time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 sys.path.insert(0, os.path.dirname(__file__))
@@ -36,6 +36,13 @@ if "--audit" in argv:
     states += [dict(nacelle_tilt=v) for v in (0.25, 0.5, 0.75, 1.0)]
     states += [dict(radiators=v) for v in (0.0, 0.33, 0.66)]
     states += [dict(scan_deg=v) for v in (45, 90, 170)]
+    states += [dict(engine_extend=v) for v in (0.5, 1.0)]
+    states += [dict(spine_lift=v) for v in (0.5, 1.0)]
+    states += [dict(canards=v) for v in (0.25, 0.5, 0.75, 1.0)]
+    states += [dict(guns=v) for v in (0.15, 0.3, 0.45, 0.6, 0.8, 1.0)]
+    states += [dict(guns=1, gun_yaw=y, gun_pitch=p, gun_fire=f)
+               for y in (-100, -60, 0, 60, 100) for p in (-5, 20, 40) for f in (0, 1)]
+    states += [dict(engine_extend=1, spine_lift=1, guns=1, canards=1, radiators=0, nacelle_tilt=1, gear=1, ramp=1)]
     sc = bpy.context.scene
     for st in states:
         for k, v in hero_ship.parts.PROPS.items():
@@ -51,6 +58,13 @@ if "--audit" in argv:
     for k, v in hero_ship.parts.PROPS.items():
         root[k] = v[0]
     print("AUDIT TOTAL", total)
+
+if "--set" in argv:
+    for kv in argv[argv.index("--set") + 1].split(","):
+        k, v = kv.split("=")
+        root[k] = float(v)
+    root.update_tag()
+    bpy.context.scene.frame_set(1)
 
 if views:
     sc = bpy.context.scene
@@ -68,7 +82,9 @@ if views:
     V = {"a": ((36, 32, 14), (0, -1, 0), 40), "b": ((-32, -40, 11), (0, -3, 0), 40),
          "c": ((14, -6, -30), (0, -3, -2), 35), "d": ((44, 0, 0), (0, 0, 0), 35),
          "e": ((9, 16, 3), (0, 0, 1), 28), "f": ((0, 0, 60), (0, 0, 0), 35),
-         "g": ((16, -22, -7), (0, -8, -3), 35), "n": ((10, 34, 2), (0, 18, 0), 40)}
+         "g": ((16, -22, -7), (0, -8, -3), 35), "n": ((10, 34, 2), (0, 18, 0), 40),
+         "t": ((9, 17, 8), (0, 8.2, 3.4), 30), "w": ((-20, -36, 10), (0, -13, 1.5), 32),
+         "k": ((14, 26, -1), (0, 15, -0.6), 30)}
     for k, (p, tgt, lens) in V.items():
         if k not in views:
             continue

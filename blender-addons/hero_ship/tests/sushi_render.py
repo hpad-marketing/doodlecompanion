@@ -111,7 +111,7 @@ if WHAT in ("all", "ship"):
             setup(sc, 1920, 1080, 64 if FAST else 384)
     print("ship stills %.0fs" % (time.time() - t0))
 
-HERO = {"idle_drift": 60, "cruise": 100, "hyperdrive_jump": 92, "planet_landing": 300}
+HERO = {"idle_drift": 60, "cruise": 100, "hyperdrive_jump": 92, "planet_landing": 300, "turret_fire": 128}
 ids = [p["id"] for p in presets.PRESETS] if WHAT in ("all",) else ([] if WHAT == "ship" else WHAT.split(","))
 for pid in ids:
     t = time.time()

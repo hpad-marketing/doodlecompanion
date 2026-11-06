@@ -10,9 +10,9 @@ Plain Python package (no UI of its own). The sitcom add-on imports it:
 Root custom properties drive every moving part (see parts.PROPS).
 """
 import bpy
-from . import geo, mats, layout, parts, decals
+from . import geo, mats, layout, parts, decals, moving
 
-VERSION = (1, 0, 0)
+VERSION = (1, 1, 0)
 ROOT_NAME = "Hero Ship"
 
 
@@ -35,6 +35,7 @@ def build(collection=None, wear=1.0, seed=1):
     parts.nav_lights(c, body, root, M)
     parts.plumes(c, body, root)
     decals.apply(c, body, M, hull)
+    moving.build(c, body, root, M, hull, mods)
     hull["soot"], hull["soot_y"] = 1.0, -16.5
     eng["soot"], eng["soot_y"] = 1.0, -20.0
     for side in ("L", "R"):

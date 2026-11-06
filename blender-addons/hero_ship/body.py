@@ -99,6 +99,7 @@ class Module:
         ys.append((stations[-1][0], list(stations[-1][1:])))
         self.rows = ys
         self.y_front, self.y_back = ys[0][0], ys[-1][0]
+        self.rakes = (front_rake, back_rake)
         secs = []
         last = len(ys) - 1
         for i, (y, p) in enumerate(ys):
@@ -157,6 +158,17 @@ class Module:
         ext = bmesh.ops.extrude_edge_only(self.bm, edges=list(edges))
         nv = [g for g in ext["geom"] if isinstance(g, bmesh.types.BMVert)]
         bmesh.ops.translate(self.bm, vec=(0, 0, depth), verts=nv)
+        # raked end caps lean inward: lean the bay's end walls with them (plus a wall
+        # thickness) so they stay inside the shell instead of poking out of the caps
+        inward = 1.0 if self.y_back < self.y_front else -1.0
+        for end_y, rake, sgn in ((self.y_front, self.rakes[0], -inward), (self.y_back, self.rakes[1], inward)):
+            if rake <= 0:   # caps leaning outward already clear vertical walls
+                continue
+            p = self.p(end_y)
+            lean = rake * depth / (p[2] - p[1]) + 0.06
+            for v in nv:
+                if abs(v.co.y - end_y) < 1e-3:
+                    v.co.y += sgn * lean
         ne = [g for g in ext["geom"] if isinstance(g, bmesh.types.BMEdge) and all(v in nv for v in g.verts)]
         cap = bmesh.ops.holes_fill(self.bm, edges=ne, sides=0)
         bay = set(cap["faces"]) | {g for g in ext["geom"] if isinstance(g, bmesh.types.BMFace)}
@@ -236,8 +248,8 @@ class Module:
         # cap: framed end plate
         for f in self.caps:
             f.material_index = self.mat
-            r1 = bmesh.ops.inset_individual(bm, faces=[f], thickness=0.22, depth=-0.03, use_even_offset=True)
-            r2 = bmesh.ops.inset_individual(bm, faces=[f], thickness=0.05, depth=0.015, use_even_offset=True)
+            r1 = bmesh.ops.inset_individual(bm, faces=[f], thickness=0.22, depth=-0.03, use_even_offset=False)
+            r2 = bmesh.ops.inset_individual(bm, faces=[f], thickness=0.05, depth=0.015, use_even_offset=False)
             f[pl] = rnd.random()
             for g in r1["faces"]:
                 g[pl] = rnd.random()

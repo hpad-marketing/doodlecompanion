@@ -341,13 +341,20 @@ def exclusions(occ):
         ((-7.3, -10.3, 0.15), (-5.3, -7.2, 1.15)),      # pylon L
         ((5.3, -10.3, 0.15), (7.3, -7.2, 1.15)),        # pylon R
         ((-2.0, -12.0, 3.7), (2.0, -11.2, 6.4)),        # masts
-        ((-1.2, 10.3, 3.1), (1.2, 11.0, 4.8)),          # front spikes
+        ((-1.2, 10.3, 3.45), (1.2, 11.0, 5.15)),        # front spikes (on the gun hood)
         ((0.2, 0.1, -1.8), (0.7, 0.7, -1.4)),           # belly beacon
-        ((-0.3, 5.7, 3.2), (0.3, 6.3, 3.6)),            # deck beacon
+        ((-0.3, 5.7, 3.55), (0.3, 6.3, 3.95)),          # hood beacon
+        ((-4.7, -14.4, -3.1), (4.7, -13.85, 3.1)),      # engine section joint (slides apart)
+        ((-3.0, 4.2, 2.55), (3.0, 5.95, 4.1)),          # gun hood swings back over this
+        ((-2.6, 5.4, 2.55), (2.6, 11.8, 3.8)),          # deck under the gun hood (turret bay)
+        ((-3.05, 5.3, 2.55), (3.05, 11.9, 2.86)),       # gap along the hood skirts
+        ((-3.5, -12.8, 2.95), (3.5, -4.2, 3.14)),       # spine rams, vents and the gap under the spine
         ((-0.3, -18.7, 2.5), (0.3, -18.1, 2.9)),        # tail strobe
         ((-4.0, -21.0, -2.6), (4.0, -18.8, 2.6)),       # engine bells
     ]
     for s in (1, -1):
+        # canard fins: stowed along the cab side, swing out for landing
+        Z.append(((min(s * 3.15, s * 6.7), 12.4, -1.25), (max(s * 3.15, s * 6.7), 17.8, -0.62)))
         # decals on the aft side, NO STEP on the fore side
         Z.append(((min(s * 4.5, s * 4.75), -10.3, -2.0), (max(s * 4.5, s * 4.75), -6.9, -0.4)))
         Z.append(((min(s * 3.95, s * 4.2), 8.0, 0.82), (max(s * 3.95, s * 4.2), 9.2, 1.08)))
@@ -380,8 +387,8 @@ def rcs(P, mods):
 
 def crates(P, mods):
     """Cargo strapped to the decks: the crew ran out of room inside."""
-    spots = [("aft_top", (0.0, -9.2), (1.3, 0.9, 0.7)), ("engine", (1.6, -14.5), (1.0, 1.4, 0.6)),
-             ("engine", (-1.4, -14.4), (0.8, 0.8, 0.8)), ("fore_top", (-1.1, 6.3), (0.8, 0.7, 0.5)),
+    spots = [("aft_top", (0.0, -9.2), (1.3, 0.9, 0.7)), ("engine", (1.75, -17.85), (0.9, 0.8, 0.6)),
+             ("engine", (-1.65, -17.75), (0.8, 0.8, 0.8)), ("fore_top", (-1.1, 6.3), (0.8, 0.7, 0.5)),
              ("fore", (-3.1, 4.4), (0.9, 1.0, 0.6))]
     for name, (x, y), (sx, sy, sz) in spots:
         m = mods[name]

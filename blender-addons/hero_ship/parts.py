@@ -26,6 +26,10 @@ PROPS = {
     "nacelle_tilt": (0.0, 0.0, 1.0), "radiators": (1.0, 0.0, 1.0), "dish_rpm": (6.0, -60.0, 60.0),
     "scan_deg": (0.0, -180.0, 180.0), "engine": (0.25, 0.0, 1.0), "hyper": (0.0, 0.0, 1.0),
     "lights": (1.0, 0.0, 1.0),
+    # added moving sections (0 = stowed)
+    "engine_extend": (0.0, 0.0, 1.0), "spine_lift": (0.0, 0.0, 1.0), "canards": (0.0, 0.0, 1.0),
+    "guns": (0.0, 0.0, 1.0), "gun_yaw": (0.0, -100.0, 100.0), "gun_pitch": (0.0, -5.0, 40.0),
+    "gun_fire": (0.0, 0.0, 1.0),
 }
 NACELLE = {"x": 8.65, "y": -8.75, "z": 0.6, "r": 1.45, "len": 8.6}
 GEAR = {
@@ -334,18 +338,21 @@ def dish_and_masts(c, body, root, mats):
     out = []
     x, y, z = DISH
     bm = bmesh.new()
-    geo.lathe(bm, [(0.55, -0.02), (0.55, 0.12), (0.42, 0.25), (0.0, 0.25)], segs=24,
+    # dish base and masts ride on the dorsal spine, spikes on the gun hood: separate pieces
+    mb = bmesh.new()
+    sb = bmesh.new()
+    geo.lathe(mb, [(0.55, -0.02), (0.55, 0.12), (0.42, 0.25), (0.0, 0.25)], segs=24,
               mat=Matrix.Translation((x, y, z)))
-    _mat(bm, set(), B.DARK)
-    # masts on the aft deck's back corners + small spikes up front
-    b0 = len(bm.faces)
     for s in (1, -1):
-        geo.add_cyl(bm, (s * 1.6, -11.6, 3.8), (s * 1.6, -11.6, 4.3), 0.12, segs=10)
-        geo.add_cyl(bm, (s * 1.6, -11.6, 4.3), (s * 1.6, -11.6, 6.1), 0.04, segs=8)
-        geo.add_cyl(bm, (s * 1.6, -11.6, 5.2), (s * 1.6, -11.6, 5.25), 0.15, segs=10)
-        geo.add_cyl(bm, (s * 1.0, 10.8, 3.24), (s * 1.0, 10.8, 3.5), 0.1, segs=8)
-        geo.add_cyl(bm, (s * 1.0, 10.8, 3.5), (s * 1.0, 10.5, 4.6), 0.035, segs=8)
-    _mat(bm, b0, B.DARK)
+        geo.add_cyl(mb, (s * 1.6, -11.6, 3.8), (s * 1.6, -11.6, 4.3), 0.12, segs=10)
+        geo.add_cyl(mb, (s * 1.6, -11.6, 4.3), (s * 1.6, -11.6, 6.1), 0.04, segs=8)
+        geo.add_cyl(mb, (s * 1.6, -11.6, 5.2), (s * 1.6, -11.6, 5.25), 0.15, segs=10)
+        geo.add_cyl(sb, (s * 1.0, 10.8, 3.59), (s * 1.0, 10.8, 3.85), 0.1, segs=8)
+        geo.add_cyl(sb, (s * 1.0, 10.8, 3.85), (s * 1.0, 10.5, 4.95), 0.035, segs=8)
+    _mat(mb, set(), B.DARK)
+    _mat(sb, set(), B.DARK)
+    out.append(_part("Spine Masts", mb, c, body, mats, "hs_spine"))
+    out.append(_part("Hood Spikes", sb, c, body, mats, "hs_hood"))
     b0 = len(bm.faces)
     # survey booms out of the chin
     for s in (1, -1):
@@ -407,7 +414,7 @@ def nav_lights(c, body, root, mats):
     """Blinking beacons: tail strobes, mast tips, belly beacon."""
     pts = [((1.6, -11.6, 6.15), B.WHITE, "strobe"), ((-1.6, -11.6, 6.15), B.WHITE, "strobe"),
            ((0, -18.4, 2.64), B.WHITE, "strobe"), ((0.45, 0.4, -1.5), B.NAV_R, "beacon"),
-           ((0, 6.0, 3.31), B.NAV_R, "beacon")]
+           ((0, 6.0, 3.66), B.NAV_R, "beacon")]
     out = []
     for i, (p, m, kind) in enumerate(pts):
         bm = bmesh.new()

@@ -23,9 +23,11 @@ PRESETS = [
     {"id": "cruise", "label": "Cruise", "frames": 240, "needs_stage": "space",
      "about": "Full burn through a dust field, gentle banking, camera swings from side to rear."},
     {"id": "hyperdrive_jump", "label": "Hyperdrive jump", "frames": 180, "needs_stage": "space",
-     "about": "Radiators fold, drive charges and flickers, ship stretches and is gone in a flash."},
+     "about": "Radiators fold, engine section slides back, spine lifts on rams, drive charges and flickers, ship stretches and is gone in a flash."},
     {"id": "planet_landing", "label": "Planet landing", "frames": 420, "needs_stage": "planet",
-     "about": "Descends to a pad: pods tilt for hover, gear drops, dust kicks up, touchdown squash, ramp lowers."},
+     "about": "Descends to a pad: canards swing out, pods tilt for hover, gear drops, dust kicks up, touchdown squash, spine vents heat, ramp lowers."},
+    {"id": "turret_fire", "label": "Turret fire", "frames": 192, "needs_stage": "space",
+     "about": "Gun hood swings open, twin turret rises, swings onto two targets and fires two bursts with tracers, then stows."},
 ]
 BY_ID = {p["id"]: p for p in PRESETS}
 LANDED_Z = -GROUND_Z
@@ -112,6 +114,28 @@ def _fx_mat():
     n.set(ad.inputs[0], tr)
     n.set(ad.inputs[1], em)
     n.out(ad)
+    return m
+
+
+def _bolt_mat():
+    """Solid glowing bolt (tracers): no edge falloff, so thin shapes still read."""
+    m = bpy.data.materials.get("HS FX Bolt")
+    if m:
+        return m
+    from .mats import N
+    m = bpy.data.materials.new("HS FX Bolt")
+    n = N(m)
+    a = n.attr("fx", "OBJECT").outputs["Fac"]
+    col = n.attr("fx_color", "OBJECT").outputs["Color"]
+    em = n("ShaderNodeEmission")
+    n.set(em.inputs["Color"], col)
+    n.set(em.inputs["Strength"], n.math("MULTIPLY", a, 18.0))
+    tr = n("ShaderNodeBsdfTransparent")
+    mx = n("ShaderNodeMixShader")
+    n.set(mx.inputs[0], n.math("MINIMUM", a, 1.0))
+    n.set(mx.inputs[1], tr)
+    n.set(mx.inputs[2], em)
+    n.out(mx)
     return m
 
 
@@ -258,6 +282,9 @@ def hyperdrive_jump(root, body, f0, camera):
     kp(root, "radiators", [(f0 + 8, 1.0), (f0 + 50, 0.0)])
     kp(root, "scan_deg", [(f0, 30.0), (f0 + 40, 0.0)])
     kp(root, "engine", [(f0, 0.25), (f0 + 60, 0.5), (J - 4, 0.8), (J, 1.0)])
+    # the ship reconfigures for the jump: engine section slides back, spine rises to vent
+    kp(root, "engine_extend", [(f0 + 22, 0.0), (f0 + 62, 1.0)])
+    kp(root, "spine_lift", [(f0 + 34, 0.0), (f0 + 78, 1.0)])
     # charge with flicker
     rnd = random.Random(11)
     hy = [(f0, 0.0), (f0 + 30, 0.0)]
@@ -276,8 +303,8 @@ def hyperdrive_jump(root, body, f0, camera):
         body.keyframe_insert("location", frame=f)
     body.location = (0, 0, 0)
     body.keyframe_insert("location", frame=J)
-    # stretch forward from the tail (tail at y = -22.4)
-    tail = 22.4
+    # stretch forward from the tail (tail at y = -24.0 with the engine section slid back)
+    tail = 24.0
     for f, sy in ((J - 1, 0.96), (J, 1.0), (J + 2, 3.0), (J + 4, 8.0)):
         body.scale = (1.0, sy, 1.0)
         body.keyframe_insert("scale", frame=f)
@@ -348,6 +375,9 @@ def planet_landing(root, body, f0, camera):
     kp(root, "engine", [(f0, 0.75), (f0 + 200, 0.9), (TD, 0.8), (TD + 40, 0.0)])
     kp(root, "scan_deg", [(f0, 0.0), (f0 + 200, 0.0), (f0 + 260, -60.0), (f0 + 330, 60.0), (f0 + 400, 0.0)])
     kp(root, "ramp", [(TD + 70, 0.0), (TD + 125, 1.0)])
+    # canards out for the atmospheric approach, folded after touchdown; spine vents the heat
+    kp(root, "canards", [(f0 + 15, 0.0), (f0 + 75, 1.0), (TD + 30, 1.0), (TD + 80, 0.0)])
+    kp(root, "spine_lift", [(TD + 45, 0.0), (TD + 85, 0.5), (f0 + n, 0.5)])
     # touchdown squash: body dips exactly as far as the shock struts slide up
     sq = [(TD - 1, 0.0), (TD, 0.0), (TD + 5, 0.16), (TD + 14, 0.03), (TD + 22, 0.0)]
     kp(root, "gear_compress", sq)
@@ -379,8 +409,76 @@ def planet_landing(root, body, f0, camera):
     return n
 
 
+def turret_fire(root, body, f0, camera):
+    n = 192
+    _defaults(root, gear=0.0, engine=0.3, radiators=1.0, dish_rpm=4.0)
+    for k in ("gear", "engine", "radiators", "lights", "ramp", "nacelle_tilt", "hyper", "gear_compress", "dish_rpm"):
+        kp(root, k, [(f0, root[k])])
+    kp(root, "scan_deg", [(f0, -20.0), (f0 + 60, 25.0), (f0 + 130, -25.0), (f0 + n, 0.0)])
+    kp(root, "guns", [(f0 + 8, 0.0), (f0 + 52, 1.0), (f0 + 150, 1.0), (f0 + 186, 0.0)])
+    kp(root, "gun_yaw", [(f0 + 52, 0.0), (f0 + 68, -22.0), (f0 + 104, -24.0), (f0 + 118, 26.0), (f0 + 150, 28.0),
+                         (f0 + 168, 0.0)])
+    kp(root, "gun_pitch", [(f0 + 52, 0.0), (f0 + 68, 12.0), (f0 + 104, 9.0), (f0 + 118, 18.0), (f0 + 150, 16.0),
+                           (f0 + 168, 0.0)])
+    shots = list(range(f0 + 74, f0 + 101, 3)) + list(range(f0 + 124, f0 + 149, 3))
+    fire = [(f0, 0.0)]
+    for f in shots:
+        fire += [(f - 1, 0.0), (f, 1.0), (f + 2, 0.0)]
+    kp(root, "gun_fire", fire, "LINEAR")
+    # slow drift with a small kick on each burst
+    kv(body, "location", 2, [(f0, 0.0), (f0 + 96, 0.25), (f0 + n, 0.0)])
+    kv(body, "rotation_euler", 1, [(f0, 0.0), (f0 + 96, math.radians(1.0)), (f0 + n, 0.0)])
+    kv(body, "rotation_euler", 0, [(f0 + 72, 0.0), (f0 + 76, math.radians(-0.35)), (f0 + 102, math.radians(-0.2)),
+                                   (f0 + 110, 0.0), (f0 + 122, 0.0), (f0 + 126, math.radians(-0.35)),
+                                   (f0 + 150, math.radians(-0.2)), (f0 + 158, 0.0)])
+    # tracers: a glowing bolt leaves each muzzle on every shot
+    c = geo.coll(stage.STAGE)
+    for o in [o for o in bpy.data.objects if o.name.startswith("HS Tracer")]:
+        bpy.data.objects.remove(o, do_unlink=True)
+    sc = bpy.context.scene
+    from mathutils import Matrix
+    for i, f in enumerate(shots):
+        sc.frame_set(f)
+        for side in ("L", "R"):
+            rec = bpy.data.objects.get(f"Barrel Recoil {side}")
+            if rec is None:
+                continue
+            mw = rec.matrix_world
+            d = (mw.to_3x3() @ Vector((0, 1, 0))).normalized()
+            tip = mw @ Vector((0, 2.6, 0))
+            bm = bmesh.new()
+            geo.add_cyl(bm, (0, 0, 0), (0, 6.0, 0), 0.09, segs=8)
+            t = _fx_obj(c, f"HS Tracer {i:02d}{side}", bm, (1.0, 0.42, 0.1), _bolt_mat())
+            t.rotation_mode = "QUATERNION"
+            t.rotation_quaternion = d.to_track_quat("Y", "Z")
+            for ff, p in ((f, tip), (f + 14, tip + d * 170.0)):
+                t.location = p
+                t.keyframe_insert("location", frame=ff)
+            _interp(t, "location", "LINEAR")
+            kp(t, "fx", [(f - 1, 0.0), (f, 1.4), (f + 13, 1.4), (f + 14, 0.0)], "CONSTANT")
+            # zero size while idle: stacked see-through bolts waiting at the muzzle would
+            # otherwise use up the transparent bounces and render as dark streaks
+            for ff, k in ((f - 1, 0.0), (f, 1.0), (f + 13, 1.0), (f + 14, 0.0)):
+                t.scale = (k, k, k)
+                t.keyframe_insert("scale", frame=ff)
+            _interp(t, "scale", "CONSTANT")
+    sc.frame_set(f0)
+    if camera:
+        cam = _camera(lens=30)
+        kv(cam, "location", 0, [(f0, 12.5), (f0 + n, 9.5)])
+        kv(cam, "location", 1, [(f0, 21.0), (f0 + n, 18.5)])
+        kv(cam, "location", 2, [(f0, 7.6), (f0 + n, 6.4)])
+        aim = bpy.data.objects.get("HS Turret Aim") or geo.empty("HS Turret Aim", c)
+        aim.parent = root
+        aim.location = (0.0, 6.5, 3.6)
+        _track(cam, aim)
+        cam.location = (11.0, 19.8, 7.0)
+        stage.aim_key(cam=cam, turn=45)
+    return n
+
+
 FUNCS = {"idle_drift": idle_drift, "cruise": cruise, "hyperdrive_jump": hyperdrive_jump,
-         "planet_landing": planet_landing}
+         "planet_landing": planet_landing, "turret_fire": turret_fire}
 
 
 def apply(root, preset_id, frame_start=1, camera=True, build_stage=True):

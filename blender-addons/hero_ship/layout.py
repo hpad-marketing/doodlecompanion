@@ -11,6 +11,10 @@ from . import geo, body as B
 
 GROUND_Z = -4.62          # ground height under the landing feet (see parts.GEAR)
 RAMP_Y = (-10.6, -4.9)
+HOOD_Z = 2.66        # gun hood underside (deck top ~2.61, raised deck panels up to ~2.645)
+HOOD_DEPTH = 0.78    # hollow under the hood that holds the stowed turret
+SPINE_Z = 3.05       # spine underside (aft deck top 3.0, raised panels up to ~3.035)
+ENGINE_Y0 = -14.12   # engine section front (aft block end plate stands out to -14.03)
 
 
 def _liv_cab(r, ca, fs, rnd):
@@ -49,20 +53,22 @@ def build_hull(c, root, mats, seed=1, detail_density=1.0):
     M("fore", [(13.3, 3.90, -2.45, 2.50, 1.10, 0.80, 0.0),
                (12.6, 4.00, -2.50, 2.60, 1.10, 0.80, 0.0),
                (3.6, 4.05, -2.50, 2.62, 1.10, 0.80, 0.0)])
-    M("fore_top", [(11.6, 2.25, 2.30, 3.25, 0.55, 0.10, 0.0),
-                   (5.6, 2.35, 2.30, 3.30, 0.55, 0.10, 0.0)], front_rake=0.7, back_rake=0.3, row_len=0.75)
+    # dorsal hood over the pop-up gun: sits on the deck (no overlap) and is hollow underneath
+    M("fore_top", [(11.6, 2.25, HOOD_Z, 3.60, 0.55, 0.10, 0.0),
+                   (5.6, 2.35, HOOD_Z, 3.65, 0.55, 0.10, 0.0)], front_rake=0.7, back_rake=0.3, row_len=0.75)
     M("keel", [(4.0, 1.70, -1.50, 1.10, 0.40, 0.40, 0.0),
                (-3.4, 1.70, -1.50, 1.10, 0.40, 0.40, 0.0)], row_len=0.9, mat=B.PRIMER)
     M("aft", [(-3.0, 4.50, -2.92, 2.92, 1.20, 0.90, 0.0),
               (-3.8, 4.60, -3.00, 3.00, 1.20, 0.90, 0.0),
               (-14.0, 4.60, -3.00, 3.00, 1.20, 0.90, 0.0)], livery=_liv_aft)
-    M("aft_top", [(-4.6, 2.75, 2.70, 3.80, 0.60, 0.10, 0.0),
-                  (-12.4, 2.85, 2.70, 3.85, 0.60, 0.10, 0.0)], front_rake=0.6, back_rake=0.4, row_len=0.8)
+    # dorsal spine: lifts on rams for the warp heat dump, so it rests just clear of the deck
+    M("aft_top", [(-4.6, 2.75, SPINE_Z, 3.80, 0.60, 0.10, 0.0),
+                  (-12.4, 2.85, SPINE_Z, 3.85, 0.60, 0.10, 0.0)], front_rake=0.6, back_rake=0.4, row_len=0.8)
     for s in (1, -1):
         M(f"sponson{s}", [(-5.9, 0.85, -0.45, 1.55, 0.40, 0.40, 0.0),
                           (-11.6, 0.90, -0.50, 1.60, 0.40, 0.40, 0.0)], cx=4.95 * s, front_rake=0.4,
           row_len=0.7)
-    M("engine", [(-13.6, 3.85, -2.35, 2.60, 1.00, 0.80, 0.0),
+    M("engine", [(ENGINE_Y0, 3.85, -2.35, 2.60, 1.00, 0.80, 0.0),
                  (-19.0, 3.95, -2.40, 2.65, 1.00, 0.80, 0.0)], livery=_liv_engine)
     # gear pods (open bottoms are cut below)
     M("pod_n", [(11.6, 0.80, -3.30, -2.30, 0.25, 0.22, 0.0),
@@ -77,6 +83,8 @@ def build_hull(c, root, mats, seed=1, detail_density=1.0):
     for k in ("pod_n", "pod1", "pod-1"):
         mods[k].cut_belly(-99, 99, depth=0.80, full=True)
         bays[k] = mods[k].bay
+    mods["fore_top"].cut_belly(-99, 99, depth=HOOD_DEPTH, full=True)
+    bays["fore_top"] = mods["fore_top"].bay
     for m in mods.values():
         m.finish(L)
     # windshield: the raked front cap of the cab is glass
@@ -146,12 +154,12 @@ def _greebles(bm, mods, rnd):
         # engine block sides
         B.vent(bm, (s * 3.96, -16.3, 0.3), 2.2, 1.0, sx, slats=7)
         B.plate(bm, (s * 3.98, -16.3, -1.5), (0.07, 2.4, 0.5), "Y", D, bev=0.04)
-        B.strip(bm, [(-13.9, 1.55), (-18.7, 1.55)], s * 3.97, width=0.06)
+        B.strip(bm, [(-14.3, 1.55), (-18.7, 1.55)], s * 3.97, width=0.06)
         # top: fore deck vents & hatch, aft deck greebles
-        B.vent(bm, (s * 1.3, 9.6, 3.27), 0.8, 1.2, "z+", slats=7)
+        B.vent(bm, (s * 1.3, 9.6, 3.62), 0.8, 1.2, "z+", slats=7)
         B.vent(bm, (s * 1.6, -9.2, 3.82), 1.0, 1.4, "z+", slats=8)
         B.vent(bm, (s * 1.7, -15.8, 2.66), 1.2, 2.2, "z+", slats=10)
-    B.hatch(bm, (0, 7.6, 3.32), 1.1, 1.1, "z+")
+    B.hatch(bm, (0, 7.6, 3.67), 1.1, 1.1, "z+")
     B.hatch(bm, (0, -11.0, 3.85), 1.0, 1.4, "z+")
     B.plate(bm, (0, -16.0, 2.66), (1.2, 3.0, 0.08), "Z", B.DARK)
     # glow light bars on the cab brow
