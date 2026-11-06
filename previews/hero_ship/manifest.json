@@ -1,0 +1,111 @@
+{
+  "name": "Hero Ship",
+  "version": "1.0.0",
+  "root": "Hero Ship",
+  "module": "hero_ship",
+  "build": "hero_ship.build(collection=None, wear=1.0, seed=1)",
+  "apply": "hero_ship.presets.apply(root, preset_id, frame_start=1, camera=True, build_stage=True)",
+  "thumb": "previews/hero_ship/ship/thumb.jpg",
+  "stills": [
+    "previews/hero_ship/ship/three_quarter.jpg",
+    "previews/hero_ship/ship/rear.jpg",
+    "previews/hero_ship/ship/side.jpg",
+    "previews/hero_ship/ship/underside.jpg",
+    "previews/hero_ship/ship/nose.jpg"
+  ],
+  "blend": "DeepInDoodles/Ship/HeroShip/HeroShip.blend",
+  "presets": [
+    {
+      "id": "idle_drift",
+      "label": "Idle drift",
+      "frames": 240,
+      "fps": 24,
+      "needs_stage": "space",
+      "about": "Floats in place: slow bob and roll, dish turning, nav lights blinking. Loops.",
+      "thumb": "previews/hero_ship/idle_drift/thumb.jpg",
+      "mp4": "previews/hero_ship/idle_drift/preview.mp4"
+    },
+    {
+      "id": "cruise",
+      "label": "Cruise",
+      "frames": 240,
+      "fps": 24,
+      "needs_stage": "space",
+      "about": "Full burn through a dust field, gentle banking, camera swings from side to rear.",
+      "thumb": "previews/hero_ship/cruise/thumb.jpg",
+      "mp4": "previews/hero_ship/cruise/preview.mp4"
+    },
+    {
+      "id": "hyperdrive_jump",
+      "label": "Hyperdrive jump",
+      "frames": 180,
+      "fps": 24,
+      "needs_stage": "space",
+      "about": "Radiators fold, drive charges and flickers, ship stretches and is gone in a flash.",
+      "thumb": "previews/hero_ship/hyperdrive_jump/thumb.jpg",
+      "mp4": "previews/hero_ship/hyperdrive_jump/preview.mp4"
+    },
+    {
+      "id": "planet_landing",
+      "label": "Planet landing",
+      "frames": 420,
+      "fps": 24,
+      "needs_stage": "planet",
+      "about": "Descends to a pad: pods tilt for hover, gear drops, dust kicks up, touchdown squash, ramp lowers.",
+      "thumb": "previews/hero_ship/planet_landing/thumb.jpg",
+      "mp4": "previews/hero_ship/planet_landing/preview.mp4"
+    }
+  ],
+  "rig_props": {
+    "gear": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "gear_compress": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.3
+    },
+    "ramp": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "nacelle_tilt": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "radiators": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "dish_rpm": {
+      "default": 6.0,
+      "min": -60.0,
+      "max": 60.0
+    },
+    "scan_deg": {
+      "default": 0.0,
+      "min": -180.0,
+      "max": 180.0
+    },
+    "engine": {
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "hyper": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "lights": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    }
+  }
+}
