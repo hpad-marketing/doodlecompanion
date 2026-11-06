@@ -163,6 +163,9 @@ def set_mood(mood, scene=None):
         ob.data.energy = ob.get("sb_energy", ob.data.energy) * mul
         ob.data.color = col or tuple(ob.get("sb_color", ob.data.color))
         ob.hide_render = mul == 0
+        if ob.get("sb_flicker"):
+            from . import wear as Wr
+            Wr.write_flicker(ob.data, "energy", ob.data.energy, Wr.flicker_keys(ob["sb_flicker"]))
     for m in bpy.data.materials:
         if not m.get("sb_emit"):
             continue
@@ -175,6 +178,9 @@ def set_mood(mood, scene=None):
         sock = nd.inputs["Emission Strength"]
         if not sock.is_linked:
             sock.default_value = base * mul
+            if m.get("sb_flicker"):
+                from . import wear as Wr
+                Wr.write_flicker(sock, "default_value", base * mul, Wr.flicker_keys(m["sb_flicker"]))
         nd.inputs["Emission Color"].default_value = tuple(col or tuple(m.get("sb_color"))[:3]) + (1,)
     sc["sb_mood"] = mood
 

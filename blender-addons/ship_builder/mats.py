@@ -8,7 +8,7 @@ All materials are cached by name; calling a builder twice returns the same one.
 import os
 import bpy
 
-WEAR = {"amount": 0.5, "grime": 0.5}
+WEAR = {"amount": 0.7, "grime": 0.75, "rust": 0.55, "stains": 0.7}
 # Folder of Poly Haven (CC0) scans: <dir>/<asset>/<asset>_diff_2k.jpg etc.
 # When present, real scanned detail is layered over the procedural looks.
 SCANS = {"dir": os.environ.get("SB_SCANS", "")}
@@ -189,6 +189,68 @@ def _wear_masks(g, scale=1.0):
     return edge, grime, smudge
 
 
+def _pos(g, scale=(1, 1, 1)):
+    """World-space position, optionally stretched (streaks run along the short axis)."""
+    geo = g.node("ShaderNodeNewGeometry")
+    if scale == (1, 1, 1):
+        return geo.outputs["Position"]
+    mp = g.node("ShaderNodeMapping")
+    g.link(geo.outputs["Position"], mp.inputs["Vector"])
+    mp.inputs["Scale"].default_value = scale
+    return mp.outputs[0]
+
+
+def _vary(g, col, amt=0.12, hue=0.025):
+    """Per-object tone and hue shift, so repeated parts never match exactly."""
+    r = g.node("ShaderNodeObjectInfo").outputs["Random"]
+    hs = g.node("ShaderNodeHueSaturation")
+    g._in(hs.inputs["Hue"], g.math("ADD", 0.5 - hue, g.math("MULTIPLY", r, 2 * hue)))
+    g._in(hs.inputs["Value"], g.math("ADD", 1.0 - amt, g.math("MULTIPLY", r, 2 * amt)))
+    g._in(hs.inputs["Color"], col)
+    return hs.outputs[0]
+
+
+def _streaks(g):
+    """Grime that has run down the walls: long vertical streaks, heavier low down."""
+    n = g.noise(1.0, 6, 0.65, vec=_pos(g, (7, 7, 0.22)))
+    s = g.ramp(n.outputs[0], 0.5, 0.72)
+    z = g.node("ShaderNodeSeparateXYZ")
+    g.link(_pos(g), z.inputs[0])
+    low = g.ramp(z.outputs[2], 3.2, 0.4)
+    return g.math("MULTIPLY", g.math("MULTIPLY", s, g.math("ADD", 0.35, g.math("MULTIPLY", low, 0.65))), WEAR["grime"])
+
+
+def _kick(g):
+    """Boot and trolley scuffs in the bottom half-metre of anything."""
+    z = g.node("ShaderNodeSeparateXYZ")
+    g.link(_pos(g), z.inputs[0])
+    band = g.ramp(z.outputs[2], 0.55, 0.05)
+    sc = g.noise(1.0, 4, 0.7, vec=_pos(g, (5, 5, 60)))
+    return g.math("MULTIPLY", band, g.ramp(sc.outputs[0], 0.58, 0.68))
+
+
+def _rust(g, edge, grime):
+    """Rust blooms where paint chipped or water sat: edges and cavities, in patches."""
+    blot = g.noise(5, 8, 0.72, vec=_pos(g))
+    where = g.math("MAXIMUM", g.math("MULTIPLY", edge, 1.5), grime, clamp=True)
+    patch = g.ramp(blot.outputs[0], 0.62 - 0.12 * WEAR["rust"], 0.7)
+    return g.math("MULTIPLY", where, patch, clamp=True)
+
+
+def _rust_col(g):
+    fine = g.noise(80, 6, 0.7, vec=_pos(g))
+    return g.mix(fine.outputs[0], (0.16, 0.055, 0.02, 1), (0.42, 0.18, 0.06, 1))
+
+
+def _stains(g, scale=0.7, cover=0.5):
+    """Dried spills: soft blotches with a darker tide-mark ring."""
+    n = g.noise(scale, 3, 0.55, vec=_pos(g))
+    t = 0.66 - 0.08 * cover * WEAR["stains"]
+    body = g.ramp(n.outputs[0], t, t + 0.04)
+    ring = g.math("MULTIPLY", g.ramp(n.outputs[0], t - 0.004, t + 0.004), g.ramp(n.outputs[0], t + 0.016, t + 0.008))
+    return body, ring
+
+
 def painted_metal(name, color, rough=0.42, bare=(0.55, 0.55, 0.56, 1), scale=1.0):
     """Painted steel with chipped edges, cavity grime, scratches and smudges."""
     m, new = _get(name)
@@ -201,6 +263,7 @@ def painted_metal(name, color, rough=0.42, bare=(0.55, 0.55, 0.56, 1), scale=1.0
     scr = g.noise(60 * scale, 2, 0.5, vec=sc_vec)
     scratch = g.ramp(scr.outputs[0], 0.68, 0.72)
     col = g.mix(smudge, color, tuple(c * 0.93 for c in color[:3]) + (1,))
+    col = _vary(g, col)
     col = g.mix(g.math("MULTIPLY", scratch, 0.25), col, (0.42, 0.42, 0.42, 1))
     col = g.mix(edge, col, bare)
     col = g.mix(grime, col, (0.05, 0.045, 0.04, 1), "MULTIPLY")
@@ -219,6 +282,16 @@ def painted_metal(name, color, rough=0.42, bare=(0.55, 0.55, 0.56, 1), scale=1.0
     else:
         pn = g.noise(220 * scale, 3, 0.5)
         nrm = _bevel_normal(g, 0.004, _bump(g, pn.outputs[0], 0.015, 0.0005))
+    # weathering on top of everything: run-down streaks, kick scuffs, rust
+    col = g.mix(_streaks(g), col, (0.03, 0.028, 0.025, 1), "MULTIPLY")
+    kick = _kick(g)
+    col = g.mix(g.math("MULTIPLY", kick, 0.7), col, (0.3, 0.3, 0.3, 1))
+    r = g.mixf(kick, r, 0.3)
+    rust = _rust(g, edge, grime)
+    col = g.mix(rust, col, _rust_col(g))
+    r = g.mixf(rust, r, 0.88)
+    metal = g.mixf(rust, metal, 0.0)
+    nrm = _bump(g, rust, 0.25, 0.0012, normal=nrm)
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     g._in(bsdf.inputs["Base Color"], col)
     g._in(bsdf.inputs["Roughness"], r)
@@ -239,7 +312,12 @@ def brushed_steel(name="SB Brushed Steel", tint=(0.62, 0.62, 0.63, 1), rough=0.3
     br = g.noise(90, 3, 0.6, vec=v)
     r = g.math("ADD", rough, g.math("MULTIPLY", br.outputs[0], 0.15))
     r = g.mixf(smudge, r, rough + 0.2)
-    col = g.mix(grime, tint, (0.08, 0.08, 0.08, 1), "MULTIPLY")
+    col = g.mix(grime, _vary(g, tint, 0.1, 0.01), (0.08, 0.08, 0.08, 1), "MULTIPLY")
+    tarn = g.ramp(g.noise(4, 8, 0.7, vec=_pos(g)).outputs[0], 0.6, 0.75)
+    col = g.mix(g.math("MULTIPLY", tarn, 0.6), col, (0.18, 0.15, 0.11, 1))
+    prints = g.ramp(g.noise(45, 3, 0.5, vec=_pos(g)).outputs[0], 0.58, 0.66)
+    r = g.mixf(g.math("MAXIMUM", prints, tarn), r, 0.62)
+    col = g.mix(_kick(g), col, (0.12, 0.12, 0.12, 1), "MULTIPLY")
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     g._in(bsdf.inputs["Base Color"], col)
     bsdf.inputs["Metallic"].default_value = 1.0
@@ -308,6 +386,12 @@ def deck_plate(name="SB Deck Plate", color=(0.075, 0.078, 0.08, 1), tile=1.0):
         col = g.mix(g.math("MULTIPLY", worn, 0.5), col, (0.16, 0.16, 0.17, 1))
         rough = g.math("ADD", g.math("MULTIPLY", sc[1], 0.8), g.math("MULTIPLY", worn, -0.15)) if sc[1] is not None else rough
         nrm = sc[2]
+    oil, ring = _stains(g, 0.55, 0.6)
+    col = g.mix(g.math("MULTIPLY", oil, 0.8), col, (0.012, 0.011, 0.01, 1))
+    col = g.mix(g.math("MULTIPLY", ring, 0.6), col, (0.005, 0.005, 0.005, 1))
+    rough = g.mixf(oil, rough, 0.12)
+    skid = g.ramp(g.noise(1, 3, 0.6, vec=_pos(g, (2.5, 45, 1))).outputs[0], 0.62, 0.7)
+    col = g.mix(g.math("MULTIPLY", skid, 0.55), col, (0.01, 0.01, 0.01, 1))
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     g._in(bsdf.inputs["Base Color"], col)
     bsdf.inputs["Metallic"].default_value = 0.0 if sc else 0.6
@@ -339,8 +423,10 @@ def plastic(name, color, rough=0.38):
         return m
     g = G(m)
     edge, grime, smudge = _wear_masks(g)
-    col = g.mix(grime, color, (0.1, 0.1, 0.1, 1), "MULTIPLY")
+    col = g.mix(grime, _vary(g, color, 0.1, 0.01), (0.1, 0.1, 0.1, 1), "MULTIPLY")
     col = g.mix(g.math("MULTIPLY", edge, 0.5), col, tuple(min(1, c * 1.25) for c in color[:3]) + (1,))
+    scr = g.ramp(g.noise(70, 2, 0.5, vec=g.coord((1, 30, 1))).outputs[0], 0.7, 0.74)
+    col = g.mix(g.math("MULTIPLY", scr, 0.35), col, (0.45, 0.45, 0.45, 1))
     r = g.mixf(smudge, rough, rough + 0.12)
     n = g.noise(300, 2, 0.5)
     bsdf = g.node("ShaderNodeBsdfPrincipled")
@@ -370,8 +456,18 @@ def fabric(name, color, sheen=0.6):
     lump = g.noise(3, 4, 0.5, vec=v)
     col = g.mix(g.ramp(lump.outputs[0], 0.35, 0.7), tuple(c * 0.8 for c in color[:3]) + (1,), color)
     edge, grime, smudge = _wear_masks(g)
+    col = _vary(g, col, 0.14, 0.015)
     col = g.mix(grime, col, (0.2, 0.2, 0.2, 1), "MULTIPLY")
     col = g.mix(g.math("MULTIPLY", edge, 0.6), col, tuple(min(1, c * 1.35) for c in color[:3]) + (1,))
+    # faded where it faces up (sat on, sun through the window)
+    geo = g.node("ShaderNodeNewGeometry")
+    nz = g.node("ShaderNodeSeparateXYZ")
+    g.link(geo.outputs["Normal"], nz.inputs[0])
+    up = g.math("MULTIPLY", g.ramp(nz.outputs[2], 0.3, 0.95), g.ramp(smudge, 0.0, 1.0))
+    col = g.mix(g.math("MULTIPLY", up, 0.6), col, (0.42, 0.36, 0.3, 1))
+    st, ring = _stains(g, 2.2, 0.9)
+    col = g.mix(g.math("MULTIPLY", st, 0.75), col, (0.1, 0.07, 0.045, 1), "MULTIPLY")
+    col = g.mix(g.math("MULTIPLY", ring, 0.5), col, (0.05, 0.035, 0.02, 1))
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     g._in(bsdf.inputs["Base Color"], col)
     bsdf.inputs["Roughness"].default_value = 0.85
@@ -403,6 +499,13 @@ def rug(name="SB Rug", a=(0.09, 0.1, 0.095, 1), b=(0.32, 0.22, 0.1, 1)):
     grain = g.noise(160, 3, 0.6, vec=v)
     h = g.math("ADD", fib.outputs[0], g.math("MULTIPLY", grain.outputs[0], 0.6))
     col = g.mix(g.math("MULTIPLY", grain.outputs[0], 0.35), col, (0.02, 0.02, 0.02, 1), "MULTIPLY")
+    # dirt collects at the edges, a walked path fades one side, spills and rings
+    col = g.mix(g.math("MULTIPLY", g.ramp(edge, 0.42, 0.5), 0.55), col, (0.04, 0.035, 0.03, 1))
+    path = g.ramp(g.math("ABSOLUTE", g.math("SUBTRACT", sep.outputs[0], 0.78)), 0.2, 0.02)
+    col = g.mix(g.math("MULTIPLY", path, 0.35), col, (0.5, 0.45, 0.38, 1))
+    st, ring = _stains(g, 1.6, 0.7)
+    col = g.mix(g.math("MULTIPLY", st, 0.6), col, (0.1, 0.06, 0.03, 1), "MULTIPLY")
+    col = g.mix(g.math("MULTIPLY", ring, 0.7), col, (0.03, 0.02, 0.01, 1))
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     g._in(bsdf.inputs["Base Color"], col)
     bsdf.inputs["Roughness"].default_value = 0.95
@@ -418,7 +521,12 @@ def glass(name="SB Glass", tint=(0.9, 0.95, 1.0, 1), rough=0.02):
         return m
     g = G(m)
     sm = g.noise(3, 4, 0.5)
-    r = g.mixf(g.ramp(sm.outputs[0], 0.55, 0.75), rough, rough + 0.08)
+    r = g.mixf(g.ramp(sm.outputs[0], 0.5, 0.75), rough, rough + 0.05)
+    # faint wipe arcs and specks of dust: only visible where a light reflects
+    wipe = g.ramp(g.noise(1.5, 2, 0.5, vec=g.coord((1, 1, 6))).outputs[0], 0.58, 0.62)
+    r = g.math("ADD", r, g.math("MULTIPLY", wipe, 0.035))
+    dust = g.ramp(g.noise(90, 3, 0.7).outputs[0], 0.68, 0.72)
+    r = g.math("ADD", r, g.math("MULTIPLY", dust, 0.12))
     bsdf = g.node("ShaderNodeBsdfPrincipled")
     bsdf.inputs["Base Color"].default_value = tint
     bsdf.inputs["Transmission Weight"].default_value = 1.0
@@ -455,20 +563,42 @@ def screen(name, color=(0.25, 0.8, 0.9, 1), strength=3.0, kind="ui"):
     g = G(m)
     tc = g.node("ShaderNodeTexCoord")
     uv = tc.outputs["UV"]
-    # UI: brick cells as widgets, wave as scanlines
-    br = g.node("ShaderNodeTexBrick")
+    # UI: a dark display with framed widget cells; only some cells hold live
+    # content (text lines, bar graphs), the rest stay dim, like a real console.
+    br = g.node("ShaderNodeTexBrick", _offset=0.0)
     g.link(uv, br.inputs["Vector"])
-    br.inputs["Scale"].default_value = 6 if kind == "ui" else 2
-    br.inputs["Mortar Size"].default_value = 0.03
-    br.inputs["Color1"].default_value = (0.9, 0.9, 0.9, 1)
-    br.inputs["Color2"].default_value = (0.35, 0.35, 0.35, 1)
+    br.inputs["Scale"].default_value = 3 if kind == "ui" else 1.2
+    br.inputs["Brick Width"].default_value = 0.6
+    br.inputs["Row Height"].default_value = 0.22
+    br.inputs["Mortar Size"].default_value = 0.012
+    br.inputs["Color1"].default_value = (1, 1, 1, 1)
+    br.inputs["Color2"].default_value = (0, 0, 0, 1)
+    br.inputs["Mortar"].default_value = (0, 0, 0, 1)
+    cell = br.outputs["Fac"]  # Brick Fac is the mortar mask: 1 on the frame lines
+    on = g.ramp(br.outputs["Color"], 0.62, 0.66)  # which cells are live
+    txt_v = g.node("ShaderNodeMapping")
+    g.link(uv, txt_v.inputs["Vector"])
+    txt_v.inputs["Scale"].default_value = (70, 9, 1)
+    txt = g.ramp(g.noise(1.0, 1, 0.5, vec=txt_v.outputs[0]).outputs[0], 0.56, 0.6)
+    rows = g.node("ShaderNodeTexWave", _wave_type="BANDS", _bands_direction="Y")
+    g.link(uv, rows.inputs["Vector"])
+    rows.inputs["Scale"].default_value = 60
+    txt = g.math("MULTIPLY", txt, g.ramp(rows.outputs["Fac"], 0.35, 0.5))
     sc = g.node("ShaderNodeTexWave", _wave_type="BANDS", _bands_direction="Y")
     g.link(uv, sc.inputs["Vector"])
-    sc.inputs["Scale"].default_value = 220
+    sc.inputs["Scale"].default_value = 260
     lines = g.ramp(sc.outputs["Fac"], 0.0, 0.6)
-    bars = g.noise(18, 0, 0.0, vec=uv)
-    pattern = g.math("MULTIPLY", br.outputs["Color"], g.ramp(bars.outputs[0], 0.3, 0.6))
-    pattern = g.math("ADD", pattern, g.math("MULTIPLY", g.math("SUBTRACT", 1, br.outputs["Fac"]), 1.5))
+    pattern = g.math("ADD", 0.04, g.math("MULTIPLY", cell, 0.35))
+    pattern = g.math("ADD", pattern, g.math("MULTIPLY", g.math("MULTIPLY", on, txt), 0.9))
+    if kind != "ui":
+        grid = g.node("ShaderNodeTexWave", _wave_type="RINGS")
+        g.link(uv, grid.inputs["Vector"])
+        grid.inputs["Scale"].default_value = 9
+        pattern = g.math("ADD", pattern, g.math("MULTIPLY", g.ramp(grid.outputs["Fac"], 0.96, 1.0), 0.6))
+        dots = g.node("ShaderNodeTexVoronoi")
+        g.link(uv, dots.inputs["Vector"])
+        dots.inputs["Scale"].default_value = 40
+        pattern = g.math("ADD", pattern, g.ramp(dots.outputs["Distance"], 0.06, 0.02))
     lum = g.math("MULTIPLY", pattern, g.mixf(lines, 0.75, 1.0))
     em = g.math("MULTIPLY", lum, strength)
     bsdf = g.node("ShaderNodeBsdfPrincipled")

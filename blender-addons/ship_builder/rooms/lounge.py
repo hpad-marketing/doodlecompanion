@@ -12,6 +12,7 @@ from .. import kit as K
 from .. import mats as M
 from .. import lighting as Li
 from . import common as C
+from .. import wear as Wr
 
 INFO = {"label": "Oil lounge", "size": (7.0, 5.5, 3.0)}
 
@@ -127,10 +128,11 @@ def oil_bar(room):
     for k in range(3):
         yy = y0 + 0.5 + k * 1.0
         sx = x + 0.75
-        K.cyl("Stool Seat", 0.19, 0.06, (sx, yy, 0.72), M.fabric("SB Stool Vinyl", (0.06, 0.06, 0.065, 1), 0.2), room.dress, verts=40, bevel=0.02)
-        K.cyl("Stool Post", 0.03, 0.66, (sx, yy, 0.36), pal["steel"], room.dress, verts=20)
-        K.cyl("Stool Ring", 0.15, 0.02, (sx, yy, 0.3), pal["steel"], room.dress, verts=32)
-        K.cyl("Stool Foot", 0.2, 0.025, (sx, yy, 0.0125), pal["dark_steel"], room.dress, verts=40)
+        with K.piece(room, "Stool", 0.08, 40):
+            K.cyl("Stool Seat", 0.19, 0.06, (sx, yy, 0.72), M.fabric("SB Stool Vinyl", (0.06, 0.06, 0.065, 1), 0.2), room.dress, verts=40, bevel=0.02)
+            K.cyl("Stool Post", 0.03, 0.66, (sx, yy, 0.36), pal["steel"], room.dress, verts=20)
+            K.cyl("Stool Ring", 0.15, 0.02, (sx, yy, 0.3), pal["steel"], room.dress, verts=32)
+            K.cyl("Stool Foot", 0.2, 0.025, (sx, yy, 0.0125), pal["dark_steel"], room.dress, verts=40)
     # things on the counter
     for k, y in enumerate((y0 + 0.3, y0 + 0.42, y1 - 0.6)):
         mug(room, (x + 0.08 + 0.03 * k, y, 1.0), M.plastic("SB Mug Cream", (0.62, 0.58, 0.48, 1), 0.3) if k != 1 else M.painted_metal("SB Mug Steel", (0.35, 0.36, 0.37, 1), 0.3), f"Bar Mug {k}")
@@ -158,7 +160,7 @@ def door(room):
     K.light_strip(room, (x - 0.3, yc, 2.27), 1.4, "Y", (0, 0, -1), (0.4, 1.0, 0.6, 1), 6, role="practical", width=0.02)
 
 
-def build(room_name="Oil lounge"):
+def build(room_name="Oil lounge", wear=1.0, wear_seed=1):
     W, D, H = INFO["size"]
     room = K.Room(room_name, W, D, H)
     pal = room.pal
@@ -178,13 +180,19 @@ def build(room_name="Oil lounge"):
     for k in range(5):
         K.cable(room, (-2.5 + k * 1.2, D - 0.3, H - 0.3), (-1.9 + k * 1.2, D - 0.3, H - 0.3), 0.18 + 0.05 * (k % 2), 0.01 + 0.004 * (k % 3))
     # couch, rug, table, side pieces
-    couch(room, 0.3, D - 0.75, 3.0)
-    rug = K.box("Rug", (2.6, 1.7, 0.012), (0.3, D - 2.15, 0.006), M.rug(), room.dress, bevel=0.005)
-    coffee_table(room, 0.3, D - 2.05)
-    side = K.box("Side Crate", (0.5, 0.5, 0.5), (2.25, D - 0.65, 0.25), pal["warm"], room.dress, bevel=0.02)
-    K.rigid(side, passive=True, shape="BOX")
-    K.box("Crate Stencil Band", (0.505, 0.505, 0.06), (2.25, D - 0.65, 0.4), M.hazard(), room.dress, bevel=0.003)
+    with K.piece(room, "Couch", 0.06, 3):
+        couch(room, 0.3, D - 0.75, 3.0)
+    with K.piece(room, "Rug", 0.1, 7):
+        K.box("Rug", (2.6, 1.7, 0.012), (0.3, D - 2.15, 0.006), M.rug(), room.dress, bevel=0.005)
+    with K.piece(room, "Coffee table", 0.07, 6):
+        coffee_table(room, 0.3, D - 2.05)
+    with K.piece(room, "Side crate", 0.05, 8):
+        side = K.box("Side Crate", (0.5, 0.5, 0.5), (2.25, D - 0.65, 0.25), pal["warm"], room.dress, bevel=0.02)
+        K.rigid(side, passive=True, shape="BOX")
+        K.box("Crate Stencil Band", (0.505, 0.505, 0.06), (2.25, D - 0.65, 0.4), M.hazard(), room.dress, bevel=0.003)
     # the plant nobody needs, under its own grow light
+    plant = K.piece(room, "Plant", 0.05, 15)
+    plant.__enter__()
     K.cyl("Plant Pot", 0.17, 0.32, (-1.65, D - 0.55, 0.16), pal["cream"], room.dress, verts=40, bevel=0.01)
     K.cyl("Soil", 0.155, 0.01, (-1.65, D - 0.55, 0.31), M.rubber("SB Soil", (0.05, 0.035, 0.02, 1), 0.95), room.dress, verts=40, bevel=0)
     leaf = M.plastic("SB Leaf", (0.06, 0.18, 0.05, 1), 0.45)
@@ -193,6 +201,7 @@ def build(room_name="Oil lounge"):
         lf = K.rounded("Leaf", (0.06, 0.32, 0.012), (-1.65 + 0.08 * math.cos(a), D - 0.55 + 0.08 * math.sin(a), 0.52 + 0.04 * (k % 3)), leaf, room.dress, soft=1)
         lf.rotation_euler = (math.radians(35 + 10 * (k % 2)), 0, a + math.radians(90))
     K.point_glow(room, (-1.65, D - 0.55, 1.2), (0.85, 0.5, 1.0), 25, 0.05, role="practical")
+    plant.__exit__()
     # props on the table: physics settles them
     mug(room, (0.0, D - 2.0, 0.46), M.plastic("SB Mug Cream", (0.62, 0.58, 0.48, 1), 0.3), "Table Mug")
     datapad(room, (0.55, D - 2.1, 0.46), 0.35)
@@ -225,4 +234,6 @@ def build(room_name="Oil lounge"):
     Li.camera(room, "Wide master", 26, (0.9, -1.0, 1.25), (-0.3, D * 0.7, 1.0), 5.6)
     Li.camera(room, "Couch two-shot", 40, (0.6, 0.9, 1.25), (0.3, D - 0.75, 0.9), 2.8)
     Li.camera(room, "Bar single", 50, (0.6, 2.0, 1.4), (-W / 2 + 0.4, 3.2, 1.3), 2.0)
+    if wear:
+        room.wear = Wr.apply(room, seed=wear_seed, amount=wear)
     return room

@@ -1,3 +1,3 @@
-from . import lounge
+from . import lounge, bridge
 
-ROOMS = {"lounge": lounge}
+ROOMS = {"lounge": lounge, "bridge": bridge}

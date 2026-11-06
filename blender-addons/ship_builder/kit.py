@@ -16,6 +16,29 @@ RNG = random.Random(7)
 
 
 # ---------------------------------------------------------------- basics
+class piece:
+    """with K.piece(room, "Couch", shift=0.05, yaw=4): ...
+    Tags everything built inside as one movable piece, so the wear pass can nudge
+    and turn it as a unit (a couch never loses its legs)."""
+    _n = [0]
+
+    def __init__(self, room, name, shift=0.04, yaw=3.0, tip=False):
+        self.room, self.name, self.shift, self.yaw, self.tip = room, name, shift, yaw, tip
+
+    def __enter__(self):
+        self.before = set(bpy.data.objects)
+        return self
+
+    def __exit__(self, *exc):
+        piece._n[0] += 1
+        pid = f"{self.name}#{piece._n[0]}"
+        for ob in set(bpy.data.objects) - self.before:
+            ob["sb_piece"] = pid
+            ob["sb_shift"] = self.shift
+            ob["sb_yaw"] = self.yaw
+        return False
+
+
 def coll(name, parent=None):
     c = bpy.data.collections.get(name)
     if c is None:
