@@ -311,7 +311,224 @@ class ROBOT_PT_easy(bpy.types.Panel):
                 col = split.column(align=True); col.label(text=f'{title} {S}')
                 for lab, b, ch, i in rows:
                     col.prop(pb[f'{b}.{S}'], ch, index=i, text=lab)
+        if 'hold.R' in pb:
+            box = lay.box(); box.label(text='Hold a prop: select it, then press Hold', icon='HAND')
+            r = box.row(align=True)
+            for S, lab in (('R', 'Right'), ('L', 'Left')):
+                o = r.operator('robot.hold', text=f'Hold {lab}'); o.side, o.release = S, False
+                o = r.operator('robot.hold', text=f'Release {lab}'); o.side, o.release = S, True
         lay.operator('robot.key_pose', icon='KEY_HLT')
+
+
+# ------------------------------------------------------------------ hold a prop
+# The prop is centred on the hand's hold.<S> bone (its longest side along the knuckle line), slid against the palm,
+# parented to that bone, then the grip closes until the first finger touches and every other finger (and the thumb)
+# curls on by itself until it touches too. "Touch" = sinks in no more than HOLD_TOL (the collision rule's 0.5 mm).
+HOLD_TOL = 0.0004
+HOLD_FINGERS = ('index', 'middle', 'ring', 'thumb')
+
+
+def _mesh_tree(o, dg):
+    from mathutils.bvhtree import BVHTree
+    e = o.evaluated_get(dg); me = e.to_mesh(); M = e.matrix_world
+    vs = [M @ v.co for v in me.vertices]; fs = [tuple(p.vertices) for p in me.polygons]; e.to_mesh_clear()
+    return vs, BVHTree.FromPolygons(vs, fs)
+
+
+def _depth(a, b):
+    """deepest point of mesh a inside closed mesh b, and of b inside a (0 if they don't overlap)"""
+    (va, ta), (vb, tb) = a, b
+    if not ta.overlap(tb): return 0.0
+    m = 1e-6   # overlapping surfaces count as a touch even when no vertex is inside
+    for vs, t in ((va, tb), (vb, ta)):
+        for v in vs:
+            loc, nrm, _, d = t.find_nearest(v)
+            if loc is not None and d < 0.1 and (v - loc).dot(nrm) < 0: m = max(m, d)
+    return m
+
+
+def _parts(ob, test):
+    return [o for o in bpy.data.objects if o.type == 'MESH' and o.parent == ob and test(o.get('rig_bone', ''))]
+
+
+def _deepest(parts, prop_t, dg):
+    return max([_depth(_mesh_tree(o, dg), prop_t) for o in parts] or [0.0])
+
+
+def hold_prop(ob, S, prop, ctx):
+    from mathutils import Matrix, Vector
+    release_prop(ob, S, ctx)
+    pb = ob.pose.bones; hb = pb[f'hold.{S}']; grip = pb[f'grip.{S}']
+    grip.rotation_euler.x = 0.0
+    for fn in HOLD_FINGERS: pb[f'f_{fn}_1.{S}'].rotation_euler.x = 0.0
+    ctx.view_layer.update()
+    H = ob.matrix_world @ hb.matrix                      # hold frame: y along the knuckle line
+    # turn the prop so its longest side runs along the knuckle line, then centre it on the hold point
+    dims = prop.dimensions; k = max(range(3), key=lambda i: dims[i])
+    order = {0: (1, 0, 2), 1: (0, 1, 2), 2: (0, 2, 1)}[k]   # which prop axis goes on hold x, y, z
+    R = Matrix([[1.0 if order[c] == r else 0.0 for c in range(3)] for r in range(3)]).transposed()
+    if R.determinant() < 0: R[2] = -R[2]
+    rot = H.to_3x3().normalized() @ R
+    prop.matrix_world = Matrix.Translation(H.translation) @ rot.to_4x4() @ Matrix.Diagonal(prop.matrix_world.to_scale()).to_4x4()
+    ctx.view_layer.update()
+    dg = ctx.evaluated_depsgraph_get()
+    c = sum((prop.matrix_world @ Vector(v) for v in prop.bound_box), Vector()) / 8
+    prop.matrix_world.translation += H.translation - c
+    # slide it toward the palm until it touches the palm or a finger, then settle on the touch
+    palm = _parts(ob, lambda b: b == f'DEF-hand.{S}' or (b.startswith('f_') and b.endswith(f'.{S}')))
+    po = bpy.data.objects.get(f'palm.{S}') or palm[0]   # geometric centre (part origins can sit anywhere)
+    pc = sum((po.matrix_world @ Vector(v) for v in po.bound_box), Vector()) / 8
+    d = (pc - H.translation).normalized()
+    def palm_depth():
+        ctx.view_layer.update(); dg = ctx.evaluated_depsgraph_get()
+        return _deepest(palm, _mesh_tree(prop, dg), dg)
+    step = 0.002
+    if palm_depth() > HOLD_TOL:
+        for _ in range(60):
+            prop.matrix_world.translation -= d * step
+            if palm_depth() <= HOLD_TOL: break
+        lo, hi = 0.0, step
+    else:
+        for _ in range(60):
+            prop.matrix_world.translation += d * step
+            if palm_depth() > HOLD_TOL: break
+        lo, hi = -step, 0.0
+    base = prop.matrix_world.translation.copy()
+    for _ in range(8):   # fine approach: largest move along d that stays within the touch tolerance
+        mid = (lo + hi) / 2; prop.matrix_world.translation = base + d * mid
+        if palm_depth() > HOLD_TOL: hi = mid
+        else: lo = mid
+    prop.matrix_world.translation = base + d * lo
+    ctx.view_layer.update()
+    W = prop.matrix_world.copy()
+    prop.parent = ob; prop.parent_type = 'BONE'; prop.parent_bone = f'hold.{S}'
+    prop.matrix_world = W; prop['held_by'] = f'{ob.name}:{S}'
+    ctx.view_layer.update()
+
+    def close(set_angle, parts, limit):
+        """largest angle (degrees, 0..limit) where parts sink no deeper than HOLD_TOL into the prop"""
+        def deep(a):
+            set_angle(a); ctx.view_layer.update(); dg = ctx.evaluated_depsgraph_get()
+            return _deepest(parts, _mesh_tree(prop, dg), dg)
+        prev = 0.0
+        for a in range(3, int(limit) + 1, 3):
+            if deep(a) > HOLD_TOL:
+                lo, hi = prev, float(a)
+                for _ in range(6):
+                    mid = (lo + hi) / 2
+                    if deep(mid) > HOLD_TOL: hi = mid
+                    else: lo = mid
+                set_angle(lo); ctx.view_layer.update(); return lo, True
+            prev = float(a)
+        set_angle(limit); ctx.view_layer.update(); return float(limit), False
+    hand = _parts(ob, lambda b: b.startswith('f_') and b.endswith(f'.{S}'))
+    lim = [c for c in grip.constraints if c.type == 'LIMIT_ROTATION']
+    gmax = math.degrees(lim[0].max_x) if lim else 90.0
+    g, _ = close(lambda a: setattr(grip.rotation_euler, 'x', math.radians(a)), hand, gmax)
+    touched = {}
+
+    def seg_lim(b):
+        c = [c for c in b.constraints if c.type == 'LIMIT_ROTATION']
+        return math.degrees(c[0].max_x) if c else 90.0
+
+    def close_finger(fn, parts):
+        """bend the base joint, then the middle and tip joints, each until the finger touches; (touching, extra)"""
+        extra = 0.0
+        for i in (1, 2, 3):   # start open: an earlier try (another thumb turret angle) may have left joints bent
+            if pb.get(f'f_{fn}_{i}.{S}'): pb[f'f_{fn}_{i}.{S}'].rotation_euler.x = 0.0
+        for i in (1, 2, 3):
+            b = pb.get(f'f_{fn}_{i}.{S}')
+            if b is None: continue
+            room = max(0.0, seg_lim(b) - math.degrees(b.matrix_basis.to_euler().x) - (g if i == 1 else 0.0))
+            a, hit = close(lambda a, b=b: setattr(b.rotation_euler, 'x', math.radians(a)), parts, room)
+            if not hit: b.rotation_euler.x = 0.0 if i == 1 else math.radians(a)
+            extra += a
+            if hit: return True, extra
+        for i in (1, 2, 3):   # never reached the prop: back to where the grip put it, instead of clenching on air
+            if pb.get(f'f_{fn}_{i}.{S}'): pb[f'f_{fn}_{i}.{S}'].rotation_euler.x = 0.0
+        ctx.view_layer.update(); return False, 0.0
+
+    for fn in HOLD_FINGERS:   # each finger closes on by itself until it touches
+        parts = [o for o in hand if o['rig_bone'].startswith(f'f_{fn}_')]
+        t0 = pb.get(f'f_thumb_0.{S}')
+        if fn == 'thumb' and t0 is not None:   # swivel the thumb turret to where the thumb meets the prop with least bend
+            tl = [c for c in t0.constraints if c.type == 'LIMIT_ROTATION']
+            ymax = math.degrees(tl[0].max_y) if tl else 75.0
+            best = None
+            for ty in range(int(-ymax), int(ymax) + 1, 15):
+                t0.rotation_euler.y = math.radians(ty)
+                hit, e = close_finger(fn, parts)
+                if hit and (best is None or e < best[1]): best = (ty, e)
+            t0.rotation_euler.y = math.radians(best[0]) if best else 0.0
+        hit, _ = close_finger(fn, parts)
+        dg = ctx.evaluated_depsgraph_get()
+        touched[fn] = hit or _deepest(parts, _mesh_tree(prop, dg), dg) > 0
+    lock_hand(ob, S)
+    mark_hold(ob, S, 1.0, ctx)
+    return g, touched
+
+
+def mark_hold(ob, S, v, ctx):
+    """rig property hold_<S> (1 holding, 0 empty hand), keyed on the current frame when the rig is animated,
+    so other tools (contact sounds, the timeline) see the exact grab / release frame"""
+    ob[f'hold_{S}'] = float(v)
+    if ob.animation_data and ob.animation_data.action:
+        ob.keyframe_insert(f'["hold_{S}"]', frame=ctx.scene.frame_current)
+        for fc in getattr(ob.animation_data.action, 'fcurves', []) or []:
+            if fc.data_path == f'["hold_{S}"]':
+                for k in fc.keyframe_points: k.interpolation = 'CONSTANT'
+
+
+def lock_hand(ob, S):
+    """keep the fingers closed on the prop whatever a motion or pose preset does to the grip: a 'hold lock' limit
+    at the end of each finger joint's stack pins it to the angle it closed to"""
+    bpy.context.view_layer.update()
+    for pb in ob.pose.bones:
+        if not (pb.name.endswith('.' + S) and pb.name.startswith('f_')): continue
+        L = ob.convert_space(pose_bone=pb, matrix=pb.matrix, from_space='POSE', to_space='LOCAL').to_euler(pb.rotation_mode if len(pb.rotation_mode) == 3 else 'XYZ')
+        c = pb.constraints.get('hold lock') or pb.constraints.new('LIMIT_ROTATION')
+        c.name = 'hold lock'; c.owner_space = 'LOCAL'
+        for i, a in enumerate('xyz'):
+            setattr(c, f'use_limit_{a}', True); setattr(c, f'min_{a}', L[i]); setattr(c, f'max_{a}', L[i])
+
+
+def unlock_hand(ob, S):
+    for pb in ob.pose.bones:
+        if pb.name.endswith('.' + S) and 'hold lock' in pb.constraints: pb.constraints.remove(pb.constraints['hold lock'])
+
+
+def release_prop(ob, S, ctx):
+    pb = ob.pose.bones
+    if ob.get(f'hold_{S}'): mark_hold(ob, S, 0.0, ctx)
+    unlock_hand(ob, S)
+    for o in bpy.data.objects:
+        if o.get('held_by') == f'{ob.name}:{S}':
+            W = o.matrix_world.copy(); o.parent = None; o.matrix_world = W; del o['held_by']
+    if f'grip.{S}' in pb:
+        pb[f'grip.{S}'].rotation_euler.x = 0.0
+        for fn in HOLD_FINGERS:
+            if f'f_{fn}_1.{S}' in pb: pb[f'f_{fn}_1.{S}'].rotation_euler.x = 0.0
+        if f'f_thumb_0.{S}' in pb: pb[f'f_thumb_0.{S}'].rotation_euler.y = 0.0
+    ctx.view_layer.update()
+
+
+class ROBOT_OT_hold(bpy.types.Operator):
+    """Put the selected prop in this hand: it sits against the palm and every finger closes until it touches"""
+    bl_idname = 'robot.hold'; bl_label = 'Hold'; bl_options = {'REGISTER', 'UNDO'}
+    side: bpy.props.StringProperty(default='R')
+    release: bpy.props.BoolProperty(default=False)
+
+    def execute(self, ctx):
+        ob = rig(ctx)
+        if self.release:
+            release_prop(ob, self.side, ctx); return {'FINISHED'}
+        props = [o for o in ctx.selected_objects if o.type == 'MESH' and o.parent != ob and 'rig_bone' not in o]
+        if not props:
+            self.report({'WARNING'}, 'Select the prop first (a mesh that is not part of the robot)'); return {'CANCELLED'}
+        g, touched = hold_prop(ob, self.side, props[0], ctx)
+        miss = [f for f, t in touched.items() if not t]
+        self.report({'INFO'}, f'Holding {props[0].name}: grip {g:.0f} deg' + (f'; not touching: {", ".join(miss)} (prop too small for them)' if miss else '; every finger touching'))
+        return {'FINISHED'}
 
 
 # ------------------------------------------------------------------ look (weathering)
@@ -890,7 +1107,7 @@ class ROBOT_PT_drive(bpy.types.Panel):
         if takes: lay.label(text=f'{len(takes)} recorded take(s) in the Motion library', icon='REC')
 
 
-CLASSES = (ROBOT_OT_palette, ROBOT_OT_snap, ROBOT_OT_reset, ROBOT_OT_check, ROBOT_OT_bake_springs, ROBOT_OT_clear_springs, ROBOT_PT_panel,
+CLASSES = (ROBOT_OT_hold, ROBOT_OT_palette, ROBOT_OT_snap, ROBOT_OT_reset, ROBOT_OT_check, ROBOT_OT_bake_springs, ROBOT_OT_clear_springs, ROBOT_PT_panel,
            ROBOT_OT_key_pose, ROBOT_OT_mirror, ROBOT_OT_pose_preset, ROBOT_OT_motion, ROBOT_PT_easy, ROBOT_PT_motions, ROBOT_PT_look,
            ROBOT_OT_drive, ROBOT_PT_drive)
 

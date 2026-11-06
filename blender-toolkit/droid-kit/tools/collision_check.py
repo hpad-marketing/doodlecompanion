@@ -72,7 +72,10 @@ def snapshot():
     def get(o):
         if o.name not in cache:
             e = o.evaluated_get(dg); me = e.to_mesh(); M = e.matrix_world
-            vs = [M @ v.co for v in me.vertices]; fs = [tuple(p.vertices) for p in me.polygons]; e.to_mesh_clear()
+            vs = [M @ v.co for v in me.vertices]; fs = [tuple(p.vertices) for p in me.polygons]
+            if o.name.startswith('Studio_Cyc') and me.polygons and (M.to_3x3() @ me.polygons[0].normal).z < 0:
+                fs = [f[::-1] for f in fs]   # cyc saved by the old stage.py: floor normal pointed down
+            e.to_mesh_clear()
             lo = Vector([min(v[k] for v in vs) for k in range(3)]) if vs else Vector((1e9,) * 3)
             hi = Vector([max(v[k] for v in vs) for k in range(3)]) if vs else Vector((-1e9,) * 3)
             cache[o.name] = [vs, fs, lo, hi, None]
@@ -95,14 +98,17 @@ def record(where, hits):
 ad = rig.animation_data or rig.animation_data_create(); keep = ad.action
 ad.action = None
 P = json.loads(rig.get('pose_presets', '{}'))
-for name, pose in P.items():
+def reset():   # every check starts from the rest pose, so results don't depend on what ran before
     for p in rig.pose.bones:
         if not p.name.startswith(('SPR-', 'DEF-', 'MCH-', 'GIM')): p.location = (0, 0, 0); p.rotation_euler = (0, 0, 0)
+for name, pose in P.items():
+    reset()
     for b, (rot, loc) in pose.items():
         if b in rig.pose.bones: rig.pose.bones[b].rotation_euler = [math.radians(v) for v in rot]; rig.pose.bones[b].location = loc
     bpy.context.view_layer.update(); record('pose ' + name, snapshot()); checked += 1
 acts = [x for x in bpy.data.actions if x.name.startswith(C.get('action_prefix', 'RM_'))]
 for act in acts:
+    ad.action = None; reset()
     ad.action = act
     if act.slots: ad.action_slot = act.slots[0]
     f0, f1 = map(int, act.frame_range)

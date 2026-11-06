@@ -30,7 +30,7 @@ def setup_studio(engine_gpu=True):
             verts.append((x, y, z))
     n = len(line)
     for i in range(n - 1):
-        faces.append((i, i + 1, n + i + 1, n + i))
+        faces.append((i, n + i, n + i + 1, i + 1))   # wound so the floor normal points UP (collision_check reads inside/outside from it)
     me.from_pydata(verts, [], faces); me.update()
     for p in me.polygons: p.use_smooth = True
     ob = bpy.data.objects.new('Studio_Cyc', me); c.objects.link(ob)
