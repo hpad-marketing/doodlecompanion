@@ -1,7 +1,8 @@
 """Heavy GPU engines (Dia2, Zonos, Orpheus, OpenVoice) each live in their own
 Python env so their dependencies never clash with Blender or each other.
 
-settings.json "runners": {"dia2": {"cmd": ["C:/.../python.exe", "C:/.../dia2_run.py"]}}
+settings.json "runners": {"dia2": {"cmd": ["C:/.../python.exe", "C:/.../dia2_run.py"],
+                                   "env": {"HF_HOME": "..."}}}
 The add-on writes job.json, runs  cmd + [job.json]  once per batch (the model
 loads once), and reads the WAVs back. job.json:
   {"engine": "dia2", "lines": [{"text", "out", "voice", "seed", "speed",
@@ -45,7 +46,13 @@ class Runner:
         job = os.path.join(work, "job.json")
         with open(job, "w", encoding="utf-8") as f:
             json.dump({"engine": self.ID, "lines": lines}, f)
-        p = subprocess.run(cmd + [job], capture_output=True, text=True,
+        # settings.json runners[id].env: extra env vars for this engine only
+        # (HF_HOME so model downloads stay inside the engine folder, eSpeak DLL...)
+        env = dict(os.environ)
+        env.update({k: str(v) for k, v in (config.settings()["runners"][self.ID].get("env") or {}).items()})
+        env.setdefault("PYTHONIOENCODING", "utf-8")
+        p = subprocess.run(cmd + [job], capture_output=True, text=True, env=env,
+                           encoding="utf-8", errors="replace",
                            timeout=config.settings()["timeout_s"])
         if p.returncode != 0:
             raise RuntimeError(f"{self.LABEL} failed: {(p.stderr or p.stdout)[-600:]}")

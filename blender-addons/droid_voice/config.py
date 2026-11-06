@@ -41,7 +41,8 @@ def settings():
     f = home() / "settings.json"
     if f.exists():
         try:
-            s.update(json.loads(f.read_text(encoding="utf-8")))
+            # utf-8-sig: PowerShell 5.1 (install_sushi.ps1) writes a BOM
+            s.update(json.loads(f.read_text(encoding="utf-8-sig")))
         except ValueError:
             pass
     return s

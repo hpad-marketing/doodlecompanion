@@ -27,8 +27,21 @@ def available():
     return (True, "ready") if exe() else (False, "eSpeak NG isn't installed")
 
 
+def _env():
+    """A portable/unpacked eSpeak NG (no registry entry) crashes unless it is
+    told where espeak-ng-data is."""
+    env = dict(os.environ)
+    e = exe()
+    if e and "ESPEAK_DATA_PATH" not in env:
+        d = os.path.dirname(e)
+        if os.path.isdir(os.path.join(d, "espeak-ng-data")):
+            env["ESPEAK_DATA_PATH"] = d
+    return env
+
+
 def synth(reqs):
     out = []
+    env = _env()
     for r in reqs:
         voice = r.get("voice") or "en-us+m3"
         wpm = int(175 * float(r.get("speed", 1.0)))
@@ -36,7 +49,7 @@ def synth(reqs):
         os.close(fd)
         try:
             subprocess.run([exe(), "-v", voice, "-s", str(wpm), "-w", tmp, r["text"]],
-                           check=True, capture_output=True, timeout=60)
+                           check=True, capture_output=True, timeout=60, env=env)
             out.append(wavio.read(tmp))
         finally:
             os.remove(tmp)
