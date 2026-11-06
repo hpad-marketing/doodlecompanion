@@ -17,6 +17,17 @@ Contact sounds for the droid sitcom. Every time a droid or a prop touches someth
 
 Weights (editable per droid in the panel): RX-07 240 kg, hazard droid 85 kg, hover drone 9 kg, ship's computer 400 kg (fixed mount).
 
+## Every moving part
+
+Every bone that carries parts is a mechanism, and so is every animated ship part (doors, hatches, ramps, landing gear, turrets). Each gets the sound of its kind:
+
+- **motor**: driven joints. Gear whine and sing rise with speed, with grind under load.
+- **hinge**: pins with no motor of their own (armour plates, hatches, antennas, cables). A stick-slip creak follows the swing, with a groan on big parts.
+- **piston**: rods, lids, sliders, sliding doors. Hydraulic hiss and pump chug.
+- **spinner**: radar, fans, rotors, wheels. Bearing hum.
+
+The kind is guessed from the bone or object name. A `foley_mech` property on a pose bone, bone or object (`motor`, `hinge`, `piston`, `spinner`, `none`) overrides the guess. Any mechanism that stops hard clunks. `python ship_foley/tests/mech_report.py -- file.blend action out/` lists what each droid gets.
+
 ## Sources and licence
 
 All sounds come from physics in code (`synth.py`, numpy only): modal synthesis, Hertz contact and a small steel-room tail. No recordings or sample packs are used, so nothing needs clearing for commercial use.

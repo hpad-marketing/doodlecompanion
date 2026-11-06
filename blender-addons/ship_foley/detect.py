@@ -400,7 +400,7 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
     world = StaticWorld(statics)
     if include_props:
         for s in movers:
-            if _root_prop(s.ob, dyn) is s.ob:
+            if _root_prop(s.ob, dyn) is s.ob and not (s.ob.get("foley_mech") or MO.SHIP_MECH.search(s.ob.name)):
                 probes.extend(_prop_probes(s))
     if report:
         report(f"{len(arms)} droids, {len(probes)} probes, {len(statics)} fixed surfaces, {len(movers)} moving props")
@@ -411,6 +411,13 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
     dt = 1.0 / (fps * substeps)
     t_prev = None
     motor_js = {a: MO.joints(a) for a in arms} if motors_out is not None else {}
+    ship_js = []
+    if motors_out is not None:
+        mech_obs = [ob for ob in scene.objects if ob not in droid_set and ob.type in {"MESH", "EMPTY"}
+                    and (ob in moved or (ob.animation_data and ob.animation_data.action))
+                    and not (ob.rigid_body or ob.get("foley_prop") or ob.get("sb_prop"))
+                    and not FX_NAME.search(ob.name)]
+        ship_js = MO.ship_joints(mech_obs)
     for f, sub in steps:
         if f == f1 and sub > 0:
             break
@@ -420,6 +427,8 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
             s.place(t, 1.0 / fps)
         for a, js in motor_js.items():
             MO.sample(a, js, t, 1.0 / fps)
+        if ship_js:
+            MO.sample(None, ship_js, t, 1.0 / fps)
         for pr, tr in zip(probes, tracks):
             p = pr.world()
             hit = _nearest(p, world, movers, pr.part if pr.limb == "prop" else None)
@@ -496,6 +505,13 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
             e["pan"], e["dist"], e["on_screen"] = _cam_info(scene, Vector(e["loc"]))
         events.extend(clunks)
         motors_out[a.name] = dict(prof=prof, joints=js, f0=f0, f1=f1, fps=fps)
+    if ship_js:
+        sprof = dict(P.DROIDS["generic"], label="Ship", mass_kg=400.0, id="ship")
+        clunks = MO.stop_clunks("Ship", ship_js, sprof, fps, f0)
+        for e in clunks:
+            e["pan"], e["dist"], e["on_screen"] = _cam_info(scene, Vector(e["loc"]))
+        events.extend(clunks)
+        motors_out["Ship"] = dict(prof=sprof, joints=ship_js, f0=f0, f1=f1, fps=fps)
     scene.frame_set(keep)
     return merge(events)
 
