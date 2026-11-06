@@ -52,28 +52,54 @@ def contact(arm, limb, speed, surface=None, material=None, seed=0):
 
 # --- walk mode: Ship Builder calls feet.ON_PLANT on every landing ------------
 
-def on_plant(rig, side, point, normal, speed, surface):
-    """Ship Builder foot-plant callback: (rig, "L"/"R", point, normal, speed, surface)."""
+def _step(rig, side, point, speed, surface, part="flat"):
     import bpy
     from . import place
     cam = bpy.context.scene.camera
     vol = place.distance_gain((cam.matrix_world.translation - point).length) if cam else 1.0
     prof = D.profile_for(rig)
-    b_mat = "deck"
+    b_mat, size, hollow = "deck", 1.0, 0.0
     if surface is not None:
-        b_mat = surface.get("sb_surface") if surface.get("sb_surface") in P.MATERIALS else P.classify(D._mat_name(surface))
-    size = max(min(max(surface.dimensions), 1.2), 0.03) if surface is not None else 1.0
-    hit = S.Hit("step", prof["mass_kg"] * prof["leg"], max(float(speed), 0.05), prof["foot"],
-                prof["foot_size"], b_mat, size, seed=(ord(side[0]) + int(abs(point.x) * 100)) % 8)
+        tag = surface.get("sb_surface")
+        b_mat = tag if tag in P.MATERIALS else P.classify(D._mat_name(surface))
+        size = max(min(max(surface.dimensions), 1.2), 0.03)
+        hollow = float(surface.get("foley_hollow", 0.0))
+    mass = prof["mass_kg"] * prof["leg"]
+    if part == "toe":            # the front of the sole rolling down: lighter, after the heel
+        mass, speed = mass * 0.35, speed * 0.6
+    hit = S.Hit("step", mass, max(float(speed), 0.05), prof["foot"], prof["foot_size"], b_mat, size, hollow,
+                seed=(ord(side[0]) + int(abs(point.x) * 100) + len(part)) % 8)
     play_hit(hit, volume=vol)
 
 
-def attach_walk():
-    """Hook into any loaded Ship Builder; safe to call again."""
+def on_contact(rig, side, part, point, normal, speed, surface):
+    """Ship Builder feet.ON_CONTACT: heel (or flat) at strike, then toe."""
+    _step(rig, side, point, speed, surface, part)
+
+
+def on_plant(rig, side, point, normal, speed, surface):
+    """Older Ship Builder without ON_CONTACT: one sound per landing."""
+    _step(rig, side, point, speed, surface)
+
+
+def _feet_modules():
     import sys
+    return [m for n, m in list(sys.modules.items()) if n.endswith("ship_builder.feet")]
+
+
+def attach_walk():
+    """Hook into any loaded Ship Builder; safe to call again. Uses heel/toe
+    contacts when available, else one sound per plant (never both)."""
     hooked = 0
-    for name, mod in list(sys.modules.items()):
-        if name.endswith("ship_builder.feet") and hasattr(mod, "ON_PLANT"):
+    for mod in _feet_modules():
+        if hasattr(mod, "ON_CONTACT"):
+            if on_contact not in mod.ON_CONTACT:
+                mod.ON_CONTACT.append(on_contact)
+            if hasattr(mod, "ON_PLANT"):
+                while on_plant in mod.ON_PLANT:
+                    mod.ON_PLANT.remove(on_plant)
+            hooked += 1
+        elif hasattr(mod, "ON_PLANT"):
             if on_plant not in mod.ON_PLANT:
                 mod.ON_PLANT.append(on_plant)
             hooked += 1
@@ -81,8 +107,8 @@ def attach_walk():
 
 
 def detach_walk():
-    import sys
-    for name, mod in list(sys.modules.items()):
-        if name.endswith("ship_builder.feet") and hasattr(mod, "ON_PLANT"):
-            while on_plant in mod.ON_PLANT:
-                mod.ON_PLANT.remove(on_plant)
+    for mod in _feet_modules():
+        for name, cb in (("ON_CONTACT", on_contact), ("ON_PLANT", on_plant)):
+            lst = getattr(mod, name, None)
+            while lst is not None and cb in lst:
+                lst.remove(cb)
