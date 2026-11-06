@@ -43,7 +43,7 @@ for S in 'LR':
     clear(P(f'IK_foot.{S}', 'location'), W0, W1); clear(P(f'IK_foot.{S}', 'rotation_euler'), W0, W1)
     for r in ('roll_ball', 'roll_heel', 'roll_toe', 'IK-toe'): clear(P(f'{r}.{S}', 'rotation_euler'), W0, W1)
     clear(P(f'FK-upper_arm.{S}', 'rotation_euler'), W0, 163)
-clear(P('COG', 'location'), W0, W1); clear(P('hips', 'rotation_euler'), W0, W1); clear(P('waist', 'rotation_euler'), W0, W1)
+clear(P('COG', 'location'), W0, W1 + 2); clear(P('hips', 'rotation_euler'), W0, W1); clear(P('waist', 'rotation_euler'), W0, W1)
 
 def step(S, peel, lift, contact, d0, d1, h=0.13, ball=18):
     """peel: heel starts to rise; lift: toe leaves; contact: heel strikes; flat 3 frames later"""
@@ -55,7 +55,7 @@ def step(S, peel, lift, contact, d0, d1, h=0.13, ball=18):
     put(P(f'roll_ball.{S}', 'rotation_euler'), [(peel, (0, 0, 0)), (lift, (ball, 0, 0)), (f(0.3), (ball * 0.75, 0, 0)),
                                                 (f(0.5), (ball * 0.2, 0, 0)), (f(0.65), (0, 0, 0))], deg=True)
     # the toe stays flat on the floor while the heel peels (it bends at the ball joint)
-    put(P(f'IK-toe.{S}', 'rotation_euler'), [(peel, (0, 0, 0)), (lift, (ball * 0.42, 0, 0)), (f(0.3), (0, 0, 0))], deg=True)
+    put(P(f'IK-toe.{S}', 'rotation_euler'), [(peel, (0, 0, 0)), (lift, (ball * 0.375, 0, 0)), (f(0.3), (0, 0, 0))], deg=True)   # 0.375 once the soles are flat (sole_fix)
     put(P(f'roll_heel.{S}', 'rotation_euler'), [(f(0.5), (0, 0, 0)), (f(0.8), (7, 0, 0)), (contact - 1, (11, 0, 0)), (contact, (12, 0, 0)),
                                                 (contact + 1, (8, 0, 0)), (contact + 2, (3, 0, 0)), (contact + 3, (0, 0, 0))], deg=True)
 for S in 'LR':
@@ -78,10 +78,10 @@ put(P('COG', 'location'), [(88, (0, 0, -0.03)), (92, (-0.03, -0.005, -0.045)), (
                            (148, (-0.055, -0.53, -0.06)), (152, (-0.07, -0.56, -0.055)),
                            (156, (-0.05, -0.58, -0.044)),                                                      # passing / up
                            (160, (-0.02, -0.595, -0.05)), (162, (0.0, -0.60, -0.072)),                        # contact, down
-                           (166, (0.012, -0.60, -0.034)), (170, (0.0, -0.60, -0.03))])
+                           (168, (0.0, -0.60, -0.04)), (172, (0.0, -0.60, -0.03))])   # settle slowly: 1 t doesn't bounce back fast
 put(P('hips', 'rotation_euler'), [(88, (2, 0, 0)), (98, (2, 0, -5)), (112, (1, 0, -1)), (115, (-1.5, 0, 1)), (119, (3, 0, 3)),
                                   (124, (2, 0, 5)), (140, (1, 0, 1)), (143, (-1.5, 0, -1)), (147, (3, 0, -3)), (151, (2, 0, -5)),
-                                  (160, (1, 0, -1)), (162, (-0.5, 0, 0.5)), (166, (2.5, 0, 0)), (170, (2, 0, 0))], deg=True)
+                                  (160, (1, 0, -1)), (162, (0.5, 0, 0.3)), (169, (2, 0, 0))], deg=True)
 put(P('waist', 'rotation_euler'), [(88, (0, 0, 0)), (106, (0, 4, 0)), (119, (0, 0, 0)), (133, (0, -4, 0)), (147, (0, 0, 0)),
                                    (156, (0, 2, 0)), (166, (0, 0, 0))], deg=True)
 for S, sg in (('L', 1), ('R', -1)):   # arms swing against the stepping leg

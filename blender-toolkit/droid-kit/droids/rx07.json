@@ -478,5 +478,44 @@
    "olive": "#4A3A2C"
   }
  },
- "palette": "original"
+ "palette": "original",
+ "physics": {
+  "_note": "internal equipment not modelled as parts (point masses, rest world position). physics_audit.py adds part masses from shape+material.",
+  "internal": [
+   {
+    "name": "battery packs",
+    "bone": "body",
+    "kg": 110,
+    "at": [
+     0,
+     0.05,
+     1.5
+    ]
+   },
+   {
+    "name": "computer and power electronics",
+    "bone": "body",
+    "kg": 30,
+    "at": [
+     0,
+     0.15,
+     1.9
+    ]
+   },
+   {
+    "name": "cooling and wiring",
+    "bone": "body",
+    "kg": 15,
+    "at": [
+     0,
+     0.25,
+     2.05
+    ]
+   }
+  ],
+  "limit_order_skip": [
+   "plate_pauldron"
+  ],
+  "zmp_margin": 0.05
+ }
 }

@@ -106,7 +106,8 @@ for name, pose in P.items():
     for b, (rot, loc) in pose.items():
         if b in rig.pose.bones: rig.pose.bones[b].rotation_euler = [math.radians(v) for v in rot]; rig.pose.bones[b].location = loc
     bpy.context.view_layer.update(); record('pose ' + name, snapshot()); checked += 1
-acts = [x for x in bpy.data.actions if x.name.startswith(C.get('action_prefix', 'RM_'))]
+acts = [x for x in bpy.data.actions if x.name.startswith(C.get('action_prefix', 'RM_')) and re.search(os.environ.get('CC_ONLY', ''), x.name)]
+if os.environ.get('CC_ONLY'): P = {}   # just the named motions
 for act in acts:
     ad.action = None; reset()
     ad.action = act
