@@ -443,6 +443,7 @@ class SHIP_OT_open(bpy.types.Operator):
         v3.shading.type = "MATERIAL"
         v3.show_region_toolbar = False
         v3.overlay.show_overlays = True
+        v3.overlay.show_extras = False  # no light/empty/camera wires over the shot
         with ctx.temp_override(window=win, screen=scr, area=left):
             try:
                 bpy.ops.wm.context_set_enum(data_path="space_data.mode", value="VIEW")
