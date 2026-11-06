@@ -1,0 +1,419 @@
+{
+  "id": "tracker",
+  "name": "Tracked porter (droid 5)",
+  "folder": "TrackedDroid",
+  "current_file": "TrackedDroid.blend",
+  "rig": "TrackerRig",
+  "facing": "-Y (droid's L side is +X)",
+  "locked": false,
+  "build": "droids/tracker/build_tracker.py",
+  "reference": {
+    "image": "ref/orange_tracked_ref.jpg",
+    "camera": {
+      "loc": [
+        -1.55,
+        -2.0,
+        1.05
+      ],
+      "target": [
+        0,
+        -0.05,
+        0.45
+      ],
+      "lens": 50
+    }
+  },
+  "paint": {
+    "paint": "#1F5552",
+    "accent": "#D8642A",
+    "cream": "#E6D3A3",
+    "grey": "#3D4349"
+  },
+  "paint_roles": {
+    "paint": "Body, chassis, track skirts",
+    "accent": "Warning accents, springs, ram",
+    "cream": "Trim",
+    "grey": "Turret, bezel, scoop, bin"
+  },
+  "joint_regex": "(cheek|knuckle|boss|lug|bezel|socket|seat|neck|_eye|_cap|trunnion|saddle|hub|bearing|bracket|bumper|mount|ball|cup|yoke|ring_base|housing|horn)",
+  "weather_scale": 1.6,
+  "uv_smooth_deg": 40,
+  "bevel": [
+    0.0014,
+    0.0008,
+    0.03
+  ],
+  "wear": [
+    [
+      "rb_mud",
+      "track_link|road_|idler|sprocket|scoop_floor|scoop_lip|scoop_tooth",
+      0.6
+    ],
+    [
+      "rb_mud",
+      "track_skirt|track_plate|scoop|bumper",
+      0.4
+    ],
+    [
+      "rb_mud",
+      "chassis_hull|strut",
+      0.5
+    ],
+    [
+      "rb_oil",
+      "strut_house|strut_rodpart|ram_|lift_pivot|tilt_pin|lift_pin|_axle|hub|sway_bearing|turret",
+      1.0
+    ],
+    [
+      "rb_touch",
+      "bin_lid_handle|lift_eye|bin_lid_plate",
+      1.0
+    ],
+    [
+      "rb_touch",
+      "body_shell",
+      0.3
+    ],
+    [
+      "rb_heat",
+      "chassis_hull",
+      0.2
+    ]
+  ],
+  "decals": [
+    {
+      "name": "unit",
+      "part": "chassis_hull",
+      "normal": [
+        0,
+        -1,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.5,
+        0.45
+      ],
+      "size": [
+        0.12,
+        0.045
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "CARGO 05",
+          0.62,
+          "bold"
+        ],
+        [
+          "MAX LOAD 60 KG",
+          0.3,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    },
+    {
+      "name": "bin",
+      "part": "bin_body",
+      "normal": [
+        0,
+        1,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.5,
+        0.3
+      ],
+      "size": [
+        0.12,
+        0.035
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "SALVAGE",
+          0.9,
+          "bold"
+        ]
+      ],
+      "colour": "yellow"
+    },
+    {
+      "name": "lift.L",
+      "part": "track_skirt.L",
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.78,
+        0.62
+      ],
+      "size": [
+        0.07,
+        0.03
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "NO STEP",
+          0.9,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    },
+    {
+      "name": "lift.R",
+      "part": "track_skirt.R",
+      "normal": [
+        -1,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.22,
+        0.62
+      ],
+      "size": [
+        0.07,
+        0.03
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "NO STEP",
+          0.9,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    }
+  ],
+  "bolt_panels": [],
+  "details": {
+    "body": "body_shell",
+    "panel_lines": false,
+    "conduits": false,
+    "status_leds": null
+  },
+  "collision": {
+    "ignore": [
+      "track_pin_",
+      "track_path",
+      "fx_"
+    ],
+    "action_prefix": "TR"
+  },
+  "hooks": {
+    "leds": [
+      "RB_LED_green",
+      "RB_LED_amber",
+      "RB_LED_red"
+    ],
+    "glow_materials": [
+      "RB_Stalk_Glow",
+      "TR_face_glow"
+    ],
+    "glow_node": "Glow",
+    "antenna_chains": [
+      "stalk_roll.L",
+      "stalk_pitch.L",
+      "stalk_ext.L",
+      "stalk_tip.L",
+      "stalk_roll.R",
+      "stalk_pitch.R",
+      "stalk_ext.R",
+      "stalk_tip.R"
+    ],
+    "eye": "face_eye.L",
+    "face": {
+      "eyes": [
+        "face_eye.L",
+        "face_eye.R"
+      ],
+      "mouth": "face_mouth",
+      "talk_prop": "talk",
+      "eye_props": [
+        "eyes_blink",
+        "eyes_happy",
+        "eyes_sad",
+        "eyes_angry",
+        "eyes_wide",
+        "eyes_heart",
+        "eyes_x"
+      ],
+      "mouth_props": [
+        "mouth_smile",
+        "mouth_frown",
+        "mouth_oh",
+        "mouth_wavy"
+      ]
+    },
+    "controls": {
+      "look_pan": "waist:rot_y",
+      "look_tilt": "lean:rot_x",
+      "turn_waist": "waist:rot_y",
+      "lean": "lean:rot_x (+ leans forward)",
+      "sway": "body:rot_y",
+      "crouch": "suspension:loc_y",
+      "drive": "TrackerRig[track_L], TrackerRig[track_R] (metres)",
+      "scoop_lift": "scoop_lift:rot_x (- raises)",
+      "scoop_tilt": "scoop_tilt:rot_x (- curls)",
+      "ears_droop": "stalk_roll.{S}:rot_z",
+      "ears_pitch": "stalk_pitch.{S}:rot_x",
+      "ears_extend": "stalk_ext.{S}:loc_y",
+      "lid": "bin_lid:rot_x (+ opens)"
+    }
+  },
+  "lock_sheet": {
+    "hero": [
+      "Rest",
+      "Carry",
+      "Happy",
+      "Sad",
+      "Alert",
+      "Curious",
+      "Sleep",
+      "Scoop up"
+    ],
+    "state_framing": "upper",
+    "states": [
+      {
+        "label": "Calm face",
+        "set": {}
+      },
+      {
+        "label": "Happy",
+        "set": {
+          "eyes_happy": 1.0,
+          "mouth_smile": 1.0
+        }
+      },
+      {
+        "label": "Sad",
+        "set": {
+          "eyes_sad": 1.0,
+          "mouth_frown": 0.8
+        }
+      },
+      {
+        "label": "Cross",
+        "set": {
+          "eyes_angry": 1.0,
+          "mouth_wavy": 0.8
+        }
+      },
+      {
+        "label": "Surprised",
+        "set": {
+          "eyes_wide": 1.0,
+          "mouth_oh": 1.0
+        }
+      },
+      {
+        "label": "In love",
+        "set": {
+          "eyes_heart": 1.0,
+          "mouth_smile": 0.7
+        }
+      },
+      {
+        "label": "Broken",
+        "set": {
+          "eyes_x": 1.0,
+          "mouth_wavy": 1.0
+        }
+      },
+      {
+        "label": "Talking",
+        "set": {
+          "talk": 1.0,
+          "mouth_smile": 0.3
+        }
+      },
+      {
+        "label": "Screen: scan",
+        "set": {
+          "screen_mode": 1,
+          "scan": 1.0
+        }
+      },
+      {
+        "label": "Screen: low battery",
+        "set": {
+          "screen_mode": 2,
+          "screen_value": 0.15
+        }
+      },
+      {
+        "label": "Screen: error",
+        "set": {
+          "screen_mode": 3
+        }
+      },
+      {
+        "label": "Screen: sticker gallery",
+        "set": {
+          "screen_mode": 6
+        }
+      },
+      {
+        "label": "Screen: sleep",
+        "set": {
+          "screen_mode": 7
+        }
+      },
+      {
+        "label": "Work lights on",
+        "set": {
+          "lamps": 1.0
+        }
+      }
+    ],
+    "closeups": [
+      "scoop_lip",
+      "stalk_cap.L",
+      "strut_spring.Lf",
+      "sprocket_wheel.L",
+      "tow_hook_hook",
+      "sticker_ringed_planet",
+      "bin_lid_plate",
+      "turret"
+    ]
+  },
+  "stage_camera": {
+    "loc": [
+      -1.9,
+      -2.4,
+      1.2
+    ],
+    "target": [
+      0,
+      -0.05,
+      0.45
+    ],
+    "lens": 45
+  }
+}

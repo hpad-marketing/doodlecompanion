@@ -1,6 +1,6 @@
 """Swap in the edge- and seam-aware shader groups from weather.py, keeping every material's settings and look drivers.
 python3 edges.py in.blend out.blend"""
-import bpy, sys
+import bpy, sys, os, glob
 blend, out = sys.argv[-2:]
 bpy.ops.wm.open_mainfile(filepath=blend)
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weather.py')).read()
@@ -15,7 +15,7 @@ for f in sorted(glob.glob(os.path.join(TEX, '*.jpg'))) if TEX else []:
     if not im.packed_file: im.pack()
     im.use_fake_user = True
     SCAN[k] = im
-ns = {'bpy': bpy, 're': __import__('re'), 'SCAN': SCAN}; exec(defs, ns)
+ns = {'bpy': bpy, 're': __import__('re'), 'SCAN': SCAN, '__file__': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'weather.py')}; exec(defs, ns)
 print('SCANS', sorted(SCAN))
 old = {n: bpy.data.node_groups[n] for n in ('RB Weathered Metal', 'RB Black Polymer')}
 for g in old.values(): g.name += ' OLD'
