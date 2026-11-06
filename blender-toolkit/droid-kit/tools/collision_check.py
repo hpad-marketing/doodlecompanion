@@ -16,6 +16,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'kit'))
 import kit
 if '--' in sys.argv: a = sys.argv[sys.argv.index('--') + 1:]
+elif bpy.data.filepath: a = []   # already inside Blender with the droid file open
 else:
     a = sys.argv[1:]; bpy.ops.wm.open_mainfile(filepath=os.path.abspath(a.pop(0)))
 rep_path = a[0] if a else ''; step = int(a[1]) if len(a) > 1 else 2
