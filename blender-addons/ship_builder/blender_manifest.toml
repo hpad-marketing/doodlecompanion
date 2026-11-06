@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "ship_builder"
+version = "0.3.0"
+name = "Ship Builder"
+tagline = "Spaceship sets for the droid sitcom, with walk mode and a studio window"
+maintainer = "HPAD Marketing"
+type = "add-on"
+website = "https://github.com/hpad-marketing/doodlecompanion"
+
+tags = ["Scene", "Animation", "3D View"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 HPAD Marketing"]
+
+[permissions]
+files = "Preview cache, droid kit files and the DeepInDoodles folder"
+
+[build]
+paths_exclude_pattern = ["__pycache__/", "/.git/", "*.zip", "tests/"]
