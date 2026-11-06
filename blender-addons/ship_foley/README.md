@@ -12,7 +12,6 @@ Contact sounds for the droid sitcom. Every time a droid or a prop touches someth
 | Bigger object | Lower ring | Modal pitch falls with size. |
 | Hollow object (crate, can, locker) | Longer, boomier ring | Thin shells ring longer and lower. |
 | Material | Metal rings, polymer knocks, rubber thumps, rug muffles | Each material has its own ring time, stiffness and grit. |
-
 | Heavy droid lands | Deep thud and frame boom, loose armour rattling, a hydraulic hiss and creak as the leg takes the weight | Weight has to go somewhere |
 | Joints turning | Motor whir and whine that rise in pitch with turning speed, gear buzz, grind under load, hiss on fast starts and stops, a clunk when a joint stops dead | Each part-carrying bone is a motor. Heavy droids have low, slow motors and the drone has thin, quick servos |
 
