@@ -83,10 +83,10 @@ def nacelles(c, body, root, mats):
         bm = bmesh.new()
         geo.add_box(bm, Vector((s * 6.2, N["y"], 0.62)), (1.3, 2.5, 0.75), bevel=0.12)
         _mat(bm, set(), B.PAINT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_cyl(bm, (s * 6.8, N["y"], N["z"]), (s * 7.1, N["y"], N["z"]), 0.92, segs=32)
         _mat(bm, b0, B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         for dz in (-0.25, 0.25):
             geo.add_box(bm, Vector((s * 6.2, N["y"] + 1.3, 0.62 + dz)), (1.1, 0.1, 0.12))
         B.bolts_row(bm, (s * 5.9, N["y"] - 1.0, 1.0), (s * 6.8, N["y"] - 1.0, 1.0), 4, (0, 0, 1))
@@ -104,14 +104,14 @@ def nacelles(c, body, root, mats):
         m = Matrix.Rotation(-math.pi / 2, 4, "X")  # lathe Z -> +Y
         geo.lathe(bm, prof, segs=40, mat=m)
         _mat(bm, set(), B.PAINT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         # intake lip inside + fan
         geo.lathe(bm, [(r * 0.80, h + 0.05), (r * 0.74, h - 0.5)], segs=40, mat=m)
         _mat(bm, b0, B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.lathe(bm, [(0.0, h - 0.95), (0.25, h - 0.75), (r * 0.74, h - 0.5)], segs=40, mat=m)
         _mat(bm, b0, B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         for k in range(14):
             a = 2 * math.pi * k / 14
             ca, sa = math.cos(a), math.sin(a)
@@ -120,24 +120,24 @@ def nacelles(c, body, root, mats):
         _mat(bm, b0, B.HEAT)
         # band rings (raised), accent band
         for yy, mat, w in ((h - 0.85, B.DARK, 0.12), (h - 2.0, B.ACCENT, 0.5), (-h + 2.0, B.DARK, 0.12)):
-            b0 = set(bm.faces)
+            b0 = len(bm.faces)
             geo.add_cyl(bm, (0, yy - w / 2, 0), (0, yy + w / 2, 0), r + 0.03, segs=40)
             _mat(bm, b0, mat)
         # hub on the inner side (rotates with the pod, coaxial with the collar)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_cyl(bm, (-s * (r + 0.05), 0, 0), (-s * (r - 0.3), 0, 0), 0.86, segs=32)
         _mat(bm, b0, B.DARK)
         # nozzle bell
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.lathe(bm, [(r * 0.78, -h + 0.2), (r * 0.80, -h - 0.35), (r * 0.86, -h - 0.7),
                        (r * 0.80, -h - 0.7), (r * 0.72, -h - 0.3), (r * 0.66, -h + 0.25)], segs=40, mat=m)
         _mat(bm, b0, B.HEAT)
         # dorsal fin with a nav light, vents on top, outer conduit
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_box(bm, Vector((0, -h + 2.6, r + 0.35)), (0.12, 1.6, 0.8),
                     rot=Matrix.Rotation(math.radians(-20), 4, "X"), bevel=0.04)
         _mat(bm, b0, B.PAINT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         xc = math.sqrt(r * r - 0.09) + 0.05
         B.tube(bm, [(s * xc, h - 1.2, 0.3), (s * xc, -h + 1.4, 0.3)], 0.06, segs=8)
         for yy in (h - 1.4, 0.0, -h + 1.6):
@@ -195,7 +195,7 @@ def gear(c, body, root, mats):
             bm = bmesh.new()
             geo.add_box(bm, Vector((-s * (half / 2 + 0.003), (y0 + y1) / 2 - py, 0.03)), (half - 0.012, y1 - y0 - 0.02, 0.05))
             _mat(bm, set(), B.PAINT)
-            b0 = set(bm.faces)
+            b0 = len(bm.faces)
             for yy in (y0 + 0.4 - py, y1 - 0.4 - py):
                 geo.add_cyl(bm, (-s * 0.03, yy - 0.15, 0.03), (-s * 0.03, yy + 0.15, 0.03), 0.025, segs=8)
             geo.add_box(bm, Vector((-s * half / 2, (y0 + y1) / 2 - py, 0.075)), (0.06, y1 - y0 - 0.5, 0.04))
@@ -209,11 +209,11 @@ def gear(c, body, root, mats):
         bm = bmesh.new()
         geo.add_cyl(bm, (-0.2, 0, 0), (0.2, 0, 0), 0.15, segs=16)
         _mat(bm, set(), B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_cyl(bm, (0, 0, -0.05), (0, 0, -(L * 0.55)), 0.12, segs=14)
         geo.add_cyl(bm, (0, 0, -(L * 0.5)), (0, 0, -(L * 0.58)), 0.15, segs=14)
         _mat(bm, b0, B.PAINT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_box(bm, Vector((0, 0.13, -L * 0.25)), (0.06, 0.06, L * 0.4))   # hydraulic line
         _mat(bm, b0, B.RUBBER)
         so = _part(f"Gear Strut {key}", bm, c, sp, mats, f"hs_gear_{key}")
@@ -223,10 +223,10 @@ def gear(c, body, root, mats):
         bm = bmesh.new()
         geo.add_cyl(bm, (0, 0, -L * 0.45), (0, 0, -L + 0.2), 0.085, segs=14)
         _mat(bm, set(), B.HEAT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_cyl(bm, (-0.12, 0, -L + 0.2), (0.12, 0, -L + 0.2), 0.08, segs=12)   # ankle
         _mat(bm, b0, B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.lathe(bm, [(0.0, -L + 0.12), (0.2, -L + 0.12), (0.26, -L + 0.06), (0.26, -L), (0.0, -L)],
                   segs=24)
         _mat(bm, b0, B.RUBBER)
@@ -251,7 +251,7 @@ def ramp(c, body, root, mats, ramp_pts, bay_depth=1.75):
     bm = bmesh.new()
     geo.add_box(bm, Vector((0, Lr / 2, 0.09)), (2 * x0, Lr, 0.18))
     _mat(bm, set(), B.PAINT)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     for k in range(9):
         yy = 0.5 + k * (Lr - 1.0) / 8
         geo.add_box(bm, Vector((0, yy, 0.2)), (2 * x0 - 0.5, 0.08, 0.05))
@@ -259,7 +259,7 @@ def ramp(c, body, root, mats, ramp_pts, bay_depth=1.75):
         geo.add_box(bm, Vector((s * (x0 - 0.1), Lr / 2, 0.24)), (0.12, Lr - 0.2, 0.12))
     geo.add_cyl(bm, (-x0 + 0.1, 0.1, 0.09), (x0 - 0.1, 0.1, 0.09), 0.09, segs=12)
     _mat(bm, b0, B.DARK)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     for s in (1, -1):
         geo.add_box(bm, Vector((s * (x0 - 0.35), Lr - 0.25, 0.005)), (0.5, 0.35, 0.01))
     _mat(bm, b0, B.ACCENT)
@@ -307,13 +307,13 @@ def radiators(c, body, root, mats):
         w = R["w"]
         geo.add_box(bm, Vector((s * (w / 2 + 0.1), (y0 + y1) / 2, 0)), (w, y1 - y0, 0.07), bevel=0.02)
         _mat(bm, set(), B.PAINT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         n = 14
         for k in range(n):
             yy = y0 + 0.25 + k * (y1 - y0 - 0.5) / (n - 1)
             geo.add_box(bm, Vector((s * (w / 2 + 0.15), yy, 0.075)), (w - 0.25, 0.03, 0.08))
         _mat(bm, b0, B.HEAT)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_box(bm, Vector((s * 0.16, (y0 + y1) / 2, 0.0)), (0.12, y1 - y0 - 0.1, 0.12))
         for yy in (y0 + 0.5, y1 - 0.5):
             geo.lathe(bm, [(0.085, -0.2), (0.12, -0.2), (0.12, 0.2), (0.085, 0.2)], segs=16,
@@ -321,7 +321,7 @@ def radiators(c, body, root, mats):
                       cap_start=False)
             geo.add_box(bm, Vector((s * 0.11, yy, 0)), (0.06, 0.36, 0.06))
         _mat(bm, b0, B.DARK)
-        b0 = set(bm.faces)
+        b0 = len(bm.faces)
         geo.add_box(bm, Vector((s * (w + 0.06), (y0 + y1) / 2, 0)), (0.05, y1 - y0 - 0.4, 0.05))
         _mat(bm, b0, B.ACCENT)
         ob = _part(f"Radiator {side}", bm, c, piv, mats, f"hs_radiator_{side}")
@@ -338,7 +338,7 @@ def dish_and_masts(c, body, root, mats):
               mat=Matrix.Translation((x, y, z)))
     _mat(bm, set(), B.DARK)
     # masts on the aft deck's back corners + small spikes up front
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     for s in (1, -1):
         geo.add_cyl(bm, (s * 1.6, -11.6, 3.8), (s * 1.6, -11.6, 4.3), 0.12, segs=10)
         geo.add_cyl(bm, (s * 1.6, -11.6, 4.3), (s * 1.6, -11.6, 6.1), 0.04, segs=8)
@@ -346,19 +346,19 @@ def dish_and_masts(c, body, root, mats):
         geo.add_cyl(bm, (s * 1.0, 10.8, 3.24), (s * 1.0, 10.8, 3.5), 0.1, segs=8)
         geo.add_cyl(bm, (s * 1.0, 10.8, 3.5), (s * 1.0, 10.5, 4.6), 0.035, segs=8)
     _mat(bm, b0, B.DARK)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     # survey booms out of the chin
     for s in (1, -1):
         geo.add_cyl(bm, (s * 0.85, 18.9, -2.05), (s * 0.85, 24.6, -2.05), 0.1, segs=12)
         geo.add_cyl(bm, (s * 0.85, 19.9, -2.05), (s * 0.85, 20.4, -2.05), 0.16, segs=12)
         geo.add_cyl(bm, (s * 0.85, 23.0, -2.05), (s * 0.85, 23.2, -2.05), 0.14, segs=12)
     _mat(bm, b0, B.DARK)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     for s in (1, -1):
         geo.add_cyl(bm, (s * 0.85, 24.6, -2.05), (s * 0.85, 25.0, -2.05), 0.12, r1=0.04, segs=12)
     _mat(bm, b0, B.HEAT)
     # chin scanner housing
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     geo.add_cyl(bm, (0, 17.0, -2.66), (0, 17.0, -2.5), 0.5, segs=24)
     _mat(bm, b0, B.DARK)
     mo = _part("Masts and Booms", bm, c, body, mats, "hs_airframe")
@@ -373,12 +373,12 @@ def dish_and_masts(c, body, root, mats):
     for s in (1, -1):
         geo.add_box(bm, Vector((s * 0.25, 0, 0.78)), (0.06, 0.12, 0.42))
     _mat(bm, set(), B.DARK)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     tilt = Matrix.Translation((0, 0, 0.95)) @ Matrix.Rotation(math.radians(-55), 4, "X")
     geo.lathe(bm, [(0.06, -0.12), (0.4, -0.08), (0.75, 0.04), (0.95, 0.22), (0.92, 0.24), (0.72, 0.08),
                    (0.38, -0.04), (0.06, -0.08)], segs=36, mat=tilt)
     _mat(bm, b0, B.PAINT)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     for k in range(3):
         a = 2 * math.pi * k / 3
         p0 = tilt @ Vector((0.85 * math.cos(a), 0.85 * math.sin(a), 0.2))
@@ -394,7 +394,7 @@ def dish_and_masts(c, body, root, mats):
     bm = bmesh.new()
     geo.lathe(bm, [(0.0, -0.02), (0.44, -0.04), (0.47, -0.25), (0.40, -0.5), (0.0, -0.62)], segs=28)
     _mat(bm, set(), B.PAINT)
-    b0 = set(bm.faces)
+    b0 = len(bm.faces)
     geo.add_cyl(bm, (0, 0.3, -0.33), (0, 0.48, -0.33), 0.16, segs=16)
     _mat(bm, b0, B.GLASS)
     so = _part("Chin Scanner", bm, c, sp, mats, "hs_scanner")

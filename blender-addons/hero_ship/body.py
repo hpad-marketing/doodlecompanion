@@ -250,17 +250,29 @@ class Module:
 # ---------------------------------------------------------------------------
 # greebles (added straight into a module's bmesh)
 
+_PENDING = {}
+
+
 def _mat_new(bm, before, mat):
-    for f in bm.faces:
-        if f.index == -2:
-            pass
-    for f in set(bm.faces) - before:
-        f.material_index = mat
+    """Marks every face added since len(bm.faces) was `before` for material `mat`.
+    Applied in one go by flush_mats() (cheap even with thousands of greebles)."""
+    start = before if isinstance(before, int) else 0
+    _PENDING.setdefault(id(bm), []).append((start, len(bm.faces), mat))
+
+
+def flush_mats(bm):
+    todo = _PENDING.pop(id(bm), None)
+    if not todo:
+        return
+    bm.faces.ensure_lookup_table()
+    for a, b, mat in todo:
+        for i in range(a, min(b, len(bm.faces))):
+            bm.faces[i].material_index = mat
 
 
 def plate(bm, c, size, axis, mat, rot=0.0, bev=0.02):
     """Rounded plate centred at c lying on a face whose normal is ±axis."""
-    before = set(bm.faces)
+    before = len(bm.faces)
     sx, sy, sz = size
     m = Matrix.Rotation(rot, 4, axis.replace("-", ""))
     geo.add_box(bm, Vector(c), (sx, sy, sz), rot=m, bevel=bev)
@@ -270,16 +282,16 @@ def plate(bm, c, size, axis, mat, rot=0.0, bev=0.02):
 def vent(bm, c, w, h, normal, slats=6, mat=DARK, frame_mat=PAINT):
     """A louvred vent on a side (normal 'x+','x-') or top ('z+') face."""
     c = Vector(c)
-    before = set(bm.faces)
+    before = len(bm.faces)
     if normal[0] == "x":
         s = 1 if normal[1] == "+" else -1
         geo.add_box(bm, c, (0.06, w + 0.12, h + 0.12), bevel=0.02)
         _mat_new(bm, before, frame_mat)
-        before = set(bm.faces)
+        before = len(bm.faces)
         geo.add_box(bm, c + Vector((s * 0.02, 0, 0)), (0.04, w, h))
         _mat_new(bm, before, mat)
         for i in range(slats):
-            before = set(bm.faces)
+            before = len(bm.faces)
             z = c.z - h / 2 + h * (i + 0.5) / slats
             geo.add_box(bm, Vector((c.x + s * 0.035, c.y, z)), (0.035, w - 0.04, h / slats * 0.45),
                         rot=Matrix.Rotation(s * math.radians(35), 4, "Y"))
@@ -287,11 +299,11 @@ def vent(bm, c, w, h, normal, slats=6, mat=DARK, frame_mat=PAINT):
     else:
         geo.add_box(bm, c, (w + 0.12, h + 0.12, 0.06), bevel=0.02)
         _mat_new(bm, before, frame_mat)
-        before = set(bm.faces)
+        before = len(bm.faces)
         geo.add_box(bm, c + Vector((0, 0, 0.02)), (w, h, 0.04))
         _mat_new(bm, before, mat)
         for i in range(slats):
-            before = set(bm.faces)
+            before = len(bm.faces)
             y = c.y - h / 2 + h * (i + 0.5) / slats
             geo.add_box(bm, Vector((c.x, y, c.z + 0.035)), (w - 0.04, h / slats * 0.45, 0.035),
                         rot=Matrix.Rotation(math.radians(35), 4, "X"))
@@ -301,11 +313,11 @@ def vent(bm, c, w, h, normal, slats=6, mat=DARK, frame_mat=PAINT):
 def hatch(bm, c, w, h, normal, mat=PAINT):
     c = Vector(c)
     s = 1 if normal[1] == "+" else -1
-    before = set(bm.faces)
+    before = len(bm.faces)
     if normal[0] == "x":
         geo.add_box(bm, c, (0.05, w, h), bevel=0.03)
         _mat_new(bm, before, mat)
-        before = set(bm.faces)
+        before = len(bm.faces)
         geo.add_box(bm, c + Vector((s * 0.045, 0, h * 0.3)), (0.05, w * 0.35, 0.06), bevel=0.01)
         for dz in (-h * 0.35, h * 0.35):
             geo.add_cyl(bm, c + Vector((s * 0.03, -w / 2 - 0.01, dz - 0.12)),
@@ -314,7 +326,7 @@ def hatch(bm, c, w, h, normal, mat=PAINT):
     else:
         geo.add_box(bm, c, (w, h, 0.05), bevel=0.03)
         _mat_new(bm, before, mat)
-        before = set(bm.faces)
+        before = len(bm.faces)
         geo.add_box(bm, c + Vector((w * 0.3, 0, 0.045)), (0.06, h * 0.35, 0.05), bevel=0.01)
         _mat_new(bm, before, DARK)
 
@@ -322,7 +334,7 @@ def hatch(bm, c, w, h, normal, mat=PAINT):
 def bolts_row(bm, p0, p1, n, normal, r=0.03):
     p0, p1 = Vector(p0), Vector(p1)
     nv = Vector(normal)
-    before = set(bm.faces)
+    before = len(bm.faces)
     for i in range(n):
         p = p0 + (p1 - p0) * (i / max(1, n - 1))
         geo.add_cyl(bm, p - nv * 0.01, p + nv * 0.025, r, segs=6)
@@ -332,7 +344,7 @@ def bolts_row(bm, p0, p1, n, normal, r=0.03):
 def strip(bm, pts, x, width=0.07, mat=GLOW, proud=0.012):
     """Glowing inlay line on a side wall at x (sign gives the side): pts=[(y,z)...]."""
     s = 1 if x > 0 else -1
-    before = set(bm.faces)
+    before = len(bm.faces)
     for (y0, z0), (y1, z1) in zip(pts, pts[1:]):
         a = Vector((x, y0, z0))
         b = Vector((x, y1, z1))
@@ -347,7 +359,7 @@ def strip(bm, pts, x, width=0.07, mat=GLOW, proud=0.012):
 def tube(bm, pts, r, segs=10, mat=DARK):
     """Pipe through a polyline with mitred joints."""
     pts = [Vector(p) for p in pts]
-    before = set(bm.faces)
+    before = len(bm.faces)
     rings = []
     for i, p in enumerate(pts):
         if i == 0:
@@ -399,6 +411,7 @@ def uv_rest(bm, done):
 
 
 def finish_object(name, bm, c, parent, mats, done_faces, bevel_w=0.10):
+    flush_mats(bm)
     bm.normal_update()
     uv_rest(bm, done_faces)
     ob = geo.obj_from_bm(name, bm, c, parent=parent, mats=mats, uv=False, smooth_angle=40)

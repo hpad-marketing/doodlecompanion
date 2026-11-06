@@ -17,7 +17,7 @@ SLOTS = ["HS Paint", "HS Dark Metal", "HS Glow Teal", "HS Accent", "HS Bay", "HS
          "HS Primer"]
 
 PALETTE = {
-    "paint": (0.66, 0.62, 0.55),      # warm bone-white hull
+    "paint": (0.60, 0.565, 0.50),      # warm bone-white hull
     "accent": (0.80, 0.50, 0.13),     # mustard livery (brand #E0A64B, weathered)
     "primer": (0.34, 0.38, 0.35),     # replaced panels in grey-green primer
     "dark": (0.035, 0.036, 0.038),    # ink gunmetal (brand #1F1F1D)
@@ -135,7 +135,7 @@ def weathered(name, base, metal=0.0, rough=0.52, wear=1.0, seed=0.0, chips=True,
     if panels:
         pa = n.attr("panel")
         is_seam = n.math("LESS_THAN", pa.outputs["Fac"], -0.5)
-        drift = n.math("MULTIPLY_ADD", pa.outputs["Fac"], 0.16, 0.92)
+        drift = n.math("MULTIPLY_ADD", pa.outputs["Fac"], 0.30, 0.84)
         tone = n("ShaderNodeHueSaturation")
         n.set(tone.inputs["Value"], drift)
         n.set(tone.inputs["Hue"], n.math("MULTIPLY_ADD", pa.outputs["Fac"], 0.025, 0.4875))
@@ -145,7 +145,7 @@ def weathered(name, base, metal=0.0, rough=0.52, wear=1.0, seed=0.0, chips=True,
     # large blotchy discolouration
     blot = n.noise(v, 0.35, 4, 0.55)
     blotm = n.ramp(blot, [(0.35, 0.0), (0.75, 1.0)])
-    color = n.mix(n.math("MULTIPLY", blotm, n.math("MULTIPLY", W, 0.22)), color, (0.42, 0.36, 0.28), "MULTIPLY")
+    color = n.mix(n.math("MULTIPLY", blotm, n.math("MULTIPLY", W, 0.38)), color, (0.40, 0.33, 0.24), "MULTIPLY")
     # cavity grime from AO
     ao = n("ShaderNodeAmbientOcclusion", Distance=0.35)
     ao.only_local = True
@@ -157,11 +157,11 @@ def weathered(name, base, metal=0.0, rough=0.52, wear=1.0, seed=0.0, chips=True,
     # streaks: grime and rust running down
     st = n.noise(v, 6.0, 5, 0.5, stretch=(1.0, 1.0, 0.07))
     st2 = n.noise(v, 2.0, 3, 0.5)
-    streak = n.math("MULTIPLY", n.ramp(st, [(0.52, 0.0), (0.72, 1.0)]), n.ramp(st2, [(0.45, 0.0), (0.7, 1.0)]))
-    streak = n.math("MULTIPLY", streak, n.math("MULTIPLY", W, 0.7), clamp=True)
+    streak = n.math("MULTIPLY", n.ramp(st, [(0.46, 0.0), (0.70, 1.0)]), n.ramp(st2, [(0.38, 0.0), (0.66, 1.0)]))
+    streak = n.math("MULTIPLY", streak, n.math("MULTIPLY", W, 0.95), clamp=True)
     color = n.mix(streak, color, (0.16, 0.12, 0.09), "MULTIPLY")
     rs = n.noise(v, 9.0, 6, 0.6, stretch=(1.0, 1.0, 0.05))
-    rust = n.math("MULTIPLY", n.ramp(rs, [(0.62, 0.0), (0.78, 1.0)]), n.math("MULTIPLY", W, 0.55), clamp=True)
+    rust = n.math("MULTIPLY", n.ramp(rs, [(0.58, 0.0), (0.76, 1.0)]), n.math("MULTIPLY", W, 0.7), clamp=True)
     color = n.mix(rust, color, (0.30, 0.12, 0.04), "MIX")
     # soot near exhausts (object props soot, soot_y)
     soot_on = n.attr("soot", "OBJECT").outputs["Fac"]
@@ -172,6 +172,16 @@ def weathered(name, base, metal=0.0, rough=0.52, wear=1.0, seed=0.0, chips=True,
     soot = n.math("MULTIPLY", n.math("SUBTRACT", 1.0, n.math("MULTIPLY", n.math("ADD", dy, 0.5), 0.4), clamp=True), soot_on)
     soot = n.math("MULTIPLY", soot, n.math("MULTIPLY_ADD", n.noise(v, 1.5, 6, 0.6), 0.9, 0.3), clamp=True)
     color = n.mix(n.math("MULTIPLY", soot, 0.9), color, (0.025, 0.022, 0.02), "MIX")
+    # lived-in: underside and lower flanks go darker and oilier
+    geo_b = n("ShaderNodeNewGeometry")
+    sepb = n("ShaderNodeSeparateXYZ")
+    n.set(sepb.inputs[0], geo_b.outputs["Normal"])
+    under = n.ramp(n.math("MULTIPLY_ADD", sepb.outputs["Z"], -0.5, 0.5), [(0.45, 0.0), (0.95, 1.0)])
+    under = n.math("MULTIPLY", under, n.math("MULTIPLY_ADD", n.noise(v, 1.2, 5, 0.6), 0.7, 0.35), clamp=True)
+    color = n.mix(n.math("MULTIPLY", under, n.math("MULTIPLY", W, 0.55)), color, (0.10, 0.085, 0.07), "MIX")
+    # hand wear: polished, slightly darker smudges at grab height on the flanks
+    smudge = n.ramp(n.noise(v, 2.5, 6, 0.65), [(0.62, 0.0), (0.75, 1.0)])
+    color = n.mix(n.math("MULTIPLY", smudge, n.math("MULTIPLY", W, 0.35)), color, (0.55, 0.5, 0.44), "MULTIPLY")
     # dust on top faces
     geo_n = n("ShaderNodeNewGeometry")
     sepn = n("ShaderNodeSeparateXYZ")
@@ -230,7 +240,7 @@ def glass(name):
     smudge = n.noise(tc.outputs["Object"], 3.0, 8, 0.7)
     r = n.math("MULTIPLY_ADD", n.math("POWER", smudge, 3.0), 0.35, 0.02)
     b = _bsdf(n, **{"Base Color": (0.01, 0.012, 0.014), "Roughness": r, "Specular IOR Level": 0.8,
-                    "Emission Color": (1.0, 0.62, 0.32, 1), "Emission Strength": 0.02, "Coat Weight": 0.6})
+                    "Emission Color": (1.0, 0.62, 0.32, 1), "Emission Strength": 0.35, "Coat Weight": 0.6})
     n.out(b)
     return m
 

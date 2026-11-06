@@ -31,6 +31,8 @@ def empty(name, c, parent=None, loc=(0, 0, 0), kind="PLAIN_AXES", size=1.0):
 
 
 def obj_from_bm(name, bm, c, parent=None, mats=(), smooth_angle=None, uv=True, loc=None):
+    from .body import flush_mats
+    flush_mats(bm)
     if uv and not bm.loops.layers.uv:
         box_uv(bm)
     me = bpy.data.meshes.new(name)
@@ -78,19 +80,41 @@ def transform(bm, geom_verts, mat):
     bmesh.ops.transform(bm, matrix=mat, verts=geom_verts)
 
 
+_CUBE_V = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5),
+           (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+_CUBE_F = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+
+
+def _merge(dst, src):
+    """Copies src's verts and faces into dst (fast for big dst meshes)."""
+    vm = {v: dst.verts.new(v.co) for v in src.verts}
+    out = [vm[v] for v in src.verts]
+    for f in src.faces:
+        try:
+            dst.faces.new([vm[v] for v in f.verts])
+        except ValueError:
+            pass
+    src.free()
+    return out
+
+
 def add_box(bm, center, size, rot=None, bevel=0.0):
     """Adds a box (size = full extents) and returns its verts."""
-    r = bmesh.ops.create_cube(bm, size=1.0)
-    vs = r["verts"]
     m = Matrix.Translation(center)
     if rot is not None:
         m = m @ (rot.to_matrix().to_4x4() if hasattr(rot, "to_matrix") else rot)
     m = m @ Matrix.Diagonal((size[0], size[1], size[2], 1.0))
-    bmesh.ops.transform(bm, matrix=m, verts=vs)
-    if bevel > 0:
-        edges = list({e for v in vs for e in v.link_edges})
-        bmesh.ops.bevel(bm, geom=edges, offset=bevel, segments=1, affect="EDGES", profile=0.5)
-    return vs
+    if bevel <= 0:
+        vs = [bm.verts.new(m @ Vector(p)) for p in _CUBE_V]
+        for f in _CUBE_F:
+            bm.faces.new([vs[i] for i in f])
+        return vs
+    tmp = bmesh.new()
+    vs = [tmp.verts.new(m @ Vector(p)) for p in _CUBE_V]
+    for f in _CUBE_F:
+        tmp.faces.new([vs[i] for i in f])
+    bmesh.ops.bevel(tmp, geom=list(tmp.edges), offset=bevel, segments=1, affect="EDGES", profile=0.5)
+    return _merge(bm, tmp)
 
 
 def add_cyl(bm, p0, p1, r0, r1=None, segs=16, caps=True):
@@ -98,14 +122,20 @@ def add_cyl(bm, p0, p1, r0, r1=None, segs=16, caps=True):
     r1 = r0 if r1 is None else r1
     p0, p1 = Vector(p0), Vector(p1)
     d = p1 - p0
-    L = d.length
-    res = bmesh.ops.create_cone(bm, cap_ends=caps, cap_tris=False, segments=segs,
-                                radius1=r0, radius2=r1, depth=L)
-    vs = res["verts"]
-    rot = d.to_track_quat("Z", "Y").to_matrix().to_4x4()
-    m = Matrix.Translation((p0 + p1) / 2) @ rot
-    bmesh.ops.transform(bm, matrix=m, verts=vs)
-    return vs
+    q = d.to_track_quat("Z", "Y")
+    a_ring, b_ring = [], []
+    for i in range(segs):
+        a = 2 * math.pi * i / segs
+        ca, sa = math.cos(a), math.sin(a)
+        a_ring.append(bm.verts.new(p0 + q @ Vector((r0 * ca, r0 * sa, 0))))
+        b_ring.append(bm.verts.new(p1 + q @ Vector((r1 * ca, r1 * sa, 0))))
+    for i in range(segs):
+        j = (i + 1) % segs
+        bm.faces.new((a_ring[i], a_ring[j], b_ring[j], b_ring[i]))
+    if caps:
+        bm.faces.new(list(reversed(a_ring)))
+        bm.faces.new(b_ring)
+    return a_ring + b_ring
 
 
 def lathe(bm, prof, segs=32, mat=None, cap_start=False, cap_end=False):

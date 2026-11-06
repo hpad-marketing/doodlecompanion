@@ -29,7 +29,7 @@ def _liv_engine(r, ca, fs, rnd):
     return ca < m[1] or ca >= B.RING - m[1]
 
 
-def build_hull(c, root, mats, seed=1):
+def build_hull(c, root, mats, seed=1, detail_density=1.0):
     rnd = random.Random(seed)
     bm = bmesh.new()
     L = B.layers(bm)
@@ -86,9 +86,12 @@ def build_hull(c, root, mats, seed=1):
     _mullions(bm, glass)
 
     _greebles(bm, mods, rnd)
+    from . import detail
+    n_items = detail.apply(bm, mods, random.Random(seed * 7 + 3), density=detail_density, base_faces=done)
     ob = B.finish_object("Hull", bm, c, root, mats, done)
     ob["hs_part"] = "hull"
     ob["sb_piece"] = "hs_airframe"
+    ob["hs_detail_items"] = n_items
     return ob, ramp_pts, mods
 
 
@@ -107,7 +110,7 @@ def _mullions(bm, face):
     bars = [(0.0, 0.0, 0.14, h), (-w * 0.3, 0.0, 0.1, h * 0.92), (w * 0.3, 0.0, 0.1, h * 0.92),
             (0.0, h * 0.12, w * 0.98, 0.1)]
     for du, dv, bw, bh in bars:
-        before = set(bm.faces)
+        before = len(bm.faces)
         geo.add_box(bm, cen + side * du + up * dv + nrm * 0.03, (bw, bh, 0.08), rot=rot)
         B._mat_new(bm, before, B.DARK)
 
@@ -165,20 +168,20 @@ def build_mechanics(c, root, mats):
     D, H = B.DARK, B.HEAT
     for s in (1, -1):
         for z, mat in ((0.95, B.PAINT), (-0.65, B.ACCENT)):
-            before = set(bm.faces)
+            before = len(bm.faces)
             prof = [(0.0, -2.9), (0.35, -2.88), (0.58, -2.78), (0.68, -2.6), (0.70, -2.35),
                     (0.70, 2.35), (0.68, 2.6), (0.58, 2.78), (0.35, 2.88), (0.0, 2.9)]
             m = Matrix.Translation((s * 2.75, 0.3, z)) @ Matrix.Rotation(-math.pi / 2, 4, "X")
             geo.lathe(bm, prof, segs=28, mat=m)
             B._mat_new(bm, before, mat)
             for y in (-1.6, 2.2):
-                before = set(bm.faces)
+                before = len(bm.faces)
                 geo.add_cyl(bm, (s * 2.75, y - 0.09, z), (s * 2.75, y + 0.09, z), 0.735, segs=28)
                 B._mat_new(bm, before, D)
                 geo.add_box(bm, Vector((s * 1.88, y, z)), (0.40, 0.14, 0.26))
                 B._mat_new(bm, before, D)
             # valve on the tank end
-            before = set(bm.faces)
+            before = len(bm.faces)
             geo.add_cyl(bm, (s * 2.75, 3.15, z), (s * 2.75, 3.45, z), 0.12, segs=10)
             geo.add_cyl(bm, (s * 2.75, 3.45, z), (s * 2.75, 3.55, z), 0.2, segs=12)
             B._mat_new(bm, before, H)
@@ -194,7 +197,7 @@ def build_mechanics(c, root, mats):
     # flanges where pipes meet the bulkheads
     for x in (-1.2, -0.5, 0.5, 1.2):
         for y, z in ((3.55, 1.38), (-2.95, 1.38)):
-            before = set(bm.faces)
+            before = len(bm.faces)
             geo.add_cyl(bm, (x, y - 0.06, z), (x, y + 0.06, z), 0.2 if abs(x) > 1 else 0.17, segs=12)
             B._mat_new(bm, before, D)
     ob = B.finish_object("Spine Mechanics", bm, c, root, mats, set(), bevel_w=0.0)
@@ -211,12 +214,12 @@ def build_engines(c, root, mats):
     for x, z, r in ((0.0, 0.95, 1.0), (2.0, -0.9, 0.9), (-2.0, -0.9, 0.9)):
         m = Matrix.Translation((x, -19.0, z)) @ Matrix.Rotation(math.pi / 2, 4, "X")
         # housing ring + bell (z of profile runs along -Y after rotation)
-        before = set(bm.faces)
+        before = len(bm.faces)
         prof = [(r * 1.08, -0.05), (r * 1.12, 0.1), (r * 1.12, 0.55), (r * 1.02, 0.62),
                 (r * 0.95, 0.62)]
         geo.lathe(bm, prof, segs=36, mat=m)
         B._mat_new(bm, before, B.DARK)
-        before = set(bm.faces)
+        before = len(bm.faces)
         bell = [(r * 0.86, 0.6), (r * 0.9, 1.1), (r * 1.0, 1.8), (r * 1.13, 2.6), (r * 1.17, 2.75),
                 (r * 1.10, 2.75), (r * 1.06, 2.6), (r * 0.94, 1.8), (r * 0.82, 1.1), (r * 0.76, 0.75)]
         geo.lathe(bm, bell, segs=36, mat=m)
@@ -227,7 +230,7 @@ def build_engines(c, root, mats):
             ca, sa = math.cos(a), math.sin(a)
             p0 = Vector((x + ca * r * 1.16, -19.35, z + sa * r * 1.16))
             p1 = Vector((x + ca * r * 1.0, -20.6, z + sa * r * 1.0))
-            before = set(bm.faces)
+            before = len(bm.faces)
             geo.add_cyl(bm, p0, p1, 0.05, segs=8)
             geo.add_cyl(bm, p0 + (p1 - p0) * 0.15, p0 + (p1 - p0) * 0.55, 0.075, segs=8)
             B._mat_new(bm, before, B.DARK)
