@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "ship_foley"
+version = "0.1.0"
+name = "Ship Foley"
+tagline = "Contact sounds for droids and props, made from physics"
+maintainer = "HPAD Marketing"
+type = "add-on"
+website = "https://github.com/hpad-marketing/doodlecompanion"
+
+tags = ["Sequencer", "Animation", "3D View"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 HPAD Marketing"]
+
+[permissions]
+files = "Writes the contact-sound WAV cache and mixdowns beside the .blend"
+
+[build]
+paths_exclude_pattern = ["__pycache__/", "/.git/", "*.zip", "tests/"]
