@@ -1,0 +1,92 @@
+{
+  "status": {
+    "kokoro": [
+      true,
+      "ready"
+    ],
+    "espeak": [
+      true,
+      "ready"
+    ],
+    "voicebox": [
+      false,
+      "Voicebox isn't running (open the app on this PC)"
+    ],
+    "dia2": [
+      false,
+      "Dia2 (Nari Labs) isn't installed on this PC"
+    ],
+    "zonos": [
+      false,
+      "Zonos v0.1 (Zyphra) isn't installed on this PC"
+    ],
+    "orpheus": [
+      false,
+      "Orpheus 3B (Canopy Labs) isn't installed on this PC"
+    ],
+    "openvoice": [
+      false,
+      "OpenVoice V2 (MyShell) isn't installed on this PC"
+    ]
+  },
+  "lines": [
+    {
+      "engine": "kokoro",
+      "droid": "hazard",
+      "ok": true,
+      "secs": 2.1,
+      "robot": "C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\lines\\hazard\\e1b836bb214b0821_robot.wav",
+      "duration": 3.43
+    },
+    {
+      "engine": "espeak",
+      "droid": "rx07",
+      "ok": true,
+      "secs": 0.1,
+      "robot": "C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\lines\\rx07\\1b247becd735550e_robot.wav",
+      "duration": 3.22
+    },
+    {
+      "engine": "voicebox:qwen_voice_design",
+      "droid": "hazard",
+      "ok": false,
+      "error": "No voice engine available. voicebox:qwen_voice_design: Voicebox isn't running (open the app on this PC)",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. voicebox:qwen_voice_design: Voicebox isn't running (open the app on this PC)\n"
+    },
+    {
+      "engine": "voicebox:chatterbox_turbo",
+      "droid": "drone",
+      "ok": false,
+      "error": "No voice engine available. voicebox:chatterbox_turbo: Voicebox isn't running (open the app on this PC)",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. voicebox:chatterbox_turbo: Voicebox isn't running (open the app on this PC)\n"
+    },
+    {
+      "engine": "dia2",
+      "droid": "hazard",
+      "ok": false,
+      "error": "No voice engine available. dia2: Dia2 (Nari Labs) isn't installed on this PC",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. dia2: Dia2 (Nari Labs) isn't installed on this PC\n"
+    },
+    {
+      "engine": "zonos",
+      "droid": "computer",
+      "ok": false,
+      "error": "No voice engine available. zonos: Zonos v0.1 (Zyphra) isn't installed on this PC",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. zonos: Zonos v0.1 (Zyphra) isn't installed on this PC\n"
+    },
+    {
+      "engine": "orpheus",
+      "droid": "drone",
+      "ok": false,
+      "error": "No voice engine available. orpheus: Orpheus 3B (Canopy Labs) isn't installed on this PC",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. orpheus: Orpheus 3B (Canopy Labs) isn't installed on this PC\n"
+    },
+    {
+      "engine": "openvoice",
+      "droid": "computer",
+      "ok": false,
+      "error": "No voice engine available. openvoice: OpenVoice V2 (MyShell) isn't installed on this PC",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 20, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. openvoice: OpenVoice V2 (MyShell) isn't installed on this PC\n"
+    }
+  ]
+}
