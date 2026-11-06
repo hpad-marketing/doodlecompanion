@@ -46,7 +46,8 @@ Other add-ons (the spaceship sitcom add-on first) drive a droid through these na
 ## Axes and rules
 
 - Droids face -Y. The droid's left side is +X. Local Z is up on every part.
-- Nothing intersects and nothing floats. `detail_check.py` and the rig's contact check must pass at 0 before anything is shown.
+- Nothing intersects and nothing floats. `tools/collision_check.py` must report 0 intersecting pairs before anything is shown. It tests every droid part against every other part and against everything in the scene, and scene parts against each other, in every pose preset and every library motion. Resting contact (a foot on the floor) up to `collision.touch_mm` (0.5 mm) is allowed; designed joint contacts, bolts on their own part and hose ends in their hooked parts are skipped.
+- If a motion sinks a foot into the floor, `tools/floor_clamp.py in.blend out.blend` lifts that foot's IK control by exactly the dip on those frames.
 - Show stills before any full render. Don't change a droid's look after it locks (`"locked": true` in its settings).
 
 ## Shared material library and texture shelf
@@ -54,6 +55,10 @@ Other add-ons (the spaceship sitcom add-on first) drive a droid through these na
 - Shelf: `DeepInDoodles\_shared\textures\<asset>\<file>_2k.jpg`
 - Library: `DeepInDoodles\_shared\RB_Materials.blend`, built with `python3 materials/build_library.py <shelf> RB_Materials.blend`. Its images use paths relative to the library, so the folder can move as one piece.
 - Each droid links the node groups `RB Weathered Metal` and `RB Black Polymer` with `python3 materials/link_library.py <library> in.blend out.blend`. Each droid keeps its own thin materials, so its paint palette stays its own while the shader is shared.
+
+## Small droids
+
+Settings that scale the finish for droids much smaller than RX-07: `weather_scale` (wear pattern size, e.g. 2.6), `uv_smooth_deg` (UV region angle, e.g. 42), `bevel` ([big, small, small-below] in m, e.g. [0.0016, 0.0009, 0.03]). Lock sheet: `lock_sheet.state_framing: "full"` keeps round droids whole in the light-state panels; close-ups walk round a part until nothing blocks it, or take `{"object": ..., "view": [x, y, z]}`.
 
 ## Starting a new droid
 
@@ -74,4 +79,4 @@ One current file sits at the top of each droid folder. Older versions go to `wor
 
 ## GPU renders and nightly checks on Sushi
 
-Renders and tests go through the render queue at `DeepInDoodles\_queue` (format in its README): drop a job JSON with `blend`, `script`, `args`, `label` and `thread` into `jobs\`. Each droid with a check script gets a line in `_queue\nightly.json`. RX-07's current file is `DeepInDoodles\Robot\Robot_RX07.blend`.
+Renders and tests go through the render queue at `DeepInDoodles\_queue` (format in its README): drop a job JSON with `blend`, `script`, `args`, `label` and `thread` into `jobs\`. Each droid with a check script gets a line in `_queue\nightly.json`. The kit is mirrored on Sushi at `DeepInDoodles\_shared\droid-kit`; point a droid's nightly line at `_shared\droid-kit\tools\collision_check.py` (it finds the droid's settings from the open file's name). RX-07's current file is `DeepInDoodles\Robot\Robot_RX07.blend`.

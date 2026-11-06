@@ -12,7 +12,8 @@ from mathutils import Vector
 blend, out = sys.argv[-2:]
 bpy.ops.wm.open_mainfile(filepath=blend)
 
-SMOOTH = math.radians(20)     # neighbours closer than this are one smooth surface
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import kit
+SMOOTH = math.radians(kit.get('uv_smooth_deg', 20))     # neighbours closer than this are one smooth surface
 SMALL = 0.10                  # regions under this share of the part's area merge into a neighbour
 
 def regions_for(bm):

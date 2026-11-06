@@ -261,6 +261,7 @@ def material(name, group, vals, viewport):
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     nt = m.node_tree; nt.nodes.clear()
     gn = nt.nodes.new('ShaderNodeGroup'); gn.node_tree = group; gn.name = 'Look'
+    vals = dict(vals); vals['Scale'] = vals.get('Scale', 1.0) * (globals()['kit'].get('weather_scale', 1.0) if 'kit' in globals() else 1.0)   # small droids: finer wear
     for k, v in vals.items(): gn.inputs[k].default_value = v
     o = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(gn.outputs[0], o.inputs['Surface'])
     m.diffuse_color = viewport; m.roughness = 0.6

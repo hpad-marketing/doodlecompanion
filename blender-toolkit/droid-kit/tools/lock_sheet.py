@@ -5,7 +5,7 @@ Uses the droid's own camera rig-free: the camera is placed from the droid's boun
 import bpy, sys, os, json, math
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'kit'))
 import kit
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
 blend, outdir = args[0], args[1]; samples = int(args[2]) if len(args) > 2 and args[2].isdigit() else 32
 bpy.ops.wm.open_mainfile(filepath=blend)
@@ -73,7 +73,7 @@ def set_state(st):
 for st in kit.get('lock_sheet', {}).get('states', []):
     set_state(st['set']); frame_whole(-20, 8, 70)
     lo, hi = bbox(parts); c = (lo + hi) / 2; top = Vector((c.x, lo.y, hi.z - (hi.z - lo.z) * 0.22))   # face the front, upper body
-    aim(top + Vector((-0.4, -1.9, 0.25)), top, 55)
+    if LS.get('state_framing', 'upper') == 'upper': aim(top + Vector((-0.4, -1.9, 0.25)), top, 55)   # 'full' keeps the whole droid (round droids)
     panels.append({'group': 'Face & light states', 'label': st['label'], 'file': shot('state_' + st['label'].lower().replace(' ', '_'))})
 set_state({'led': 3, 'glow': 0})
 for cu in LS.get('closeups', []):
@@ -84,6 +84,14 @@ for cu in LS.get('closeups', []):
     blo, bhi = bbox(parts); out = c - (blo + bhi) / 2; out.z = 0   # default: look at the part from its outer side
     side = out.normalized() if out.length > 0.15 else Vector((0, -1, 0))
     d = Vector(view) if view else side + Vector((-0.35 * side.y, 0.35 * side.x, 0.45))
+    def clear(dv):   # can the camera see the part, or is a shell / arm in the way?
+        loc = c + dv.normalized() * r * 3.2; hit, _, _, _, ob, _ = sc.ray_cast(bpy.context.evaluated_depsgraph_get(), loc, (c - loc).normalized())
+        while ob and ob != o: ob = ob.parent
+        return not hit or ob == o
+    if not view and not clear(d):
+        for k in range(1, 12):   # walk round the part until it is in view
+            q = Quaternion((0, 0, 1), math.radians(30 * k)) @ d
+            if clear(q): d = q; break
     aim(c + d.normalized() * r * 3.2, c, 60)
     panels.append({'group': 'Close-ups', 'label': nm, 'file': shot('close_' + nm.replace('.', '_'), 540, 540)})
 json.dump({'droid': kit.get('name', ''), 'kit': kit.VERSION, 'panels': panels}, open(os.path.join(outdir, 'manifest.json'), 'w'), indent=1)

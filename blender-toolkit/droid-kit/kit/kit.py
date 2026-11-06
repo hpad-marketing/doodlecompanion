@@ -11,6 +11,14 @@ def settings():
     if _S is None:
         p = os.environ.get('DROID_SETTINGS') or (os.path.join(ROOT, 'droids', os.environ['DROID'] + '.json') if os.environ.get('DROID') else '')
         _S = json.load(open(p)) if p and os.path.exists(p) else {}
+        if not _S:   # no DROID given (e.g. nightly run inside Blender): find the droid whose current_file is the open .blend
+            try:
+                import bpy; open_name = os.path.basename(bpy.data.filepath)
+            except Exception: open_name = ''
+            for f in sorted(os.listdir(os.path.join(ROOT, 'droids'))) if open_name else []:
+                if f.endswith('.json') and not f.startswith('_'):
+                    d = json.load(open(os.path.join(ROOT, 'droids', f)))
+                    if d.get('current_file') == open_name: _S = d; break
     return _S
 def get(key, default=None): return settings().get(key, default)
 def path(name): return os.path.join(KIT, name)
