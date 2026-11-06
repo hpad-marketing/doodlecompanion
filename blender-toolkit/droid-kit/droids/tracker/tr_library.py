@@ -149,15 +149,15 @@ def _(C, F):
     C.base.update(CARRY, **stalks(droop=0, pitch=0, ext=0.02))
     C.at(0.3, **stalks(pitch=22, ext=0.04), lean=r(8)).at(0.9, scoop_lift=r(8), scoop_tilt=r(4))       # look down, lower the scoop
     C.at(2.2, vl=0.14, vr=0.14).at(3.6, vl=0.0, vr=0.0)                                              # creep forward, under the item
-    C.at(4.0, scoop_tilt=r(-55), load=4.0).at(4.9, scoop_lift=r(-26)).at(5.4, lean=r(0), **stalks(pitch=0, ext=0.06))
+    C.at(4.0, scoop_tilt=r(-55), load=P.SCRAP_KG).at(4.9, scoop_lift=r(-26)).at(5.4, lean=r(0), **stalks(pitch=0, ext=0.06))
     C.at(7.0, scoop_lift=r(-18), **stalks(ext=0.03))
     F.look(0.3, 0, -0.02).set(0.3, eyes_happy=0.0).set(4.1, eyes_happy=0.0).set(4.6, eyes_happy=1.0, mouth_smile=0.0).set(5.0, mouth_smile=1.0)
     F.look(5.4, 0, 0); blinks(F, (2.0, 7.6))
 
-@motion('TR_scoop_dump', 'Tip the scoop out', 7.0, start_load=4.0,
+@motion('TR_scoop_dump', 'Tip the scoop out', 7.0, start_load=P.SCRAP_KG,
         start=dict(scoop_lift=r(-18), scoop_tilt=r(-55)))
 def _(C, F):
-    C.base.update(scoop_lift=r(-18), scoop_tilt=r(-55), load=4.0, **stalks(droop=0, pitch=0, ext=0.03))
+    C.base.update(scoop_lift=r(-18), scoop_tilt=r(-55), load=P.SCRAP_KG, **stalks(droop=0, pitch=0, ext=0.03))
     C.at(0.4, scoop_lift=r(-36), **stalks(pitch=15)).at(1.6, scoop_tilt=r(18)).at(2.25, load=0.0)
     C.at(3.4, scoop_tilt=r(-8)).at(3.8, scoop_lift=r(-6), **stalks(pitch=0))
     F.look(0.4, 0, -0.015).set(2.2, eyes_happy=0.0, mouth_smile=0.0).set(2.6, eyes_happy=1.0, mouth_smile=1.0).look(3.8, 0, 0); blinks(F, (5.0,))

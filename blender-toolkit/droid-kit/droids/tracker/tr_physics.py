@@ -16,11 +16,14 @@ Units: metres, seconds, kilograms, radians.
 import math
 
 G = 9.81
-MASS = {'tracks': 16.0, 'chassis': 11.0, 'body': 13.0, 'scoop': 3.0}
-M_TOTAL = sum(MASS.values())           # 43 kg porter
+# masses from the Droid Kit mass model (kit/physics.py: 4 mm steel shells, solid steel links and pins), CoG measured at rest
+MASS = {'tracks': 91.2, 'chassis': 24.8, 'body': 64.8, 'scoop': 8.6}
+M_TOTAL = sum(MASS.values())           # 189 kg porter
+K_SCALE = M_TOTAL / 43.0               # strut and motor stiffness sized for this mass (natural frequencies stay the same)
+SCRAP_KG = 8.0                         # one scoop of scrap metal
 GAUGE = 0.58                           # track centre to centre
 MU = 0.85                              # rubber pads on deck plating
-H_CG = 0.36                            # centre of gravity height (loaded body raises it)
+H_CG = 0.31                            # centre of gravity height (kit mass model: 0.312 m)
 TRACK_LAG = 0.10                       # motor speed lag (s)
 A_DRIVE = 0.9                          # motor-limited acceleration (m/s^2)
 A_BRAKE = 1.6                          # braking (motors reverse + friction)
@@ -114,10 +117,10 @@ class Droid:
             sv[k] = s.step(cmd.get(k, s.x), dt, load)
         # chassis on its struts: + pitch = nose down, + roll = toward the droid's right, heave + = up
         load_moment = self.load * G * 0.30            # load sits ~0.30 m ahead of the strut centre
-        lift_react = -self.servo['scoop_lift'].a * (1.0 + self.load) * 0.004
-        p_ss = (m * self.a_fwd * H_CG * -1.0 + load_moment) / 600.0 + lift_react
-        r_ss = (m * self.a_left * H_CG) / 700.0
-        h_ss = -self.load * G / 26000.0
+        lift_react = -self.servo['scoop_lift'].a * (MASS['scoop'] + self.load) * 0.0013 / K_SCALE
+        p_ss = (m * self.a_fwd * H_CG * -1.0 + load_moment) / (600.0 * K_SCALE) + lift_react
+        r_ss = (m * self.a_left * H_CG) / (700.0 * K_SCALE)
+        h_ss = -self.load * G / (26000.0 * K_SCALE)
         p = self.pitch.step(p_ss, dt); r = self.roll.step(r_ss, dt); h = self.heave.step(h_ss, dt)
         # body: accel at the lean pivot in the body frame (chassis accel + chassis pitch spin x height)
         wa = sv['waist']

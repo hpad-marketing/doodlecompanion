@@ -415,5 +415,8 @@
       0.45
     ],
     "lens": 45
+  },
+  "physics": {
+    "foot_regex": "track_link_\\d+"
   }
 }

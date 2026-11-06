@@ -233,7 +233,7 @@ class Whirr:
 class DriveCore:
     """Drives the porter through tr_physics.Droid at 240 Hz: track motors with lag and traction limits, struts that
     squat, dive and roll, body inertia, sprung stalk caps, a swinging tow hook and trapezoid servos that slow down
-    under load. Drive the scoop low and forward to pick up scrap (4 kg): the nose drops and everything gets heavier."""
+    under load. Drive the scoop low and forward to pick up scrap (8 kg): the nose drops and everything gets heavier."""
     SUB = 10
 
     def __init__(self, ob):
@@ -332,8 +332,8 @@ class DriveCore:
             if k > 1.8 and d.load > 0: d.load = 0.0
             if k > 3.2: self.dump = None
         lift_t = min(lift_t, self.max_lift(d.servo['scoop_tilt'].x))
-        # scrap pickup: scoop low and driving forward fills it (4 kg of scrap)
-        if d.load == 0 and d.servo['scoop_lift'].x > self.max_lift(d.servo['scoop_tilt'].x) - r(3) and d.v > 0.12 and self.dump is None: d.load = 4.0
+        # scrap pickup: scoop low and driving forward fills it with scrap
+        if d.load == 0 and d.servo['scoop_lift'].x > self.max_lift(d.servo['scoop_tilt'].x) - r(3) and d.v > 0.12 and self.dump is None: d.load = SCRAP_KG
         v_cmd = inp.thr * V_MAX if self.powered else 0.0
         turn = inp.steer * 0.55 if self.powered else 0.0
         cmd = dict(vl=v_cmd + turn * (1 - 0.4 * abs(inp.thr)), vr=v_cmd - turn * (1 - 0.4 * abs(inp.thr)),
@@ -425,7 +425,7 @@ def control_lines(pad):
                 'R2 / L2: scoop up / down   R1 / L1: tilt the scoop   D-pad up / down: stalks out / in   D-pad left / right: screen mode',
                 'Cross: talk   Circle: happy wiggle   Square: scan   Triangle: tip scrap into the bin   R3: surprised',
                 'L3: work lights   Mic: vent dust   Options: power   Create: record a take   Touchpad: follow camera   PS: stop',
-                'Lower the scoop and drive forward to pick up scrap (4 kg): it gets heavier']
+                'Lower the scoop and drive forward to pick up scrap (8 kg): it gets heavier']
     return ['Drive W/S   Steer A/D   Waist Q/E   Look I/K   Scoop up/down Up/Down arrows   Tilt Left/Right arrows',
             'Stalks out/in U/J   Talk T   Happy H   Scan G   Tip into bin B   Surprised N   Lights L   Vent dust V',
             'Screen mode [ ]   Power P   Record R   Follow cam F   Stop Esc']
