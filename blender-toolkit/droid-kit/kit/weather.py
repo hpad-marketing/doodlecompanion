@@ -103,10 +103,11 @@ def metal_group():
     chips = ramp(math('SUBTRACT', chip_src, thr), 0.0, 0.04)
     bare = math('MAXIMUM', chips, math('SUBTRACT', 1.0, gi.outputs['Paint']))
 
-    # rust: inside chips and in cavities, patchy
-    rust_src = math('ADD', math('MULTIPLY', n_rust, 1.2), math('MULTIPLY', cavity, 0.35))
-    rust_src = math('ADD', rust_src, math('MULTIPLY', math('MULTIPLY', bare, n_big), 0.6))
-    rust = ramp(math('SUBTRACT', rust_src, math('SUBTRACT', 1.38, math('MULTIPLY', gi.outputs['Rust'], 0.75))), 0.0, 0.12)
+    # rust: ONLY along seams, worn edges, cavities and inside chips (never whole faces), broken up by noise
+    where = math('MAXIMUM', seam, math('MULTIPLY', edge, math('ADD', 0.35, math('MULTIPLY', bare, 0.4))))
+    where = math('MAXIMUM', where, math('MAXIMUM', math('MULTIPLY', cavity, 0.6), math('MULTIPLY', chips, 0.55)))
+    rust_src = math('MULTIPLY', where, math('ADD', 0.35, math('MULTIPLY', n_rust, 0.9)))
+    rust = ramp(math('SUBTRACT', rust_src, math('SUBTRACT', 0.6, math('MULTIPLY', gi.outputs['Rust'], 0.5))), 0.0, 0.1)
 
     # grime: cavities + vertical rain streaks
     grime = math('MULTIPLY', math('ADD', math('MULTIPLY', cavity, 0.9), math('MULTIPLY', ramp(n_str, 0.45, 0.7), 0.5)),
@@ -294,6 +295,11 @@ for o in bpy.data.objects:
     else: continue
     for s in o.material_slots: s.material = m
     count[m.name] = count.get(m.name, 0) + 1
+for pat, role in kit.get('material_overrides', {}).items():   # e.g. {"pauldron_vent0": "yellow"}: part painted in a palette role
+    rx = re.compile(pat)
+    for o in bpy.data.objects:
+        if o.type == 'MESH' and rx.search(o.name) and ('RB_' + role) in NEW:
+            for s_ in o.material_slots: s_.material = NEW['RB_' + role]
 for o in bpy.data.objects:   # hoses are curves: black polymer too
     if o.type == 'CURVE' and o.name.startswith('hose'):
         o.data.materials.clear(); o.data.materials.append(NEW['poly']); count['RB_polymer'] = count.get('RB_polymer', 0) + 1

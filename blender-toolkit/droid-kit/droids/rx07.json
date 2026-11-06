@@ -67,7 +67,7 @@
   ],
   [
    "rb_heat",
-   "pauldron_vent|body_port",
+   "body_port",
    1.0
   ],
   [
@@ -84,6 +84,11 @@
    "rb_touch",
    "body_box",
    0.35
+  ],
+  [
+   "rb_heat",
+   "pauldron_vent",
+   0.25
   ]
  ],
  "decals": [
@@ -412,5 +417,9 @@
    1.05
   ],
   "lens": 40
+ },
+ "material_overrides": {
+  "^pauldron_vent0\\.": "yellow",
+  "^pauldron_vent1\\.": "teal"
  }
 }
