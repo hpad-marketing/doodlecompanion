@@ -175,6 +175,8 @@ def planet(room, loc=(-40, 160, 30), radius=34, color=(0.55, 0.32, 0.18, 1), rin
         ro.location = loc
         ro.rotation_euler = (math.radians(74), math.radians(-18), 0)
         ro.visible_shadow = False
+        ro["sb_view_only"] = "DEEP_SPACE"
+    ob["sb_view_only"] = "DEEP_SPACE"  # views.py hides the room's own planet and star in the other views
     # local star: a sun that also slants through the window
     L = bpy.data.lights.new("SB Star", "SUN")
     L.energy = 2.2
@@ -184,6 +186,7 @@ def planet(room, loc=(-40, 160, 30), radius=34, color=(0.55, 0.32, 0.18, 1), rin
     room.lights.objects.link(so)
     so.rotation_euler = (math.radians(58), math.radians(12), math.radians(200))
     so["sb_light"] = "star"
+    so["sb_view_only"] = "DEEP_SPACE"
     so["sb_energy"] = L.energy
     so["sb_color"] = list(L.color)
     return ob

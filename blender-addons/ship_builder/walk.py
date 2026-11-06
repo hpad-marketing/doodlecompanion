@@ -9,6 +9,7 @@ Keyboard                         DualSense
   Q                 auto cut       Square       auto cut on/off
   E                 nearest door   Cross        open/close nearest door
   R                 record on/off  Options      record on/off
+  V / Shift+V       window view    D-pad up/down  next / prev window view
   Esc / right click leave          Circle       leave
 
 Doors open by themselves as the droid walks up and close behind it. Auto cut
@@ -147,6 +148,83 @@ def _seg_dist(p, a, b):
     return (p - q).length, q
 
 
+class Gait:
+    """Plays a droid's walk cycle by distance travelled, so the feet never skate, then
+    hands the pose to feet.Planter so every sole lands on the real floor.
+    The cycle is any action on the rig whose name holds "walk" (in-place cycles;
+    root bone translation is ignored so the Walker alone moves the droid)."""
+
+    ROOTS = ("root", "Root", "COG", "torso")
+
+    def __init__(self, scene, rig, speed=None):
+        from . import feet as Ft
+        from .wear import _fcurves
+        self.rig = rig
+        acts = [a for a in bpy.data.actions if "walk" in a.name.lower() and
+                any(c.data_path.startswith("pose.bones") for c in _fcurves(a))]
+        acts.sort(key=lambda a: (("cycle" not in a.name.lower()) + ("run" in a.name.lower()), len(a.name)))
+        self.act = acts[0] if acts else None
+        self.curves = []
+        if self.act:
+            for fc in _fcurves(self.act):
+                if not fc.data_path.startswith("pose.bones"):
+                    continue
+                bone = fc.data_path.split('"')[1]
+                if bone in self.ROOTS and fc.data_path.endswith("location"):
+                    continue
+                self.curves.append(fc)
+            self.f0, self.f1 = self.act.frame_range
+        fps = scene.render.fps / scene.render.fps_base
+        self.stride = (speed or WALK) * max(1.0, (self.f1 - self.f0) if self.act else 24) / fps
+        if self.act:
+            self.stride = self._measure_stride(scene) or self.stride
+        self.phase = 0.0
+        self.planter = Ft.Planter(rig, scene)
+
+    def _measure_stride(self, scene):
+        """Distance the body must travel per cycle so a planted foot doesn't skate:
+        the speed a stance foot slides back in the in-place cycle, times the cycle length."""
+        ad = self.rig.animation_data or self.rig.animation_data_create()
+        keep, keep_f = ad.action, scene.frame_current
+        ad.action = self.act
+        if hasattr(ad, "action_slot") and getattr(self.act, "slots", None) and len(self.act.slots):
+            ad.action_slot = self.act.slots[0]
+        side = next((b for b in self.rig.pose.bones if b.name.startswith("IK_foot")), None)
+        track = []
+        for fr in range(int(self.f0), int(self.f1) + 1):
+            scene.frame_set(fr)
+            track.append(side.head.copy())
+        ad.action = keep
+        scene.frame_set(keep_f)
+        if not track:
+            return None
+        zmin = min(p.z for p in track)
+        speeds = sorted((b - a).xy.length for a, b in zip(track, track[1:]) if a.z < zmin + 0.005 and b.z < zmin + 0.005)
+        if not speeds:
+            return None
+        return speeds[len(speeds) // 2] * (self.f1 - self.f0)
+
+    def pose(self, dist, moving):
+        if self.act:
+            self.phase = (self.phase + dist / self.stride) % 1.0 if moving else self.phase
+            fr = self.f0 + self.phase * (self.f1 - self.f0)
+            for fc in self.curves:
+                try:
+                    owner = self.rig.path_resolve(fc.data_path.rsplit(".", 1)[0])
+                    prop = fc.data_path.rsplit(".", 1)[1]
+                    getattr(owner, prop)[fc.array_index] = fc.evaluate(fr)
+                except (ValueError, AttributeError, TypeError, IndexError):
+                    continue
+        return self.planter.plant()
+
+    def key(self, frame):
+        for pb in self.rig.pose.bones:
+            if pb.name in self.ROOTS:
+                continue
+            pb.keyframe_insert("location", frame=frame)
+            pb.keyframe_insert("rotation_quaternion" if pb.rotation_mode == "QUATERNION" else "rotation_euler", frame=frame)
+
+
 class Walker:
     def __init__(self, scene, pawn, radius=None, height=None):
         self.scene, self.pawn = scene, pawn
@@ -160,7 +238,16 @@ class Walker:
                     hi = Vector(map(max, hi, w))
         if lo.x > hi.x:
             lo, hi = pawn.location - Vector((0.3, 0.3, 0)), pawn.location + Vector((0.3, 0.3, 1.2))
-        self.radius = radius or max(0.2, min(0.65, 0.5 * max(hi.x - lo.x, hi.y - lo.y)))
+        # body radius: the farthest any part above step height reaches from the droid's centre line,
+        # so a turning box body can't swing a corner into a table rim
+        reach = 0.0
+        for ob in fam:
+            if ob.type in {"MESH", "CURVE", "FONT"}:
+                for c in ob.bound_box:
+                    w = ob.matrix_world @ Vector(c)
+                    if w.z > pawn.location.z + STEP:
+                        reach = max(reach, (w.xy - pawn.location.xy).length)
+        self.radius = radius or max(0.2, min(0.65, reach + 0.02 if reach else 0.5 * max(hi.x - lo.x, hi.y - lo.y)))
         self.height = height or max(0.4, hi.z - lo.z)
         self.world = World(scene, ignore=fam)
         self.pos = _flat(pawn.location)
@@ -182,6 +269,8 @@ class Walker:
         self.t = 0.0
         self.room = self._room_at(self.pos)
         self.events = []
+        rig = pawn if pawn.type == "ARMATURE" else next((o for o in fam if o.type == "ARMATURE"), None)
+        self.gait = Gait(scene, rig) if rig is not None and any(b.name.startswith("IK_foot") for b in rig.pose.bones) else None
 
     # ------------------------------------------------------------ helpers
     def _follow_cam(self):
@@ -195,8 +284,10 @@ class Walker:
         return cam
 
     def _heights(self):
-        h = self.height
-        return [STEP + 0.04, max(STEP + 0.05, 0.5 * h), min(0.95 * h, 1.9)]
+        """Probe heights every 4 cm up the body, so thin rims and ledges can't slip between them."""
+        top = min(0.95 * self.height, 1.9)
+        n = max(2, int((top - STEP) / 0.04))
+        return [STEP + 0.02 + (top - STEP - 0.02) * i / n for i in range(n + 1)]
 
     def _room_at(self, p):
         for r in self.info["rooms"]:
@@ -336,6 +427,15 @@ class Walker:
         fps = self.scene.render.fps / self.scene.render.fps_base
         return self.rec_f0 + int(round((self.t - self.rec_t0) * fps))
 
+    def step_view(self, step=1):
+        """Change the view outside the windows; keyed on the timeline while recording."""
+        from . import views as V
+        if self.scene.world is None or self.scene.world.name != V.WORLD:
+            V.build(self.scene)
+        i = (int(self.scene.get("sb_view", 0)) + step) % len(V.KEYS)
+        V.set_view(V.KEYS[i], self.scene, frame=self._frame() if self.recording else None)
+        return V.KEYS[i]
+
     def _mark_cut(self):
         if not self.recording:
             return
@@ -365,6 +465,8 @@ class Walker:
         self.last_key = f
         self.pawn.keyframe_insert("location", frame=f)
         self.pawn.keyframe_insert("rotation_euler", index=2, frame=f)
+        if self.gait is not None:
+            self.gait.key(f)
         for ctl in {d["ctl"] for d in self.world.doors}:
             if ctl in doors or f == self.rec_f0:
                 ctl.keyframe_insert('["open"]', frame=f)
@@ -394,6 +496,8 @@ class Walker:
                 self.toggle_nearest_door()
             elif f == "record":
                 self.record()
+            elif f in ("next_view", "prev_view"):
+                self.step_view(1 if f == "next_view" else -1)
         right, fwd = self._view_axes()
         stick = Vector((inp.mx, inp.my))
         if stick.length > 1:
@@ -407,11 +511,14 @@ class Walker:
         new = self._collide(self.pos, self.pos + self.vel * dt)
         if dt > 0:
             self.vel = (new - self.pos) / dt if (new - self.pos).length < self.vel.length * dt + 1e-6 else self.vel
+        step_len = (new - self.pos).length
         self.pos = new
         gz = self.world.ground_z(self.pos, self.radius, self.z - 0.002) + 0.002  # rests on, never in, the floor
         self.z = gz if gz > self.z else self.z + (gz - self.z) * min(1.0, 12.0 * dt)
         self.pawn.location = Vector((self.pos.x, self.pos.y, self.z))
         self.pawn.rotation_euler.z = self.yaw
+        if self.gait is not None:
+            self.gait.pose(step_len, step_len > 1e-4)  # walk cycle by distance, then plant every sole
         doors = self._doors(dt)
         self.orbit += inp.orbit * 2.5 * dt
         self._update_follow(dt)
@@ -422,8 +529,9 @@ class Walker:
 
 
 # ================================================================ operator
-KEYS_FIRE = {"TAB": "next_cam", "F": "follow", "Q": "auto_cut", "E": "door", "R": "record"}
-PAD_FIRE = {"RB": "next_cam", "LB": "prev_cam", "Y": "follow", "X": "auto_cut", "A": "door", "START": "record", "B": "exit"}
+KEYS_FIRE = {"TAB": "next_cam", "F": "follow", "Q": "auto_cut", "E": "door", "R": "record", "V": "next_view"}
+PAD_FIRE = {"RB": "next_cam", "LB": "prev_cam", "Y": "follow", "X": "auto_cut", "A": "door", "START": "record", "B": "exit",
+            "UP": "next_view", "DOWN": "prev_view"}
 NUM = {"ONE": 0, "TWO": 1, "THREE": 2, "FOUR": 3, "FIVE": 4, "SIX": 5, "SEVEN": 6, "EIGHT": 7, "NINE": 8}
 
 
@@ -468,7 +576,7 @@ class SHIP_OT_walk(bpy.types.Operator):
         self._timer = ctx.window_manager.event_timer_add(1 / 60, window=ctx.window)
         ctx.window_manager.modal_handler_add(self)
         self.start = (pawn.location.copy(), pawn.rotation_euler.copy())
-        ctx.workspace.status_text_set("Walk: WASD move, Shift run, Tab camera, F follow, Q auto cut, E door, R record, Esc leave")
+        ctx.workspace.status_text_set("Walk: WASD move, Shift run, Tab camera, F follow, Q auto cut, E door, R record, V window view, Esc leave")
         return {"RUNNING_MODAL"}
 
     def modal(self, ctx, event):
@@ -480,6 +588,8 @@ class SHIP_OT_walk(bpy.types.Operator):
                 tag = KEYS_FIRE[event.type]
                 if tag == "next_cam" and event.shift:
                     tag = "prev_cam"
+                if tag == "next_view" and event.shift:
+                    tag = "prev_view"
                 self.fire.add(tag)
             elif event.type in NUM:
                 self.fire.add(("cam", NUM[event.type]))

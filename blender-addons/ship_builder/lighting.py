@@ -59,59 +59,9 @@ def render_setup(scene=None, preview=False):
 
 
 def space_world(strength=0.03):
-    """Near-black space with faint stars, so windows show stars and walls get no fake fill."""
-    w = bpy.data.worlds.get("SB Space") or bpy.data.worlds.new("SB Space")
-    w.use_nodes = True
-    nt = w.node_tree
-    nt.nodes.clear()
-    tc = nt.nodes.new("ShaderNodeTexCoord")
-    vor = nt.nodes.new("ShaderNodeTexVoronoi")
-    vor.inputs["Scale"].default_value = 420
-    nt.links.new(tc.outputs["Generated"], vor.inputs["Vector"])
-    mr = nt.nodes.new("ShaderNodeMapRange")
-    mr.inputs[1].default_value = 0.035
-    mr.inputs[2].default_value = 0.0
-    nt.links.new(vor.outputs["Distance"], mr.inputs[0])
-    neb = nt.nodes.new("ShaderNodeTexNoise")
-    neb.inputs["Scale"].default_value = 1.4
-    neb.inputs["Detail"].default_value = 8
-    nt.links.new(tc.outputs["Generated"], neb.inputs["Vector"])
-    nmr = nt.nodes.new("ShaderNodeMapRange")
-    nmr.inputs[1].default_value = 0.55
-    nmr.inputs[2].default_value = 0.8
-    nmr.inputs[4].default_value = 0.02
-    nt.links.new(neb.outputs[0], nmr.inputs[0])
-    nebc = nt.nodes.new("ShaderNodeMix")
-    nebc.data_type = "RGBA"
-    nebc.inputs[6].default_value = (0.0, 0.0, 0.0, 1)
-    nebc.inputs[7].default_value = (0.25, 0.1, 0.45, 1)
-    nt.links.new(nmr.outputs[0], nebc.inputs[0])
-    add = nt.nodes.new("ShaderNodeMix")
-    add.data_type = "RGBA"
-    add.blend_type = "ADD"
-    add.inputs[0].default_value = 1.0
-    nt.links.new(nebc.outputs[2], add.inputs[6])
-    st = nt.nodes.new("ShaderNodeMath")
-    st.operation = "MULTIPLY"
-    st.inputs[1].default_value = 4.0
-    nt.links.new(mr.outputs[0], st.inputs[0])
-    nt.links.new(st.outputs[0], add.inputs[7])
-    bg = nt.nodes.new("ShaderNodeBackground")
-    nt.links.new(add.outputs[2], bg.inputs["Color"])
-    bg.inputs["Strength"].default_value = 1.0
-    # camera sees space, everything else gets only a faint ambient
-    lp = nt.nodes.new("ShaderNodeLightPath")
-    amb = nt.nodes.new("ShaderNodeBackground")
-    amb.inputs["Color"].default_value = (0.5, 0.55, 0.65, 1)
-    amb.inputs["Strength"].default_value = strength
-    mix = nt.nodes.new("ShaderNodeMixShader")
-    nt.links.new(lp.outputs["Is Camera Ray"], mix.inputs[0])
-    nt.links.new(amb.outputs[0], mix.inputs[1])
-    nt.links.new(bg.outputs[0], mix.inputs[2])
-    out = nt.nodes.new("ShaderNodeOutputWorld")
-    nt.links.new(mix.outputs[0], out.inputs["Surface"])
-    bpy.context.scene.world = w
-    return w
+    """The outside: switchable views (views.py) seen through every window, a faint ambient on walls."""
+    from . import views
+    return views.build(bpy.context.scene, ambient=strength)
 
 
 def haze(room, density=0.01):

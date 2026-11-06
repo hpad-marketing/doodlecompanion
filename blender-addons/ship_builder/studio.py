@@ -284,6 +284,16 @@ def _use_mood(ctx, it):
     return None
 
 
+def _use_view(ctx, it):
+    from . import views as V
+    if ctx.scene.world is None or ctx.scene.world.name != V.WORLD:
+        V.build(ctx.scene)
+    # with auto-key on, the switch is keyed at the current frame (cut to hyperspace mid-scene)
+    key = ctx.scene.tool_settings.use_keyframe_insert_auto
+    V.set_view(it.id, ctx.scene, frame=ctx.scene.frame_current if key else None)
+    return None
+
+
 def _hero_module():
     for name, mod in list(sys.modules.items()):
         if name.split(".")[-1] == "hero_ship" and hasattr(mod, "build"):
@@ -302,9 +312,9 @@ def _use_ship(ctx, it):
 
 
 USE = {"SETS": _use_set, "ROOMS": _use_room, "DROIDS": _use_droid, "MOTIONS": _use_motion, "PROPS": _use_prop,
-       "CAMERAS": _use_cam, "MOODS": _use_mood, "SHIP": _use_ship}
+       "CAMERAS": _use_cam, "MOODS": _use_mood, "VIEWS": _use_view, "SHIP": _use_ship}
 USE_LABEL = {"SETS": "Build set", "ROOMS": "Build room", "DROIDS": "Add droid", "MOTIONS": "Play on droid",
-             "PROPS": "Add prop", "CAMERAS": "Look through", "MOODS": "Apply mood", "SHIP": "Apply preset"}
+             "PROPS": "Add prop", "CAMERAS": "Look through", "MOODS": "Apply mood", "VIEWS": "Show outside", "SHIP": "Apply preset"}
 
 
 class SHIP_OT_cam_step(bpy.types.Operator):

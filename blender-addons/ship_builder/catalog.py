@@ -26,6 +26,7 @@ CATEGORIES = [
     ("PROPS", "Props", "PACKAGE"),
     ("CAMERAS", "Cameras", "CAMERA_DATA"),
     ("MOODS", "Moods", "LIGHT_SUN"),
+    ("VIEWS", "Window views", "WORLD"),
     ("SHIP", "Hero ship", "OUTLINER_OB_FORCE_FIELD"),
 ]
 ROOM_LABELS = {"lounge": "Oil lounge", "bridge": "Command centre", "corridor": "Corridor"}
@@ -159,6 +160,10 @@ def items(cat, prefs=None, droid=None):
     elif cat == "MOODS":
         for k in Li.MOODS:
             out.append(Item(cat, k, k.replace("_", " ").capitalize(), "", find(prefs, f"mood_{k}", f"lounge_Wide_master_{k}", f"bridge_Wide_master_{k}")))
+    elif cat == "VIEWS":
+        from . import views as V
+        for k, (lab, *_r) in V.VIEWS.items():
+            out.append(Item(cat, k, lab, "Seen through every window; the sunlight follows it", find(prefs, f"view_{k}")))
     elif cat == "SHIP":
         d, pres = hero_manifest(prefs)
         for p in pres:
