@@ -1,0 +1,108 @@
+{
+ "steps": [
+  {
+   "step": "build",
+   "t": 80.5,
+   "seconds": 77.3,
+   "rooms": [
+    "lounge",
+    "corridor",
+    "bridge"
+   ],
+   "device": "GPU",
+   "intersections": 0,
+   "intersections_doors_open": 0,
+   "pairs": []
+  },
+  {
+   "step": "studio opened",
+   "t": 81.0,
+   "windows": 2,
+   "areas": [
+    "DOPESHEET_EDITOR",
+    "IMAGE_EDITOR",
+    "VIEW_3D"
+   ]
+  },
+  {
+   "step": "screenshot",
+   "t": 82.2,
+   "file": "studio_sets.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 84.3,
+   "file": "studio_rooms.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 85.6,
+   "file": "studio_moods.png"
+  },
+  {
+   "step": "stills",
+   "t": 143.8,
+   "times": {
+    "Ship Wide": 12.0,
+    "Corridor Walkthrough": 13.8,
+    "Command centre Wide master": 15.7,
+    "Joint check": 15.3
+   }
+  },
+  {
+   "step": "bake",
+   "t": 262.9,
+   "seconds": 118.9,
+   "returncode": 0,
+   "lines": [
+    "BAKE wrote set_deck1 4.2 s",
+    "BAKE wrote cam_Oil_lounge_Wide_master 2.9 s",
+    "BAKE wrote cam_Oil_lounge_Couch_two-shot 2.9 s",
+    "BAKE wrote cam_Oil_lounge_Bar_single 2.9 s",
+    "BAKE wrote cam_Ship_Wide 2.4 s",
+    "BAKE wrote cam_Corridor_Walkthrough 2.8 s",
+    "BAKE wrote cam_Command_centre_Wide_master 3.0 s",
+    "BAKE wrote cam_Command_centre_Console_shoulder 3.0 s",
+    "BAKE wrote cam_Command_centre_Holo_table 3.0 s",
+    "BAKE wrote mood_NORMAL 2.9 s",
+    "BAKE wrote mood_NIGHT 2.9 s",
+    "BAKE wrote mood_RED_ALERT 2.9 s",
+    "BAKE wrote mood_POWER_CUT 2.8 s",
+    "BAKE wrote mood_DOCKING 3.0 s",
+    "ReferenceError: StructRNA of type Mesh has been removed"
+   ],
+   "files": [
+    "cam_Command_centre_Console_shoulder.jpg",
+    "cam_Command_centre_Holo_table.jpg",
+    "cam_Command_centre_Wide_master.jpg",
+    "cam_Corridor_Walkthrough.jpg",
+    "cam_Oil_lounge_Bar_single.jpg",
+    "cam_Oil_lounge_Couch_two-shot.jpg",
+    "cam_Oil_lounge_Wide_master.jpg",
+    "cam_Ship_Wide.jpg",
+    "mood_DOCKING.jpg",
+    "mood_NIGHT.jpg",
+    "mood_NORMAL.jpg",
+    "mood_POWER_CUT.jpg",
+    "mood_RED_ALERT.jpg",
+    "set_deck1.jpg"
+   ]
+  },
+  {
+   "step": "screenshot",
+   "t": 263.0,
+   "file": "studio_sets_baked.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 263.1,
+   "file": "studio_props.png"
+  },
+  {
+   "step": "done",
+   "t": 263.9,
+   "errors": 0
+  }
+ ],
+ "errors": []
+}
