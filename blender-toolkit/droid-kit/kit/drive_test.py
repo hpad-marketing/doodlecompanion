@@ -9,7 +9,7 @@ ns = {'__name__': 'robot_rig_ui'}; exec(compile(txt.as_string(), 'robot_rig_ui.p
 import stage
 import physics
 sc = bpy.context.scene; ob = bpy.data.objects['RobotRig']; pbs = ob.pose.bones
-ad = ob.animation_data; ad.action = None; ad.use_nla = False; ob['springs_on'] = 1
+ad = ob.animation_data; ad.action = None; ad.use_nla = False; ob['springs_on'] = int(os.environ.get('DRIVE_SPRINGS', '1'))
 for p in pbs:
     if not p.name.startswith(('SPR-', 'DEF-', 'MCH-', 'GIM')): p.location = (0, 0, 0); p.rotation_euler = (0, 0, 0)
 bpy.context.view_layer.update()
@@ -51,7 +51,7 @@ for dur, d in plan:
                 o = bpy.data.objects[f'{nm}.{S}']; Mw = o.evaluated_get(dg).matrix_world
                 low = min(low, min((Mw @ v.co).z for v in o.data.vertices))
         coms.append(B.com()); sups.append(B.support())
-        dbg.append((frames, round(core.ph, 3), round(core.ch.get('env', 0), 2), round(core.ch.get('sway', 0), 3), round(coms[-1].x, 3),
+        dbg.append((frames, round(core.ph, 3), round(core.ch.get('env', 0), 2), round(core.ch.get('sway', 0), 3), round(coms[-1].x, 3), round(coms[-1].y, 3), round(core.speed, 3),
                     ''.join(S if core.feet[S]['step'] else '.' for S in 'LR'), ''.join(sorted(sups[-1])),
                     [round(core.feet[S].get(k, 0)) for S in 'LR' for k in ('ball', 'heel')]))
         for S in 'LR':                      # while the heel peels, the toe must stay on the floor

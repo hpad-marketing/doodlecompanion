@@ -782,7 +782,7 @@ class DriveCore:
     T_WALK, T_RUN, V_WALK, V_RUN, YAW_RATE = 0.46, 0.36, 0.45, 0.8, math.radians(75)
     # gait (per droid via rig custom props drive_<name>): double support s, CoM height m, sideways ZMP target as a
     # COG offset m, heel-peel lead s, heel slap s, peel/strike degrees, toe counter-turn, body drop over the foot m
-    DS, COM_H, SWAY, PEEL, SLAP, BALL, HEEL, TOE_K, DROP, ENV_T, REACH = 0.24, 1.5, 0.38, 0.16, 0.18, 18.0, 12.0, 0.15, 0.02, 0.25, 1.0
+    DS, COM_H, SWAY, PEEL, SLAP, BALL, HEEL, TOE_K, DROP, ENV_T, REACH, TWIST = 0.30, 1.5, 0.38, 0.16, 0.18, 18.0, 12.0, 0.15, 0.02, 0.25, 1.0, 9.0
 
     def __init__(self, ob):
         self.ob = ob; pb = ob.pose.bones; B = ob.data.bones
@@ -805,7 +805,7 @@ class DriveCore:
         self.overlay = None               # (action, start time, length s, channels)
         self.last_lift = None
         self.ph = 0.75                    # gait clock, 0..1 per two steps (L lifts near 0.25 - half its swing)
-        for k in ('DS', 'COM_H', 'SWAY', 'PEEL', 'SLAP', 'BALL', 'HEEL', 'TOE_K', 'DROP', 'ENV_T', 'REACH'):
+        for k in ('DS', 'COM_H', 'SWAY', 'PEEL', 'SLAP', 'BALL', 'HEEL', 'TOE_K', 'DROP', 'ENV_T', 'REACH', 'TWIST'):
             v = ob.get('drive_' + k.lower())
             if v is not None: setattr(self, k, float(v))
 
@@ -863,9 +863,10 @@ class DriveCore:
                 h, _ = self.home(S, 0.0); worst = max(worst, (F['P'] - h).length)
         lim = max(0.0, min(1.0, (0.26 - worst) / 0.08))
         twist = max([abs((F['Y'] - self.yaw + math.pi) % (2 * math.pi) - math.pi) for F in self.feet.values() if F['step'] is None] or [0.0])
-        tlim = max(0.0, min(1.0, (math.radians(11) - twist) / math.radians(5)))   # hip yaw bearing stays clear of the pelvis
+        tlim = max(0.0, min(1.0, (math.radians(self.TWIST) - twist) / math.radians(5)))   # hip yaw bearing stays clear of the pelvis
         gait = self.ch.get('env', 0.0)          # the body only travels once the weight is moving from foot to foot
-        self.speed = _smooth(self.speed, tgt_v * lim * gait, 4.0, dt)
+        lim = self.sm('lim', lim, 3.0, dt, 1.0)      # a heavy body changes speed gradually (no surges as feet land)
+        self.speed = _smooth(self.speed, tgt_v * lim * gait, 2.5, dt)
         self.yawrate = _smooth(self.yawrate, tgt_w * (0.4 + 0.6 * lim) * tlim, 5.0, dt)
         fwd = Matrix.Rotation(self.yaw, 3, 'Z') @ Vector((0, -1, 0))
         self.pos += fwd * self.speed * dt; self.yaw += self.yawrate * dt
@@ -907,7 +908,8 @@ class DriveCore:
             P1, Y1 = self.home(S, look)
             e = s * s * (3 - 2 * s)
             F['P'] = st['P0'].lerp(P1, e); F['Y'] = st['Y0'] + (Y1 - st['Y0']) * e
-            F['P'].z = (0.08 if not inp.run else 0.065) * math.sin(math.pi * s)
+            hz = 0.08 if not inp.run else 0.065   # lift eases off the floor (no jolt), comes down with speed onto the heel
+            F['P'].z = hz * ((1 - math.cos(2 * math.pi * s)) / 2 if s < 0.5 else math.sin(math.pi * s))
             swing[S] = math.sin(math.pi * s)
             a = min(1.0, s / 0.45); F['ball'] = st['ball'] * (1 - a * a * (3 - 2 * a))         # push-off, toe leaves last
             b = max(0.0, (s - 0.5) / 0.5); F['heel'] = self.HEEL * b * b * (3 - 2 * b)        # toes up for the heel strike
