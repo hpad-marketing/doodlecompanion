@@ -780,6 +780,9 @@ def _smooth(cur, tgt, rate, dt):
 class DriveCore:
     """Walks the rig from stick input: root travels, feet step and stay planted, body sways; everything is servo-eased."""
     T_WALK, T_RUN, V_WALK, V_RUN, YAW_RATE = 0.46, 0.36, 0.45, 0.8, math.radians(75)
+    # gait (per droid via rig custom props drive_<name>): double support s, CoM height m, sideways ZMP target as a
+    # COG offset m, heel-peel lead s, heel slap s, peel/strike degrees, toe counter-turn, body drop over the foot m
+    DS, COM_H, SWAY, PEEL, SLAP, BALL, HEEL, TOE_K, DROP, ENV_T, REACH = 0.24, 1.5, 0.38, 0.16, 0.18, 18.0, 12.0, 0.15, 0.02, 0.25, 1.0
 
     def __init__(self, ob):
         self.ob = ob; pb = ob.pose.bones; B = ob.data.bones
@@ -801,6 +804,10 @@ class DriveCore:
         self.t = 0.0; self.powered = True; self.hatch_open = False; self.follow = True
         self.overlay = None               # (action, start time, length s, channels)
         self.last_lift = None
+        self.ph = 0.75                    # gait clock, 0..1 per two steps (L lifts near 0.25 - half its swing)
+        for k in ('DS', 'COM_H', 'SWAY', 'PEEL', 'SLAP', 'BALL', 'HEEL', 'TOE_K', 'DROP', 'ENV_T', 'REACH'):
+            v = ob.get('drive_' + k.lower())
+            if v is not None: setattr(self, k, float(v))
 
     # ---------------------------------------------------------------- helpers
     @staticmethod
@@ -856,32 +863,45 @@ class DriveCore:
                 h, _ = self.home(S, 0.0); worst = max(worst, (F['P'] - h).length)
         lim = max(0.0, min(1.0, (0.26 - worst) / 0.08))
         twist = max([abs((F['Y'] - self.yaw + math.pi) % (2 * math.pi) - math.pi) for F in self.feet.values() if F['step'] is None] or [0.0])
-        tlim = max(0.0, min(1.0, (math.radians(13) - twist) / math.radians(5)))   # hip yaw bearing stays clear of the pelvis
-        self.speed = _smooth(self.speed, tgt_v * lim, 4.0, dt)
+        tlim = max(0.0, min(1.0, (math.radians(11) - twist) / math.radians(5)))   # hip yaw bearing stays clear of the pelvis
+        gait = self.ch.get('env', 0.0)          # the body only travels once the weight is moving from foot to foot
+        self.speed = _smooth(self.speed, tgt_v * lim * gait, 4.0, dt)
         self.yawrate = _smooth(self.yawrate, tgt_w * (0.4 + 0.6 * lim) * tlim, 5.0, dt)
         fwd = Matrix.Rotation(self.yaw, 3, 'Z') @ Vector((0, -1, 0))
         self.pos += fwd * self.speed * dt; self.yaw += self.yawrate * dt
 
-        # feet
+        # feet: a gait clock. Each foot lifts at its own point in the cycle, so both feet are down between steps
+        # (double support). The body sways as a linear inverted pendulum whose floor push (ZMP) sits on the stance foot
+        # while the other foot is in the air: x = P (1 - cosh(t/tau) / cosh(Th/2tau)) per half cycle, which is what
+        # mass and gravity allow (an eased sway that "waits" over the foot would need impossible sideways forces).
         T = self.T_RUN if inp.run else self.T_WALK
+        Tc = self.sm('Tc', 2 * (T + self.DS), 3.0, dt, 2 * (T + self.DS))   # walk <-> run changes the rhythm smoothly
         moving = abs(self.speed) > 0.03 or abs(self.yawrate) > 0.05
-        stepping = [S for S, F in self.feet.items() if F['step'] is not None]
-        if not stepping:
-            errs = {}
-            for S, F in self.feet.items():
-                h, y = self.home(S, 0.0)
-                errs[S] = (F['P'] - h).length + 0.004 * abs(math.degrees(y - F['Y']))
-            if moving:     # continuous gait: strictly alternate feet
-                S = ('R' if self.last_lift == 'L' else 'L') if self.last_lift else max(errs, key=errs.get)
-                go = True
-            else:          # standing: settle whichever foot is out of place
-                S = max(errs, key=errs.get); go = errs[S] > 0.025
-            if go:
-                F = self.feet[S]; F['step'] = dict(t=0.0, P0=F['P'].copy(), Y0=F['Y'], T=T); self.last_lift = S
-        sway = 0.0; swing = {'L': 0.0, 'R': 0.0}
+        errs = {}
+        for S, F in self.feet.items():
+            h, y = self.home(S, 0.0)
+            errs[S] = (F['P'] - h).length + 0.004 * abs(math.degrees(y - F['Y']))
+        want = {S: moving or errs[S] > 0.025 for S in 'LR'}
+        busy_step = any(F['step'] is not None for F in self.feet.values())
+        env = self.ch['env'] = _smooth(self.ch.get('env', 0.0), 1.0 if (any(want.values()) or busy_step) else 0.0, 1 / self.ENV_T, dt)
+        ph0 = self.ph; self.ph = (self.ph + dt / Tc) % 1.0
+        half = 0.5 * T / Tc
+        lift_at = {'L': (0.25 - half) % 1.0, 'R': (0.75 - half) % 1.0}
+        for S, F in self.feet.items():
+            other = self.feet['R' if S == 'L' else 'L']
+            crossed = (ph0 <= lift_at[S] < self.ph) or (self.ph < ph0 and (lift_at[S] >= ph0 or lift_at[S] < self.ph))
+            if crossed and F['step'] is None and other['step'] is None and want[S] and env >= 0.9:
+                F['step'] = dict(t=0.0, P0=F['P'].copy(), Y0=F['Y'], T=T, ball=F.get('ball', 0.0)); self.last_lift = S
+        swing = {'L': 0.0, 'R': 0.0}
         for S, F in self.feet.items():
             st = F['step']
-            if st is None: continue
+            if st is None:
+                ttl = ((lift_at[S] - self.ph) % 1.0) * Tc        # heel peels just before the toe pushes off
+                peel = 1.0 - ttl / self.PEEL if (want[S] and env >= 0.85 and ttl < self.PEEL) else 0.0
+                F['ball'] = self.BALL * peel * peel * (3 - 2 * peel)
+                lt = (self.t - F.get('landed', -9)) / self.SLAP     # heel takes the impact, the forefoot rolls down gently
+                F['heel'] = self.HEEL * (1 - lt) ** 2 if lt < 1 else 0.0
+                continue
             st['t'] += dt; s = min(1.0, st['t'] / st['T'])
             look = max(0.0, st['T'] - st['t']) + 0.5 * st['T']
             P1, Y1 = self.home(S, look)
@@ -889,9 +909,17 @@ class DriveCore:
             F['P'] = st['P0'].lerp(P1, e); F['Y'] = st['Y0'] + (Y1 - st['Y0']) * e
             F['P'].z = (0.08 if not inp.run else 0.065) * math.sin(math.pi * s)
             swing[S] = math.sin(math.pi * s)
-            sway += (1 if S == 'R' else -1) * math.sin(math.pi * s)     # weight onto the planted foot
+            a = min(1.0, s / 0.45); F['ball'] = st['ball'] * (1 - a * a * (3 - 2 * a))         # push-off, toe leaves last
+            b = max(0.0, (s - 0.5) / 0.5); F['heel'] = self.HEEL * b * b * (3 - 2 * b)        # toes up for the heel strike
             if s >= 1.0:
                 F['P'].z = 0.0; F['step'] = None; F['landed'] = self.t
+        # lateral pendulum: ZMP P on the stance foot, CoM follows the cosh profile, eased in and out with the gait
+        tau = math.sqrt(self.COM_H / 9.81); Th = Tc / 2
+        u = (self.ph % 0.5) * Tc - Th / 2                     # time from mid single support
+        prof = 1 - math.cosh(u / tau) / math.cosh(Th / 2 / tau)
+        side = -1 if self.ph < 0.5 else 1                     # L in the air (ph < 0.5): weight over R (-x)
+        cx = side * self.SWAY * prof * env * env * (3 - 2 * env)
+        self.ch['sway'] = cx
 
         # pose: root, COG, feet (armature-space matrices -> local)
         Rw = self.root_xf(Vector((self.pos.x, self.pos.y, 0.0)), self.yaw)
@@ -899,8 +927,8 @@ class DriveCore:
         pb['root'].matrix_basis = self.M_root.inverted() @ root_pose
         sn = min(1.0, abs(self.speed) / self.V_WALK)
         crouch = self.sm('crouch', -0.18 if (inp.crouch and self.powered) else 0.0, 5.0, dt)
-        cz = -0.035 - 0.03 * sn + crouch - 0.012 * max(swing.values())
-        cx = self.sm('sway', 0.055 * sway * (1 if moving else 0.6), 6.0, dt)
+        cz = -0.035 - 0.03 * sn + crouch - 0.012 * max(swing.values()) - self.DROP * (cx / self.SWAY) ** 2 \
+            - self.REACH * max(0.0, worst - 0.1) ** 2      # hip over the foot / a planted foot far behind: knees give a little
         cog_local = Matrix.Translation(self.cog_off + Vector((cx, 0.0, cz)))
         cog_pose = Rw @ cog_local @ self.M_cog.to_3x3().to_4x4()
         par = root_pose @ self.M_root.inverted() @ self.M_cog
@@ -910,6 +938,9 @@ class DriveCore:
             par = root_pose @ self.M_root.inverted() @ self.M_foot[S]
             pb[f'IK_foot.{S}'].matrix_basis = par.inverted() @ Mf
             pb[f'IK_foot.{S}']['ik_fk'] = 1.0; pb[f'IK_hand.{S}']['ik_fk'] = 0.0
+            for bn, val in ((f'roll_ball.{S}', F.get('ball', 0.0)), (f'roll_heel.{S}', F.get('heel', 0.0)),
+                            (f'IK-toe.{S}', F.get('ball', 0.0) * self.TOE_K)):
+                if bn in pb: pb[bn].rotation_euler = (r(val), 0, 0)
 
         # upper body
         pan = self.sm('pan', -inp.look_x * 100 if self.powered else 0.0, 4.0, dt)
@@ -952,6 +983,7 @@ class DriveCore:
     def keyed_bones(self):
         out = ['root', 'COG', 'hips', 'waist', 'sensor', 'hatch']
         for S in 'LR':
+            out += [b for b in (f'roll_ball.{S}', f'roll_heel.{S}', f'IK-toe.{S}') if b in self.ob.pose.bones]
             out += [f'IK_foot.{S}', f'FK-upper_arm.{S}', f'FK-forearm.{S}', f'FK-hand.{S}', f'grip.{S}', f'f_thumb_0.{S}']
         return out
 

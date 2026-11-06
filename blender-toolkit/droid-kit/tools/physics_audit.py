@@ -49,11 +49,12 @@ for act in acts:
     ad.action = act
     if act.slots: ad.action_slot = act.slots[0]
     f0, f1 = map(int, act.frame_range); frames = list(range(f0, f1 + 1, step))
-    com = []; sup = []; jang = {}
+    com = []; sup = []; loose = []; jang = {}
     for f in frames:
         sc.frame_set(f)
         W = world_points(); c = sum((p['m'] * x for p, x in W), Vector()) / total
         com.append(c); s = support(); sup.append(s)
+        B.tol, t0 = 0.012, B.tol; loose.append(support()); B.tol = t0   # a landing heel within 12 mm already takes the impact
         for j, bones in JD.items():
             b = pbs[JOINTS[j]]; Mp = b.parent.matrix if b.parent else Matrix()
             jang.setdefault(j, []).append((Mp.inverted() @ b.matrix).to_quaternion())   # the joint's own turn, relative to its parent
@@ -71,7 +72,9 @@ for act in acts:
     dt = step / fps
     for i in range(1, len(frames) - 1):
         c, fr = com[i]; acc = (com[i + 1][0] - 2 * c + com[i - 1][0]) / (dt * dt)
-        s = sup[i]
+        s = dict(sup[i])
+        for S in 'LR':   # heel strike: the foot lands within the next two frames, so the impact already goes through it
+            if S not in s and S in loose[i] and any(S in sup[k] for k in range(i + 1, min(len(sup), i + 3))): s[S] = loose[i][S]
         if not s: continue
         h = hull([p for v in s.values() for p in v])
         zx = c.x - (c.z - Z0) * acc.x / (G + acc.z); zy = c.y - (c.z - Z0) * acc.y / (G + acc.z)

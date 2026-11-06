@@ -11,8 +11,11 @@ bpy.ops.wm.open_mainfile(filepath=src)
 # (side, degrees out, first frame, last frame): the arm on the swing-leg side, for each step of the demo walk
 DEMO = ([('L', 9, 84, 116), ('R', 9, 114, 144), ('L', 8, 142, 180)], 80, 184)
 PLAN = {'RM_demo_10s': DEMO, 'RM_demo_weighted': DEMO,
-        'RM_step_forward': ([('L', 9, 2, 34), ('R', 9, 30, 60), ('L', 9, 56, 80)], 1, 80)}
+        'RM_step_forward': ([('L', 9, 2, 32), ('R', 9, 28, 58), ('L', 9, 54, 80)], 1, 80)}
+import os
+ONLY = os.environ.get('ARM_ONLY')   # re-apply to one motion after it's rebuilt
 for an, (BUMPS, F0, F1) in PLAN.items():
+    if ONLY and an != ONLY: continue
     a = bpy.data.actions[an]; cb = anim_utils.action_get_channelbag_for_slot(a, a.slots[0])
     for S, sg in (('L', 1), ('R', -1)):
         c = next(c for c in cb.fcurves if c.data_path == f'pose.bones["FK-upper_arm.{S}"].rotation_euler' and c.array_index == 2)

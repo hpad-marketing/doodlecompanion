@@ -516,6 +516,6 @@
   "limit_order_skip": [
    "plate_pauldron"
   ],
-  "zmp_margin": 0.05
+  "zmp_margin": 0.035
  }
 }

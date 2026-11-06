@@ -46,12 +46,13 @@ def foot(S, contact):
     f = lambda t: round(lift + SWING * t)
     keys = [(contact, (0, 0.15, 0)), (peel, (0, y(peel), 0)), (lift, (0, -0.15, 0)),
             (f(0.15), (0, -0.15 + 0.02 * STRIDE, 0.3 * H)), (f(0.5), (0, 0.0, H)), (f(0.8), (0, 0.15 - 0.1 * STRIDE, 0.45 * H))]
-    put(P(f'IK_foot.{S}', 'location'), keys, lin={contact, peel, contact + T})
+    put(P(f'IK_foot.{S}', 'location'), keys, lin={contact, peel, f(0.8), contact + T})   # straight down into the heel strike
     put(P(f'roll_ball.{S}', 'rotation_euler'), [(contact, (0, 0, 0)), (peel, (0, 0, 0)), (lift, (BALL, 0, 0)), (f(0.3), (BALL * 0.75, 0, 0)),
                                                (f(0.5), (BALL * 0.2, 0, 0)), (f(0.65), (0, 0, 0))], deg=True)
     put(P(f'IK-toe.{S}', 'rotation_euler'), [(contact, (0, 0, 0)), (peel, (0, 0, 0)), (lift, (BALL * TOE_K, 0, 0)), (f(0.3), (0, 0, 0))], deg=True)
-    put(P(f'roll_heel.{S}', 'rotation_euler'), [(land - T + 3, (0, 0, 0)), (f(0.5), (0, 0, 0)), (f(0.8), (7, 0, 0)), (land - 1, (11, 0, 0)), (land, (12, 0, 0)),
-                                               (land + 1 - T, (8, 0, 0)), (land + 2 - T, (3, 0, 0))], deg=True)
+    # the heel takes the impact; the forefoot then rolls down over 4 frames, gently at the end (not a toe slap)
+    put(P(f'roll_heel.{S}', 'rotation_euler'), [(land - T + 4, (0, 0, 0)), (f(0.5), (0, 0, 0)), (f(0.8), (7, 0, 0)), (land - 1, (11, 0, 0)), (land, (12, 0, 0)),
+                                               (land + 1 - T, (8.5, 0, 0)), (land + 2 - T, (4.5, 0, 0)), (land + 3 - T, (1.5, 0, 0))], deg=True)
 
 
 foot('L', 1); foot('R', 1 + T // 2)

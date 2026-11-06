@@ -70,11 +70,12 @@ def solve(cs, ax, p, w, w0, w1):
             else: c0 -= cf * cs[j][i]
         rows.append(r * w[k]); rhs.append(c0 * w[k])
         r = np.zeros(n); r[k - w0] = 0.05; rows.append(r); rhs.append(0.05 * cs[k][i])   # stay near the original
-    for k in range(w0, w1 - 1):   # smooth: small jerk
-        r = np.zeros(n)
+    for k in range(max(1, w0 - 2), min(len(cs) - 3, w1 + 1) + 1):   # smooth: small jerk, also across the window edges
+        r = np.zeros(n); c0 = 0.0; inside = False
         for j, cf in ((k - 1, -1), (k, 3), (k + 1, -3), (k + 2, 1)):
-            if w0 <= j <= w1: r[j - w0] += cf * 0.4
-        rows.append(r); rhs.append(0.0)
+            if w0 <= j <= w1: r[j - w0] += cf * 0.4; inside = True
+            else: c0 -= cf * 0.4 * cs[j][i]
+        if inside: rows.append(r); rhs.append(c0)
     return np.linalg.lstsq(np.array(rows), np.array(rhs), rcond=None)[0]
 
 
@@ -153,7 +154,7 @@ for name in names:
         msg.append(f'sway frames {frames[w0]}-{frames[w1]} (CoM error {err * 1000:.1f} mm' + (f', body lowered up to {d * 1000:.0f} mm)' if d else ')'))
         cs, sup = sample(frames)
     # ---- forward/back (and sideways when standing): only where the ZMP leaves the feet
-    for ax in ('y',) + (() if single else ('x',)):
+    for ax in ('y', 'x'):   # x too: a walk's sway is solved above, but other moves in the same motion can still tip
         z = zmps(cs, ax); p = list(z); w = [0.15] * N; bad = []
         for k in range(N):
             if not sup0[k]: continue

@@ -2,6 +2,7 @@
 so the robot stood on the front edge of each foot and the toe blocks: its centre of mass (21 cm behind that edge) sat
 outside what it stood on, and a real 1 t machine would tip backwards. This lowers the sole of foot_block.L/R onto the
 floor along its whole length (only the bottom 6 cm of the block is reshaped, by up to 10 mm; nothing above moves).
+Also moves the heel-strike pivot (roll_heel) onto the heel's rounded rear edge.
 python3 sole_fix.py in.blend out.blend"""
 import bpy, sys
 from mathutils import Vector
@@ -31,6 +32,14 @@ for S in 'LR':
         v.co = Mi @ (p + Vector((0, 0, dz)))
     o.data.update()
     print(S, 'sole was front', round(zf * 1000, 1), 'mm, heel', round(zb * 1000, 1), 'mm')
+# heel-strike pivot onto the heel itself: at y 0.20 it sat 4.5 cm behind the sole's rear edge, so a heel strike with
+# the toes up 12 degrees left the heel hanging ~9 mm above the floor
+HEEL_Y = 0.165
+bpy.context.view_layer.objects.active = rig; rig.select_set(True); bpy.ops.object.mode_set(mode='EDIT')
+for S in 'LR':
+    b = rig.data.edit_bones[f'roll_heel.{S}']; d = b.tail - b.head
+    b.head.y = HEEL_Y; b.head.z = 0.0; b.tail = b.head + d
+bpy.ops.object.mode_set(mode='OBJECT')
 ad.action = keep[0]
 if keep[0]: ad.action_slot = keep[1]
 bpy.ops.wm.save_as_mainfile(filepath=out, compress=True, relative_remap=False)

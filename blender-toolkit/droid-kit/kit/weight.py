@@ -39,7 +39,8 @@ lands.sort(); print('LANDINGS', lands)
 def dip(f):
     d = 0.0
     for lf, _ in lands:
-        t = f - lf
+        t = f - lf + 2   # the body starts sinking just before the heel lands and the leg catches it after: dropping
+        # from rest only after contact would mean the body free-falls while the foot is already down (physics audit)
         if 0 <= t < 6: d -= 0.007 * math.sin(math.pi * t / 6)
         elif 6 <= t < 16: d += 0.0018 * math.sin(math.pi * (t - 6) / 10) * math.exp(-(t - 6) / 8)
     return d
