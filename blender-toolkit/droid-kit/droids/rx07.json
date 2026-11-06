@@ -1,0 +1,47 @@
+{
+ "id": "rx07",
+ "name": "RX-07",
+ "folder": "Robot",
+ "current_file": "Robot_RX07.blend",
+ "rig": "RobotRig",
+ "facing": "-Y (robot's L side is +X)",
+ "locked": false,
+ "build": "droids/rx07/build.py",
+ "reference": {"image": "ref/rx07_photo.jpg"},
+ "paint": {"grey": "#434E58", "tan": "#A38F68", "teal": "#5F9692", "navy": "#2B3A5C", "yellow": "#C99A2E", "sage": "#85A68C", "olive": "#66713D"},
+ "paint_roles": {"grey": "Body", "tan": "Armour", "teal": "Hatch & pack", "navy": "Forearm shield", "yellow": "Forearm plate", "sage": "Shins", "olive": "Feet"},
+ "joint_regex": "(cheek|tongue|knuckle|_joint|joint\\d|drum|bearing|bracket|roll_bar|bridge|collar|wrist_cross|disc|turret|turntable|socket|waist_ring|yoke|lug|_tab[+-]|_eye|gland|clamp|riser|_drop|elbow_joint|knee_joint|hip_axle)",
+ "wear": [
+  ["rb_oil", "piston|knee_joint|elbow_joint|ankle|wrist", 1.0],
+  ["rb_mud", "foot|toe|heel", 1.0],
+  ["rb_mud", "shin", 0.65],
+  ["rb_heat", "pauldron_vent|body_port", 1.0],
+  ["rb_heat", "pauldron_top", 0.45],
+  ["rb_touch", "hatch_panel|body_handle", 1.0],
+  ["rb_touch", "body_box", 0.35]
+ ],
+ "decals": [
+  {"name": "serial", "part": "body_box", "normal": [0,-1,0], "up": [0,0,1], "uv": [0.25,0.82], "size": [0.30,0.12], "kind": "text", "lines": [["RX-07",0.68,"bold"],["UNIT 7   MAX LOAD 450 KG",0.24,"mono"]], "colour": "cream"},
+  {"name": "service", "part": "hatch_panel", "normal": [0,1,0], "up": [0,0,1], "uv": [0.674,0.76], "size": [0.17,0.07], "kind": "text", "lines": [["SERVICE",0.64,"bold"],["ACCESS",0.3,"mono"]], "colour": "yellow"},
+  {"name": "lockout", "part": "hatch_panel", "normal": [0,1,0], "up": [0,0,1], "uv": [0.326,0.76], "size": [0.17,0.05], "kind": "text", "lines": [["LOCK OUT",0.5,"mono"],["BEFORE OPENING",0.4,"mono"]], "colour": "cream"},
+  {"name": "hyd.{S}", "part": "shin_front.{S}", "normal": [0,-1,0], "up": [0,0,1], "uv": [0.5,0.5], "size": [0.10,0.0625], "kind": "text", "lines": [["HYD",0.5,"bold"],["3000 PSI",0.44,"mono"]], "colour": "white", "sides": "LR"},
+  {"name": "chev.{S}", "part": "toe_block.{S}", "normal": [0,0,1], "up": [0,-1,0], "uv": [0.5,0.5], "size": [0.24,0.08], "kind": "chevrons", "colour": "yellow", "sides": "LR"},
+  {"name": "side.{S}", "part": "thigh_plate.{S}", "normal": [0,-1,0], "up": [0,0,1], "uv": [0.5,0.42], "size": [0.075,0.075], "kind": "box_letter", "letter": "{S}", "colour": "white", "sides": "LR"}
+ ],
+ "bolt_panels": ["body_box","hatch_panel","pack_base","pelvis","pauldron_top","foot_block","pauldron_side","upper_arm_block","skirt_side_plate","forearm_core","forearm_shield","toe_block","skirt_front_plate","skirt_back_plate","wrist_cuff","thigh_plate_side","thigh_plate","forearm_yellow","shin_core","thigh_core","elbow_guard","sensor_head"],
+ "details": {"body": "body_box", "panel_lines": true, "conduits": true, "status_leds": {"under_decal": "decal_serial", "colours": ["green","amber","red"]}},
+ "hooks": {
+  "leds": ["RB_LED_green","RB_LED_amber","RB_LED_red"],
+  "glow_materials": ["RB_Antenna_Tip_L","RB_Antenna_Tip_R"],
+  "glow_node": "Glow",
+  "antenna_chains": ["antenna_L_1","antenna_L_2","antenna_L_3","antenna_R_1","antenna_R_2","antenna_R_3"],
+  "eye": "sensor_lens",
+  "controls": {"look_pan": "sensor:rot_y", "look_tilt": "sensor:rot_x", "turn_waist": "waist:rot_y", "lean": "hips:rot_x (+ leans back)", "crouch": "COG:loc_z", "shift_weight": "COG:loc_x", "grip": "grip.{S}:rot_x", "arm_swing": "FK-upper_arm.{S}:rot_x", "arm_raise": "FK-upper_arm.{S}:rot_z", "elbow": "FK-forearm.{S}:rot_x", "step": "IK_foot.{S}:loc"}
+ },
+ "lock_sheet": {
+  "hero": ["Stand", "Ready", "Arms up", "Reach", "Crouch", "Powered off"],
+  "states": [{"label": "LEDs off", "set": {"led": 0}}, {"label": "LEDs on", "set": {"led": 4}}, {"label": "Antenna glow", "set": {"glow": 6}}],
+  "closeups": ["sensor_head", "palm.R", "foot_block.L", "hatch_panel", "knee_joint.L", "pauldron_top.L"]
+ },
+ "stage_camera": {"loc": [-3.6, -4.6, 1.7], "target": [0, -0.3, 1.05], "lens": 40}
+}
