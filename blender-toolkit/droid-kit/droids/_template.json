@@ -1,0 +1,28 @@
+{
+ "id": "",
+ "name": "",
+ "folder": "",
+ "current_file": "",
+ "rig": "RobotRig",
+ "facing": "-Y (droid's L side is +X)",
+ "locked": false,
+ "build": "",
+ "reference": {"image": "ref/photo.jpg", "camera": {"loc": [-2.2, -2.6, 0.9], "target": [0, -0.5, 0.9], "lens": 35}},
+ "paint": {},
+ "paint_roles": {},
+ "joint_regex": "(cheek|tongue|knuckle|_joint|joint\\d|drum|bearing|bracket|socket|yoke|lug|gland|clamp)",
+ "wear": [],
+ "decals": [],
+ "bolt_panels": [],
+ "details": {"body": "", "panel_lines": false, "conduits": false, "status_leds": null},
+ "hooks": {
+  "leds": [],
+  "glow_materials": [],
+  "glow_node": "Glow",
+  "antenna_chains": [],
+  "eye": "",
+  "controls": {"look_pan": "", "look_tilt": "", "turn_waist": "", "lean": "", "crouch": "", "grip": "grip.{S}:rot_x", "arm_swing": "FK-upper_arm.{S}:rot_x", "arm_raise": "FK-upper_arm.{S}:rot_z", "elbow": "FK-forearm.{S}:rot_x", "step": "IK_foot.{S}:loc"}
+ },
+ "lock_sheet": {"hero": ["Stand", "Ready", "Arms up", "Reach", "Crouch"], "states": [], "closeups": []},
+ "stage_camera": {"loc": [-3.6, -4.6, 1.7], "target": [0, -0.3, 1.05], "lens": 40}
+}
