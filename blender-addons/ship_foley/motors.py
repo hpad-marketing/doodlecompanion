@@ -143,7 +143,8 @@ def render_group(js, prof, duration, strain=(), seed=0, level=1.0):
         return np.zeros(max(n, 1), np.float32)
     rng = np.random.default_rng(seed)
     mass = prof["mass_kg"]
-    base = 55.0 * (240.0 / max(mass, 1.0)) ** 0.33          # Hz: RX-07 55, hazard 78, drone 165
+    base = 190.0 * (240.0 / max(mass, 1.0)) ** 0.33         # Hz: RX-07 190, hazard 270, drone 570
+    # (a 55 Hz fundamental was below what phone and laptop speakers play)
     tt = np.arange(n) / S.RATE
     strain_env = np.ones(n)
     for ts, amt in strain:
@@ -177,9 +178,14 @@ def render_group(js, prof, duration, strain=(), seed=0, level=1.0):
         acc = np.clip(_env(times, dw, n, 0.0) / 25.0, 0, 1.5)
         hiss = S._bandnoise(rng, n, 5200, q=0.6) * acc * 0.35
         amp = x ** 0.7
-        out += amp * load * (0.55 * whine * mesh + 0.3 * grind * np.minimum(load, 2.0)) + hiss * load
-    # level: an RX-07 leg moving briskly sits about 16 dB under a walking step
-    out *= 0.032 * level
+        # the gear-mesh whine: teeth x shaft speed, the high servo sing you hear
+        # on any robot arm; it rises and falls with the joint
+        gph = phase * (teeth * 0.5)
+        sing = (np.sin(gph) + 0.35 * np.sin(2 * gph)) * (1 + 0.3 * _lp_noise(rng, n, 40.0))
+        sing = np.where(f * teeth * 0.5 < 9000, sing, 0.0)
+        out += amp * load * (0.55 * whine * mesh + 0.45 * sing + 0.3 * grind * np.minimum(load, 2.0)) + hiss * load
+    # level: an RX-07 leg moving briskly sits about 6-8 dB under a walking step
+    out *= 0.11 * level
     out = np.tanh(out * 1.6) / 1.6
     fade = min(n, int(0.01 * S.RATE))
     out[:fade] *= np.linspace(0, 1, fade)
