@@ -353,6 +353,9 @@ def exclusions(occ):
         ((-4.0, -21.0, -2.6), (4.0, -18.8, 2.6)),       # engine bells
     ]
     for s in (1, -1):
+        # engine guide rails and carriages along the engine section's flanks
+        Z.append(((min(s * 3.85, s * 4.7), -17.0, 0.85), (max(s * 3.85, s * 4.7), -13.9, 1.65)))
+        Z.append(((min(s * 3.85, s * 4.7), -17.0, -1.40), (max(s * 3.85, s * 4.7), -13.9, -0.60)))
         # canard fins: stowed along the cab side, swing out for landing
         Z.append(((min(s * 3.15, s * 6.7), 12.4, -1.25), (max(s * 3.15, s * 6.7), 17.8, -0.62)))
         # decals on the aft side, NO STEP on the fore side

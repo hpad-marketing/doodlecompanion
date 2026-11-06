@@ -18,7 +18,7 @@ import bpy
 from mathutils import Matrix, Vector
 from . import geo
 from . import body as B
-from .parts import drv, _part, _mat
+from .parts import drv, _part, _mat, telescopic
 from .layout import HOOD_Z, HOOD_DEPTH, SPINE_Z, ENGINE_Y0
 
 ENGINE_TRAVEL = 1.6      # m the engine section slides back
@@ -347,11 +347,87 @@ def canards(c, body, root, mats, mods):
     return out
 
 
+# ---------------------------------------------------------------------------
+# mechanisms: what actually pushes, guides and holds each moving section
+RAIL_X, RAIL_Z = 4.30, (1.25, -1.0)
+RAIL_Y = (-13.99, -16.80)
+
+
+def engine_rails(c, body, slide, mats):
+    """Guide beams off the aft block's back face; C-clamp carriages on the engine
+    section ride them (an electric screw drive inside the joint pushes it)."""
+    bm = bmesh.new()
+    for s in (1, -1):
+        for z in RAIL_Z:
+            geo.add_cyl(bm, (s * RAIL_X, RAIL_Y[0], z), (s * RAIL_X, RAIL_Y[1], z), 0.075, segs=14)
+            geo.add_box(bm, Vector((s * RAIL_X, RAIL_Y[0] - 0.06, z)), (0.30, 0.10, 0.30), bevel=0.02)  # root flange
+            geo.add_box(bm, Vector((s * RAIL_X, RAIL_Y[1] - 0.05, z)), (0.24, 0.10, 0.24), bevel=0.02)  # end stop
+    _mat(bm, set(), B.DARK)
+    _part("Engine Guide Rails", bm, c, body, mats, "hs_airframe")
+    bm = bmesh.new()
+    for s in (1, -1):
+        for z in RAIL_Z:
+            y0, y1 = -14.30, -15.05
+            yc, ly = (y0 + y1) / 2, y0 - y1
+            xin, xo = 3.93, RAIL_X + 0.075 + 0.03          # from the engine side to past the rail
+            for dz in (0.075 + 0.006 + 0.05, -(0.075 + 0.006 + 0.05)):   # shoes above and below the rail
+                geo.add_box(bm, Vector((s * (xin + xo) / 2, yc, z + dz)), (xo - xin, ly, 0.10))
+            geo.add_box(bm, Vector((s * (xo + 0.035), yc, z)), (0.07, ly, 0.36))   # outer cheek
+    _mat(bm, set(), B.DARK)
+    car = _part("Engine Carriages", bm, c, slide, mats, "hs_engine")
+    return car
+
+
+def hood_rams(c, body, hood_piv, mats):
+    hx, hy, hz = hood_piv.location
+    out = []
+    for s, side in ((1, "R"), (-1, "L")):
+        x = s * 1.95
+        end_body = Vector((x, 9.2, HOOD_Z + HOOD_DEPTH - 0.11))
+        out += telescopic(c, f"Hood Ram {side}", body, (x, 7.3, 2.73), hood_piv, tuple(end_body - Vector((hx, hy, hz))),
+                          mats, 1.45, "hs_hood", radii=(0.085, 0.066, 0.046),
+                          base_mount=((0.16, 0.26, 0.14), (0, 0, -0.05)), end_mount=((0.16, 0.24, 0.16), (0, 0, 0.07)))
+    return out
+
+
+def sockets(c, body, mats):
+    """Deck collars the spine rams and the turret column come up through."""
+    bm = bmesh.new()
+    for x, y in ((1.75, -5.6), (-1.75, -5.6), (1.75, -11.3), (-1.75, -11.3)):
+        geo.add_cyl(bm, (x, y, 3.0125), (x, y, 3.040), 0.17, segs=20, caps=False)
+        geo.add_cyl(bm, (x, y, 3.0125), (x, y, 3.040), 0.125, segs=20, caps=False)
+    x0, y0 = TURRET
+    geo.add_cyl(bm, (x0, y0, 2.612), (x0, y0, 2.644), 0.44, segs=32, caps=False)
+    geo.add_cyl(bm, (x0, y0, 2.612), (x0, y0, 2.644), 0.32, segs=32, caps=False)
+    _mat(bm, set(), B.DARK)
+    _part("Deck Sockets", bm, c, body, mats, "hs_airframe")
+
+
+def canard_brackets(c, body, mats, mods):
+    """Upper and lower lugs on the cab side that carry each canard's hinge pin."""
+    cab = mods["cab"]
+    y, z = CANARD["y"], CANARD["z"]
+    hw = cab.p(y)[0]
+    bm = bmesh.new()
+    for s in (1, -1):
+        px = s * (hw + 0.05)
+        for dz in (0.115, -0.115):
+            x_in, x_out = hw - 0.03, hw + 0.05 + 0.07 + 0.11
+            geo.add_box(bm, Vector((s * (x_in + x_out) / 2, y + 0.07, z + dz)), (x_out - x_in, 0.24, 0.06), bevel=0.01)
+        geo.add_box(bm, Vector((s * (hw + 0.005), y + 0.07, z)), (0.05, 0.34, 0.36), bevel=0.01)   # backing plate
+    _mat(bm, set(), B.DARK)
+    _part("Canard Brackets", bm, c, body, mats, "hs_airframe")
+
+
 def build(c, body, root, mats, hull, mods):
     sect = split_hull(hull)
-    engine_section(c, body, root, mats, sect["engine"])
+    slide = engine_section(c, body, root, mats, sect["engine"])
+    engine_rails(c, body, slide, mats)
     spine(c, body, root, mats, sect["spine"])
-    gun_hood(c, body, root, mats, sect["hood"])
+    hood = gun_hood(c, body, root, mats, sect["hood"])
+    hood_rams(c, body, hood, mats)
     turret(c, body, root, mats)
+    sockets(c, body, mats)
     canards(c, body, root, mats, mods)
+    canard_brackets(c, body, mats, mods)
     return sect

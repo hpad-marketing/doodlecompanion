@@ -41,7 +41,7 @@ if "--audit" in argv:
     states += [dict(canards=v) for v in (0.25, 0.5, 0.75, 1.0)]
     states += [dict(guns=v) for v in (0.15, 0.3, 0.45, 0.6, 0.8, 1.0)]
     states += [dict(guns=1, gun_yaw=y, gun_pitch=p, gun_fire=f)
-               for y in (-100, -60, 0, 60, 100) for p in (-5, 20, 40) for f in (0, 1)]
+               for y in (-95, -60, 0, 60, 95) for p in (0, 20, 40) for f in (0, 1)]
     states += [dict(engine_extend=1, spine_lift=1, guns=1, canards=1, radiators=0, nacelle_tilt=1, gear=1, ramp=1)]
     sc = bpy.context.scene
     for st in states:

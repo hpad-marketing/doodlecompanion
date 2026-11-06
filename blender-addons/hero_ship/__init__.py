@@ -45,7 +45,44 @@ def build(collection=None, wear=1.0, seed=1):
     for ob in c.all_objects:
         if ob is not root:
             ob["hero_ship_part"] = 1
+    tag_foley(root)
     return root
+
+
+# sound type per moving part, read by the ship foley tools (first match wins)
+FOLEY = [
+    ("Dish Pivot", "spinner"),
+    ("Barrel Recoil", "piston"),          # gun recoil slide
+    (" Ram ", "piston"), ("Spine Ram", "piston"), ("Gear Piston", "piston"),
+    ("Engine Section Slide", "piston"),   # screw drive on guide rails
+    ("Dorsal Spine Lift", "piston"), ("Turret Lift", "piston"), ("Turret Column", "piston"),
+    ("Gun Hood Hinge", "hinge"), ("Ramp Pivot", "hinge"),   # pushed by their rams
+    ("Turret Yaw", "motor"), ("Turret Pitch", "motor"), ("Canard Hinge", "motor"),
+    ("Nacelle Pivot", "motor"), ("Gear Door Pivot", "motor"), ("Gear Pivot", "motor"),
+    ("Radiator Pivot", "motor"), ("Scanner Pivot", "motor"),
+]
+SILENT = ("Beacon", "Light", "Glow", "Plume", "Muzzle Flash", "Hyper Rings", "Drive Core", "Spine Vents")
+
+
+def tag_foley(root):
+    for ob in ship_objects(root):
+        ad = ob.animation_data
+        moving = bool(ob.constraints) or bool(ad and any(
+            d.data_path in ("location", "rotation_euler", "scale") for d in ad.drivers))
+        if not (moving or (ad and ad.drivers)):
+            continue
+        kind = None
+        if any(k in ob.name for k in SILENT):
+            kind = "none"
+        elif " Ram " in f" {ob.name} " and ("Mid Pivot" in ob.name or "Rod Pivot" in ob.name):
+            kind = "none"     # one sound per ram: the barrel pivot carries it
+        else:
+            for key, k in FOLEY:
+                if key in f" {ob.name} ":
+                    kind = k
+                    break
+        if kind:
+            ob["foley_mech"] = kind
 
 
 def ship_objects(root):

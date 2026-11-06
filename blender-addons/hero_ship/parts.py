@@ -28,7 +28,7 @@ PROPS = {
     "lights": (1.0, 0.0, 1.0),
     # added moving sections (0 = stowed)
     "engine_extend": (0.0, 0.0, 1.0), "spine_lift": (0.0, 0.0, 1.0), "canards": (0.0, 0.0, 1.0),
-    "guns": (0.0, 0.0, 1.0), "gun_yaw": (0.0, -100.0, 100.0), "gun_pitch": (0.0, -5.0, 40.0),
+    "guns": (0.0, 0.0, 1.0), "gun_yaw": (0.0, -95.0, 95.0), "gun_pitch": (0.0, 0.0, 40.0),
     "gun_fire": (0.0, 0.0, 1.0),
 }
 NACELLE = {"x": 8.65, "y": -8.75, "z": 0.6, "r": 1.45, "len": 8.6}
@@ -268,6 +268,12 @@ def ramp(c, body, root, mats, ramp_pts, bay_depth=1.75):
         geo.add_box(bm, Vector((s * (x0 - 0.35), Lr - 0.25, 0.005)), (0.5, 0.35, 0.01))
     _mat(bm, b0, B.ACCENT)
     ro = _part("Ramp", bm, c, piv, mats, "hs_ramp")
+    # two hydraulic rams from the bay ceiling lower the ramp
+    for s, side in ((1, "R"), (-1, "L")):
+        x = s * (x0 - 0.42)
+        telescopic(c, f"Ramp Ram {side}", body, (x, ya + 0.35, zb + 1.47), piv, (x, 2.0, 0.42), mats, 0.95,
+                   "hs_ramp", radii=(0.075, 0.058, 0.04),
+                   base_mount=((0.14, 0.22, 0.32), (0, 0, 0.14)), end_mount=((0.14, 0.2, 0.26), (0, 0, -0.12)))
     # bay lights: a strip in the ceiling and a warm area light
     lb = bmesh.new()
     geo.add_box(lb, Vector((0, (ya + yf) / 2, zb + bay_depth - 0.03)), (0.25, Lr - 1.2, 0.05))
@@ -512,3 +518,56 @@ def plumes(c, body, root):
         for ax in (0, 2):
             drv(ob, "scale", "0.7+e*0.35", root, {"e": "engine"}, ax)
     return out
+
+
+# ---------------------------------------------------------------------------
+def telescopic(c, name, base_parent, base_loc, end_parent, end_loc, mats, stage_len,
+               end_piece, radii=(0.085, 0.065, 0.045), base_mount=None, end_mount=None):
+    """Three-stage hydraulic ram between two attachment points.
+
+    The barrel tracks from the base point, the rod from the end point, the middle stage
+    sits halfway and tracks too, so the ram stretches and turns with whatever it moves.
+    Tubes are open-ended so the stages nest without cutting through each other.
+    base_mount / end_mount: (size xyz, offset from the pin) of the clevis blocks."""
+    base = geo.empty(f"{name} Base", c, base_parent, base_loc, "PLAIN_AXES", 0.15)
+    end = geo.empty(f"{name} End", c, end_parent, end_loc, "PLAIN_AXES", 0.15)
+    r0, r1, r2 = radii
+    out = []
+
+    def tube(nm, parent, r, a, b, piece, mat=B.DARK, caps=False):
+        bm = bmesh.new()
+        geo.add_cyl(bm, (0, a, 0), (0, b, 0), r, segs=16, caps=caps)
+        _mat(bm, set(), mat)
+        ob = _part(nm, bm, c, parent, mats, piece)
+        return ob
+
+    bp = geo.empty(f"{name} Barrel Pivot", c, base, (0, 0, 0), "PLAIN_AXES", 0.1)
+    con = bp.constraints.new("DAMPED_TRACK")
+    con.target, con.track_axis = end, "TRACK_Y"
+    out.append(tube(f"{name} Barrel", bp, r0, 0.0, stage_len, "hs_airframe"))
+    ep = geo.empty(f"{name} Rod Pivot", c, end, (0, 0, 0), "PLAIN_AXES", 0.1)
+    con = ep.constraints.new("DAMPED_TRACK")
+    con.target, con.track_axis = base, "TRACK_Y"
+    rod = tube(f"{name} Rod", ep, r2, 0.0, stage_len, end_piece, mat=B.HEAT)
+    out.append(rod)
+    mp = geo.empty(f"{name} Mid Pivot", c, base_parent, (0, 0, 0), "PLAIN_AXES", 0.1)
+    c1 = mp.constraints.new("COPY_LOCATION")
+    c1.target = base
+    c2 = mp.constraints.new("COPY_LOCATION")
+    c2.target, c2.influence = end, 0.5
+    con = mp.constraints.new("DAMPED_TRACK")
+    con.target, con.track_axis = end, "TRACK_Y"
+    out.append(tube(f"{name} Mid", mp, r1, -stage_len / 2, stage_len / 2, "hs_ram_mid"))
+    # clevis blocks with pins: fixed to the structure they hang on
+    for nm, parent, loc, mount, piece in ((f"{name} Base Clevis", base_parent, base_loc, base_mount, "hs_airframe"),
+                                          (f"{name} End Clevis", end_parent, end_loc, end_mount, end_piece)):
+        if mount is None:
+            continue
+        size, off = mount
+        bm = bmesh.new()
+        geo.add_box(bm, Vector(loc) + Vector(off), size, bevel=0.01)
+        geo.add_cyl(bm, Vector(loc) - Vector((size[0] / 2 + 0.03, 0, 0)), Vector(loc) + Vector((size[0] / 2 + 0.03, 0, 0)),
+                    0.03, segs=10)
+        _mat(bm, set(), B.DARK)
+        out.append(_part(nm, bm, c, parent, mats, piece))
+    return [base, end, bp, ep, mp] + out
