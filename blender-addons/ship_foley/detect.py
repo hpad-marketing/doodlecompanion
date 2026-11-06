@@ -29,9 +29,11 @@ from mathutils.bvhtree import BVHTree
 from . import profiles as P
 from . import motors as MO
 
-EPS_ON = 0.004       # metres: closer than this is touching
-EPS_OFF = 0.009      # metres: further than this has let go
-LOOKBACK = 0.10      # seconds of approach speed history behind a touch
+EPS_ON = 0.0025      # metres: closer than this is touching (walk test allows 2 mm float)
+EPS_OFF = 0.007      # metres: further than this has let go
+LOOKBACK = 0.001     # seconds: a droid's impact speed is its speed at the touch, not the peak of the swing or roll
+PROP_LOOKBACK = 0.045  # props: physics sims step on whole frames and stop the prop mid-frame
+PALM_LOOKBACK = 0.10   # palm path used to size a Hold key's grab
 MIN_SPEED = 0.03     # m/s: slower than this is resting, not a hit
 MERGE = 0.035        # seconds: touches of one limb this close become one
 SLIDE_MIN = 0.12     # m/s tangential speed that counts as a scrape
@@ -453,7 +455,8 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
                 else:
                     v_n = v_t = 0.0
             tr.hist.append((t, max(v_n, 0.0)))
-            while tr.hist and tr.hist[0][0] < t - LOOKBACK:
+            lb = PROP_LOOKBACK if pr.limb == "prop" else LOOKBACK
+            while tr.hist and tr.hist[0][0] < t - lb:
                 tr.hist.pop(0)
 
             if t_prev is None:
@@ -467,7 +470,15 @@ def scan(scene=None, frame_start=None, frame_end=None, substeps=2, include_props
                 tr.surf = surf
                 if speed >= MIN_SPEED and tc - tr.last_t > 0.08:
                     tr.last_t = tc
-                    events.append(_event(scene, pr, surf, pi, speed, tc, f0, fps, p))
+                    e = _event(scene, pr, surf, pi, speed, tc, f0, fps, p)
+                    if pr.limb.startswith("foot") and any(
+                            t2.touch and p2 is not pr and p2.owner is pr.owner and p2.limb == pr.limb
+                            for p2, t2 in zip(probes, tracks)):
+                        # the toe rolling down onto a foot that is already planted:
+                        # the heel took the body's weight, the forefoot only lays down
+                        e["hit"]["mass"] *= 0.35
+                        e["part"] = "toe"
+                    events.append(e)
             elif tr.touch and d > EPS_OFF:
                 if pr.hand and tr.surf is not None and tr.surf in movers:
                     sep = max(-v_n, 0.0)
@@ -608,10 +619,10 @@ def _hold_signal(scene, arms, movers, events, f0, f1, fps):
             for fr, what in keys:
                 pts = []
                 for i in range(4, -1, -1):          # 0.1 s of palm path up to the key
-                    tf = fr - i * LOOKBACK * fps / 4
+                    tf = fr - i * PALM_LOOKBACK * fps / 4
                     scene.frame_set(int(math.floor(tf)), subframe=tf - math.floor(tf))
                     pts.append(palm())
-                step = LOOKBACK / 4
+                step = PALM_LOOKBACK / 4
                 speed = max((b - a).length / step for a, b in zip(pts, pts[1:]))
                 if what == "release":
                     speed *= 0.35
