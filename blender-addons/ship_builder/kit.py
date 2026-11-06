@@ -169,8 +169,11 @@ _BOLT = {}
 
 
 def bolt_mesh():
-    if "m" in _BOLT and _BOLT["m"].name in bpy.data.meshes:
-        return _BOLT["m"]
+    try:
+        if "m" in _BOLT and _BOLT["m"].name in bpy.data.meshes:
+            return _BOLT["m"]
+    except ReferenceError:  # a new file was loaded since
+        pass
     me = bpy.data.meshes.new("SB_Bolt")
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=0.007, radius2=0.007, depth=0.004)

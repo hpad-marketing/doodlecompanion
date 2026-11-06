@@ -19,7 +19,7 @@ import bpy
 
 args = sys.argv[sys.argv.index("--") + 1:]
 OUT = os.path.abspath(args[0])
-THUMBS = os.path.abspath(args[1]) if len(args) > 1 else os.path.join(OUT, "thumbs")
+THUMBS = os.path.abspath(args[1]) if len(args) > 1 and not args[1].startswith("--") else os.path.join(OUT, "thumbs")
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(THUMBS, exist_ok=True)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -176,15 +176,19 @@ def step_studio_after_bake():
     if pr:
         pr.thumbs_dir = THUMBS
     st = St.state()
+    st.cat = "PROPS"
+    st.selected = "PROPS:crate"
+    St.show_preview(St.selected_item(bpy.context))
+    shot("studio_props")
     st.cat = "SETS"
     st.selected = "SETS:deck1"
     St.show_preview(St.selected_item(bpy.context))
     shot("studio_sets_baked")
-    st.cat = "PROPS"
-    shot("studio_props")
 
 
 STEPS = [step_build, step_studio, step_pick_set, step_pick_room, step_pick_mood, step_stills, step_bake, step_studio_after_bake]
+if "--quick" in args:  # layout check only: no stills, no bake
+    STEPS = [step_build, step_studio, step_pick_set, step_pick_room, step_pick_mood, step_studio_after_bake]
 
 
 def tick():

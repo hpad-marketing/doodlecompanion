@@ -133,12 +133,20 @@ def show_preview(item):
         im["sb_preview"] = 1
         if item.movie and path == item.movie:
             im.source = "MOVIE"
-    for a, sp in preview_spaces():
+    for a, sp in list(preview_spaces()):
         sp.image = im
         if im.source == "MOVIE":
             sp.image_user.frame_duration = max(1, im.frame_duration)
             sp.image_user.use_auto_refresh = True
             sp.image_user.use_cyclic = True
+        win = next((w for w in bpy.context.window_manager.windows if a in w.screen.areas[:]), None)
+        reg = next((r for r in a.regions if r.type == "WINDOW"), None)
+        if win and reg:  # fill the preview area with the picture
+            try:
+                with bpy.context.temp_override(window=win, screen=win.screen, area=a, region=reg):
+                    bpy.ops.image.view_all(fit_view=True)
+            except RuntimeError:
+                pass
         a.tag_redraw()
 
 
@@ -413,15 +421,17 @@ class SHIP_OT_open(bpy.types.Operator):
                 bpy.ops.screen.area_close()
         main = scr.areas[0]
         main.ui_type = "VIEW_3D"
+        # sizes are reliable right after a split, positions are not: pick areas by size
         with ctx.temp_override(window=win, screen=scr, area=main):
             bpy.ops.screen.area_split(direction="HORIZONTAL", factor=0.22)
-        bottom = min(scr.areas, key=lambda a: a.y)
-        top = max(scr.areas, key=lambda a: a.y)
+        bottom = min(scr.areas, key=lambda a: a.height)
+        top = max(scr.areas, key=lambda a: a.height)
         bottom.ui_type = "TIMELINE"
         with ctx.temp_override(window=win, screen=scr, area=top):
             bpy.ops.screen.area_split(direction="VERTICAL", factor=0.58)
-        tops = sorted([a for a in scr.areas if a != bottom], key=lambda a: a.x)
-        left, right = tops[0], tops[-1]
+        tops = [a for a in scr.areas if a != bottom]
+        left = max(tops, key=lambda a: a.width)   # the wide one: preview + library
+        right = min(tops, key=lambda a: a.width)  # the live camera view
         left.ui_type = "IMAGE_EDITOR"
         sp = left.spaces.active
         sp.image = _placeholder()
