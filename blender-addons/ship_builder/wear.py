@@ -207,7 +207,7 @@ def panels(room, col, rng, amount):
     out = {"proud": 0, "skew": 0, "open": 0, "missing": 0, "tape": 0}
     pan = _panels(room)
     rng.shuffle(pan)
-    tall = [p for p in pan if p.matrix_world.translation.z > 0.9 and p.dimensions.x > 0.5]
+    tall = [p for p in pan if 0.9 < p.matrix_world.translation.z < 2.0 and p.dimensions.x > 0.5]
     # one panel off, cables spilling out
     if amount > 0.3 and tall:
         for p in tall[:6]:
@@ -217,19 +217,33 @@ def panels(room, col, rng, amount):
             c = mw.translation
             hy = p.dimensions.y / 2
             cabs = []
+            mats_ = [room.pal["rubber"], M.plastic("SB Cable Red", (0.35, 0.03, 0.02, 1), 0.45),
+                     M.plastic("SB Cable Yellow", (0.6, 0.42, 0.04, 1), 0.45)]
             for k in range(3):
+                # out of the hole, over the lip, then hanging loose down the panel below
                 x0 = rng.uniform(-0.3, 0.3) * p.dimensions.x
-                a = c + u * x0 + v * (hy - 0.06) + n * 0.012
-                b = c + u * (x0 + rng.uniform(-0.15, 0.15)) + v * (hy - 0.08) + n * 0.012
-                cb = K.cable(room, a, b, sag=min(0.5, rng.uniform(0.25, 0.5)) * hy * 1.6, r=rng.choice((0.007, 0.01, 0.013)),
-                             mat=[room.pal["rubber"], M.plastic("SB Cable Red", (0.35, 0.03, 0.02, 1), 0.45),
-                                  M.plastic("SB Cable Yellow", (0.6, 0.42, 0.04, 1), 0.45)][k], name="Loose Cable")
-                # bow the middle out of the wall
-                sp = cb.data.splines[0]
-                for i, pt in enumerate(sp.points):
-                    t = i / (len(sp.points) - 1)
-                    q = Vector(pt.co[:3]) + n * (0.09 * 4 * t * (1 - t))
-                    pt.co = (*q, 1)
+                dx = rng.uniform(-0.12, 0.12)
+                drop = rng.uniform(0.08, 0.35)
+                out_ = rng.uniform(0.1, 0.16)
+                rel = [(x0, hy - 0.05, 0.0), (x0 + dx * 0.3, hy * 0.25, out_ * 0.5),
+                       (x0 + dx * 0.6, -hy + 0.04, out_), (x0 + dx * 0.9, -hy - 0.12, out_ * 0.8),
+                       (x0 + dx, -hy - 0.12 - drop, out_ * 0.7)]
+                pts = [c + u * x + v * y + n * z for x, y, z in rel]
+                cu = bpy.data.curves.new("Loose Cable", "CURVE")
+                cu.dimensions = "3D"
+                cu.bevel_depth = rng.choice((0.007, 0.01, 0.013))
+                cu.bevel_resolution = 4
+                cu.use_fill_caps = True
+                sp = cu.splines.new("NURBS")
+                sp.points.add(len(pts) - 1)
+                for q, w in zip(sp.points, pts):
+                    q.co = (*w, 1)
+                sp.use_endpoint_u = True
+                sp.order_u = 3
+                sp.resolution_u = 16
+                cb = bpy.data.objects.new("Loose Cable", cu)
+                room.dress.objects.link(cb)
+                cu.materials.append(mats_[k])
                 cabs.append(cb)
             hidden = [p] + att
             for o in hidden:
@@ -435,10 +449,10 @@ def debris(room, col, rng, amount):
         return K.box("Paper Scrap", (0.1, 0.14, 0.0008), loc + Vector((0, 0, 0.0006)), paper, room.dress, bevel=0, segs=1, rot=(0, 0, yaw))
 
     def crumple(loc, yaw):
-        return K.rounded("Crumpled Paper", (0.06, 0.055, 0.045), loc + Vector((0, 0, 0.026)), paper, room.dress, soft=2, rot=(0, 0, yaw), wrinkle=0.02)
+        return K.rounded("Crumpled Paper", (0.06, 0.055, 0.045), loc + Vector((0, 0, 0.0295)), paper, room.dress, soft=2, rot=(0, 0, yaw), wrinkle=0.012)
 
     def rag_(loc, yaw):
-        return K.rounded("Oily Rag", (0.26, 0.18, 0.025), loc + Vector((0, 0, 0.017)), rag, room.dress, soft=2, rot=(0, 0, yaw), wrinkle=0.035)
+        return K.rounded("Oily Rag", (0.26, 0.18, 0.025), loc + Vector((0, 0, 0.0215)), rag, room.dress, soft=2, rot=(0, 0, yaw), wrinkle=0.015)
 
     def spent(loc, yaw):
         return K.cyl("Spent Cell", 0.016, 0.07, loc + Vector((0, 0, 0.0166)), cell, room.dress, verts=20, bevel=0.002, rot=(math.radians(90), 0, yaw))

@@ -24,20 +24,21 @@ def any_of(*tests):
     return (lambda i, j, pw, ph: any(t(i, j, pw, ph) for t in tests)) if tests else None
 
 
-def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", panel=(1.0, 0.75)):
+def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", panel=(1.0, 0.75), chamfer=0.0):
     W, D, H = room.W, room.D, room.H
+    room.chamfer = chamfer
     K.floor(room)
     # back wall: origin bottom-left at (-W/2, D), u = +x, normal = -y
     K.wall(room, (-W / 2, D, 0), (1, 0, 0), (0, 0, 1), W, H, (0, -1, 0), pal_key, panel,
            any_of(*[opening(r) for r in back_holes]), "Back")
     # left wall: origin at (-W/2, 0), u = +y, normal = +x
     K.wall(room, (-W / 2, 0, 0), (0, 1, 0), (0, 0, 1), D, H, (1, 0, 0), pal_key, panel,
-           any_of(*[opening(r) for r in left_holes]), "Left")
+           any_of(*[opening(r) for r in left_holes]), "Left", trim_end=0.045)
     # right wall: origin at (W/2, D), u = -y, normal = -x
     K.wall(room, (W / 2, D, 0), (0, -1, 0), (0, 0, 1), D, H, (-1, 0, 0), pal_key, panel,
-           any_of(*[opening(r) for r in right_holes]), "Right")
+           any_of(*[opening(r) for r in right_holes]), "Right", trim_start=0.045)
     # corner posts hide panel ends
-    for x in (-W / 2 + 0.08, W / 2 - 0.08):
+    for x in (() if chamfer else (-W / 2 + 0.08, W / 2 - 0.08)):
         K.box("Corner Post", (0.16, 0.16, H), (x, D - 0.08, H / 2), room.pal["hull"], room.shell, bevel=0.01)
     # fourth wall: camera-transparent, keeps the room closed for light
     fw = K.box("Fourth Wall", (W, 0.05, H), (0, -0.03, H / 2), room.pal["hull"], room.shell, bevel=0)
@@ -45,11 +46,26 @@ def shell(room, back_holes=(), left_holes=(), right_holes=(), pal_key="panel", p
     fw.visible_glossy = True
     fw["sb_fourth_wall"] = 1
     # skirting + top trim
-    for (a, b) in (((-W / 2, D - 0.02), (W / 2, D - 0.02)),):
-        pass
-    K.box("Skirting Back", (W, 0.05, 0.12), (0, D - 0.06, 0.06), room.pal["dark_steel"], room.shell, bevel=0.004)
-    K.box("Skirting Left", (0.05, D, 0.12), (-W / 2 + 0.06, D / 2, 0.06), room.pal["dark_steel"], room.shell, bevel=0.004)
-    K.box("Skirting Right", (0.05, D, 0.12), (W / 2 - 0.06, D / 2, 0.06), room.pal["dark_steel"], room.shell, bevel=0.004)
+    # skirting stops short of the chamfered corner columns
+    cut = chamfer + 0.12 if chamfer else 0.0
+    # ... and leaves gaps where a door or floor-level opening cuts the wall
+    def spans(L, holes, c0, c1):
+        cuts = sorted((h[0], h[1]) for h in holes if h[2] < 0.12)
+        out, s = [], c0
+        for a, b in cuts:
+            if a > s:
+                out.append((s, a - 0.02))
+            s = max(s, b + 0.02)
+        if s < L - c1:
+            out.append((s, L - c1))
+        return [(a, b) for a, b in out if b - a > 0.1]
+    sk = room.pal["dark_steel"]
+    for a, b in spans(W, back_holes, cut, cut):
+        K.box("Skirting Back", (b - a, 0.05, 0.12), (-W / 2 + (a + b) / 2, D - 0.06, 0.06), sk, room.shell, bevel=0.004)
+    for a, b in spans(D, left_holes, 0.0, cut):  # left wall runs +y from the front
+        K.box("Skirting Left", (0.05, b - a, 0.12), (-W / 2 + 0.06, (a + b) / 2, 0.06), sk, room.shell, bevel=0.004)
+    for a, b in spans(D, right_holes, cut, 0.0):  # right wall runs -y from the back
+        K.box("Skirting Right", (0.05, b - a, 0.12), (W / 2 - 0.06, D - (a + b) / 2, 0.06), sk, room.shell, bevel=0.004)
 
 
 def window(room, centre, w, h, normal=(0, -1, 0), frame=0.12, name="Window", tilt=-9):
@@ -67,7 +83,7 @@ def window(room, centre, w, h, normal=(0, -1, 0), frame=0.12, name="Window", til
         parts.append(p)
     # inner bevelled reveal
     for k, z in enumerate((-0.1,)):
-        g = K.box(f"{name} Glass", (w, h, 0.012), c + n * z, room.pal["glass"], room.shell, bevel=0.002)
+        g = K.box(f"{name} Glass", (w - 0.012, h - 0.03, 0.012), c + n * z, room.pal["glass"], room.shell, bevel=0.002)
         g.rotation_euler = rot
         g.rotation_euler.rotate_axis("X", math.radians(tilt))  # armoured glass leans in
         g.visible_shadow = False
@@ -165,3 +181,24 @@ def planet(room, loc=(-40, 160, 30), radius=34, color=(0.55, 0.32, 0.18, 1), rin
     so["sb_energy"] = L.energy
     so["sb_color"] = list(L.color)
     return ob
+
+
+def door(room, yc, x=None):
+    """Sliding pressure door set into a right-wall opening (2 m wide hole centred on yc).
+    Every part only touches its neighbours; nothing overlaps."""
+    W = room.W
+    pal = room.pal
+    x = W / 2 if x is None else x
+    dx = x - 0.136  # parts are 0.27 deep and stop 1 mm short of the door back
+    with K.piece(room, "Door", 0, 0):
+        K.box("Door Lintel", (0.27, 2.0, 0.3), (dx, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
+        for s in (-1, 1):
+            K.box("Door Jamb", (0.27, 0.26, 1.928), (dx, yc + s * 0.87, 0.021 + 0.964), pal["hull"], room.shell, bevel=0.02)
+        K.box("Door Back", (0.04, 1.48, 1.928), (x + 0.02, yc, 0.021 + 0.964), M.painted_metal("SB Backing", (0.02, 0.021, 0.023, 1), 0.6), room.shell, bevel=0)
+        for s in (-1, 1):
+            K.box("Door Panel", (0.06, 0.733, 1.925), (x - 0.06, yc + s * 0.3695, 0.0215 + 0.9625), pal["warm"], room.shell, bevel=0.01)
+        K.box("Door Window", (0.065, 0.12, 0.5), (x - 0.06, yc - 0.37, 1.45), M.painted_metal("SB Door Slot", (0.01, 0.01, 0.01, 1), 0.2), room.shell, bevel=0.004)
+        K.box("Door Hazard", (0.004, 1.98, 0.08), (x - 0.2725, yc, 2.1), M.hazard(), room.shell, bevel=0.001, segs=1)
+        K.box("Door Sill", (0.4, 1.47, 0.02), (x - 0.2, yc, 0.0105), M.hazard(), room.shell, bevel=0.003)
+        K.screen(room, (x - 0.035, yc - 1.15, 1.3), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.18, 0.24, (0.4, 1.0, 0.5, 1), "ui", light=False, name="Door Keypad")
+        K.light_strip(room, (x - 0.3, yc, 2.29), 1.4, "Y", (0, 0, -1), (0.4, 1.0, 0.6, 1), 6, role="practical", width=0.02)

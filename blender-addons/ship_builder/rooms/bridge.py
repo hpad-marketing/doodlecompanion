@@ -10,6 +10,7 @@ from .. import mats as M
 from .. import lighting as Li
 from . import common as C
 from .. import wear as Wr
+from .. import arch as A
 
 INFO = {"label": "Command centre", "size": (9.0, 7.0, 3.6)}
 
@@ -146,14 +147,12 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     room = K.Room(room_name, W, D, H)
     pal = room.pal
     # wide viewport: three panes across the back wall
-    C.shell(room, back_holes=[(1.0, 8.0, 0.9, 3.15)], right_holes=[(2.0, 4.0, 0.0, 2.25)], panel=(1.0, 0.75))
-    for i, cx in enumerate((-2.33, 0.0, 2.33)):
-        C.window(room, (cx, D, 2.02), 2.2, 2.2, (0, -1, 0), frame=0.12, name=f"Viewport {i}", tilt=-6)
-    K.ceiling(room, light_rows=2, color=(0.75, 0.85, 1.0, 1), power=18, cols=3)
-    K.frames(room, step=2.3, avoid=[(-3.6, 3.6)])
-    floor_walk = K.box("Walkway", (2.4, D - 1.2, 0.012), (0, D / 2 - 0.3, 0.006), M.diamond_plate(), room.dress, bevel=0.003)
+    C.shell(room, back_holes=[(1.0, 8.0, 0.9, 3.15)], right_holes=[(2.0, 4.0, 0.0, 2.25)], panel=(1.0, 0.75), chamfer=0.6)
+    for i, cx in enumerate((-7 / 3, 0.0, 7 / 3)):  # three panes exactly filling the 7 m x 2.25 m opening
+        C.window(room, (cx, D, 0.9 + 1.125), 7 / 3 - 0.244, 2.25 - 0.244, (0, -1, 0), frame=0.12, name=f"Viewport {i}", tilt=-6)
+    K.ceiling(room, light_rows=2, color=(0.75, 0.85, 1.0, 1), power=18, cols=3, cove=0.5, cove_back=False, cove_color=(0.35, 0.8, 1.0, 1), cove_power=4)
     for sx in (-1, 1):
-        K.light_strip(room, (sx * 1.25, D / 2 - 0.3, 0.02), D - 1.4, "Y", (0, 0, 1), (0.3, 0.8, 1.0, 1), 4, role="practical", width=0.02)
+        K.light_strip(room, (sx * 1.25, D / 2 - 0.3, 0.045), D - 1.4, "Y", (0, 0, 1), (0.3, 0.8, 1.0, 1), 4, role="practical", width=0.02)
     # console arc under the viewport
     for cx, cy, cw, yaw in ((-2.6, D - 1.0, 2.0, 12), (0.0, D - 0.85, 2.4, 0), (2.6, D - 1.0, 2.0, -12)):
         with K.piece(room, "Console", 0.03, 2):
@@ -168,21 +167,15 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     K.screen(room, (-W / 2 + 0.04, 3.8, 1.75), (0, 1, 0), (0, 0, 1), (1, 0, 0), 2.4, 1.1, (0.35, 0.8, 1.0, 1), "map", name="Star Map", strength=1.4)
     with K.piece(room, "Map console", 0.03, 2):
         console(room, -W / 2 + 0.45, 3.8, 2.2, math.radians(-90), 0, (0.35, 0.8, 1.0, 1))
-    for k in range(3):
-        K.screen(room, (W / 2 - 0.04, 4.6 + k * 0.7, 1.7), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.6, 0.4, [(1.0, 0.65, 0.2, 1), (0.4, 1.0, 0.5, 1), (1.0, 0.3, 0.2, 1)][k], "ui", name="System Screen", strength=1.4)
-    # door frame on the right wall opening
-    yc = D - 3.0
-    x = W / 2
-    K.box("Door Lintel", (0.3, 2.0, 0.3), (x - 0.12, yc, 2.1), pal["hull"], room.shell, bevel=0.02)
-    for s in (-1, 1):
-        K.box("Door Jamb", (0.3, 0.26, 2.0), (x - 0.12, yc + s * 0.87, 1.0), pal["hull"], room.shell, bevel=0.02)
-    K.box("Door Panel", (0.06, 1.48, 1.98), (x - 0.06, yc, 0.99), pal["warm"], room.shell, bevel=0.01)
-    K.box("Door Hazard", (0.31, 2.0, 0.08), (x - 0.13, yc, 2.04), M.hazard(), room.shell, bevel=0.004)
+    for k, (yy, zz) in enumerate(((5.35, 1.7), (5.98, 1.7), (5.665, 2.2))):
+        K.screen(room, (W / 2 - 0.04, yy, zz), (0, -1, 0), (0, 0, 1), (-1, 0, 0), 0.55, 0.4, [(1.0, 0.65, 0.2, 1), (0.4, 1.0, 0.5, 1), (1.0, 0.3, 0.2, 1)][k], "ui", name="System Screen", strength=1.4)
+    # door on the right wall opening
+    C.door(room, D - 3.0)
     # overhead conduits
-    K.pipe(room, [(-W / 2 + 0.2, 0.5, H - 0.25), (-W / 2 + 0.2, D - 0.3, H - 0.25), (W / 2 - 0.2, D - 0.3, H - 0.25), (W / 2 - 0.2, 0.5, H - 0.25)], 0.04)
+    K.pipe(room, [(-W / 2 + 0.9, D - 0.075, H - 0.25), (-W / 2 + 1.0, D - 0.3, H - 0.25), (W / 2 - 1.0, D - 0.3, H - 0.25), (W / 2 - 0.9, D - 0.075, H - 0.25)], 0.04)
     for k in range(6):
         K.cable(room, (-3.5 + k * 1.3, D - 0.35, H - 0.3), (-2.8 + k * 1.3, D - 0.35, H - 0.3), 0.22, 0.012)
-    K.stencil(room, "BRIDGE - DECK 1", (-3.8, D - 0.035, 3.3), (math.radians(90), 0, 0), 0.11)
+    K.stencil(room, "BRIDGE - DECK 1", (-2.3, D - 0.035, 3.33), (math.radians(90), 0, 0), 0.11)
     K.stencil(room, "MISSION: NONE", (2.6, D - 1.36, 0.55), (math.radians(90), 0, math.radians(-12)), 0.05)
     # loose props on the consoles
     from .lounge import mug, datapad
@@ -190,14 +183,16 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     datapad(room, (-2.4, D - 1.25, 0.88), 0.4)
     # alert beacons
     for x0 in (-W / 2 + 0.6, W / 2 - 0.6):
-        K.cyl("Alert Beacon", 0.06, 0.1, (x0, D - 0.12, H - 0.45), M.emissive("SB Alert Lens", (1.0, 0.08, 0.05, 1), 0.0), room.dress, verts=24, rot=(math.radians(90), 0, 0))
-        K.point_glow(room, (x0, D - 0.25, H - 0.45), (1.0, 0.1, 0.05), 60, 0.05, role="alert")
+        K.cyl("Alert Beacon", 0.06, 0.1, (x0 * 0.72, D - 0.12, H - 0.25), M.emissive("SB Alert Lens", (1.0, 0.08, 0.05, 1), 0.0), room.dress, verts=24, rot=(math.radians(90), 0, 0))
+        K.point_glow(room, (x0 * 0.72, D - 0.25, H - 0.25), (1.0, 0.1, 0.05), 60, 0.05, role="alert")
         K.point_glow(room, (x0, 0.6, 0.25), (1.0, 0.35, 0.1), 12, 0.03, role="emergency")
     C.planet(room, loc=(-30, 140, 4), radius=26, color=(0.22, 0.35, 0.55, 1), ring=False)
     Li.haze(room, 0.012)
     Li.camera(room, "Wide master", 24, (0.6, -1.2, 1.5), (0.0, D * 0.7, 1.3), 5.6)
     Li.camera(room, "Console shoulder", 35, (1.6, D - 2.6, 1.45), (0.0, D - 0.6, 1.3), 2.8)
     Li.camera(room, "Holo table", 40, (1.8, 1.0, 1.3), (0.0, 2.6, 1.3), 2.0)
+    room.arch = A.detail(room, seed=wear_seed, accent=(0.35, 0.8, 1.0, 1), frame_step=2.3, frame_avoid=[(-3.6, 3.6)],
+                         walkway=(-1.2, 1.2, 0.3, D - 1.5))
     if wear:
         room.wear = Wr.apply(room, seed=wear_seed, amount=wear)
     return room

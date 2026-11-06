@@ -194,7 +194,7 @@ def bolt(loc, normal, c):
 
 # ---------------------------------------------------------------- walls
 def wall(room, origin, u, v, width, height, normal, pal_key="panel", panel=(1.0, 0.75),
-         skip=None, name="Wall"):
+         skip=None, name="Wall", trim_start=0.0, trim_end=0.0):
     """A wall face made of real inset panels over a dark backing.
 
     origin: bottom-left corner. u: unit vector along the width, v: up.
@@ -215,20 +215,24 @@ def wall(room, origin, u, v, width, height, normal, pal_key="panel", panel=(1.0,
             key = pal_key
             if j == 0:
                 key = "hull"  # kick plate
-            c0 = Vector(origin) + u * (pw * (i + 0.5)) + v * (ph * (j + 0.5))
-            bk = box(f"{name} Backing", (pw, ph, 0.05), c0 - n * 0.04, backing, room.shell, bevel=0)
+            # trim: the first/last column is narrowed so it stops short of a meeting wall
+            ts = trim_start if i == 0 else 0.0
+            te = trim_end if i == nx - 1 else 0.0
+            pwi = pw - ts - te
+            c0 = Vector(origin) + u * (pw * (i + 0.5) + (ts - te) / 2) + v * (ph * (j + 0.5))
+            bk = box(f"{name} Backing", (pwi, ph, 0.05), c0 - n * 0.04, backing, room.shell, bevel=0)
             bk.rotation_euler = rot
             depth = 0.03 + (0.012 if (i + j) % 3 == 0 and j > 0 else 0)
-            p = box(f"{name} Panel", (pw - gap, ph - gap, depth), (0, 0, 0), pal[key], room.shell, bevel=0.006)
+            p = box(f"{name} Panel", (pwi - gap, ph - gap, depth), (0, 0, 0), pal[key], room.shell, bevel=0.006)
             p.rotation_euler = Matrix((u, v, n)).transposed().to_euler()
             p.location = c0 + n * (depth / 2 - 0.015)
             parts.append(p)
             if DETAIL["level"] >= 2:
                 for a in (-1, 1):
                     for b in (-1, 1):
-                        bolt(c0 + u * a * (pw / 2 - 0.035) + v * b * (ph / 2 - 0.035) + n * (depth - 0.013), n, room.dress)
+                        bolt(c0 + u * a * (pwi / 2 - 0.035) + v * b * (ph / 2 - 0.035) + n * (depth - 0.013), n, room.dress)
             if DETAIL["level"] >= 3 and RNG.random() < 0.18 and j > 0:
-                vent(room, c0 + n * (depth - 0.012), u, v, n, pw * 0.55, ph * 0.35)
+                vent(room, c0 + n * (depth - 0.012), u, v, n, pwi * 0.55, ph * 0.35)
     return parts
 
 
@@ -249,53 +253,125 @@ def floor(room, mat=None, trench=True):
     W, D = room.W, room.D
     f = box("Deck", (W, D, 0.06), (0, D / 2, -0.03), mat or room.pal["deck"], room.shell, bevel=0.002)
     f.data.uv_layers.new()
-    if trench and DETAIL["level"] >= 2:
+    if False and trench and DETAIL["level"] >= 2:  # see arch.trench (placed around furniture)
         # cable trench with grating along the back wall
-        box("Trench", (W - 0.2, 0.3, 0.02), (0, D - 0.35, 0.001), M.painted_metal("SB Trench", (0.015, 0.015, 0.015, 1), 0.7), room.shell, bevel=0)
-        for k in range(int((W - 0.3) / 0.05)):
-            x = -W / 2 + 0.2 + k * 0.05
+        tw = W - 0.2 - 2 * (getattr(room, "chamfer", 0.0) and getattr(room, "chamfer", 0.0) + 0.45)
+        box("Trench", (tw, 0.3, 0.02), (0, D - 0.35, 0.001), M.painted_metal("SB Trench", (0.015, 0.015, 0.015, 1), 0.7), room.shell, bevel=0)
+        for k in range(int((tw - 0.1) / 0.05)):
+            x = -tw / 2 + 0.1 + k * 0.05
             box("Grate Bar", (0.008, 0.3, 0.012), (x, D - 0.35, 0.012), room.pal["dark_steel"], room.dress, bevel=0.002, segs=1)
     # skirting kick line
     return f
 
 
-def ceiling(room, light_rows=2, color=(1.0, 0.86, 0.7, 1), power=60, cols=2):
-    """Ceiling with structural ribs and recessed panel lights in a grid."""
+def ceiling(room, light_rows=2, color=(1.0, 0.86, 0.7, 1), power=60, cols=2,
+            cove=0.0, cove_back=True, cove_color=None, cove_power=6):
+    """Ceiling with structural ribs and recessed panel lights in a grid.
+
+    cove > 0 adds a chamfered cove where the ceiling meets the walls (a sloped,
+    mitred band of that width), so the room is no longer a box, with a
+    wall-wash light tucked under its lower lip."""
     W, D, H = room.W, room.D, room.H
+    room.cove, room.cove_back = cove, cove_back
     box("Ceiling", (W, D, 0.08), (0, D / 2, H + 0.04), room.pal["hull"], room.shell, bevel=0.004)
+    o = 0.05
+    side_in = (o + cove + 0.1) if cove else 0.0
     for k in range(int(D) + 1):
         y = min(D - 0.06, k + 0.06)
-        box("Ceiling Rib", (W, 0.12, 0.16), (0, y, H - 0.08), room.pal["panel"], room.shell, bevel=0.01)
+        if y > D - 0.2 or (cove and cove_back and y > D - o - cove - 0.12):
+            continue
+        box("Ceiling Rib", (W - 2 * side_in, 0.12, 0.16), (0, y, H - 0.08), room.pal["panel"], room.shell, bevel=0.01)
     for r in range(light_rows):
-        y = D * (r + 0.5) / light_rows + 0.5 / light_rows
+        y = math.floor(D * (r + 0.5) / light_rows) + 0.56  # between two ribs
         for c in range(cols):
             x = -W / 2 + W * (c + 1) / (cols + 1)
             light_strip(room, (x, y, H - 0.02), 1.2, "X", (0, 0, -1), color, power, role="ceiling", width=0.28)
+    if cove:
+        _cove(room, cove, cove_back, o)
+        cc = cove_color or color
+        ch = getattr(room, "chamfer", 0.0)
+        zl = H - cove - 0.05
+        y1 = D - o - ch - 0.1 if ch else D - 0.4
+        for sx in (-1, 1):
+            light_strip(room, (sx * (W / 2 - 0.095), (0.15 + y1) / 2, zl), y1 - 0.15, "Y", (0, 0, -1), cc, cove_power, role="practical", width=0.03)
+        if cove_back:
+            x1 = W / 2 - o - (ch if ch else 0.3) - 0.1
+            light_strip(room, (0, D - 0.095, zl), 2 * x1, "X", (0, 0, -1), cc, cove_power, role="practical", width=0.03)
 
 
-def frames(room, step=1.75, rail=True, avoid=()):
-    """Structural wall frames (vertical ribs) and a steel handrail on the side walls."""
+def _cove(room, c, back, o):
+    W, D, H = room.W, room.D, room.H
+    lo, hi, t = H - c, H - 0.025, 0.021
+    paths = ([[(-1, 0), (-1, 1), (1, 1), (1, 0)]] if back else [[(-1, 0), (-1, 1)], [(1, 1), (1, 0)]])
+    verts, faces = [], []
+    for path in paths:
+        ring = []
+        for sx, back_pt in path:
+            yo = D - o if back_pt and back else (D - o if back_pt else 0.0)
+            yi = D - o - c if back_pt and back else yo
+            outer = Vector((sx * (W / 2 - o), yo, lo))
+            inner = Vector((sx * (W / 2 - o - c), yi, hi))
+            nh = Vector((sx, 1 if (back_pt and back) else 0, 0))
+            up = Vector((0, 0, t)) + nh * t
+            base = len(verts)
+            verts += [outer, inner, outer + up, inner + up]
+            ring.append(base)
+        for i, j in zip(ring[:-1], ring[1:]):
+            faces += [(i, j, j + 1, i + 1), (i + 2, i + 3, j + 3, j + 2), (i, i + 2, j + 2, j), (i + 1, j + 1, j + 3, i + 3)]
+        for e in (ring[0], ring[-1]):
+            faces.append((e, e + 1, e + 3, e + 2))
+    me = bpy.data.meshes.new("Ceiling Cove")
+    me.from_pydata([tuple(v) for v in verts], [], faces)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    me.uv_layers.new()
+    ob = _obj("Ceiling Cove", me, room.shell, room.pal["panel"])
+    _finish(ob, bevel=0.006, segs=2, smooth=False)
+    return ob
+
+
+def frames(room, step=1.75, rail=True, avoid=(), place=None):
+    """Structural wall frames (vertical ribs) and a steel handrail on the side walls.
+
+    place(fn) -> list: optional collision-checked placement (arch._place); a
+    frame or rail bay that would hit a door, screen or counter is then skipped."""
     W, D, H = room.W, room.D, room.H
     pal = room.pal
+    cv, ch = getattr(room, "cove", 0.0), getattr(room, "chamfer", 0.0)
+    fh = H - cv - 0.1 if cv else H
+    put = place or (lambda fn: fn())
+    bh = fh if (cv and getattr(room, "cove_back", True)) else H - 0.17
     k = step
     while k < W - 0.4:
         x = -W / 2 + k
         if not any(a - 0.1 < x < b + 0.1 for a, b in avoid):
-            box("Wall Frame", (0.14, 0.12, H), (x, D - 0.09, H / 2), pal["hull"], room.shell, bevel=0.012)
+            put(lambda x=x: (box("Wall Frame", (0.14, 0.12, bh - 0.125), (x, D - 0.09, 0.125 + (bh - 0.125) / 2), pal["hull"], room.shell, bevel=0.012),
+                             box("Frame Foot", (0.16, 0.06, 0.124), (x, D - 0.117, 0.0625), pal["dark_steel"], room.shell, bevel=0.006)))
         k += step
     k = step
-    while k < D - 0.3:
+    while k < D - 0.3 - ch:
         for sx in (-1, 1):
-            box("Wall Frame", (0.12, 0.14, H), (sx * (W / 2 - 0.09), k, H / 2), pal["hull"], room.shell, bevel=0.012)
+            put(lambda sx=sx, k=k: (box("Wall Frame", (0.12, 0.14, fh - 0.125), (sx * (W / 2 - 0.09), k, 0.125 + (fh - 0.125) / 2), pal["hull"], room.shell, bevel=0.012),
+                                    box("Frame Foot", (0.06, 0.16, 0.124), (sx * (W / 2 - 0.117), k, 0.0625), pal["dark_steel"], room.shell, bevel=0.006)))
         k += step
     if rail:
+        ye = D - 0.45 - ch
         for sx in (-1, 1):
             x = sx * (W / 2 - 0.2)
-            pipe(room, [(x, 0.0, 1.0), (x, D - 0.3, 1.0)], 0.02, pal["steel"], flanges=False, name="Handrail")
-            yy = 0.6
-            while yy < D - 0.3:
-                box("Rail Bracket", (0.16, 0.03, 0.03), (sx * (W / 2 - 0.12), yy, 1.0), pal["dark_steel"], room.dress, bevel=0.006)
-                yy += 1.2
+            yy = 0.0
+            while yy < ye - 0.3:
+                y2 = min(ye, yy + 1.2)
+
+                def bay(yy=yy, y2=y2, x=x, sx=sx):
+                    pipe(room, [(x, yy + 0.002, 1.0), (x, y2 - 0.002, 1.0)], 0.02, pal["steel"], flanges=False, name="Handrail")
+                    if yy > 0:
+                        box("Rail Bracket", (0.16, 0.03, 0.03), (sx * (W / 2 - 0.12), yy + 0.03, 1.0), pal["dark_steel"], room.dress, bevel=0.006)
+                    box("Rail Bracket", (0.16, 0.03, 0.03), (sx * (W / 2 - 0.12), y2 - 0.03, 1.0), pal["dark_steel"], room.dress, bevel=0.006)
+                put(bay)
+                yy = y2
 
 
 def stencil(room, text, loc, rot, size=0.12, color=(0.62, 0.55, 0.4, 1)):
@@ -331,6 +407,7 @@ def pipe(room, pts, r, mat=None, flanges=True, name="Pipe"):
     ob = bpy.data.objects.new(name, cu)
     room.dress.objects.link(ob)
     cu.materials.append(mat or room.pal["steel"])
+    ob["sb_group"] = "pipe:" + ob.name
     if flanges and DETAIL["level"] >= 2:
         for a, b in zip(pts[:-1], pts[1:]):
             a, b = Vector(a), Vector(b)
@@ -340,6 +417,7 @@ def pipe(room, pts, r, mat=None, flanges=True, name="Pipe"):
             while k < L - 0.3:
                 q = a + d * k
                 f = cyl("Flange", r * 1.45, 0.025, q, room.pal["dark_steel"], room.dress, verts=24)
+                f["sb_group"] = "pipe:" + ob.name
                 f.rotation_euler = Vector((0, 0, 1)).rotation_difference(d).to_euler()
                 k += 1.2
     return ob
@@ -374,11 +452,12 @@ def light_strip(room, loc, length, axis, facing, color, power, role="practical",
     loc, facing = Vector(loc), Vector(facing)
     size = {"X": (length, width, 0.03), "Y": (width, length, 0.03), "Z": (width, 0.03, length)}[axis]
     hs = {"X": (length + 0.04, width + 0.04, 0.05), "Y": (width + 0.04, length + 0.04, 0.05), "Z": (width + 0.04, 0.05, length + 0.04)}[axis]
-    box("Light Housing", hs, loc - facing * 0.015, room.pal["dark_steel"], room.dress, bevel=0.004)
+    hous = box("Light Housing", hs, loc - facing * 0.015, room.pal["dark_steel"], room.dress, bevel=0.004)
     em = M.emissive(f"SB Light {role} {tuple(round(c, 2) for c in color)}", color, 5)
     em["sb_role"] = role
     d = box("Light Diffuser", size, loc + facing * 0.012, em, room.dress, bevel=0.003)
     d["sb_light"] = role
+    hous["sb_group"] = d["sb_group"] = "fixture:" + hous.name
     L = bpy.data.lights.new(f"SB {role}", "AREA")
     L.shape = "RECTANGLE"
     if axis == "X":

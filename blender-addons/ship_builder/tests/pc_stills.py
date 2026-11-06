@@ -15,13 +15,15 @@ from mathutils import Vector
 from ship_builder import lighting as Li, physics as P
 os.makedirs(out, exist_ok=True)
 rep = {}
-t = time.time(); room = ROOMS[key].build(wear_seed=seed); rep['wear'] = getattr(room, 'wear', {}); Li.space_world(); rep['build_s'] = round(time.time() - t, 1)
+t = time.time(); room = ROOMS[key].build(wear_seed=seed); rep['wear'] = getattr(room, 'wear', {}); rep['arch'] = getattr(room, 'arch', {}); Li.space_world(); rep['build_s'] = round(time.time() - t, 1)
 sc = bpy.context.scene
 Li.render_setup(sc)
 Li.camera_finish(sc)
 sc.cycles.samples = spp
 rep['device'] = sc.cycles.device
 rep['settled'] = P.settle(sc); rep['contacts'] = P.contacts(sc)
+from ship_builder import collide
+rep['intersections'] = collide.audit_room(room)
 sc.render.resolution_x, sc.render.resolution_y = res, int(res * 1.25)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, f'Ship_{key}.blend'))
 shots = [(c, 'NORMAL') for c in sc.objects if c.get('sb_cam')]
