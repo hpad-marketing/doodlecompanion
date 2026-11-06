@@ -421,5 +421,62 @@
  "material_overrides": {
   "^pauldron_vent0\\.": "yellow",
   "^pauldron_vent1\\.": "teal"
- }
+ },
+ "palettes": {
+  "original": {
+   "grey": "#4A5258",
+   "tan": "#A38F68",
+   "teal": "#5E9690",
+   "navy": "#2B3A5C",
+   "yellow": "#C99A2E",
+   "sage": "#86A88E",
+   "olive": "#66703A"
+  },
+  "site": {
+   "grey": "#C9A227",
+   "tan": "#3B3E42",
+   "teal": "#2A2C2E",
+   "navy": "#1E1F21",
+   "yellow": "#D9D3C4",
+   "sage": "#5A5E62",
+   "olive": "#2E3033"
+  },
+  "field": {
+   "grey": "#4B5320",
+   "tan": "#A8916A",
+   "teal": "#3E423A",
+   "navy": "#2F3A2F",
+   "yellow": "#C08A2A",
+   "sage": "#6B6F4E",
+   "olive": "#3A3D25"
+  },
+  "rescue": {
+   "grey": "#C8C6BE",
+   "tan": "#CF5B1C",
+   "teal": "#3A3F44",
+   "navy": "#1F3A5F",
+   "yellow": "#D8A21E",
+   "sage": "#8E9294",
+   "olive": "#3C4044"
+  },
+  "dockyard": {
+   "grey": "#2F4F6F",
+   "tan": "#9A9C98",
+   "teal": "#D19A1E",
+   "navy": "#16263A",
+   "yellow": "#D19A1E",
+   "sage": "#6E7A86",
+   "olive": "#232629"
+  },
+  "retro": {
+   "grey": "#D9CFB4",
+   "tan": "#A2322A",
+   "teal": "#2E6F6B",
+   "navy": "#2B3A5C",
+   "yellow": "#D4A23A",
+   "sage": "#7FA39A",
+   "olive": "#4A3A2C"
+  }
+ },
+ "palette": "original"
 }

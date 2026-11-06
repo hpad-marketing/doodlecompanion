@@ -327,6 +327,27 @@ class ROBOT_PT_look(bpy.types.Panel):
         for k, lab in (('look_wear', 'Chipped paint'), ('look_rust', 'Rust'), ('look_grime', 'Dirt and streaks'),
                        ('look_scuffs', 'Polymer scuffs')):
             if k in ob: col.prop(ob, f'["{k}"]', text=lab, slider=True)
+        if 'palettes' in ob:   # colour schemes: every RB_metal_<role> paint colour at once
+            self.layout.label(text='Colour scheme' + (f"  (now: {ob.get('palette', '')})" if ob.get('palette') else ''))
+            g = self.layout.grid_flow(columns=3, align=True)
+            for n in json.loads(ob['palettes']): g.operator('robot.palette', text=n.title()).name = n
+
+
+class ROBOT_OT_palette(bpy.types.Operator):
+    """Repaint the robot in this colour scheme (wear, rust and dirt stay as they are)"""
+    bl_idname = 'robot.palette'; bl_label = 'Colour scheme'; bl_options = {'REGISTER', 'UNDO'}
+    name: bpy.props.StringProperty()
+
+    def execute(self, ctx):
+        ob = rig(ctx); pal = json.loads(ob['palettes'])[self.name]
+        for role, hx in pal.items():
+            m = bpy.data.materials.get('RB_metal_' + role)
+            if not m or not m.node_tree or 'Look' not in m.node_tree.nodes: continue
+            h = hx.lstrip('#'); c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+            lin = [((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92 for x in c]
+            m.node_tree.nodes['Look'].inputs['Paint Colour'].default_value = lin + [1]; m.diffuse_color = lin + [1]
+        ob['palette'] = self.name
+        return {'FINISHED'}
 
 
 # ------------------------------------------------------------------ motion library
@@ -869,7 +890,7 @@ class ROBOT_PT_drive(bpy.types.Panel):
         if takes: lay.label(text=f'{len(takes)} recorded take(s) in the Motion library', icon='REC')
 
 
-CLASSES = (ROBOT_OT_snap, ROBOT_OT_reset, ROBOT_OT_check, ROBOT_OT_bake_springs, ROBOT_OT_clear_springs, ROBOT_PT_panel,
+CLASSES = (ROBOT_OT_palette, ROBOT_OT_snap, ROBOT_OT_reset, ROBOT_OT_check, ROBOT_OT_bake_springs, ROBOT_OT_clear_springs, ROBOT_PT_panel,
            ROBOT_OT_key_pose, ROBOT_OT_mirror, ROBOT_OT_pose_preset, ROBOT_OT_motion, ROBOT_PT_easy, ROBOT_PT_motions, ROBOT_PT_look,
            ROBOT_OT_drive, ROBOT_PT_drive)
 
