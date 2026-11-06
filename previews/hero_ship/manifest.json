@@ -1,6 +1,6 @@
 {
   "name": "Hero Ship",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "root": "Hero Ship",
   "module": "hero_ship",
   "build": "hero_ship.build(collection=None, wear=1.0, seed=1)",
@@ -41,7 +41,7 @@
       "frames": 180,
       "fps": 24,
       "needs_stage": "space",
-      "about": "Radiators fold, drive charges and flickers, ship stretches and is gone in a flash.",
+      "about": "Radiators fold, engine section slides back, spine lifts on rams, drive charges and flickers, ship stretches and is gone in a flash.",
       "thumb": "previews/hero_ship/hyperdrive_jump/thumb.jpg",
       "mp4": "previews/hero_ship/hyperdrive_jump/preview.mp4"
     },
@@ -51,9 +51,19 @@
       "frames": 420,
       "fps": 24,
       "needs_stage": "planet",
-      "about": "Descends to a pad: pods tilt for hover, gear drops, dust kicks up, touchdown squash, ramp lowers.",
+      "about": "Descends to a pad: canards swing out, pods tilt for hover, gear drops, dust kicks up, touchdown squash, spine vents heat, ramp lowers.",
       "thumb": "previews/hero_ship/planet_landing/thumb.jpg",
       "mp4": "previews/hero_ship/planet_landing/preview.mp4"
+    },
+    {
+      "id": "turret_fire",
+      "label": "Turret fire",
+      "frames": 192,
+      "fps": 24,
+      "needs_stage": "space",
+      "about": "Gun hood swings open, twin turret rises, swings onto two targets and fires two bursts with tracers, then stows.",
+      "thumb": "previews/hero_ship/turret_fire/thumb.jpg",
+      "mp4": "previews/hero_ship/turret_fire/preview.mp4"
     }
   ],
   "rig_props": {
@@ -104,6 +114,41 @@
     },
     "lights": {
       "default": 1.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "engine_extend": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "spine_lift": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "canards": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "guns": {
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "gun_yaw": {
+      "default": 0.0,
+      "min": -100.0,
+      "max": 100.0
+    },
+    "gun_pitch": {
+      "default": 0.0,
+      "min": -5.0,
+      "max": 40.0
+    },
+    "gun_fire": {
+      "default": 0.0,
       "min": 0.0,
       "max": 1.0
     }
