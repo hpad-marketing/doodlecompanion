@@ -60,7 +60,7 @@ for S, s in (('L', 1), ('R', -1)):
     M = max((about(piv, ax, THUMB_SWIVEL * g) for g in (1, -1)), key=lambda m: (m @ th[-1].tail).x * -s)
     xform_all(th, M)
     hb = E.get(f'hold.{S}') or E.new(f'hold.{S}')
-    hb.head = V((X - s * 0.09, 0.03, 0.525))   # inside the finger curl, below the palm face
+    hb.head = V((X - s * 0.095, 0.03, 0.605))   # in front of the cupped palm face: the prop presses into the palm, fingers wrap it
     hb.tail = hb.head + V((0, 0.06, 0)); hb.align_roll(V((0, 0, 1)))
     hb.parent = E[f'DEF-hand.{S}']; hb.use_deform = False
 bpy.ops.object.mode_set(mode='OBJECT')

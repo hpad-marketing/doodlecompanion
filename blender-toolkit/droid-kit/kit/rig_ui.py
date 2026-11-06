@@ -374,11 +374,12 @@ def hold_prop(ob, S, prop, ctx):
     dg = ctx.evaluated_depsgraph_get()
     c = sum((prop.matrix_world @ Vector(v) for v in prop.bound_box), Vector()) / 8
     prop.matrix_world.translation += H.translation - c
-    # slide it toward the palm until it touches the palm or a finger, then settle on the touch
+    # slide it straight into the palm until it touches the palm or a finger, then settle on the touch
     palm = _parts(ob, lambda b: b == f'DEF-hand.{S}' or (b.startswith('f_') and b.endswith(f'.{S}')))
     po = bpy.data.objects.get(f'palm.{S}') or palm[0]   # geometric centre (part origins can sit anywhere)
     pc = sum((po.matrix_world @ Vector(v) for v in po.bound_box), Vector()) / 8
-    d = (pc - H.translation).normalized()
+    d = H.to_3x3().col[0].normalized()   # straight into the palm face (across the knuckle line), not toward its centre
+    d = d if d.dot(pc - H.translation) > 0 else -d
     def palm_depth():
         ctx.view_layer.update(); dg = ctx.evaluated_depsgraph_get()
         return _deepest(palm, _mesh_tree(prop, dg), dg)
@@ -405,11 +406,18 @@ def hold_prop(ob, S, prop, ctx):
     prop.matrix_world = W; prop['held_by'] = f'{ob.name}:{S}'
     ctx.view_layer.update()
 
-    def close(set_angle, parts, limit):
-        """largest angle (degrees, 0..limit) where parts sink no deeper than HOLD_TOL into the prop"""
+    def close(set_angle, parts, limit, others=()):
+        """largest angle (degrees, 0..limit) where parts sink no deeper than HOLD_TOL into the prop
+        (or into the other fingers' parts, so the thumb never closes through a finger)"""
         def deep(a):
             set_angle(a); ctx.view_layer.update(); dg = ctx.evaluated_depsgraph_get()
-            return _deepest(parts, _mesh_tree(prop, dg), dg)
+            d = _deepest(parts, _mesh_tree(prop, dg), dg)
+            if others and d <= HOLD_TOL:
+                ot = [_mesh_tree(o, dg) for o in others]
+                for o in parts:
+                    t = _mesh_tree(o, dg)
+                    if any(_depth(t, x) > HOLD_TOL for x in ot): return 1.0
+            return d
         prev = 0.0
         for a in range(3, int(limit) + 1, 3):
             if deep(a) > HOLD_TOL:
@@ -440,7 +448,8 @@ def hold_prop(ob, S, prop, ctx):
             b = pb.get(f'f_{fn}_{i}.{S}')
             if b is None: continue
             room = max(0.0, seg_lim(b) - math.degrees(b.matrix_basis.to_euler().x) - (g if i == 1 else 0.0))
-            a, hit = close(lambda a, b=b: setattr(b.rotation_euler, 'x', math.radians(a)), parts, room)
+            others = [o for o in hand if o not in parts]
+            a, hit = close(lambda a, b=b: setattr(b.rotation_euler, 'x', math.radians(a)), parts, room, others)
             if not hit: b.rotation_euler.x = 0.0 if i == 1 else math.radians(a)
             extra += a
             if hit: return True, extra
