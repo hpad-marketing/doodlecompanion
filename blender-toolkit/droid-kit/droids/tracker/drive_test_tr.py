@@ -6,6 +6,8 @@ bpy.ops.wm.open_mainfile(filepath=sys.argv[-1])
 from trcheck import Checker
 src = bpy.data.texts['tracker_rig_ui.py'].as_string()
 ns = {'__name__': 'tracker_rig_ui'}; exec(compile(src, 'tracker_rig_ui.py', 'exec'), ns)
+REG = [c for c in ('TRACKER_OT_drive', 'TRACKER_OT_motion', 'TRACKER_PT_main', 'TRACKER_PT_drive') if not hasattr(bpy.types, c)]
+WH = ns['Whirr'](); whirr_ok = bool(WH.h); WH.stop()   # the servo-whirr synth opens an audio device (False headless / no sound card)
 arm = bpy.data.objects['TrackerRig']; ad = arm.animation_data
 if ad: ad.action = None
 ns['reset_pose'](arm)
@@ -38,4 +40,9 @@ for ticks, kw in plan:
 print('DRIVETEST', json.dumps(dict(ticks=n, clashes=hits, strokes=bad_stroke, scoop_lowest_mm=round(lowest * 1000, 2),
                                    max_deg={k: round(v, 2) for k, v in mx.items()}, loads=sorted(loads),
                                    end=[round(core.d.x, 2), round(core.d.y, 2), round(math.degrees(core.d.yaw), 1)],
-                                   powered=core.powered, whirr_groups=sorted({k for w in core.whirr_log for k in w}))))
+                                   powered=core.powered, whirr_groups=sorted({k for w in core.whirr_log for k in w}),
+                                   unregistered=REG, whirr_audio=whirr_ok, blender=bpy.app.version_string)))
+ok = not hits and not bad_stroke and not REG and lowest > 0 and core.powered
+print(f"CHECK_SUMMARY: Tracked porter drive test {n} ticks, {len(hits)} clashes, {len(bad_stroke)} stroke faults, "
+      f"scoop lowest {lowest * 1000:.1f} mm, panel {'registered' if not REG else 'MISSING ' + ','.join(REG)}, whirr audio {'on' if whirr_ok else 'off'}")
+sys.exit(0 if ok else 1)

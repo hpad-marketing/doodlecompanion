@@ -5,7 +5,7 @@
   "current_file": "TrackedDroid.blend",
   "rig": "TrackerRig",
   "facing": "-Y (droid's L side is +X)",
-  "locked": false,
+  "locked": true,
   "build": "droids/tracker/build_tracker.py",
   "reference": {
     "image": "ref/orange_tracked_ref.jpg",
@@ -278,7 +278,7 @@
       "lean": "lean:rot_x (+ leans forward)",
       "sway": "body:rot_y",
       "crouch": "suspension:loc_y",
-      "drive": "TrackerRig[track_L], TrackerRig[track_R] (metres)",
+      "drive": "root:loc (tread travel: rig props track_L / track_R in metres)",
       "scoop_lift": "scoop_lift:rot_x (- raises)",
       "scoop_tilt": "scoop_tilt:rot_x (- curls)",
       "ears_droop": "stalk_roll.{S}:rot_z",
@@ -701,5 +701,6 @@
   },
   "physics": {
     "foot_regex": "track_link_\\d+"
-  }
+  },
+  "open_issues": []
 }
