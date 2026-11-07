@@ -27,6 +27,8 @@ The pipeline runs these steps in order:
 
 The same model bakes the library and runs Drive mode live, at 240 Hz:
 
+The porter is dense and heavy for its size: 283 kg with a 0.30 m centre of gravity. The shells are 4 mm steel. Inside sit a 38 kg battery pack, two 12 kg drive motors with gearboxes, a 14 kg cast-iron counterweight, the scoop pump, the waist slewing drive and the electronics, all listed under `physics.internal` in `../tracker.json`. The motors are the same as before, so it now pulls away, stops and turns more slowly, and it settles longer on its struts.
+
 - **Tracks.** Each track is a motor with speed lag. Acceleration is capped by motor torque and by traction (mu × g × that track's share of the weight), and braking is stronger. When the tracks counter-rotate, skid-steer scrub eats some of the turn.
 - **Chassis.** It rides on four coil-over struts, with pitch, roll and heave as damped springs. It squats when accelerating, dives when braking, rolls out in turns and dips its nose when the scoop is loaded.
 - **Body.** It sits on stiff but not rigid lean and sway motors, so it lags behind the chassis and then settles.

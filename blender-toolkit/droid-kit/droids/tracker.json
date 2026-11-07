@@ -700,7 +700,80 @@
     "lens": 45
   },
   "physics": {
-    "foot_regex": "track_link_\\d+"
+    "foot_regex": "track_link_\\d+",
+    "_note": "DENSE RULE (user 2026-11-07): heavy for its size. Internal equipment as point masses (rest world position); part masses from shape+material.",
+    "internal": [
+      {
+        "name": "battery pack",
+        "bone": "chassis",
+        "kg": 38,
+        "at": [
+          0,
+          0.02,
+          0.235
+        ]
+      },
+      {
+        "name": "drive motor and gearbox L",
+        "bone": "chassis",
+        "kg": 12,
+        "at": [
+          0.13,
+          0.19,
+          0.24
+        ]
+      },
+      {
+        "name": "drive motor and gearbox R",
+        "bone": "chassis",
+        "kg": 12,
+        "at": [
+          -0.13,
+          0.19,
+          0.24
+        ]
+      },
+      {
+        "name": "cast-iron counterweight",
+        "bone": "chassis",
+        "kg": 14,
+        "at": [
+          0,
+          0.22,
+          0.21
+        ]
+      },
+      {
+        "name": "scoop hydraulic pump",
+        "bone": "chassis",
+        "kg": 5,
+        "at": [
+          0,
+          -0.12,
+          0.24
+        ]
+      },
+      {
+        "name": "waist slewing drive",
+        "bone": "waist",
+        "kg": 7,
+        "at": [
+          0,
+          0,
+          0.33
+        ]
+      },
+      {
+        "name": "computer, screen driver and speakers",
+        "bone": "body",
+        "kg": 6,
+        "at": [
+          0,
+          0.05,
+          0.62
+        ]
+      }
+    ]
   },
   "open_issues": []
 }

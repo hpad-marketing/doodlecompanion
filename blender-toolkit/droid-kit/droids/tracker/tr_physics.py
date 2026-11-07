@@ -17,16 +17,16 @@ import math
 
 G = 9.81
 # masses from the Droid Kit mass model (kit/physics.py: 4 mm steel shells, solid steel links and pins), CoG measured at rest
-MASS = {'tracks': 91.2, 'chassis': 24.8, 'body': 64.8, 'scoop': 8.6}
-M_TOTAL = sum(MASS.values())           # 189 kg porter
+MASS = {'tracks': 91.2, 'chassis': 105.9, 'body': 77.8, 'scoop': 8.5}   # dense rule: battery, drive motors, counterweight inside
+M_TOTAL = sum(MASS.values())           # 283 kg porter (dense and heavy for its size)
 K_SCALE = M_TOTAL / 43.0               # strut and motor stiffness sized for this mass (natural frequencies stay the same)
 SCRAP_KG = 8.0                         # one scoop of scrap metal
 GAUGE = 0.58                           # track centre to centre
 MU = 0.85                              # rubber pads on deck plating
-H_CG = 0.31                            # centre of gravity height (kit mass model: 0.312 m)
-TRACK_LAG = 0.10                       # motor speed lag (s)
-A_DRIVE = 0.9                          # motor-limited acceleration (m/s^2)
-A_BRAKE = 1.6                          # braking (motors reverse + friction)
+H_CG = 0.296                           # centre of gravity height (kit mass model with internal equipment: 0.296 m)
+TRACK_LAG = 0.14                       # motor speed lag (s)
+A_DRIVE = 0.6                          # motor-limited acceleration (m/s^2)
+A_BRAKE = 1.15                         # braking (motors reverse + friction)
 V_MAX = 0.9
 
 
@@ -72,8 +72,8 @@ class Track:
 
 
 SERVOS = {  # joint: (max speed, max accel) in rad/s, rad/s^2 (m/s for slides)
-    'waist': (2.4, 7.0), 'lean': (1.4, 6.0), 'sway': (1.0, 5.0),
-    'scoop_lift': (1.1, 4.0), 'scoop_tilt': (1.8, 7.0), 'bin_lid': (2.5, 9.0),
+    'waist': (1.8, 4.5), 'lean': (1.1, 4.0), 'sway': (0.8, 3.5),     # dense body: same motors, more inertia
+    'scoop_lift': (0.9, 2.8), 'scoop_tilt': (1.4, 5.0), 'bin_lid': (2.0, 6.0),
     'stalk_roll.L': (4.0, 22.0), 'stalk_roll.R': (4.0, 22.0), 'stalk_pitch.L': (4.0, 22.0), 'stalk_pitch.R': (4.0, 22.0),
     'stalk_ext.L': (0.35, 2.5), 'stalk_ext.R': (0.35, 2.5),
 }
@@ -85,8 +85,8 @@ class Droid:
         self.x = 0.0; self.y = 0.0; self.yaw = 0.0
         self.tl, self.tr = Track(), Track()
         self.v = 0.0; self.w = 0.0; self.a_fwd = 0.0; self.a_left = 0.0
-        self.pitch = Spring(1.9, 0.32); self.roll = Spring(2.1, 0.35); self.heave = Spring(2.4, 0.38)
-        self.lean_flex = Spring(1.7, 0.22); self.sway_flex = Spring(1.9, 0.22)
+        self.pitch = Spring(1.6, 0.32); self.roll = Spring(1.8, 0.35); self.heave = Spring(2.0, 0.38)   # heavy on its struts: slower, deeper
+        self.lean_flex = Spring(1.4, 0.22); self.sway_flex = Spring(1.6, 0.22)
         self.tip = {S: (Spring(2.6, 0.10), Spring(2.6, 0.10)) for S in 'LR'}
         self.hook = 0.0; self.hook_v = 0.0
         self.servo = {k: Servo(*v) for k, v in SERVOS.items()}
