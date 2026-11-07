@@ -20,7 +20,7 @@ def srgb(h):
 
 
 PALETTE = {
-    'paint': ('#2C6764', 0.55),   # body, chassis, track skirts: worn deep teal
+    'paint': ('#123837', 0.55),   # body, chassis, track skirts: worn deep teal (deeper option approved at lock)
     'accent': ('#D8642A', 0.5),   # warning accents: scoop lip, stalk collars, bin lid stripe
     'cream': ('#E6D3A3', 0.55),   # trim
     'grey': ('#3D4349', 0.5),     # turret, bezel, lift arms: gunmetal

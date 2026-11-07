@@ -199,34 +199,40 @@ def spot(name, bone, loc, direction, energy_expr, props, size_deg=60, blend=0.4,
     o.matrix_world = mw
     drv(Ld, 'energy', energy_expr, props)
     return o
+import bmesh
+def beam(o, name, length, radius, color, strength_expr, props, blend=0.35):
+    """a faint visible cone in haze: apex AT the lamp (light origin), opening along the light's -Z, no shadow, additive"""
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=False, segments=24, radius1=radius, radius2=0.0, depth=length)
+    bmesh.ops.translate(bm, vec=(0, 0, -length / 2), verts=bm.verts)      # tip at z=0, wide end at z=-length
+    cm = bpy.data.meshes.new(name); bm.to_mesh(cm); bm.free()
+    cone = bpy.data.objects.new(name, cm); col.objects.link(cone)
+    cone.parent = o; cone.matrix_parent_inverse = Matrix.Identity(4); cone.location = (0, 0, 0)
+    mt = bpy.data.materials.new('TR_' + name.split('.')[0]); n2 = mt.node_tree.nodes; l2 = mt.node_tree.links; n2.clear()
+    o2 = n2.new('ShaderNodeOutputMaterial'); e2 = n2.new('ShaderNodeEmission'); t2 = n2.new('ShaderNodeBsdfTransparent'); a2 = n2.new('ShaderNodeAddShader')
+    e2.inputs['Color'].default_value = (*color, 1); lw = n2.new('ShaderNodeLayerWeight'); lw.inputs['Blend'].default_value = blend
+    mul = n2.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; l2.new(lw.outputs['Facing'], mul.inputs[0])
+    sv = n2.new('ShaderNodeValue'); sv.name = 'strength'; drv(sv.outputs[0], 'default_value', strength_expr, props)
+    l2.new(sv.outputs[0], mul.inputs[1]); l2.new(mul.outputs[0], e2.inputs['Strength'])
+    l2.new(e2.outputs[0], a2.inputs[0]); l2.new(t2.outputs[0], a2.inputs[1]); l2.new(a2.outputs[0], o2.inputs['Surface'])
+    cm.materials.append(mt); cone.visible_shadow = False
+    for c_ in ('diffuse', 'glossy', 'transmission', 'volume_scatter'): setattr(cone, 'visible_' + c_, False)
+    off = f'{props[0]} < 0.02'
+    drv(cone, 'hide_render', off, props[:1]); drv(cone, 'hide_viewport', off, props[:1])
+    return cone
+# work lights (brighter option approved at lock): stronger headlamps + chin lamp, each with a visible beam in the air
 for S in 'LR':
     hl = bpy.data.objects[f'headlamp.{S}']; c = hl.matrix_world @ (sum((V(v.co) for v in hl.data.vertices), V()) / len(hl.data.vertices))
-    spot(f'fx_worklight.{S}', 'chassis', c + V((0, -0.01, 0)), (0, -1, -0.25), '14.0 * lamps * power', ['lamps', 'power'], 70, 0.5)
+    o = spot(f'fx_worklight.{S}', 'chassis', c + V((0, -0.01, 0)), (0, -1, -0.25), '32.0 * lamps * power', ['lamps', 'power'], 70, 0.5)
+    beam(o, f'fx_work_beam.{S}', 0.85, 0.30, (1.0, 0.88, 0.68), '0.35 * lamps * power', ['lamps', 'power'])
 cl = bpy.data.objects['chin_lamp']; c = cl.matrix_world @ (sum((V(v.co) for v in cl.data.vertices), V()) / len(cl.data.vertices))
-spot('fx_chinlight', 'body', c + V((0, -0.01, 0)), (0, -1, -0.5), '8.0 * lamps * power', ['lamps', 'power'], 90, 0.6)
-# scanner: a spot from each cap lens + a thin cone you can see in haze
+o = spot('fx_chinlight', 'body', c + V((0, -0.01, 0)), (0, -1, -0.5), '16.0 * lamps * power', ['lamps', 'power'], 90, 0.6)
+beam(o, 'fx_chin_beam', 0.6, 0.30, (1.0, 0.88, 0.68), '0.25 * lamps * power', ['lamps', 'power'])
+# scanner: a spot from each cap lens + a thin visible cone that starts at the lens
 for S in 'LR':
     ln = bpy.data.objects[f'stalk_lens.{S}']; c = ln.matrix_world @ (sum((V(v.co) for v in ln.data.vertices), V()) / len(ln.data.vertices))
     o = spot(f'fx_scanner.{S}', f'stalk_tip.{S}', c + V((0, -0.004, 0)), (0, -1, -0.35), '9.0 * scan * power', ['scan', 'power'], 16, 0.15,
              color=(0.25, 0.85, 1.0), radius=0.002)
-    # visible cone (no shadow, additive), parented to the same bone, swept left/right by scan_sweep
-    import bmesh
-    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=False, segments=24, radius1=0.0, radius2=0.20, depth=0.9)
-    bmesh.ops.translate(bm, vec=(0, 0, -0.45), verts=bm.verts)
-    cm = bpy.data.meshes.new(f'fx_scan_beam.{S}'); bm.to_mesh(cm); bm.free()
-    cone = bpy.data.objects.new(f'fx_scan_beam.{S}', cm); col.objects.link(cone)
-    cone.parent = o; cone.matrix_parent_inverse = Matrix.Identity(4); cone.location = (0, 0, 0)
-    bm_ = bpy.data.materials.get('TR_scan_beam')
-    if not bm_:
-        bm_ = bpy.data.materials.new('TR_scan_beam'); n2 = bm_.node_tree.nodes; l2 = bm_.node_tree.links; n2.clear()
-        o2 = n2.new('ShaderNodeOutputMaterial'); e2 = n2.new('ShaderNodeEmission'); t2 = n2.new('ShaderNodeBsdfTransparent'); a2 = n2.new('ShaderNodeAddShader')
-        e2.inputs['Color'].default_value = (0.25, 0.85, 1.0, 1); lw = n2.new('ShaderNodeLayerWeight'); lw.inputs['Blend'].default_value = 0.35
-        mul = n2.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; l2.new(lw.outputs['Facing'], mul.inputs[0])
-        sv = n2.new('ShaderNodeValue'); sv.name = 'scan'; drv(sv.outputs[0], 'default_value', '0.6 * scan * power', ['scan', 'power'])
-        l2.new(sv.outputs[0], mul.inputs[1]); l2.new(mul.outputs[0], e2.inputs['Strength'])
-        l2.new(e2.outputs[0], a2.inputs[0]); l2.new(t2.outputs[0], a2.inputs[1]); l2.new(a2.outputs[0], o2.inputs['Surface'])
-    cm.materials.append(bm_); cone.visible_shadow = False
-    drv(cone, 'hide_render', 'scan < 0.02', ['scan']); drv(cone, 'hide_viewport', 'scan < 0.02', ['scan'])
+    beam(o, f'fx_scan_beam.{S}', 0.9, 0.20, (0.25, 0.85, 1.0), '0.6 * scan * power', ['scan', 'power'])
 # ---------------------------------------------------------------- vent dust: volume puffs rising from the side vents
 dust = bpy.data.materials.new('TR_vent_dust'); n3 = dust.node_tree.nodes; l3 = dust.node_tree.links; n3.clear()
 o3 = n3.new('ShaderNodeOutputMaterial'); pv = n3.new('ShaderNodeVolumePrincipled'); pv.inputs['Color'].default_value = (0.55, 0.5, 0.42, 1)

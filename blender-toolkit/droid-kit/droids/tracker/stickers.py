@@ -119,7 +119,8 @@ SPOTS = [  # art, part, face normal, up, u, v, size (m), tilt (deg)
     ('fish', 'bin_body', (0, 1, 0), (0, 0, 1), 0.25, 0.72, 0.060, 15),
     ('zone', 'chassis_hull', (0, 1, 0), (0, 0, 1), 0.82, 0.55, 0.058, 4),
 ]
-arm['stickers_shown'] = len(SPOTS); arm.id_properties_ui('stickers_shown').update(min=0, max=len(SPOTS), description='Souvenir stickers shown (one more per planet)')
+arm['stickers_shown'] = min(3, len(SPOTS));   # the show starts with 3, one more per planet (lock option)
+arm.id_properties_ui('stickers_shown').update(min=0, max=len(SPOTS), description='Souvenir stickers shown (one more per planet)')
 for k, (art, part, n, up, u, v, size, tilt) in enumerate(SPOTS):
     p = os.path.join(IMG, f'sticker_{art}.png'); ART[art]().filter(ImageFilter.GaussianBlur(0.6)).save(p)
     img = bpy.data.images.load(p, check_existing=True); img.pack()
