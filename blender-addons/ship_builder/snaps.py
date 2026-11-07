@@ -58,7 +58,10 @@ def _snap(kind, scene_name, cam_name, folder):
     keep = dict(engine=r.engine, x=r.resolution_x, y=r.resolution_y, pct=r.resolution_percentage,
                 path=r.filepath, fmt=r.image_settings.file_format, cam=sc.camera,
                 light=sh.light, color=sh.color_type)
+    haze = [o for o in sc.objects if o.get("sb_haze") and not o.hide_render]   # a solid grey box in Workbench
     try:
+        for o in haze:
+            o.hide_render = True
         r.engine = "BLENDER_WORKBENCH"
         r.resolution_x, r.resolution_y, r.resolution_percentage = W, H, 100
         r.image_settings.file_format = "JPEG"
@@ -73,6 +76,8 @@ def _snap(kind, scene_name, cam_name, folder):
         r.resolution_percentage, r.filepath = keep["pct"], keep["path"]
         r.image_settings.file_format, sc.camera = keep["fmt"], keep["cam"]
         sh.light, sh.color_type = keep["light"], keep["color"]
+        for o in haze:
+            o.hide_render = False
 
 
 def _tick():

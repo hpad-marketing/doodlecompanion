@@ -85,6 +85,7 @@ def haze(room, density=0.01):
 def camera(room, name="Wide master", lens=24, loc=None, target=None, fstop=4.0, portrait=True):
     cam = bpy.data.cameras.new(name)
     cam.lens = lens
+    cam.display_size = 0.25            # small in the view, so walking past it never blacks out the set
     cam.sensor_fit = "AUTO"
     cam.dof.use_dof = True
     cam.dof.aperture_fstop = fstop

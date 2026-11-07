@@ -14,7 +14,8 @@ from mathutils import Vector
 
 MOUNT = 0.35        # parts within this of a wall plane belong to that wall
 CEIL = 0.6          # parts this close under the ceiling belong to the ceiling
-TAG_V = 2           # sets tagged by an older build are tagged again on first view
+TAG_V = 3           # sets tagged by an older build are tagged again on first view
+CAM_SIZE = 0.25
 _STATE = {"on": False, "eye": None, "hidden": set()}
 
 
@@ -77,6 +78,9 @@ def tag(scene=None):
                 ob["sb_cut"] = ",".join(sides)
                 ob["sb_room"] = r["name"]
                 n += 1
+    for ob in sc.objects:              # a set camera drawn at 1 m blacks out the view when you walk past it
+        if ob.type == "CAMERA" and ob.data.display_size > CAM_SIZE:
+            ob.data.display_size = CAM_SIZE
     sc["sb_cut_v"] = TAG_V
     return n
 

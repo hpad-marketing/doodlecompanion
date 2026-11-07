@@ -207,6 +207,7 @@ def _face(ob, target):
 # ------------------------------------------------------------------ cameras for shots
 def _cam(sc, name, loc, target, lens):
     cd = bpy.data.cameras.get(name) or bpy.data.cameras.new(name)
+    cd.display_size = 0.25
     ob = bpy.data.objects.get(name)
     if ob is None:
         ob = bpy.data.objects.new(name, cd)

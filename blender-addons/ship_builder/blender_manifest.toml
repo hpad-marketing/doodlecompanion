@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "ship_builder"
-version = "0.6.4"
+version = "0.6.5"
 name = "Ship Builder"
 tagline = "Spaceship sets and the episode studio for the droid sitcom"
 maintainer = "HPAD Marketing"

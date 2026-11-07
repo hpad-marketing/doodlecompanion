@@ -42,39 +42,78 @@ def _builtin(name):
     return bpy.types.UILayout.bl_rna.functions["prop"].parameters["icon"].enum_items[name].value
 
 
-_NUDGE = {"left": 0}
+_PIX = {"todo": [], "on": False}
 
 
-def _nudge():
-    """Pictures load in the background: redraw a few times so they replace the spinners."""
-    if _NUDGE["left"] <= 0:
-        bpy.app.timers.register(_redraw_all, first_interval=0.4)
-    _NUDGE["left"] = 6
+def _pix_tick():
+    """Read waiting pictures straight into the icon set (a few per tick), then redraw.
 
-
-def _redraw_all():
+    Blender's own background loader keeps a "could not read" mark per file in its thumbnail
+    cache, and a file it once caught half-written stayed a spinner for good; reading the
+    pixels ourselves never gets stuck that way.
+    """
+    pc = _PCOLL["main"]
+    if pc is None or not _PIX["todo"]:
+        _PIX["on"] = False
+        return None
+    for _ in range(3):
+        if not _PIX["todo"]:
+            break
+        key, path = _PIX["todo"].pop(0)
+        if key in pc:
+            continue
+        try:
+            im = bpy.data.images.load(path, check_existing=False)
+        except RuntimeError:
+            continue
+        try:
+            w, h = im.size
+            px = [0.0] * (w * h * 4)
+            im.pixels.foreach_get(px)
+            pv = pc.new(key)
+            pv.image_size = (w, h)
+            pv.image_pixels_float.foreach_set(px)
+        except (RuntimeError, ValueError, KeyError):
+            pass
+        finally:
+            bpy.data.images.remove(im)
     for w in bpy.context.window_manager.windows:
-        for a in w.screen.areas:
-            a.tag_redraw()
-    _NUDGE["left"] -= 1
-    return 0.7 if _NUDGE["left"] > 0 else None
+        for ar in w.screen.areas:
+            ar.tag_redraw()
+    if _PIX["todo"]:
+        return 0.05
+    _PIX["on"] = False
+    return None
+
+
+def _want_pixels(key, path):
+    if all(k != key for k, _p in _PIX["todo"]):
+        _PIX["todo"].append((key, path))
+    if not _PIX["on"]:
+        _PIX["on"] = True
+        bpy.app.timers.register(_pix_tick, first_interval=0.05)
 
 
 def icon_for(item):
     pc = _PCOLL["main"]
+    fallback = _builtin(dict((c, i) for c, _l, i in Cat.CATEGORIES)[item.cat])
     if pc is None:
-        return _builtin(dict((c, i) for c, _l, i in Cat.CATEGORIES)[item.cat])
-    for path, kind in ((item.thumb, "IMAGE"), (item.movie, "MOVIE")):
-        if path:
-            key = f"{path}|{os.path.getmtime(path) if os.path.exists(path) else 0}"
-            if key not in pc:
-                try:
-                    pc.load(key, path, kind)
-                except (RuntimeError, KeyError):
-                    continue
-                _nudge()
+        return fallback
+    if item.thumb and os.path.exists(item.thumb):
+        key = f"{item.thumb}|{os.path.getmtime(item.thumb)}"
+        if key in pc:
             return pc[key].icon_id
-    return _builtin(dict((c, i) for c, _l, i in Cat.CATEGORIES)[item.cat])
+        _want_pixels(key, item.thumb)
+        return fallback
+    if item.movie and os.path.exists(item.movie):
+        key = f"{item.movie}|{os.path.getmtime(item.movie)}"
+        if key not in pc:
+            try:
+                pc.load(key, item.movie, "MOVIE")
+            except (RuntimeError, KeyError):
+                return fallback
+        return pc[key].icon_id
+    return fallback
 
 
 # ------------------------------------------------------------------ state

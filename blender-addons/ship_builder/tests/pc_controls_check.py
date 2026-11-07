@@ -259,7 +259,7 @@ def snap_poses():
     shot("2_poses_tab", studio=True)
 
 
-STEPS = [step_build, step_droids, step_pose, warm_up, warm_up, warm_up, snap_handles, probe, probe_near, snap_no_overlays, snap_no_extras, snap_no_bones, step_move, open_studio, warm_up, warm_up,
+STEPS = [step_build, step_droids, step_pose, warm_up, warm_up, warm_up, snap_handles, step_move, open_studio, warm_up, warm_up,
          snap_poses] + tab("MOVES", "3_camera_moves_tab") + tab("SCENE", "4_in_this_scene_tab") + tab("DROIDS", "5_droids_tab_controls")
 
 
