@@ -135,5 +135,21 @@ for c, _l, _i in Cat.CATEGORIES:
     except Exception as e:
         import traceback; traceback.print_exc()
         BAD.append(f"library {c}: {e!r}")
+# the droid kit is read (a broken catalog.droids hid every droid once)
+import json, tempfile
+kd = tempfile.mkdtemp()
+os.makedirs(os.path.join(kd, "droids"))
+with open(os.path.join(kd, "droids", "rx07.json"), "w") as f:
+    json.dump({"id": "rx07", "name": "RX-07", "folder": "R", "current_file": "r.blend", "rig": "RobotRig"}, f)
+
+
+class KP:
+    kit_dir, deep_root, thumbs_dir, scans_dir, hero_dir = kd, kd, "", "", ""
+
+
+if [d["id"] for d in Cat.droids(KP)] != ["rx07"]:
+    BAD.append("catalog.droids does not read the kit")
+if len(Cat.items("POSES", KP, "rx07")) < 10:
+    BAD.append("poses tab short")
 SB.unregister()
 print("STATIONS", "OK" if not BAD else "BAD", sorted(set(BAD)))

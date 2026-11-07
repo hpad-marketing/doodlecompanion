@@ -83,6 +83,21 @@ def droids(prefs):
         return out
 
 
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".json") or fn.startswith("_"):
+            continue
+        try:
+            with open(os.path.join(d, fn), encoding="utf-8") as f:
+                j = json.load(f)
+        except (OSError, ValueError):
+            continue
+        blend = os.path.join(root, j.get("folder", ""), j.get("current_file", ""))
+        out.append(dict(id=j.get("id", fn[:-5]), name=j.get("name", fn[:-5]), blend=blend, rig=j.get("rig", ""),
+                        folder=os.path.join(root, j.get("folder", "")),
+                        **{k: j[k] for k in ("set_height", "mass_kg") if k in j}))
+    return out
+
+
 def _diagram_dir(prefs):
     d = bpy.path.abspath(getattr(prefs, "thumbs_dir", "") or "") if prefs is not None else ""
     return d or os.path.join(bpy.app.tempdir or os.path.expanduser("~"), "sb_thumbs")
@@ -123,19 +138,6 @@ def scene_items(prefs):
         if o.type == "CAMERA":
             out.append(Item("SCENE", f"obj:{o.name}", o.name, "Camera: Use looks through it",
                             find(prefs, f"cam_{_safe(o.name)}"), None, dict(kind="camera", name=o.name)))
-    return out
-    for fn in sorted(os.listdir(d)):
-        if not fn.endswith(".json") or fn.startswith("_"):
-            continue
-        try:
-            with open(os.path.join(d, fn), encoding="utf-8") as f:
-                j = json.load(f)
-        except (OSError, ValueError):
-            continue
-        blend = os.path.join(root, j.get("folder", ""), j.get("current_file", ""))
-        out.append(dict(id=j.get("id", fn[:-5]), name=j.get("name", fn[:-5]), blend=blend, rig=j.get("rig", ""),
-                        folder=os.path.join(root, j.get("folder", "")),
-                        **{k: j[k] for k in ("set_height", "mass_kg") if k in j}))
     return out
 
 
