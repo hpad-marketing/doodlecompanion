@@ -46,12 +46,20 @@ def fresh():
     return bpy.context.scene
 
 
+def as_jpeg(sc):
+    """Blender 5 keeps a VIDEO media type after a movie render; JPEG is only valid under IMAGE."""
+    ims = sc.render.image_settings
+    if hasattr(ims, "media_type") and ims.media_type != "IMAGE":
+        ims.media_type = "IMAGE"
+    ims.file_format = "JPEG"
+
+
 def still(sc, cam, name, w, h, spp=48):
     sc.camera = cam
     sc.render.resolution_x, sc.render.resolution_y = w, h
     sc.render.resolution_percentage = 100
     sc.cycles.samples = spp
-    sc.render.image_settings.file_format = "JPEG"
+    as_jpeg(sc)
     sc.render.image_settings.quality = 88
     sc.render.filepath = os.path.join(OUT, name + ".jpg")
     t = time.time()
@@ -225,7 +233,7 @@ if (want("DROIDS") or want("MOTIONS")) and KIT:
             if made:
                 os.replace(os.path.join(OUT, made[-1]), os.path.join(OUT, n + ".mp4"))
             sc.frame_set((f0 + f1) // 2)
-            sc.render.image_settings.file_format = "JPEG"
+            as_jpeg(sc)
             sc.render.filepath = os.path.join(OUT, n + ".jpg")
             bpy.ops.render.render(write_still=True)
             say("wrote", n, round(time.time() - t, 1), "s")
@@ -307,7 +315,7 @@ if want("POSES") and KIT:
         Li.render_setup(sc, preview=True)
         eevee(sc)
         sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 320, 400, 100
-        sc.render.image_settings.file_format = "JPEG"
+        as_jpeg(sc)
         sc.tool_settings.use_keyframe_insert_auto = False
         for k in todo:
             if k not in ok:
