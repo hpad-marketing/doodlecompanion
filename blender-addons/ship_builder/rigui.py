@@ -97,7 +97,7 @@ def label(rig):
     """The droid's own name (RX-07), not its rig object's (RobotRig)."""
     for c in rig.users_collection:
         if c.name.startswith("Droid "):
-            return c.name[6:].split(".")[0]
+            return c.name[6:].split(".")[0].split(" (")[0]
     return rig.get("sb_cast") or rig.name.split(".")[0]
 
 
@@ -241,10 +241,10 @@ def draw_controls(L, ctx):
         o.rig, o.bone = rig.name, "*"
         r.operator("ship.pose_reset", text="", icon="LOOP_BACK").rig = rig.name
         g = col.grid_flow(row_major=True, columns=3, even_columns=True, align=True)
-        for label, keys in MAIN:
+        for name, keys in MAIN:
             bn = find(rig, keys)
             if bn:
-                o = g.operator("ship.pose", text=label)
+                o = g.operator("ship.pose", text=name)
                 o.rig, o.bone = rig.name, bn
         a = rig.data
         if hasattr(a, "collections_all"):
