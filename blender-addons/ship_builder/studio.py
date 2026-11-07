@@ -261,6 +261,8 @@ def _use_motion(ctx, it):
         with bpy.data.libraries.load(it.data["blend"], link=False) as (src, dst):
             dst.actions = [it.id]
         act = dst.actions[0]
+    from . import posekit as PK
+    PK.fk_arms(rig)        # its motions drive the FK arms
     ad = rig.animation_data or rig.animation_data_create()
     ad.action = act
     if hasattr(ad, "action_slot") and getattr(act, "slots", None) and len(act.slots):

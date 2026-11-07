@@ -62,7 +62,13 @@ def point(rig, h):
     if h.bone == "*":
         return rig.matrix_world.translation.copy()
     pb = rig.pose.bones.get(h.bone)
-    return rig.matrix_world @ pb.head if pb else rig.matrix_world.translation.copy()
+    if pb is None:
+        return rig.matrix_world.translation.copy()
+    if "ik_fk" in pb.keys() and _fk_live(rig, pb):
+        m = _fk_matrix(rig, pb)      # the limb is in FK: the handle sits on the visible hand
+        if m is not None:
+            return rig.matrix_world @ m.translation
+    return rig.matrix_world @ pb.head
 
 
 def _key(rig, h):
@@ -79,12 +85,72 @@ def _key(rig, h):
     pb.keyframe_insert("rotation_quaternion" if pb.rotation_mode == "QUATERNION" else "rotation_euler", frame=f)
 
 
+LIMB = {"hand": ("upper_arm", "forearm", "hand"), "foot": ("thigh", "shin", "foot")}
+
+
+def _limb_switch(rig, stem, side, ik):
+    """Blend a limb's deform bones to their IK (1) or FK (0) chain. Works whether the rig
+    drives this from its ik_fk property or not (RX-07 keeps the influences static)."""
+    names = {f"DEF-{p}{side}" for p in LIMB[stem]}
+    for pb in rig.pose.bones:
+        if pb.name not in names:
+            continue
+        for c in pb.constraints:
+            if c.type in ("COPY_TRANSFORMS", "COPY_ROTATION") and c.name.upper() in ("IK", "FK"):
+                c.influence = ik if c.name.upper() == "IK" else 1.0 - ik
+
+
+def _ensure_ik(rig, pb):
+    """A limb in FK ignores its IK handle: snap the handle onto the hand and switch to IK,
+    so dragging the hand works and nothing jumps."""
+    if "ik_fk" not in pb.keys() or float(pb["ik_fk"]) >= 0.5 and not _fk_live(rig, pb):
+        return
+    m = _fk_matrix(rig, pb)
+    if m is not None:
+        pb.matrix = m
+    side = pb.name[-2:] if pb.name[-2:].lower() in (".l", ".r") else ""
+    pb["ik_fk"] = 1.0
+    _limb_switch(rig, "hand" if "hand" in pb.name.lower() else "foot", side, 1.0)
+    bpy.context.view_layer.update()
+
+
+def fk_arms(rig):
+    """Hand the arms back to FK (the droid's own motions animate its FK arms)."""
+    for pb in rig.pose.bones:
+        if "ik_fk" in pb.keys() and "hand" in pb.name.lower():
+            side = pb.name[-2:] if pb.name[-2:].lower() in (".l", ".r") else ""
+            pb["ik_fk"] = 0.0
+            _limb_switch(rig, "hand", side, 0.0)
+
+
+def _fk_matrix(rig, pb):
+    """Where the IK handle would sit on the hand/foot as the FK chain holds it now."""
+    side = pb.name[-2:] if pb.name[-2:].lower() in (".l", ".r") else ""
+    stem = "hand" if "hand" in pb.name.lower() else "foot"
+    for name in (f"DEF-{stem}{side}", f"FK-{stem}{side}", f"{stem}{side}"):
+        src = rig.pose.bones.get(name)
+        if src is not None:
+            # keep the handle's own offset from the hand (it may sit at the palm, not the wrist)
+            off = rig.data.bones[src.name].matrix_local.inverted() @ rig.data.bones[pb.name].matrix_local
+            return src.matrix @ off
+    return None
+
+
+def _fk_live(rig, pb):
+    side = pb.name[-2:] if pb.name[-2:].lower() in (".l", ".r") else ""
+    stem = "hand" if "hand" in pb.name.lower() else "foot"
+    d = rig.pose.bones.get(f"DEF-{LIMB[stem][0]}{side}")
+    c = d.constraints.get("IK") if d else None
+    return c is not None and c.influence < 0.5
+
+
 def move_to(rig, h, p, key=True):
     p = Vector(p)
     if h.bone == "*":
         rig.location += p - rig.matrix_world.translation
     else:
         pb = rig.pose.bones[h.bone]
+        _ensure_ik(rig, pb)
         d = rig.matrix_world.inverted().to_3x3() @ (p - rig.matrix_world @ pb.head)
         m = pb.matrix.copy()
         m.translation += d
@@ -121,6 +187,8 @@ def tilt(rig, h, angle, key=True):
 
 def rest(rig):
     for pb in rig.pose.bones:
+        if "ik_fk" in pb.keys() and rig.data.bones.get(pb.name) and not rig.data.bones[pb.name].parent or "ik_fk" in pb.keys():
+            pb["ik_fk"] = 0.0       # presets pose through the IK handles: _ensure_ik snaps and switches
         pb.location = (0, 0, 0)
         pb.rotation_quaternion = (1, 0, 0, 0)
         pb.rotation_euler = (0, 0, 0)
@@ -159,27 +227,79 @@ def poses_for(rig):
     return out
 
 
-def apply(rig, key, keyframe=True):
-    lab, offs, look = POSES[key]
+def _parts(rig):
+    return [o for o in rig.children_recursive if o.type in {"MESH", "CURVE"}]
+
+
+def _near(rig, hh):
+    c = rig.matrix_world.translation
+    out = []
+    for o in bpy.context.scene.objects:
+        if o.type != "MESH" or o is rig or o.parent is rig or o in rig.children_recursive or o.get("sb_widget"):
+            continue
+        if (o.matrix_world.translation - c).length < hh * 2.5 + max(o.dimensions) * 0.5:
+            out.append(o)
+    return out
+
+
+def _hits(rig, parts, others):
+    from . import collide
+    bpy.context.view_layer.update()
+    return {tuple(sorted(h[:2])) for h in collide.audit_objects(parts + others, 0.0015, only=parts)}
+
+
+def _pose(rig, offs, look, hh, out, scale, keyframe):
     rest(rig)
     bpy.context.view_layer.update()
-    hh = height(rig)
     basis = rig.matrix_world.to_3x3().normalized()
-    order = sorted(offs, key=lambda k: k != "body")   # body first, the hands follow it
-    for k in order:
+    for k in sorted(offs, key=lambda k: k != "body"):   # body first, the hands follow it
         h = get(rig, k)
         if h is None:
             continue
         x, y, z = offs[k]
+        if k == "hand_l":
+            x += out          # its left is +X
+        elif k == "hand_r":
+            x -= out
         start = point(rig, h)
-        move_to(rig, h, start + basis @ Vector((x, y, z)) * hh, key=keyframe)
+        move_to(rig, h, start + basis @ Vector((x * scale, y * scale, z * scale)) * hh, key=keyframe)
         bpy.context.view_layer.update()
     if look and (look[0] or look[1]):
         h = get(rig, "head")
         if h is not None:
             if look[0]:
-                turn(rig, h, math.radians(look[0]), key=keyframe)
+                turn(rig, h, math.radians(look[0] * scale), key=keyframe)
             if look[1]:
-                tilt(rig, h, math.radians(look[1]), key=keyframe)
+                tilt(rig, h, math.radians(look[1] * scale), key=keyframe)
             bpy.context.view_layer.update()
-    return lab
+
+
+# hands swing out from the body first, then the pose shrinks, until nothing passes through anything
+TRIES = [(o, 1.0) for o in (0.0, 0.06, 0.12, 0.18, 0.26)] + [(0.18, f) for f in (0.85, 0.7, 0.55, 0.4)]
+
+
+def apply(rig, key, keyframe=True, safe=True):
+    """Pose from a preset. With safe=True the pose is checked for intersections (the droid
+    against itself and the set around it) and eased until it is clean: the hard rule."""
+    lab, offs, look = POSES[key]
+    rest(rig)
+    if key == "neutral":
+        fk_arms(rig)
+    bpy.context.view_layer.update()
+    if key == "neutral" or not offs and not look:
+        return lab
+    hh = height(rig)
+    if not safe:
+        _pose(rig, offs, look, hh, 0.0, 1.0, keyframe)
+        return lab
+    parts, others = _parts(rig), _near(rig, hh)
+    base = _hits(rig, parts, others)
+    for out, scale in TRIES:
+        _pose(rig, offs, look, hh, out, scale, False)
+        if not (_hits(rig, parts, others) - base):
+            if keyframe:
+                _pose(rig, offs, look, hh, out, scale, True)
+            return lab if (out, scale) == (0.0, 1.0) else f"{lab} (eased so nothing touches)"
+    rest(rig)
+    bpy.context.view_layer.update()
+    return f"{lab} doesn't fit here without touching something: left at rest"
