@@ -28,6 +28,9 @@ CATEGORIES = [
     ("MOODS", "Moods", "LIGHT_SUN"),
     ("VIEWS", "Window views", "WORLD"),
     ("SHIP", "Hero ship", "OUTLINER_OB_FORCE_FIELD"),
+    ("POSES", "Poses", "POSE_HLT"),
+    ("MOVES", "Camera moves", "VIEW_CAMERA"),
+    ("SCENE", "In this scene", "OUTLINER"),
 ]
 ROOM_LABELS = {"lounge": "Oil lounge", "bridge": "Command centre", "corridor": "Corridor"}
 
@@ -78,6 +81,49 @@ def droids(prefs):
     d = os.path.join(kit, "droids")
     if not os.path.isdir(d):
         return out
+
+
+def _diagram_dir(prefs):
+    d = bpy.path.abspath(getattr(prefs, "thumbs_dir", "") or "") if prefs is not None else ""
+    return d or os.path.join(bpy.app.tempdir or os.path.expanduser("~"), "sb_thumbs")
+
+
+def _room_key(sc):
+    try:
+        info = json.loads(sc["sb_ship"])
+        return [r.get("key") for r in info.get("rooms", []) if r.get("key")]
+    except (KeyError, ValueError, TypeError):
+        return []
+
+
+def scene_items(prefs):
+    """Everything in the open file and scene, each with the best picture we have."""
+    out = []
+    sc = bpy.context.scene
+    for s in bpy.data.scenes:
+        keys = _room_key(s)
+        th = next((find(prefs, f"room_{k}") for k in keys if find(prefs, f"room_{k}")), None)
+        here = " (open)" if s == sc else ""
+        out.append(Item("SCENE", f"scene:{s.name}", s.name + here, "Scene: click Use to switch to it", th, None,
+                        dict(kind="scene", name=s.name)))
+    for o in sc.objects:
+        if o.type == "ARMATURE" and (o.get("sb_droid") or o.get("sb_cast")):
+            did = str(o.get("sb_droid") or o.get("sb_cast"))
+            name = next((c.name[6:].split(" (")[0] for c in o.users_collection if c.name.startswith("Droid ")), o.name)
+            out.append(Item("SCENE", f"obj:{o.name}", name, "Droid", find(prefs, f"droid_{did}"), find(prefs, f"droid_{did}", movie=True),
+                            dict(kind="droid", name=o.name)))
+    seen = set()
+    for o in sc.objects:
+        pid = o.get("sb_prop")
+        if pid and o.parent is None and o.name not in seen:
+            seen.add(o.name)
+            lab = Pr.PROPS.get(pid, (pid,))[0]
+            out.append(Item("SCENE", f"obj:{o.name}", lab, "Prop", find(prefs, f"prop_{pid}"), None, dict(kind="object", name=o.name)))
+    for o in sc.objects:
+        if o.type == "CAMERA":
+            out.append(Item("SCENE", f"obj:{o.name}", o.name, "Camera: Use looks through it",
+                            find(prefs, f"cam_{_safe(o.name)}"), None, dict(kind="camera", name=o.name)))
+    return out
     for fn in sorted(os.listdir(d)):
         if not fn.endswith(".json") or fn.startswith("_"):
             continue
@@ -165,6 +211,27 @@ def items(cat, prefs=None, droid=None):
         from . import views as V
         for k, (lab, *_r) in V.VIEWS.items():
             out.append(Item(cat, k, lab, "Seen through every window; the sunlight follows it", find(prefs, f"view_{k}")))
+    elif cat == "POSES":
+        from . import posekit as PK
+        ds = droids(prefs)
+        d = next((x for x in ds if x["id"] == droid), ds[0] if ds else None)
+        did = d["id"] if d else "droid"
+        for k, (lab, _o, _l) in PK.POSES.items():
+            out.append(Item(cat, k, lab, f"{d['name'] if d else 'Droid'}: click Use to pose the droid in the scene",
+                            find(prefs, f"pose_{did}_{k}") or find(prefs, f"droid_{did}"), None, dict(droid=did)))
+    elif cat == "MOVES":
+        from . import cammoves as CM
+        dd = _diagram_dir(prefs)
+        for k, (lab, secs, blurb) in CM.MOVES.items():
+            th = find(prefs, f"move_{k}")
+            if th is None:
+                try:
+                    th = CM.diagram(k, dd)
+                except OSError:
+                    th = None
+            out.append(Item(cat, k, lab, f"{blurb} ({secs:g} s from the playhead)", th, find(prefs, f"move_{k}", movie=True)))
+    elif cat == "SCENE":
+        out = scene_items(prefs)
     elif cat == "SHIP":
         d, pres = hero_manifest(prefs)
         for p in pres:

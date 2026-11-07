@@ -60,7 +60,8 @@ class Lay:
         if data is not None and not hasattr(data, name) and name not in getattr(data, "bl_rna", bpy.types.ID.bl_rna).properties:
             BAD.append(f"prop {type(data).__name__}.{name}")
 
-    prop_enum = prop
+    def prop_enum(self, data, name, value, **kw):
+        return self.prop(data, name, **kw)
 
     def template_icon(self, **kw):
         return Lay()
@@ -116,5 +117,23 @@ for opname, kw in (("ep_emotion", {}), ("ep_event", {}), ("ep_approve", {})):
         BAD.append(f"poll {opname}: {ex!r}")
 print("youtube.ready", __import__("ship_builder.youtube", fromlist=["x"]).ready(root))
 print("publish_at", __import__("ship_builder.youtube", fromlist=["x"]).publish_at("2026-11-10 18:00"))
+# the library: every tab draws (pictures, controls, poses, moves, scene list)
+Std = __import__("ship_builder.studio", fromlist=["x"])
+Cat = __import__("ship_builder.catalog", fromlist=["x"])
+
+
+class Reg:
+    width = 560
+
+
+ctx.region = Reg()
+s.station = "LIBRARY"
+for c, _l, _i in Cat.CATEGORIES:
+    Std.state(ctx).cat = c
+    try:
+        Std.SHIP_PT_library.draw(type("P", (), {"layout": Lay()})(), ctx)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        BAD.append(f"library {c}: {e!r}")
 SB.unregister()
 print("STATIONS", "OK" if not BAD else "BAD", sorted(set(BAD)))

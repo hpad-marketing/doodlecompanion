@@ -221,12 +221,28 @@ def draw_set_view(L, ctx):
                icon="HIDE_OFF" if on else "HIDE_ON", depress=on)
 
 
+def _draw_pose_strip(col, ctx, rig):
+    """One-click pose presets with a picture each."""
+    from . import posekit as PK, studio as St, catalog as Cat
+    pr = St.prefs()
+    did = str(rig.get("sb_droid") or rig.get("sb_cast") or "")
+    g = col.grid_flow(row_major=True, columns=6, even_columns=True, align=True)
+    for k, lab in PK.poses_for(rig):
+        it = Cat.Item("POSES", k, lab, "", Cat.find(pr, f"pose_{did}_{k}") or Cat.find(pr, f"droid_{did}"))
+        c = g.column(align=True)
+        c.template_icon(icon_value=St.icon_for(it), scale=2.4)
+        o = c.operator("ship.pose_preset", text=lab)
+        o.rig, o.preset = rig.name, k
+
+
 def draw_controls(L, ctx):
     """The Controls box: one block per droid in the scene."""
     rigs = droids(ctx.scene)
     box = L.box()
     head = box.row()
     head.label(text="Droid controls", icon="ARMATURE_DATA")
+    from . import handles
+    head.operator("ship.handles", text="Handles on droids", icon="GIZMO", depress=handles.on(ctx.scene))
     if ctx.mode == "POSE":
         head.operator("ship.pose_done", icon="CHECKMARK")
     if not rigs:
@@ -253,6 +269,7 @@ def draw_controls(L, ctx):
                 if c.name.lower() in ("deform", "mechanics", "mch", "org"):
                     continue
                 g.prop(c, "is_visible", text=c.name, toggle=True)
+        _draw_pose_strip(col, ctx, rig)
         kg = rig.get("foley_mass_kg")
         if kg:
             col.label(text=f"{kg:.0f} kg  ·  scale {rig.get('sb_set_scale', 1.0):.2f}", icon="PHYSICS")

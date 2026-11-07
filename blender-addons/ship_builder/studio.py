@@ -316,10 +316,67 @@ def _use_ship(ctx, it):
     return f"Hero ship: {it.label}"
 
 
+def _use_pose(ctx, it):
+    from . import posekit as PK
+    rig = _scene_rig(ctx, it.data.get("droid"))
+    if rig is None:
+        raise RuntimeError("add the droid first (Droids tab), or click it in the view")
+    lab = PK.apply(rig, it.id)
+    return f"{rigui_label(rig)}: {lab}"
+
+
+def rigui_label(rig):
+    from . import rigui
+    return rigui.label(rig)
+
+
+def _use_move(ctx, it):
+    from . import cammoves as CM
+    lab, f0, f1 = CM.apply(ctx.scene, it.id)
+    return f"{lab} on {ctx.scene.camera.name}, frames {f0}-{f1}"
+
+
+def _frame_object(ctx, ob):
+    for o in ctx.view_layer.objects:
+        o.select_set(False)
+    ob.hide_set(False)
+    ob.select_set(True)
+    ctx.view_layer.objects.active = ob
+    for w in ctx.window_manager.windows:
+        for a in w.screen.areas:
+            if a.type == "VIEW_3D":
+                r = next(r for r in a.regions if r.type == "WINDOW")
+                if a.spaces.active.region_3d.view_perspective == "CAMERA":
+                    continue
+                with ctx.temp_override(window=w, area=a, region=r):
+                    bpy.ops.view3d.view_selected()
+
+
+def _use_scene_item(ctx, it):
+    d = it.data
+    if d["kind"] == "scene":
+        sc = bpy.data.scenes.get(d["name"])
+        if sc is None:
+            raise RuntimeError("that scene is gone")
+        ctx.window.scene = sc
+        return f"Switched to {sc.name}"
+    ob = bpy.data.objects.get(d["name"])
+    if ob is None:
+        raise RuntimeError("that object is gone")
+    if ctx.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
+    if d["kind"] == "camera":
+        return _use_cam(ctx, type("I", (), {"id": ob.name})())
+    _frame_object(ctx, ob)
+    return f"Selected {it.label}"
+
+
 USE = {"SETS": _use_set, "ROOMS": _use_room, "DROIDS": _use_droid, "MOTIONS": _use_motion, "PROPS": _use_prop,
-       "CAMERAS": _use_cam, "MOODS": _use_mood, "VIEWS": _use_view, "SHIP": _use_ship}
+       "CAMERAS": _use_cam, "MOODS": _use_mood, "VIEWS": _use_view, "SHIP": _use_ship,
+       "POSES": _use_pose, "MOVES": _use_move, "SCENE": _use_scene_item}
 USE_LABEL = {"SETS": "Build set", "ROOMS": "Build room", "DROIDS": "Add droid", "MOTIONS": "Play on droid",
-             "PROPS": "Add prop", "CAMERAS": "Look through", "MOODS": "Apply mood", "VIEWS": "Show outside", "SHIP": "Apply preset"}
+             "PROPS": "Add prop", "CAMERAS": "Look through", "MOODS": "Apply mood", "VIEWS": "Show outside", "SHIP": "Apply preset",
+             "POSES": "Pose droid", "MOVES": "Key on camera", "SCENE": "Go to"}
 
 
 class SHIP_OT_cam_step(bpy.types.Operator):
@@ -471,7 +528,7 @@ class SHIP_OT_open(bpy.types.Operator):
         return {"FINISHED"}
 
 
-SIDEBAR_PX = 460
+SIDEBAR_PX = 560
 
 
 def _fit_later(area):
@@ -513,6 +570,8 @@ EMPTY = {
     "MOTIONS": "Pick a droid that has motions in its file",
     "CAMERAS": "Build a set or room first; its cameras show here",
     "SHIP": "Hero ship previews appear when its manifest.json folder is set in preferences",
+    "POSES": "Pick a droid above; add it to the scene to pose it",
+    "SCENE": "Nothing in this scene yet",
 }
 
 
@@ -537,14 +596,14 @@ class SHIP_PT_library(bpy.types.Panel):
             return
         st = state(ctx)
         # tabs: two rows of four, pictures + words
-        tabs = L.grid_flow(row_major=True, columns=4, even_columns=True, align=True)
+        tabs = L.grid_flow(row_major=True, columns=4, even_columns=True, align=True)  # 3 rows of 4
         tabs.scale_y = 1.3
         for c, lab, ic in Cat.CATEGORIES:
             tabs.prop_enum(st, "cat", c, text=lab, icon=ic)
         if st.cat == "DROIDS":
             from . import rigui
             rigui.draw_controls(L, ctx)
-        if st.cat == "MOTIONS":
+        if st.cat in ("MOTIONS", "POSES"):
             L.prop(st, "droid", text="Droid")
         # what's picked + the one big action
         it = selected_item(ctx)
@@ -562,8 +621,8 @@ class SHIP_PT_library(bpy.types.Panel):
         row.operator("ship.gallery", text="", icon="FULLSCREEN_ENTER")
         if it and it.blurb:
             L.label(text=it.blurb)
-        cols = st.cols or max(2, int(ctx.region.width / (150 * ctx.preferences.system.ui_scale)))
-        draw_grid(L, ctx, cols, 5.0)
+        cols = st.cols or max(2, int(ctx.region.width / (165 * max(0.5, ctx.preferences.system.ui_scale))))
+        draw_grid(L, ctx, cols, 6.0)
         row = L.row(align=True)
         busy = _BAKE["proc"] is not None and _BAKE["proc"].poll() is None
         row.operator("ship.bake_previews", text="Baking previews..." if busy else "Bake missing previews", icon="RENDER_STILL").what = "ALL"

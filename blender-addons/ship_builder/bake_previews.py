@@ -211,4 +211,109 @@ if (want("DROIDS") or want("MOTIONS")) and KIT:
             bpy.ops.render.render(write_still=True)
             say("wrote", n, round(time.time() - t, 1), "s")
 
+# ------------------------------------------------------------------ pose presets, one picture per droid and pose
+def eevee(sc):
+    for eng in ("BLENDER_EEVEE", "BLENDER_EEVEE_NEXT"):
+        try:
+            sc.render.engine = eng
+            return
+        except TypeError:
+            continue
+
+
+def clip(sc, name, f0, f1, w, h):
+    sc.frame_start, sc.frame_end = f0, f1
+    sc.render.resolution_x, sc.render.resolution_y = w, h
+    sc.render.resolution_percentage = 100
+    if hasattr(sc.render.image_settings, "media_type"):
+        sc.render.image_settings.media_type = "VIDEO"
+    sc.render.image_settings.file_format = "FFMPEG"
+    sc.render.ffmpeg.format = "MPEG4"
+    sc.render.ffmpeg.codec = "H264"
+    sc.render.ffmpeg.constant_rate_factor = "MEDIUM"
+    sc.render.filepath = os.path.join(OUT, name + "_")
+    bpy.ops.render.render(animation=True)
+    made = sorted((f for f in os.listdir(OUT) if f.startswith(name + "_") and f.endswith(".mp4")),
+                  key=lambda f: os.path.getmtime(os.path.join(OUT, f)))
+    if made:
+        os.replace(os.path.join(OUT, made[-1]), os.path.join(OUT, name + ".mp4"))
+    if hasattr(sc.render.image_settings, "media_type"):
+        sc.render.image_settings.media_type = "IMAGE"
+    sc.render.image_settings.file_format = "JPEG"
+    sc.frame_set(f1)
+    sc.render.filepath = os.path.join(OUT, name + ".jpg")
+    bpy.ops.render.render(write_still=True)
+
+
+if want("POSES") and KIT:
+    PK = importlib.import_module(pkg + ".posekit")
+
+    class PP:
+        kit_dir, deep_root, thumbs_dir, scans_dir, hero_dir = KIT, ROOT, OUT, "", ""
+    for d in Cat.droids(PP):
+        todo = [k for k in PK.POSES if not have(f"pose_{d['id']}_{k}")]
+        if not todo or not os.path.isfile(d["blend"]):
+            continue
+        bpy.ops.wm.open_mainfile(filepath=d["blend"])
+        sc = bpy.context.scene
+        rig = bpy.data.objects.get(d["rig"]) or next((o for o in bpy.data.objects if o.type == "ARMATURE"), None)
+        if rig is None:
+            continue
+        ad = rig.animation_data
+        if ad:
+            ad.action = None
+        ok = {k for k, _l in PK.poses_for(rig)}
+        fam = [rig] + list(rig.children_recursive)
+        pts = [o.matrix_world @ Vector(c) for o in fam if o.type == "MESH" for c in o.bound_box]
+        lo = Vector([min(p[i] for p in pts) for i in range(3)])
+        hi = Vector([max(p[i] for p in pts) for i in range(3)])
+        c, size = (lo + hi) / 2, (hi - lo).length
+        cd = bpy.data.cameras.new("SB Pose Cam")
+        cd.lens = 50
+        cam = bpy.data.objects.new("SB Pose Cam", cd)
+        sc.collection.objects.link(cam)
+        cam.location = c + Vector((0.55, -1.6, 0.3)).normalized() * size * 1.9
+        cam.rotation_euler = (c - cam.location).to_track_quat("-Z", "Y").to_euler()
+        sc.camera = cam
+        Li.render_setup(sc, preview=True)
+        eevee(sc)
+        sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 320, 400, 100
+        sc.render.image_settings.file_format = "JPEG"
+        sc.tool_settings.use_keyframe_insert_auto = False
+        for k in todo:
+            if k not in ok:
+                continue
+            PK.apply(rig, k, keyframe=False)
+            sc.render.filepath = os.path.join(OUT, f"pose_{d['id']}_{k}.jpg")
+            t = time.time()
+            bpy.ops.render.render(write_still=True)
+            say("wrote", f"pose_{d['id']}_{k}", round(time.time() - t, 1), "s")
+
+# ------------------------------------------------------------------ camera moves, played in the lounge
+if want("MOVES"):
+    CM = importlib.import_module(pkg + ".cammoves")
+    todo = [k for k in CM.MOVES if not os.path.isfile(os.path.join(OUT, f"move_{k}.mp4"))]
+    if todo:
+        sc = fresh()
+        Li.render_setup(sc, preview=True)
+        Li.space_world()
+        info = S.build(["lounge"])
+        Li.camera_finish(sc)
+        eevee(sc)
+        base = next((bpy.data.objects[c["name"]] for c in info["cameras"] if c["label"] != "Ship wide"), None)
+        if base is not None:
+            for k in todo:
+                cam = base.copy()
+                cam.data = base.data.copy()
+                cam.animation_data_clear()
+                sc.collection.objects.link(cam)
+                sc.camera = cam
+                sc.frame_set(1)
+                lab, f0, f1 = CM.apply(sc, k, 1)
+                f1 = max(f1, f0 + 12)
+                t = time.time()
+                clip(sc, f"move_{k}", f0, f1 + 6, 320, 180)
+                say("wrote", f"move_{k}", round(time.time() - t, 1), "s")
+                bpy.data.objects.remove(cam)
+
 say("DONE")
