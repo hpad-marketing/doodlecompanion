@@ -271,3 +271,48 @@ def set_door(ctl, value, frame=None):
     ctl["open"] = float(value)
     if frame is not None:
         ctl.keyframe_insert('["open"]', frame=frame)
+
+
+def use_point(room, name, loc, yaw=0.0, action="use", approach=None, contact=None, who="walker", size=0.25, **extra):
+    """An interaction mark for the cast: where to stand, which way to face, what to do.
+
+    loc: where the droid's root ends up (on the surface it stands on). yaw: facing,
+    0 = the droids' own -Y forward. approach: the floor mark to walk to first.
+    contact: what touches what (e.g. "back socket -> plug"). who: walker, hover or any.
+    Stored as an empty in the room's props with ob["sb_use"] (JSON), so walk mode,
+    the Studio and episode tools can all read it.
+    """
+    import json
+    ob = bpy.data.objects.new(f"Use: {name}", None)
+    ob.empty_display_type = "SINGLE_ARROW"
+    ob.empty_display_size = size
+    ob.location = loc
+    ob.rotation_euler = (math.radians(90), 0, yaw + math.radians(180))  # arrow points the way the droid faces
+    # positions live on the empty itself (rooms are slid into place after building), so the
+    # approach mark is stored as an offset from it
+    off = [round(a - b, 4) for a, b in zip(approach, loc)] if approach else None
+    data = {"name": name, "action": action, "approach_offset": off, "contact": contact, "who": who}
+    data.update(extra)
+    ob["sb_use"] = json.dumps(data)
+    ob.hide_render = True
+    room.props.objects.link(ob)
+    return ob
+
+
+def use_points(scene=None):
+    """Every interaction mark in the scene: [{name, action, loc, yaw, approach, contact, who, ob}]."""
+    import json
+    scene = scene or bpy.context.scene
+    out = []
+    for ob in scene.objects:
+        if "sb_use" not in ob:
+            continue
+        d = json.loads(ob["sb_use"])
+        p = ob.matrix_world.translation
+        d["loc"] = tuple(p)
+        d["yaw"] = ob.matrix_world.to_euler().z - math.radians(180)
+        off = d.pop("approach_offset", None)
+        d["approach"] = tuple(p + Vector(off)) if off else None
+        d["ob"] = ob
+        out.append(d)
+    return out

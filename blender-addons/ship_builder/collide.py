@@ -26,7 +26,7 @@ from mathutils.bvhtree import BVHTree
 
 SKIP = ("Fourth Wall", "Haze", "Planet", "Planet Ring", "SB Zero-G")
 FASTENERS = ("Bolt",)
-RECESSED = {("Ceiling", "Light Housing")}
+RECESSED = {("Ceiling", "Light Housing"), ("Tool Wall", "Peg Hook")}  # hooks sit in the pegboard holes
 
 
 def _base(n):
@@ -38,6 +38,8 @@ def _solid_objects(objs):
         if ob.type not in {"MESH", "CURVE", "FONT"} or ob.hide_render:
             continue
         if ob.get("sb_haze") or ob.get("sb_fourth_wall") or any(ob.name.startswith(s) for s in SKIP):
+            continue
+        if ob.get("sb_decal") and min(ob.dimensions) < 0.001:  # floor paint, thinner than the tolerance
             continue
         yield ob
 

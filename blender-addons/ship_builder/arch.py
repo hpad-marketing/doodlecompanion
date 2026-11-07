@@ -55,6 +55,10 @@ def _place(col, fn, ignore=()):
         col._cache(o)
     names = [o.name for o in objs]
     hits = [m for _, m in col.pairs(names) if not any(m.startswith(i) for i in ignore)]
+    # nothing may poke out of the open front of the set (a door left ajar, a hanging cable):
+    # rooms dock side by side there, and the next set's bulkhead sits just past it
+    if not hits and any((o.matrix_world @ Vector(c)).y < -0.005 for o in objs if o.type == "MESH" for c in o.bound_box):
+        hits = ["open front"]
     if hits:
         for o in objs:
             col.forget(o)
@@ -325,8 +329,9 @@ def lane(room, a, b, width=0.05):
     a, b = Vector(a), Vector(b)
     d = b - a
     yellow = M.painted_metal("SB Lane Paint", (0.55, 0.38, 0.04, 1), 0.5)
-    ob = K.box("Lane Line", (d.length, width, 0.0012), ((a + b) / 2).to_3d() + Vector((0, 0, 0.0009)), yellow, room.dress, bevel=0, segs=1)
+    ob = K.box("Lane Line", (d.length, width, 0.0004), ((a + b) / 2).to_3d() + Vector((0, 0, 0.0003)), yellow, room.dress, bevel=0, segs=1)
     ob.rotation_euler = (0, 0, math.atan2(d.y, d.x))
+    ob["sb_decal"] = True   # painted on: 0.4 mm of paint is floor, not an obstacle
 
 
 def tie_down(room, x, y):

@@ -46,6 +46,18 @@ def route(info):
         by_room.setdefault(d["room"], []).append(d)
     for i, r in enumerate(rs):
         pts.append(("centre " + r["key"], Vector((r["x"] + (0.3 if r["key"] == "lounge" else 0), r["y"] + r["D"] * 0.5, 0))))
+        # visit every walker use point in this room: its approach mark, then the stand itself when
+        # it is a floor-level stand (pads, steps), so feet are tested on every surface the cast uses
+        for u in USES:
+            p = Vector(u["loc"])
+            if u["who"] not in ("walker", "any") or abs(p.x - r["x"]) > r["W"] / 2:
+                continue
+            if u["approach"]:
+                pts.append(("approach " + u["name"], Vector(u["approach"])))
+            if p.z < 0.2 and u["action"] != "walk_through":
+                pts.append(("use " + u["name"], p))
+                if u["approach"]:
+                    pts.append(("back off " + u["name"], Vector(u["approach"])))
         if i < len(rs) - 1:
             d = next(d for d in by_room[r["name"]] if d["side"] == "right")
             pts.append(("door " + d["id"], Vector((d["x"] - 0.9, d["yc"], 0))))
@@ -66,6 +78,8 @@ for lay in layouts:
     rig.location = (r0["x"] - r0["W"] * 0.25, r0["y"] + r0["D"] * 0.3, 0)
     bpy.context.view_layer.update()
     w = Wk.Walker(sc, rig)
+    from ship_builder.rooms import common as RC
+    USES = RC.use_points(sc)
     pts = route(info)
     w.record(True)
     dt, t, wp, stall, hits, reached, opened = 1 / 24, 0.0, 0, 0.0, [], [], {}

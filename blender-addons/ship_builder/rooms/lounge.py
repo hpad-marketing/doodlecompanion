@@ -9,6 +9,8 @@ import math
 from mathutils import Vector
 
 from .. import kit as K
+from .. import dressing as Dr
+from .. import surfaces as Sf
 from .. import mats as M
 from .. import lighting as Li
 from . import common as C
@@ -221,6 +223,8 @@ def build(room_name="Oil lounge", wear=1.0, wear_seed=1):
     Li.camera(room, "Couch two-shot", 40, (0.6, 0.9, 1.25), (0.3, D - 0.75, 0.9), 2.8)
     Li.camera(room, "Bar single", 50, (0.6, 2.0, 1.4), (-W / 2 + 0.4, 3.2, 1.3), 2.0)
     room.arch = A.detail(room, seed=wear_seed, accent=(1.0, 0.6, 0.3, 1), frame_avoid=[(-1.6, 1.6)])
+    room.dressing = Dr.dress(room, "lounge", seed=wear_seed)
     if wear:
         room.wear = Wr.apply(room, seed=wear_seed, amount=wear)
+    room.surfaces = Sf.tag_room(room)
     return room

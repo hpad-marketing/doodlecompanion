@@ -6,6 +6,8 @@ import bmesh
 from mathutils import Vector, Matrix
 
 from .. import kit as K
+from .. import dressing as Dr
+from .. import surfaces as Sf
 from .. import mats as M
 from .. import lighting as Li
 from . import common as C
@@ -196,6 +198,8 @@ def build(room_name="Command centre", wear=1.0, wear_seed=1):
     Li.camera(room, "Holo table", 40, (1.8, 1.0, 1.3), (0.0, 2.6, 1.3), 2.0)
     room.arch = A.detail(room, seed=wear_seed, accent=(0.35, 0.8, 1.0, 1), frame_step=2.3, frame_avoid=[(-3.6, 3.6)],
                          walkway=(-1.2, 1.2, 0.3, D - 1.5))
+    room.dressing = Dr.dress(room, "bridge", seed=wear_seed)
     if wear:
         room.wear = Wr.apply(room, seed=wear_seed, amount=wear)
+    room.surfaces = Sf.tag_room(room)
     return room

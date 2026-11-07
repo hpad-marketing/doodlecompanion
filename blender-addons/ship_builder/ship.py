@@ -28,6 +28,10 @@ LAYOUTS = {
               "blurb": "Crew lounge, corridor and command centre"},
     "lounge_only": {"label": "Lounge", "rooms": ["lounge"], "blurb": "Just the crew lounge"},
     "bridge_only": {"label": "Command centre", "rooms": ["bridge"], "blurb": "Just the command centre"},
+    "deck2": {"label": "Deck 2", "rooms": ["charging", "corridor", "repair"],
+              "blurb": "Charging stations, corridor and repair bay"},
+    "charging_only": {"label": "Charging stations", "rooms": ["charging"], "blurb": "Just the charging stations"},
+    "repair_only": {"label": "Repair bay", "rooms": ["repair"], "blurb": "Just the repair bay"},
 }
 
 
@@ -82,6 +86,9 @@ def _joint(col, xa, yc, h_max, depth_a, depth_b, name):
     half = 0.74
     parts = []
     parts.append(K.box("Joint Deck", (wx, 2 * half + 0.04, 0.06), (xc, yc, -0.03), deck, col, bevel=0.002))
+    # one continuous threshold: the gap between the two door sills is filled flush with them,
+    # so a foot never has to stand half in a 15 cm dip between two raised strips
+    parts.append(K.box("Joint Sill", (GAP - 0.006, 2 * half - 0.006, 0.02), (xc, yc, 0.0105), M.hazard(), col, bevel=0.003))
     parts.append(K.box("Joint Top", (wx, 2 * half + 0.04, 0.02), (xc, yc, PASS_H + 0.01), dark, col, bevel=0.002))
     for sd in (-1, 1):
         parts.append(K.box("Joint Side", (wx, 0.02, PASS_H), (xc, yc + sd * (half + 0.01), PASS_H / 2), dark, col, bevel=0.002))

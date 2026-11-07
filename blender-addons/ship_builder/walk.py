@@ -148,6 +148,73 @@ def _seg_dist(p, a, b):
     return (p - q).length, q
 
 
+class Body:
+    """Mass and momentum for walk mode: heavy droids get going slowly, take a step or two
+    to stop, turn with inertia and can't corner hard at speed; light ones are nimble.
+
+    Mass comes from the rig's "foley_mass_kg" (the same number the contact sounds use),
+    else "sb_mass_kg", else an estimate from the droid's size. Top walking speed is the
+    walk cycle's own natural pace (stride / cycle time), so cadence and speed agree.
+    """
+    REF = 85.0   # kg: the hazard droid, the reference for the scaling below
+
+    def __init__(self, rig, size, gait=None):
+        m = None
+        for k in ("foley_mass_kg", "sb_mass_kg"):
+            if rig is not None and k in rig:
+                m = float(rig[k])
+                break
+        if m is None:  # size estimate: a mostly hollow metal body, about 180 kg per cubic metre of bounding box
+            m = max(5.0, 180.0 * max(0.01, size.x * size.y * size.z))
+        self.mass = m
+        r = self.REF / m
+        self.accel = 2.4 * r ** 0.4          # m/s^2 drive: 85 kg -> 2.4, 240 kg -> 1.6, 9 kg drone -> 6
+        self.brake = 1.6 * self.accel        # feet bite harder than they push
+        self.lateral = 1.3 * self.accel      # how hard it can corner before it must slow
+        self.yaw_rate = 4.0 * r ** 0.3       # rad/s top turn speed
+        self.yaw_acc = 10.0 * r ** 0.5       # rad/s^2: heavy bodies take time to start and stop turning
+        self.max_lean = math.radians(6)
+        self.lean_gain = 0.6
+        natural = None
+        if gait is not None and gait.act is not None:
+            fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
+            natural = gait.stride / max(1e-3, (gait.f1 - gait.f0) / fps)
+        self.walk = natural if natural and 0.2 < natural < 3.0 else WALK
+        self.run = min(RUN, self.walk * 1.9)
+        self.w = 0.0                         # current yaw rate
+
+    def accelerate(self, v, target, yaw, dt):
+        """Move velocity toward the stick target with force limits (no instant starts or stops)."""
+        dv = target - v
+        if dv.length < 1e-6 or dt <= 0:
+            return target.copy()
+        # split into along-the-motion (speed up / brake) and sideways (cornering)
+        along = v.normalized() if v.length > 0.05 else (target.normalized() if target.length > 1e-6 else Vector((0, 0, 0)))
+        a_par = dv.dot(along)
+        a_lat = dv - along * a_par
+        lim_par = (self.accel if a_par > 0 else self.brake) * dt
+        a_par = max(-lim_par, min(lim_par, a_par))
+        lat = a_lat.length
+        if lat > self.lateral * dt:
+            a_lat = a_lat * (self.lateral * dt / lat)
+        out = v + along * a_par + a_lat
+        if target.length < 1e-6 and out.length < 0.02:
+            return Vector((0, 0, 0))
+        return out
+
+    def turn(self, dyaw, dt):
+        """Yaw change this tick: angular speed builds up and winds down (no snap turns)."""
+        # the turn rate we'd want, easing in as we approach the heading
+        want = max(-self.yaw_rate, min(self.yaw_rate, dyaw * 6.0))
+        dw = want - self.w
+        lim = self.yaw_acc * dt
+        self.w += max(-lim, min(lim, dw))
+        step = self.w * dt
+        if abs(step) > abs(dyaw):   # never overshoot the heading
+            step, self.w = dyaw, 0.0
+        return step
+
+
 class Gait:
     """Plays a droid's walk cycle by distance travelled, so the feet never skate, then
     hands the pose to feet.Planter so every sole lands on the real floor.
@@ -178,6 +245,9 @@ class Gait:
         self.stride = (speed or WALK) * max(1.0, (self.f1 - self.f0) if self.act else 24) / fps
         if self.act:
             self.stride = self._measure_stride(scene) or self.stride
+        self.rest, self.stance = self._rest_phases(scene) if self.act else ([], {})
+        self.spine = next((rig.pose.bones[n] for n in ("spine", "torso", "chest", "hips", "body", "Spine", "Torso", "Hips")
+                           if n in rig.pose.bones), None)
         self.phase = 0.0
         self.planter = Ft.Planter(rig, scene)
 
@@ -204,9 +274,46 @@ class Gait:
             return None
         return speeds[len(speeds) // 2] * (self.f1 - self.f0)
 
-    def pose(self, dist, moving):
+    def _rest_phases(self, scene, n=48):
+        """Phases of the cycle where both feet are down: where a droid may stop."""
+        ad = self.rig.animation_data or self.rig.animation_data_create()
+        keep, keep_f = ad.action, scene.frame_current
+        ad.action = self.act
+        if hasattr(ad, "action_slot") and getattr(self.act, "slots", None) and len(self.act.slots):
+            ad.action_slot = self.act.slots[0]
+        from . import feet as Ft
+        feet = [b for b in self.rig.pose.bones if b.name.startswith("IK_foot")]
+        soles = [Ft.Foot(self.rig, b.name.rsplit(".", 1)[-1]) for b in feet]
+        zs = []
+        for i in range(n):
+            scene.frame_set(int(round(self.f0 + (self.f1 - self.f0) * i / n)))
+            # the lowest point of each sole (a foot rolling onto its toe is still in stance)
+            zs.append([min((p.z for p in so.sole_points()), default=b.head.z) if so.parts else b.head.z
+                       for b, so in zip(feet, soles)])
+        ad.action = keep
+        scene.frame_set(keep_f)
+        if not feet:
+            return [], {}
+        lo = [min(z[k] for z in zs) for k in range(len(feet))]
+        down = [[z[k] < lo[k] + 0.004 for k in range(len(feet))] for z in zs]
+        stance = {b.name.rsplit(".", 1)[-1]: [d[k] for d in down] for k, b in enumerate(feet)}
+        return [i / n for i, d in enumerate(down) if all(d)], stance
+
+    def pose(self, dist, moving, lean=0.0):
         if self.act:
-            self.phase = (self.phase + dist / self.stride) % 1.0 if moving else self.phase
+            if moving:
+                sgn = 1 if dist > 0 else -1
+                at_rest = not self.rest or any(min(abs(self.phase - r), 1 - abs(self.phase - r)) < 0.011 for r in self.rest)
+                if sgn != getattr(self, "dir", 1) and not at_rest:
+                    # a swinging leg can't reverse in the air: finish this step the way it was
+                    # going (a short braking step), and walk the other way from both feet down
+                    dist = abs(dist) * getattr(self, "dir", 1)
+                else:
+                    self.dir = sgn
+                self.phase = (self.phase + dist / self.stride) % 1.0
+            elif self.rest and not any(abs(self.phase - r) < 0.011 for r in self.rest):
+                # stopping: finish the step that is under way, so no foot is left hanging
+                self.phase = (self.phase + min(0.02, min((r - self.phase) % 1.0 for r in self.rest))) % 1.0
             fr = self.f0 + self.phase * (self.f1 - self.f0)
             for fc in self.curves:
                 try:
@@ -215,7 +322,22 @@ class Gait:
                     getattr(owner, prop)[fc.array_index] = fc.evaluate(fr)
                 except (ValueError, AttributeError, TypeError, IndexError):
                     continue
-        return self.planter.plant()
+        if lean and self.spine is not None:
+            # tip the upper body about the rig's sideways axis (legs stay on their IK targets)
+            pb = self.spine
+            bpy.context.view_layer.update()
+            side = Vector((1, 0, 0))   # rig-local right; droids face -Y, so +lean tips forward
+            M = pb.matrix
+            pb.matrix = Matrix.Translation(M.translation) @ Matrix.Rotation(lean, 4, side) @ Matrix.Translation(-M.translation) @ M
+        contact = None
+        if self.stance:
+            n = len(next(iter(self.stance.values())))
+            i = int(round(self.phase * n)) % n
+            contact = {side: v[i] for side, v in self.stance.items()}
+            if not moving and self.rest and any(min(abs(self.phase - r), 1 - abs(self.phase - r)) < 0.011 for r in self.rest):
+                # standing still: both feet are down, whatever a sampled cycle frame says
+                contact = {side: True for side in contact}
+        return self.planter.plant(contact=contact)
 
     def key(self, frame):
         for pb in self.rig.pose.bones:
@@ -271,6 +393,10 @@ class Walker:
         self.events = []
         rig = pawn if pawn.type == "ARMATURE" else next((o for o in fam if o.type == "ARMATURE"), None)
         self.gait = Gait(scene, rig) if rig is not None and any(b.name.startswith("IK_foot") for b in rig.pose.bones) else None
+        self.body = Body(rig or pawn, hi - lo, self.gait)
+        # a leaning body reaches further: keep the collision radius outside the lean
+        self.radius = min(0.75, self.radius + max(0.0, self.height - STEP) * math.sin(self.body.max_lean) * 0.6)
+        self.lean = 0.0
 
     # ------------------------------------------------------------ helpers
     def _follow_cam(self):
@@ -502,23 +628,40 @@ class Walker:
         stick = Vector((inp.mx, inp.my))
         if stick.length > 1:
             stick.normalize()
-        tgt_v = (right * stick.x + fwd * stick.y) * (RUN if inp.run else WALK)
-        self.vel = self.vel.lerp(tgt_v, min(1.0, 10.0 * dt))
+        B = self.body
+        tgt_v = (right * stick.x + fwd * stick.y) * (B.run if inp.run else B.walk)
+        old_v = self.vel.copy()
+        self.vel = B.accelerate(self.vel, tgt_v, self.yaw, dt)
+        yaw0 = self.yaw
         if self.vel.length > 0.05:  # droids face -Y: heading (dx, dy) -> yaw atan2(dx, -dy)
             goal = math.atan2(self.vel.x, -self.vel.y)
             dyaw = (goal - self.yaw + math.pi) % math.tau - math.pi
-            self.yaw += dyaw * min(1.0, TURN * dt)
+            self.yaw += B.turn(dyaw, dt)
+        # lean into acceleration and back against braking, like a real mass over its feet
+        acc = ((self.vel - old_v) / dt) if dt > 0 else Vector()
+        fwd_now = Vector((math.sin(self.yaw), -math.cos(self.yaw), 0.0))  # droids face -Y
+        a_fwd = acc.dot(fwd_now)
+        target = max(-B.max_lean, min(B.max_lean, math.atan2(a_fwd, 9.81) * B.lean_gain))
+        self.lean += (target - self.lean) * min(1.0, 8.0 * dt)
         new = self._collide(self.pos, self.pos + self.vel * dt)
         if dt > 0:
             self.vel = (new - self.pos) / dt if (new - self.pos).length < self.vel.length * dt + 1e-6 else self.vel
         step_len = (new - self.pos).length
+        # walking backwards plays the cycle backwards, so a planted foot is never dragged
+        if (new - self.pos).dot(fwd_now) < -0.7 * step_len:   # clearly backwards (over 135°), not a turn
+            step_len = -step_len
+        # turning moves the feet too: a planted foot sits off the turn axis, so the body
+        # steps round instead of twisting on its soles (the way a person turns on the spot)
+        turn = abs(self.yaw - yaw0) * self.radius * 0.6
+        if turn > 1e-6:
+            step_len = math.copysign(math.hypot(step_len, turn), step_len if step_len else 1.0)
         self.pos = new
         gz = self.world.ground_z(self.pos, self.radius, self.z - 0.002) + 0.002  # rests on, never in, the floor
         self.z = gz if gz > self.z else self.z + (gz - self.z) * min(1.0, 12.0 * dt)
         self.pawn.location = Vector((self.pos.x, self.pos.y, self.z))
         self.pawn.rotation_euler.z = self.yaw
         if self.gait is not None:
-            self.gait.pose(step_len, step_len > 1e-4)  # walk cycle by distance, then plant every sole
+            self.gait.pose(step_len, abs(step_len) > 1e-4, lean=self.lean)  # walk cycle by distance, then plant every sole
         doors = self._doors(dt)
         self.orbit += inp.orbit * 2.5 * dt
         self._update_follow(dt)

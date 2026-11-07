@@ -113,8 +113,8 @@ def build(scene=None, ambient=0.03):
     layers.append(_add(g, _rgb(g, g.math("MULTIPLY", neb, 0.02), (0.25, 0.1, 0.45)), _rgb(g, stars, (1, 1, 1))))
 
     # 1 ringed planet, lit from the right, banded, with a tilted ring
-    r1 = 0.24
-    ins, off = _disc(g, d, (0.16, 1.0, 0.14), r1)  # framed by a window seen from across the room
+    r1 = 0.2
+    ins, off = _disc(g, d, (-0.1, 1.0, 0.07), r1)  # framed by a window seen from across the room
     ox, oy, oz = _sep(g, off)
     lit = g.math("POWER", g.ramp(g.math("ADD", g.math("MULTIPLY", ox, 1.0), g.math("MULTIPLY", oz, 0.5)), -0.3, 0.25), 1.6)
     bands = g.noise(2.0, 4, 0.5, vec=_add(g, g.node("ShaderNodeCombineXYZ", Z=g.math("MULTIPLY", oz, 22.0)).outputs[0], (0, 0, 0)))
@@ -140,15 +140,15 @@ def build(scene=None, ambient=0.03):
 
     # 3 asteroid field: lumpy rocks of many sizes in a band, lit from one side
     vo = g.node("ShaderNodeTexVoronoi", _feature="F1")
-    vo.inputs["Scale"].default_value = 9.0
+    vo.inputs["Scale"].default_value = 12.0
     lump = g.noise(14.0, 4, 0.6, vec=d)
     g._in(vo.inputs["Vector"], _add(g, d, _rgb(g, g.math("MULTIPLY", lump.outputs[0], 0.06), (1, 1, 1))))
-    size = g.math("MULTIPLY", g.node("ShaderNodeSeparateColor", Color=vo.outputs["Color"]).outputs[0], 0.38)
+    size = g.math("MULTIPLY", g.node("ShaderNodeSeparateColor", Color=vo.outputs["Color"]).outputs[0], 0.46)
     rock = g.math("LESS_THAN", vo.outputs["Distance"], size)
     band = g.ramp(g.math("ABSOLUTE", dz), 0.55, 0.15)
     rock = g.math("MULTIPLY", rock, band)
     shade = g.ramp(g.math("ADD", g.math("MULTIPLY", g.node("ShaderNodeTexNoise", Scale=40.0, Vector=d).outputs[0], 0.6), dx), 0.1, 1.0)
-    rocks = _rgb(g, g.math("MULTIPLY", rock, g.math("MULTIPLY", shade, 0.55)), (0.42, 0.36, 0.3))
+    rocks = _rgb(g, g.math("MULTIPLY", rock, g.math("MULTIPLY", shade, 1.6)), (0.42, 0.36, 0.3))
     layers.append(_add(g, rocks, _rgb(g, g.math("MULTIPLY", stars, g.math("SUBTRACT", 1.0, rock)), (1, 1, 1))))
 
     # 4 hyperspace: streaks rushing past the +Y axis, a bright tunnel at the centre

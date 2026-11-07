@@ -7,6 +7,8 @@ characters can walk straight through from one door to the other.
 import math
 
 from .. import kit as K
+from .. import dressing as Dr
+from .. import surfaces as Sf
 from .. import mats as M
 from .. import lighting as Li
 from . import common as C
@@ -63,6 +65,8 @@ def build(room_name="Corridor", wear=1.0, wear_seed=1):
     Li.camera(room, "Walkthrough", 20, (0.0, -1.4, 1.45), (0.0, D * 0.6, 1.1), 4.0)
     room.arch = A.detail(room, seed=wear_seed, density=0.6, accent=(1.0, 0.55, 0.25, 1), frame_step=1.2,
                          frame_avoid=[(-0.95, 1.0)])
+    room.dressing = Dr.dress(room, "corridor", seed=wear_seed)
     if wear:
         room.wear = Wr.apply(room, seed=wear_seed, amount=wear)
+    room.surfaces = Sf.tag_room(room)
     return room
