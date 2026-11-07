@@ -27,7 +27,7 @@ class Handle:
 SPEC = (
     ("whole", "Whole droid", "C", ("*",)),
     ("body", "Body", "C", ("cog", "torso", "chassis", "body", "hips")),
-    ("head", "Head", "C", ("head", "sensor", "neck")),
+    ("head", "Head", "C", ("head", "sensor", "neck", "waist")),
     ("hand_l", "Left hand", "L", ("ik-hand.l", "hand_ik.l", "ik_hand.l", "fk-hand.l", "grip.l")),
     ("hand_r", "Right hand", "R", ("ik-hand.r", "hand_ik.r", "ik_hand.r", "fk-hand.r", "grip.r")),
     ("foot_l", "Left foot", "L", ("ik_foot.l", "ik-foot.l", "foot_ik.l")),
