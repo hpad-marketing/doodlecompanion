@@ -74,6 +74,7 @@ class Ctx:
         self.space_data = None
         self.region = None
         self.preferences = bpy.context.preferences
+        self.mode = "OBJECT"
 
 
 ctx = Ctx()

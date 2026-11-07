@@ -88,7 +88,8 @@ def droids(prefs):
             continue
         blend = os.path.join(root, j.get("folder", ""), j.get("current_file", ""))
         out.append(dict(id=j.get("id", fn[:-5]), name=j.get("name", fn[:-5]), blend=blend, rig=j.get("rig", ""),
-                        folder=os.path.join(root, j.get("folder", ""))))
+                        folder=os.path.join(root, j.get("folder", "")),
+                        **{k: j[k] for k in ("set_height", "mass_kg") if k in j}))
     return out
 
 

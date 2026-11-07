@@ -1046,6 +1046,8 @@ def draw_bar(L, ctx):
             row.label(text="")
     if e:
         L.label(text=f"{e.name.replace('_', ' ')}  ·  next: {E.STATION_LABEL[e.next_station()]}", icon="FILE_MOVIE")
+    from . import rigui
+    rigui.draw_set_view(L, ctx)
     if busy() or _JOBS["log"]:
         L.label(text=_JOBS["label"] + "..." if busy() else _JOBS["log"], icon="SORTTIME" if busy() else "INFO")
 
@@ -1204,6 +1206,8 @@ def draw_stage(L, ctx):
         c.template_icon(icon_value=picture(os.path.join(stills, s["id"] + ".png"), (0.18, 0.2, 0.24)), scale=3.0)
         c.operator("ship.ep_jump", text=f"{s['id']} {s['start']:.1f}s").shot = s["id"]
         c.operator("ship.ep_shot", text=s["preset"][:22], icon="LOCKED" if s.get("locked") else "NONE").shot = s["id"]
+    from . import rigui
+    rigui.draw_controls(L, ctx)
 
 
 def draw_perform(L, ctx):
@@ -1241,6 +1245,8 @@ def draw_perform(L, ctx):
         c = g.column(align=True)
         c.template_icon(icon_value=chip(f"ev {k}", cols[k]), scale=2.5)
         c.operator("ship.ep_event", text=lab).kind = k
+    from . import rigui
+    rigui.draw_controls(L, ctx)
 
 
 def draw_check(L, ctx):

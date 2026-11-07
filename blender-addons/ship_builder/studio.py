@@ -217,15 +217,19 @@ def _use_droid(ctx, it):
         for o in objs:
             bpy.data.objects.remove(o)
         raise RuntimeError("no rig in the droid file")
-    fam = {rig} | set(rig.children_recursive)
+    from . import castfit, rigui
+    fam = rigui.keep_family(rig, objs)
     col = bpy.data.collections.new(f"Droid {d['name']}")
     ctx.scene.collection.children.link(col)
     for o in objs:
         if o in fam:
             col.objects.link(o)
-            o["sb_droid"] = d["id"]
+            if o is rig or o.parent is not None:
+                o["sb_droid"] = d["id"]
         else:
             bpy.data.objects.remove(o)
+    castfit.fit(rig, d["id"], d)
+    rigui.show_controls(rig, ctx.scene)
     info = S.info(ctx.scene)
     if info and info["rooms"]:
         r = info["rooms"][0]
@@ -537,6 +541,9 @@ class SHIP_PT_library(bpy.types.Panel):
         tabs.scale_y = 1.3
         for c, lab, ic in Cat.CATEGORIES:
             tabs.prop_enum(st, "cat", c, text=lab, icon=ic)
+        if st.cat == "DROIDS":
+            from . import rigui
+            rigui.draw_controls(L, ctx)
         if st.cat == "MOTIONS":
             L.prop(st, "droid", text="Droid")
         # what's picked + the one big action

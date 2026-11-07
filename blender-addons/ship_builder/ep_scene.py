@@ -108,16 +108,20 @@ def cast_object(sc, key, prefs=None):
         objs = [o for o in dst.objects if o is not None]
         rig = next((o for o in objs if o.name.split(".")[0] == d["rig"]), None) or next((o for o in objs if o.type == "ARMATURE"), None)
         if rig is not None:
-            fam = {rig} | set(rig.children_recursive)
+            from . import castfit, rigui
+            fam = rigui.keep_family(rig, objs)
             col = bpy.data.collections.new(f"Droid {d['name']}")
             sc.collection.children.link(col)
             for o in objs:
                 if o in fam:
                     col.objects.link(o)
-                    o["sb_droid"] = d["id"]
+                    if o is rig or o.parent is not None:
+                        o["sb_droid"] = d["id"]
                 else:
                     bpy.data.objects.remove(o)
             rig["sb_cast"] = key
+            castfit.fit(rig, d["id"], d)
+            rigui.show_controls(rig, sc)
             return rig
     return _stand_in(sc, key)
 

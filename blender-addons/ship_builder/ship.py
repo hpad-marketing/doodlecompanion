@@ -169,6 +169,8 @@ def build(layout="deck1", wear=1.0, seed=1, settle=True):
         P.settle(bpy.context.scene)
     sc = bpy.context.scene
     sc["sb_ship"] = json.dumps(info)
+    from . import cutaway
+    cutaway.tag(sc)   # set view: open front, walls between the eye and a room cut away
     from . import screens as Sc
     info["screens"] = Sc.feeds(sc, seed=seed)  # every display plays live feeds and cuts at random
     first = next((bpy.data.objects.get(c["name"]) for c in info["cameras"] if c["room"] == rooms[0].name), None)

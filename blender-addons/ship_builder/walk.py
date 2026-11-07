@@ -272,7 +272,8 @@ class Gait:
         speeds = sorted((b - a).xy.length for a, b in zip(track, track[1:]) if a.z < zmin + 0.005 and b.z < zmin + 0.005)
         if not speeds:
             return None
-        return speeds[len(speeds) // 2] * (self.f1 - self.f0)
+        # pose space is the rig's own: a droid scaled to fit the set strides in proportion
+        return speeds[len(speeds) // 2] * (self.f1 - self.f0) * self.rig.matrix_world.to_scale().x
 
     def _rest_phases(self, scene, n=48):
         """Phases of the cycle where both feet are down: where a droid may stop."""

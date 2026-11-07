@@ -7,9 +7,9 @@ door; walk mode drives a droid through them with WASD or a DualSense.
 """
 import bpy
 
-from . import studio, walk, stations
+from . import studio, walk, stations, rigui, cutaway
 
-CLASSES = studio.CLASSES + walk.CLASSES + stations.CLASSES
+CLASSES = studio.CLASSES + walk.CLASSES + stations.CLASSES + rigui.CLASSES
 
 
 def register():
@@ -17,9 +17,11 @@ def register():
         bpy.utils.register_class(c)
     studio.register()
     stations.register()
+    cutaway.start()
 
 
 def unregister():
+    cutaway.stop()
     stations.unregister()
     studio.unregister()
     for c in reversed(CLASSES):
