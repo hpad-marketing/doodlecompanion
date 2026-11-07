@@ -1,0 +1,823 @@
+{
+ "shots": [
+  {
+   "name": "00_blender_main",
+   "note": "plain Blender, Window menu at top",
+   "win": {
+    "w": 1920,
+    "h": 1009
+   },
+   "areas": [
+    {
+     "type": "PROPERTIES",
+     "ui": "PROPERTIES",
+     "x": 1578,
+     "y": 16,
+     "w": 341,
+     "h": 794
+    },
+    {
+     "type": "OUTLINER",
+     "ui": "OUTLINER",
+     "x": 1578,
+     "y": 811,
+     "w": 341,
+     "h": 179
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 16,
+     "w": 1576,
+     "h": 72
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1,
+     "y": 89,
+     "w": 1576,
+     "h": 901
+    }
+   ]
+  },
+  {
+   "name": "01_window_menu",
+   "note": "Window menu open, Ship Studio at the bottom",
+   "win": {
+    "w": 1920,
+    "h": 1009
+   },
+   "areas": [
+    {
+     "type": "PROPERTIES",
+     "ui": "PROPERTIES",
+     "x": 1578,
+     "y": 16,
+     "w": 341,
+     "h": 794
+    },
+    {
+     "type": "OUTLINER",
+     "ui": "OUTLINER",
+     "x": 1578,
+     "y": 811,
+     "w": 341,
+     "h": 179
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 16,
+     "w": 1576,
+     "h": 72
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1,
+     "y": 89,
+     "w": 1576,
+     "h": 901
+    }
+   ]
+  },
+  {
+   "name": "02_sets_tab",
+   "note": "Library > Sets, a set picked, big preview",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "03_rooms_tab",
+   "note": "Rooms tab, lounge picked, Build room button",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "04_room_built",
+   "note": "room built, live camera view on the right",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "05_droids_tab",
+   "note": "Droids tab, RX-07 picked, Add droid button",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "06_droid_added",
+   "note": "droid in the room, Droid controls box in the panel",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "07_handles",
+   "note": "drag handles on the droid (blue left, red right, yellow middle)",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "08_pose_mode",
+   "note": "Pose mode via Pose button",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "09_poses_tab",
+   "note": "Poses tab, a pose picked",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "10_posed",
+   "note": "pose applied",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "11_motions_tab",
+   "note": "Motions tab with clip preview",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "12_props_tab",
+   "note": "Props tab, prop picked",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "13_prop_added",
+   "note": "prop added at the 3D cursor",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "14_moods_tab",
+   "note": "Moods tab",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "15_mood_applied",
+   "note": "mood applied in the live view",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "16_window_views",
+   "note": "Window views tab",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "17_cameras_tab",
+   "note": "Cameras tab",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "18_camera_moves",
+   "note": "Camera moves tab",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "19_in_this_scene",
+   "note": "In this scene tab",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "20_episodes_board",
+   "note": "Episodes board and seven stations",
+   "win": {
+    "w": 1920,
+    "h": 1080
+   },
+   "areas": [
+    {
+     "type": "IMAGE_EDITOR",
+     "ui": "IMAGE_EDITOR",
+     "x": 1,
+     "y": 239,
+     "w": 1113,
+     "h": 840
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 1,
+     "w": 1918,
+     "h": 237
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1115,
+     "y": 239,
+     "w": 804,
+     "h": 840
+    }
+   ]
+  },
+  {
+   "name": "21_output_props",
+   "note": "Output properties: frame range, file path, format",
+   "win": {
+    "w": 1920,
+    "h": 1009
+   },
+   "areas": [
+    {
+     "type": "PROPERTIES",
+     "ui": "PROPERTIES",
+     "x": 1578,
+     "y": 16,
+     "w": 341,
+     "h": 794
+    },
+    {
+     "type": "OUTLINER",
+     "ui": "OUTLINER",
+     "x": 1578,
+     "y": 811,
+     "w": 341,
+     "h": 179
+    },
+    {
+     "type": "DOPESHEET_EDITOR",
+     "ui": "TIMELINE",
+     "x": 1,
+     "y": 16,
+     "w": 1576,
+     "h": 72
+    },
+    {
+     "type": "VIEW_3D",
+     "ui": "VIEW_3D",
+     "x": 1,
+     "y": 89,
+     "w": 1576,
+     "h": 901
+    }
+   ]
+  }
+ ],
+ "errors": [],
+ "log": [
+  "   0.0 guide capture armed 5.0.0 49 steps",
+  "   6.0 shot 00_blender_main",
+  "  12.1 shot 01_window_menu",
+  "  15.1 studio window 1824 908",
+  "  31.1 picked SETS SETS:deck1 of 6 with pictures 6",
+  "  34.1 shot 02_sets_tab",
+  "  37.0 picked ROOMS ROOMS:lounge of 13 with pictures 13",
+  "  40.2 shot 03_rooms_tab",
+  "  81.2 use -> {'FINISHED'}",
+  "  85.9 shot 04_room_built",
+  "  89.5 picked DROIDS DROIDS:rx07 of 4 with pictures 1",
+  "  97.3 shot 05_droids_tab",
+  " 103.9 use -> {'FINISHED'}",
+  " 108.3 shot 06_droid_added",
+  " 117.6 shot 07_handles",
+  " 123.6 shot 08_pose_mode",
+  " 126.6 picked POSES POSES:wave of 16 with pictures 16",
+  " 129.6 shot 09_poses_tab",
+  " 138.9 use -> {'FINISHED'}",
+  " 139.6 shot 10_posed",
+  " 142.5 picked MOTIONS MOTIONS:BK_walk of 10 with pictures 10",
+  " 145.4 shot 11_motions_tab",
+  " 148.4 picked PROPS PROPS:couch of 19 with pictures 19",
+  " 151.5 shot 12_props_tab",
+  " 154.7 use -> {'FINISHED'}",
+  " 157.5 shot 13_prop_added",
+  " 160.4 picked MOODS MOODS:RED_ALERT of 5 with pictures 5",
+  " 163.4 shot 14_moods_tab",
+  " 166.5 use -> {'FINISHED'}",
+  " 169.4 shot 15_mood_applied",
+  " 172.4 picked VIEWS VIEWS:HYPERSPACE of 8 with pictures 8",
+  " 175.5 shot 16_window_views",
+  " 178.4 picked CAMERAS CAMERAS:Oil lounge Wide master of 4 with pictures 4",
+  " 181.5 shot 17_cameras_tab",
+  " 184.5 use -> {'FINISHED'}",
+  " 187.6 picked MOVES MOVES:push_in of 16 with pictures 16",
+  " 190.5 shot 18_camera_moves",
+  " 193.5 use -> {'FINISHED'}",
+  " 196.4 picked SCENE SCENE:scene:Scene of 8 with pictures 7",
+  " 200.0 shot 19_in_this_scene",
+  " 206.0 shot 20_episodes_board",
+  " 209.2 saved guide blend",
+  " 212.0 shot 21_output_props",
+  " 214.9 trial: render skipped"
+ ]
+}
