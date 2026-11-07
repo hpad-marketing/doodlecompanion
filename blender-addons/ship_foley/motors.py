@@ -59,7 +59,7 @@ LIN_REF = 0.3            # m/s: a brisk piston stroke
 
 
 def _group(name):
-    side = re.search(r"\.([LR])$", name)
+    side = re.search(r"\.([FB]?[LR])$", name)
     for g, rx, size, load in GROUPS:
         if rx.search(name):
             return ("%s.%s" % (g, side.group(1)) if side else g), size, load

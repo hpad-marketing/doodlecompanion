@@ -48,7 +48,7 @@ HOLLOW_NAME = re.compile(r"crate|locker|can\b|oil can|toolbox|bin|drum|barrel|bo
 # --- scene reading ----------------------------------------------------------
 
 def _side(name):
-    m = re.search(r"\.([LR])$", name or "")
+    m = re.search(r"\.([FB]?[LR])$", name or "")   # .L/.R, quadruped .FL/.FR/.BL/.BR
     return m.group(1) if m else "C"
 
 

@@ -25,6 +25,8 @@ DROIDS = {
                         foot="metal_thin", foot_size=0.45, hand="metal", hand_size=0.04),
     "computer": dict(label="Ship's computer", mass_kg=400.0, leg=0.0, arm=0.03,
                      foot="metal", foot_size=0.5, hand="polymer", hand_size=0.06),
+    "beacon": dict(label="Beacon (BKN-4)", mass_kg=31.8, leg=0.5, arm=0.04,
+                   foot="rubber", foot_size=0.09, hand="rubber", hand_size=0.03),
     "generic": dict(label="Droid", mass_kg=100.0, leg=0.5, arm=0.05,
                     foot="metal", foot_size=0.3, hand="metal", hand_size=0.08),
 }
@@ -41,6 +43,8 @@ def droid_id(names):
         return "hover_drone"
     if "computer" in text or "mainframe" in text:
         return "computer"
+    if re.search(r"beacon|bkn", text):
+        return "beacon"
     if re.search(r"rx[-_ ]?07|box ?mech|robotrig|robot_rig|robot_rx", text):
         return "rx07"
     return "generic"

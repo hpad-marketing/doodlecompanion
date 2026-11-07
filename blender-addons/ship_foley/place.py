@@ -134,7 +134,7 @@ def bake_motors(motors, events, scene=None, master=1.0, room_wet=0.05):
             ch = ch + 1 if ch < 40 else MOTOR_CH
             strip.sound.use_mono = True
             strip.volume = distance_gain(dist)
-            lr = {"L": 0.15, "R": -0.15}.get(side, 0.0)   # droid faces camera: its left is screen right
+            lr = {"L": 0.15, "R": -0.15}.get((side or "")[-1:], 0.0)   # droid faces camera: its left is screen right
             strip.pan = max(-1.0, min(1.0, pan + lr))
             made += 1
     return made
