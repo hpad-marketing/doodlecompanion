@@ -58,7 +58,10 @@ def _snap(kind, scene_name, cam_name, folder):
     keep = dict(engine=r.engine, x=r.resolution_x, y=r.resolution_y, pct=r.resolution_percentage,
                 path=r.filepath, fmt=r.image_settings.file_format, cam=sc.camera,
                 light=sh.light, color=sh.color_type)
-    haze = [o for o in sc.objects if o.get("sb_haze") and not o.hide_render]   # a solid grey box in Workbench
+    # Workbench ignores ray visibility: the haze box and the camera-transparent fourth wall
+    # would draw as solid grey slabs in front of the lens
+    haze = [o for o in sc.objects if not o.hide_render and
+            (o.get("sb_haze") or o.get("sb_fourth_wall") or not getattr(o, "visible_camera", True))]
     try:
         for o in haze:
             o.hide_render = True

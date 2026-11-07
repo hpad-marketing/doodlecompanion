@@ -246,6 +246,9 @@ def open_studio():
 def tab(cat, name):
     def set_():
         St.state().cat = cat
+        for w in bpy.context.window_manager.windows:     # a click on the tab redraws; setting it from code does not
+            for a in w.screen.areas:
+                a.tag_redraw()
         log("tab " + cat)
 
     def snap():
