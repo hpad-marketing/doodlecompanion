@@ -17,7 +17,7 @@ OUT = a[0]
 rig_blend = rig_name = None
 if '--rig' in a:
     i = a.index('--rig'); rig_blend, rig_name = a[i + 1], a[i + 2]; a = a[:i] + a[i + 3:]
-from ship_builder import ship as S, walk as Wk, feet as Ft, collide
+from ship_builder import ship as S, walk as Wk, feet as Ft, collide, pathing as PA
 layouts = a[1:] or list(S.LAYOUTS)
 os.makedirs(OUT, exist_ok=True)
 report = {}
@@ -84,20 +84,36 @@ for lay in layouts:
     w.record(True)
     dt, t, wp, stall, hits, reached, opened = 1 / 24, 0.0, 0, 0.0, [], [], {}
     best = 1e9
-    while wp < len(pts) and t < 120:
+    grid = PA.Grid.from_scene(sc, radius=0.26)
+    sub = None
+    while wp < len(pts) and t < 120 * max(1, len(info["rooms"]) // 2):
         name, goal = pts[wp]
+        if grid.blocked(*grid.ij(goal)):  # a mark inside a grown obstacle: the closest place a droid can stand
+            near = grid.nearest_free(goal)
+            if near:
+                goal = grid.xy(*near)
         d = goal - w.pos
         d.z = 0
         if d.length < 0.35 or stall > 6:
             reached.append((name, d.length < 0.35))
-            wp, stall, best = wp + 1, 0.0, 1e9
+            wp, stall, best, sub = wp + 1, 0.0, 1e9, None
             continue
-        if d.length < best - 0.05:
-            best, stall = d.length, 0.0
+        if sub is None:  # route around the furniture, as a person steering would
+            sub = grid.path(w.pos, goal)[:-1]
+        while sub and (sub[0] - w.pos).to_2d().length < 0.25:
+            sub.pop(0)
+        aim = (sub[0] - w.pos) if sub else d
+        aim.z = 0
+        rem = d.length
+        if sub:
+            chain = [w.pos] + sub + [goal]
+            rem = sum((b - a).to_2d().length for a, b in zip(chain, chain[1:]))
+        if rem < best - 0.05:
+            best, stall = rem, 0.0
         else:
             stall += dt
         right, fwd = w._view_axes()
-        dn = d.normalized()
+        dn = aim.normalized()
         w.tick(dt, Wk.Input(dn.dot(right), dn.dot(fwd)))
         t += dt
         for dd in w.world.doors:

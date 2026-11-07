@@ -653,6 +653,12 @@ class Planter:
                 # rising again after the foot has started down), but never closer than 2 mm
                 # to the floor before it lands
                 lift = max(lift, min(0.0, 0.002 - low))
+                # arrived but not yet planted: a foot that has stopped travelling on its way down
+                # sets down now instead of hovering while the cycle catches up (heel to the floor)
+                if getattr(f, "falling", False) and travel.xy.length < STILL * 1.5 and 0.002 < low + lift < LAND * 1.5 \
+                        and not getattr(f, "forced", 0) and getattr(f, "merge_z", None) is None:
+                    lift = -low + 0.0002
+                    f.zlast = zr + lift
                 f.zpeak = max(getattr(f, "zpeak", 0.0), zr + max(0.0, lift)) if f.swing > 1 else zr + max(0.0, lift)
                 if DEBUG:
                     print("SWINGDBG", self.scene.frame_current, f.side, round(zr * 1000, 1), round(lift * 1000, 1), round(getattr(f, "zlast", 0) * 1000, 1), prog, getattr(f, "falling", None), getattr(f, "forced", 0))

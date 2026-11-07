@@ -79,7 +79,8 @@ class SB_Prefs(bpy.types.AddonPreferences):
     bl_idname = PKG
     deep_root: StringProperty(name="DeepInDoodles folder", subtype="DIR_PATH",
                               default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles"))
-    kit_dir: StringProperty(name="Droid Kit folder", subtype="DIR_PATH", description="Folder with droids/<id>.json")
+    kit_dir: StringProperty(name="Droid Kit folder", subtype="DIR_PATH", description="Folder with droids/<id>.json",
+                             default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles", "_droid_kit"))
     thumbs_dir: StringProperty(name="Preview cache", subtype="DIR_PATH",
                                default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles", "Ship", "thumbs"))
     scans_dir: StringProperty(name="Scans / stills folder", subtype="DIR_PATH")
@@ -501,6 +502,11 @@ class SHIP_PT_library(bpy.types.Panel):
 
     def draw(self, ctx):
         L = self.layout
+        from . import stations
+        stations.draw_bar(L, ctx)
+        if ctx.window_manager.sb_ep.station != "LIBRARY":
+            stations.draw_station(L, ctx)
+            return
         st = state(ctx)
         # tabs: two rows of four, pictures + words
         tabs = L.grid_flow(row_major=True, columns=4, even_columns=True, align=True)

@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
 id = "ship_builder"
-version = "0.4.0"
+version = "0.5.0"
 name = "Ship Builder"
-tagline = "Spaceship sets for the droid sitcom, with walk mode and a studio window"
+tagline = "Spaceship sets and the episode studio for the droid sitcom"
 maintainer = "HPAD Marketing"
 type = "add-on"
 website = "https://github.com/hpad-marketing/doodlecompanion"
@@ -17,6 +17,7 @@ copyright = ["2026 HPAD Marketing"]
 
 [permissions]
 files = "Preview cache, droid kit files and the DeepInDoodles folder"
+network = "Optional YouTube upload of a finished episode"
 
 [build]
 paths_exclude_pattern = ["__pycache__/", "/.git/", "*.zip", "tests/"]

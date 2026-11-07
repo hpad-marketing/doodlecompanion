@@ -75,7 +75,7 @@ def alcoves(room):
         pd = K.box("Charge Pad", (inner - 0.08, DEPTH - 0.1, PAD_H), (x, (y_back + y_front) / 2 - 0.02, PAD_H / 2), pad, room.dress, bevel=0.004)
         pd["sb_surface"] = "rubber"
         K.box("Charge Pad Glow", (inner - 0.16, 0.025, 0.002), (x, y_front + 0.05, PAD_H + 0.001), glow, room.dress, bevel=0, segs=1)
-        K.light_strip(room, (x, (y_back + y_front) / 2, HOOD_Z - 0.03), inner - 0.2, "X", (0, 0, -1), (0.35, 0.65, 1.0, 1), 5,
+        K.light_strip(room, (x, (y_back + y_front) / 2, HOOD_Z - 0.03), inner - 0.2, "X", (0, 0, -1), (0.35, 0.65, 1.0, 1), 12,
                       role="practical", width=0.03)
         out.append(C.use_point(room, f"Charge bay {i + 1}", (x, (y_back + y_front) / 2 - 0.02, PAD_H), 0.0, "back_in_plug",
                                approach=(x, y_front - 0.9, 0.0), contact="back charge port -> socket lead", who="walker"))
@@ -103,7 +103,7 @@ def build(room_name="Charging stations", wear=1.0, wear_seed=1):
     dr = INFO["doors"]
     C.shell(room, left_holes=[C.door_hole(room, dr["left"], "left")],
             right_holes=[C.door_hole(room, dr["right"], "right")], panel=(0.9, 0.7), chamfer=0.3)
-    K.ceiling(room, light_rows=1, color=(0.55, 0.65, 1.0, 1), power=8, cols=2, cove=0.22, cove_back=False, cove_color=(0.35, 0.65, 1.0, 1), cove_power=2)
+    K.ceiling(room, light_rows=1, color=(0.55, 0.65, 1.0, 1), power=22, cols=2, cove=0.22, cove_back=False, cove_color=(0.35, 0.65, 1.0, 1), cove_power=6)
     C.door(room, dr["left"], side="left")
     C.door(room, dr["right"], side="right")
     with K.piece(room, "Alcoves", 0.0, 0):

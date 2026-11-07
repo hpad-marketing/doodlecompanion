@@ -40,7 +40,7 @@ CAST = {
               "speaks": "beeps and chirps only, never words", "words": False},
     "COMPUTER": {"name": "Ship computer", "color": (0.6, 0.62, 0.66), "aliases": ("COMPUTER", "SHIP", "SHIP COMPUTER"),
                  "voice": "deadpan vocoder", "wants": "nothing", "fears": "nothing",
-                 "speaks": "deadpan announcements", "words": True},
+                 "speaks": "deadpan announcements", "words": True, "body": False},   # a voice from the walls
 }
 BEEPS = re.compile(r"^[\s\W]*((beep|boop|bip|bweep|chirp|whirr|brrt|trill|meep|wee+|oo+)[\s\W]*)+$", re.I)
 
@@ -56,9 +56,9 @@ HEADINGS = (
     (("CARGO",), "cargo"),
     (("AIRLOCK",), "airlock"),
     (("WORKSHOP", "FABRICATOR"), "workshop"),
-    (("REST POD", "PODS"), "rest_pods"),
+    (("REST POD", "PODS", "BUNKS"), "rest"),
     (("JUNK", "RECYCLER"), "junk"),
-    (("GARDEN", "PLANT ROOM"), "garden"),
+    (("GARDEN", "PLANT ROOM", "HYDROPONICS"), "plants"),
 )
 EXTERIOR = "hero_ship"   # EXT. SHIP: a hero ship establishing shot (slot until the hero ship lands)
 

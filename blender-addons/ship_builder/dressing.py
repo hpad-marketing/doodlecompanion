@@ -279,7 +279,7 @@ def overhead_pipes(room, pl):
             P.disc("Valve Stem", 0.008, 0.06, (0, 0, 0.04), m["steel"])
             for k in range(3):
                 P.box("Valve Spoke", (0.13, 0.008, 0.006), (0, 0, 0.07), m["red"], bevel=0.001, tilt=60 * k)
-        if A._place(pl.col, build, ignore=("Bolt", "Hanger Rod", "Air Duct", "Cable Tray")):
+        if A._place(pl.col, build, ignore=("Bolt", "Hanger Rod")):  # rods may pass beside other rods, never through a duct or tray
             pl.done.append("w11")
             return
     pl.missed.append("w11")

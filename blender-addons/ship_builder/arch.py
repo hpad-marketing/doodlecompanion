@@ -390,7 +390,7 @@ def walk_tiles(room, col, x0, x1, y0, y1, size=0.6):
         x = x0
         while x < x1 - 0.1:
             w, d = min(size, x1 - x) - 0.004, min(size, y1 - y) - 0.004
-            _place(col, lambda x=x, y=y, w=w, d=d: K.box("Walkway Tile", (w, d, 0.01), (x + w / 2, y + d / 2, 0.0055), dp, room.dress, bevel=0.002),
+            _place(col, lambda x=x, y=y, w=w, d=d: K.box("Walkway Tile", (w, d, 0.0016), (x + w / 2, y + d / 2, 0.0009), dp, room.dress, bevel=0.0005, segs=1),
                    ignore=("Deck",))
             x += size
         y += size

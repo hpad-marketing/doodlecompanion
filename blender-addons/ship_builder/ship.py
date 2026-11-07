@@ -32,7 +32,17 @@ LAYOUTS = {
               "blurb": "Charging stations, corridor and repair bay"},
     "charging_only": {"label": "Charging stations", "rooms": ["charging"], "blurb": "Just the charging stations"},
     "repair_only": {"label": "Repair bay", "rooms": ["repair"], "blurb": "Just the repair bay"},
+    "deck3": {"label": "Deck 3", "rooms": ["observation", "corridor", "engine"],
+              "blurb": "Observation deck, corridor and engine room"},
+    "deck4": {"label": "Deck 4", "rooms": ["workshop", "corridor", "cargo"],
+              "blurb": "Workshop, corridor and cargo hold"},
+    "deck5": {"label": "Deck 5", "rooms": ["rest", "corridor", "plants"],
+              "blurb": "Rest pods, corridor and plant room"},
+    "deck6": {"label": "Deck 6", "rooms": ["junk", "corridor", "airlock"],
+              "blurb": "Junk room, corridor and airlock"},
 }
+for _k in ("observation", "engine", "cargo", "airlock", "workshop", "rest", "junk", "plants"):
+    LAYOUTS[f"{_k}_only"] = {"label": ROOMS[_k].INFO["label"], "rooms": [_k], "blurb": f"Just the {ROOMS[_k].INFO['label'].lower()}"}
 
 
 def _doors(key):
