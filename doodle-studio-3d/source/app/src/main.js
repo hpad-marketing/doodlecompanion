@@ -4,7 +4,7 @@ import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
-import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, inkModeOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
 import { loadAudio, loadMusic, musicInfo, scrub as scrubAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
@@ -1724,17 +1724,23 @@ function buildPanel() {
         h('div', { class: 'col' }, autosavePanel()), h('div', { class: 'col' }, ...shelves('render:blender'))));
       api('settings', {}).then(st => { const el = $('#blender-path'); if (el) el.textContent = st.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
     } else {
-      // Line size (user, 2026-11-03): one control for every stroke in the shot, a lock that keeps it the same
-      // on screen at any camera distance or angle, and a button that copies both to every shot
+      // Line size (user, 2026-11-03): one control for every stroke in the shot, how lines respond to the
+      // camera (thin out when it pulls back, same size, or grow), and a button that copies both to every shot
       const inkRow = () => {
         const num = h('input', { type: 'number', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'width:4.5em' });
         const sl = h('input', { type: 'range', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'flex:1' });
         const set = v => { v = Math.max(40, Math.min(250, Math.round(Number(v) || 100))); pushUndo(); project.ink = v; num.value = sl.value = v; updateHud(); };
         sl.addEventListener('input', () => { num.value = sl.value; }); sl.addEventListener('change', () => set(sl.value)); num.addEventListener('change', () => set(num.value));
-        const lock = h('input', { type: 'checkbox', checked: project.inkLock !== false, onchange: e => { pushUndo(); project.inkLock = e.target.checked ? undefined : false; updateHud(); } });
-        const all = h('button', { title: 'Copy this line size and lock to every shot in the scene', onclick: () => { pushUndo(); for (const sh of scene.shots) { sh.ink = project.ink ?? 100; sh.inkLock = project.inkLock; } all.textContent = 'Done ✓'; setTimeout(() => { all.textContent = 'Use for every shot'; }, 1500); } }, 'Use for every shot');
+        const mode = h('select', { title: 'How lines respond when the camera moves', onchange: e => { pushUndo(); project.inkMode = e.target.value === 'thin' ? undefined : e.target.value; delete project.inkLock; updateHud(); } },
+          ...[['thin', 'Thin out as the camera pulls back'], ['same', 'Same size at any distance'], ['grow', 'Grow close up, thin far away']].map(([v, t]) => h('option', { value: v, selected: inkModeOf(project) === v }, t)));
+        const all = h('button', { title: 'Copy this line size, camera setting and line noise to every shot in the scene', onclick: () => { pushUndo(); for (const sh of scene.shots) { sh.ink = project.ink ?? 100; sh.inkMode = project.inkMode; sh.inkNoise = project.inkNoise; delete sh.inkLock; } all.textContent = 'Done ✓'; setTimeout(() => { all.textContent = 'Use for every shot'; }, 1500); } }, 'Use for every shot');
+        const nNum = h('input', { type: 'number', min: 0, max: 100, step: 5, value: project.inkNoise ?? 50, style: 'width:4.5em' });
+        const nSl = h('input', { type: 'range', min: 0, max: 100, step: 5, value: project.inkNoise ?? 50, style: 'flex:1' });
+        const setN = v => { v = Math.max(0, Math.min(100, Math.round(Number(v) || 0))); pushUndo(); project.inkNoise = v === 50 ? undefined : v; nNum.value = nSl.value = v; updateHud(); };
+        nSl.addEventListener('input', () => { nNum.value = nSl.value; }); nSl.addEventListener('change', () => setN(nSl.value)); nNum.addEventListener('change', () => setN(nNum.value));
         return h('div', {}, h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Line size for every stroke in this shot, as a percent of Bunny\'s usual line (100). All lines change together, so they stay equal.' }, 'Line size (%)', h('div', { class: 'row' }, sl, num)),
-          h('div', { class: 'row', style: 'margin:4px 0' }, h('label', { class: 'row', style: 'flex:1', title: 'On: every line stays the same size on screen however close or far the camera is, at any angle. Off: lines grow as the camera moves in and shrink as it pulls back.' }, lock, ' Same size at any distance or angle'), all));
+          h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Thin out (default): lines get finer as the camera pulls back, so wide shots stay clean, and never get thicker than the line size up close. Same size: every line keeps one size on screen at any distance or angle. Grow: lines get thicker close up too, like a drawing.' }, 'Camera moves', h('div', { class: 'row' }, mode, all)),
+          h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Hand-drawn wobble on every line, redrawn every few frames like the 2D studio\'s boil. 0 = clean lines, 50 = normal, 100 = rough sketch. Only with the outline on.' }, 'Line noise (%)', h('div', { class: 'row' }, nSl, nNum)));
       };
       const field = (label, obj, key, attrs) => { const i = h('input', { ...attrs, value: obj[key] }); i.addEventListener('change', () => { pushUndo(); obj[key] = attrs.type === 'number' ? Number(i.value) : i.value; buildTimelineTools(); drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
       c.append(cols('two', [h('h3', {}, `Shot ${project.code}`), field('Name', project, 'label', { type: 'text', placeholder: 'optional, e.g. intro' }), field('Length (frames)', project, 'length', { type: 'number', min: 1, max: 54000 }),
@@ -3547,11 +3553,11 @@ function loop() {
     // Materials tab (materials.js): list looks and palettes, apply a look to a target, clear it, set the light
     materials(a) { return MAT.mcp(matCtx(), a || {}); },
     setShotLook(p) {
-      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); if (p.inkLock != null) project.inkLock = p.inkLock ? undefined : false;
+      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); if (p.inkLock != null) { project.inkMode = p.inkLock ? 'same' : 'grow'; delete project.inkLock; } if (p.noise != null) { const v = Math.max(0, Math.min(100, Math.round(Number(p.noise) || 0))); project.inkNoise = v === 50 ? undefined : v; } if (p.inkMode != null && ['thin', 'same', 'grow'].includes(p.inkMode)) { project.inkMode = p.inkMode === 'thin' ? undefined : p.inkMode; delete project.inkLock; }
       for (const [k, v] of Object.entries(p.rules || {})) if (RULES.some(r => r[0] === k)) { project.rules ||= {}; if (v === false) project.rules[k] = false; else delete project.rules[k]; }
       if (p.captionSnap != null) { P.captionsOf(scene).snap = p.captionSnap ? undefined : false; drawPost(); }
       apply(); buildPanel();
-      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, inkLock: project.inkLock !== false, rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
+      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, inkMode: inkModeOf(project), noise: project.inkNoise ?? 50, inkLock: inkModeOf(project) === 'same', rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
     },
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
