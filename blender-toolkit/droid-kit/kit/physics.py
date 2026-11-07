@@ -43,8 +43,9 @@ class Body:
             b = rig.data.bones[it['bone']]; M = (rig.matrix_world @ b.matrix_local).inverted()
             self.parts.append(dict(o=None, bone=it['bone'], m=it['kg'], rest_inv=M, at=Vector(it['at']), name=it['name']))
         self.total = sum(p['m'] for p in self.parts)
+        FOOT = PH.get('foot_regex', '(foot|toe|heel|sole)')   # tracked droids: 'track_link_\\d+'
         self.feet = {S: [o for o in bpy.data.objects if o.type == 'MESH' and 'rig_bone' in o and not o.hide_render
-                         and re.search(rf'(foot|toe|heel|sole)[^.]*\.{S}$', o.name)] for S in 'LR'}
+                         and re.search(rf'{FOOT}[^.]*\.{S}$', o.name)] for S in 'LR'}
 
     def world_points(self):
         out = []

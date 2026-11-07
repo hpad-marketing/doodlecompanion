@@ -1,0 +1,779 @@
+{
+  "id": "tracker",
+  "name": "Tracked porter (droid 5)",
+  "folder": "TrackedDroid",
+  "current_file": "TrackedDroid.blend",
+  "rig": "TrackerRig",
+  "facing": "-Y (droid's L side is +X)",
+  "locked": true,
+  "build": "droids/tracker/build_tracker.py",
+  "reference": {
+    "image": "ref/orange_tracked_ref.jpg",
+    "camera": {
+      "loc": [
+        -1.55,
+        -2.0,
+        1.05
+      ],
+      "target": [
+        0,
+        -0.05,
+        0.45
+      ],
+      "lens": 50
+    }
+  },
+  "paint": {
+    "paint": "#123837",
+    "accent": "#D8642A",
+    "cream": "#E6D3A3",
+    "grey": "#3D4349"
+  },
+  "paint_roles": {
+    "paint": "Body, chassis, track skirts",
+    "accent": "Warning accents, springs, ram",
+    "cream": "Trim",
+    "grey": "Turret, bezel, scoop, bin"
+  },
+  "joint_regex": "(cheek|knuckle|boss|lug|bezel|socket|seat|neck|_eye|_cap|trunnion|saddle|hub|bearing|bracket|bumper|mount|ball|cup|yoke|ring_base|housing|horn)",
+  "weather_scale": 1.6,
+  "uv_smooth_deg": 40,
+  "bevel": [
+    0.0014,
+    0.0008,
+    0.03
+  ],
+  "wear": [
+    [
+      "rb_mud",
+      "track_link|road_|idler|sprocket|scoop_floor|scoop_lip|scoop_tooth",
+      0.6
+    ],
+    [
+      "rb_mud",
+      "track_skirt|track_plate|scoop|bumper",
+      0.4
+    ],
+    [
+      "rb_mud",
+      "chassis_hull|strut",
+      0.5
+    ],
+    [
+      "rb_oil",
+      "strut_house|strut_rodpart|ram_|lift_pivot|tilt_pin|lift_pin|_axle|hub|sway_bearing|turret",
+      1.0
+    ],
+    [
+      "rb_touch",
+      "bin_lid_handle|lift_eye|bin_lid_plate",
+      1.0
+    ],
+    [
+      "rb_touch",
+      "body_shell",
+      0.3
+    ],
+    [
+      "rb_heat",
+      "chassis_hull",
+      0.2
+    ]
+  ],
+  "decals": [
+    {
+      "name": "unit",
+      "part": "chassis_hull",
+      "normal": [
+        0,
+        -1,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.5,
+        0.45
+      ],
+      "size": [
+        0.12,
+        0.045
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "CARGO 05",
+          0.62,
+          "bold"
+        ],
+        [
+          "MAX LOAD 60 KG",
+          0.3,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    },
+    {
+      "name": "bin",
+      "part": "bin_body",
+      "normal": [
+        0,
+        1,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.5,
+        0.3
+      ],
+      "size": [
+        0.12,
+        0.035
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "SALVAGE",
+          0.9,
+          "bold"
+        ]
+      ],
+      "colour": "yellow"
+    },
+    {
+      "name": "lift.L",
+      "part": "track_skirt.L",
+      "normal": [
+        1,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.78,
+        0.62
+      ],
+      "size": [
+        0.07,
+        0.03
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "NO STEP",
+          0.9,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    },
+    {
+      "name": "lift.R",
+      "part": "track_skirt.R",
+      "normal": [
+        -1,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "uv": [
+        0.22,
+        0.62
+      ],
+      "size": [
+        0.07,
+        0.03
+      ],
+      "kind": "text",
+      "lines": [
+        [
+          "NO STEP",
+          0.9,
+          "mono"
+        ]
+      ],
+      "colour": "cream"
+    }
+  ],
+  "bolt_panels": [],
+  "details": {
+    "body": "body_shell",
+    "panel_lines": false,
+    "conduits": false,
+    "status_leds": null
+  },
+  "collision": {
+    "ignore": [
+      "track_pin_",
+      "track_path",
+      "fx_"
+    ],
+    "action_prefix": "TR"
+  },
+  "hooks": {
+    "leds": [
+      "RB_LED_green",
+      "RB_LED_amber",
+      "RB_LED_red"
+    ],
+    "glow_materials": [
+      "RB_Stalk_Glow",
+      "TR_face_glow"
+    ],
+    "glow_node": "Glow",
+    "antenna_chains": [
+      "stalk_roll.L",
+      "stalk_pitch.L",
+      "stalk_ext.L",
+      "stalk_tip.L",
+      "stalk_roll.R",
+      "stalk_pitch.R",
+      "stalk_ext.R",
+      "stalk_tip.R"
+    ],
+    "eye": "face_eye.L",
+    "face": {
+      "eyes": [
+        "face_eye.L",
+        "face_eye.R"
+      ],
+      "mouth": "face_mouth",
+      "talk_prop": "talk",
+      "eye_props": [
+        "eyes_blink",
+        "eyes_happy",
+        "eyes_sad",
+        "eyes_angry",
+        "eyes_wide",
+        "eyes_heart",
+        "eyes_x"
+      ],
+      "mouth_props": [
+        "mouth_smile",
+        "mouth_frown",
+        "mouth_oh",
+        "mouth_wavy"
+      ]
+    },
+    "controls": {
+      "look_pan": "waist:rot_y",
+      "look_tilt": "lean:rot_x",
+      "turn_waist": "waist:rot_y",
+      "lean": "lean:rot_x (+ leans forward)",
+      "sway": "body:rot_y",
+      "crouch": "suspension:loc_y",
+      "drive": "root:loc (tread travel: rig props track_L / track_R in metres)",
+      "scoop_lift": "scoop_lift:rot_x (- raises)",
+      "scoop_tilt": "scoop_tilt:rot_x (- curls)",
+      "ears_droop": "stalk_roll.{S}:rot_z",
+      "ears_pitch": "stalk_pitch.{S}:rot_x",
+      "ears_extend": "stalk_ext.{S}:loc_y",
+      "lid": "bin_lid:rot_x (+ opens)"
+    }
+  },
+  "lock_sheet": {
+    "hero": [
+      "Rest",
+      "Carry",
+      "Happy",
+      "Sad",
+      "Alert",
+      "Curious",
+      "Sleep",
+      "Scoop up"
+    ],
+    "state_framing": "upper",
+    "states": [
+      {
+        "label": "Calm face",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Happy",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 1.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 1.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Sad",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 1.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.8,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Cross",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 1.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.8,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Surprised",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 1.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 1.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "In love",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 1.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.7,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Broken",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 1.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 1.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Talking",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.3,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 1.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Screen scan",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 1.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 1,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Screen low battery",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 2,
+          "screen_value": 0.15
+        }
+      },
+      {
+        "label": "Screen error",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 3,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Screen loading",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 4,
+          "screen_value": 0.6
+        }
+      },
+      {
+        "label": "Screen arrow",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 5,
+          "screen_value": 0.25
+        }
+      },
+      {
+        "label": "Screen sticker gallery",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 6,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Screen sleep",
+        "set": {
+          "eyes_blink": 1.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 7,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Work lights on",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 1.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      },
+      {
+        "label": "Rest face again",
+        "set": {
+          "eyes_blink": 0.0,
+          "eyes_happy": 0.0,
+          "eyes_sad": 0.0,
+          "eyes_angry": 0.0,
+          "eyes_wide": 0.0,
+          "eyes_heart": 0.0,
+          "eyes_x": 0.0,
+          "mouth_smile": 0.0,
+          "mouth_frown": 0.0,
+          "mouth_oh": 0.0,
+          "mouth_wavy": 0.0,
+          "talk": 0.0,
+          "scan": 0.0,
+          "lamps": 0.0,
+          "vent_puff": 0.0,
+          "screen_mode": 0,
+          "screen_value": 0.7
+        }
+      }
+    ],
+    "closeups": [
+      "scoop_lip",
+      "stalk_cap.L",
+      "strut_spring.Lf",
+      "sprocket_wheel.L",
+      "tow_hook_hook",
+      "bin_lid_plate",
+      "turret",
+      "sticker_0_ringed_planet"
+    ]
+  },
+  "stage_camera": {
+    "loc": [
+      -1.9,
+      -2.4,
+      1.2
+    ],
+    "target": [
+      0,
+      -0.05,
+      0.45
+    ],
+    "lens": 45
+  },
+  "physics": {
+    "foot_regex": "track_link_\\d+",
+    "_note": "DENSE RULE (user 2026-11-07): heavy for its size. Internal equipment as point masses (rest world position); part masses from shape+material.",
+    "internal": [
+      {
+        "name": "battery pack",
+        "bone": "chassis",
+        "kg": 38,
+        "at": [
+          0,
+          0.02,
+          0.235
+        ]
+      },
+      {
+        "name": "drive motor and gearbox L",
+        "bone": "chassis",
+        "kg": 12,
+        "at": [
+          0.13,
+          0.19,
+          0.24
+        ]
+      },
+      {
+        "name": "drive motor and gearbox R",
+        "bone": "chassis",
+        "kg": 12,
+        "at": [
+          -0.13,
+          0.19,
+          0.24
+        ]
+      },
+      {
+        "name": "cast-iron counterweight",
+        "bone": "chassis",
+        "kg": 14,
+        "at": [
+          0,
+          0.22,
+          0.21
+        ]
+      },
+      {
+        "name": "scoop hydraulic pump",
+        "bone": "chassis",
+        "kg": 5,
+        "at": [
+          0,
+          -0.12,
+          0.24
+        ]
+      },
+      {
+        "name": "waist slewing drive",
+        "bone": "waist",
+        "kg": 7,
+        "at": [
+          0,
+          0,
+          0.33
+        ]
+      },
+      {
+        "name": "computer, screen driver and speakers",
+        "bone": "body",
+        "kg": 6,
+        "at": [
+          0,
+          0.05,
+          0.62
+        ]
+      }
+    ]
+  },
+  "open_issues": []
+}
