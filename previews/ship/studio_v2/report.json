@@ -1,0 +1,59 @@
+{
+ "steps": [
+  {
+   "step": "build",
+   "t": 81.9,
+   "seconds": 78.8,
+   "rooms": [
+    "lounge",
+    "corridor",
+    "bridge"
+   ],
+   "device": "GPU",
+   "intersections": 0,
+   "intersections_doors_open": 0,
+   "pairs": []
+  },
+  {
+   "step": "studio opened",
+   "t": 82.3,
+   "windows": 2,
+   "areas": [
+    "IMAGE_EDITOR",
+    "DOPESHEET_EDITOR",
+    "VIEW_3D"
+   ]
+  },
+  {
+   "step": "screenshot",
+   "t": 83.5,
+   "file": "studio_sets.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 84.4,
+   "file": "studio_rooms.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 85.4,
+   "file": "studio_moods.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 86.4,
+   "file": "studio_props.png"
+  },
+  {
+   "step": "screenshot",
+   "t": 86.5,
+   "file": "studio_sets_baked.png"
+  },
+  {
+   "step": "done",
+   "t": 87.4,
+   "errors": 0
+  }
+ ],
+ "errors": []
+}
