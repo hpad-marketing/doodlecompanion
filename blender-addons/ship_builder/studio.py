@@ -80,7 +80,7 @@ class SB_Prefs(bpy.types.AddonPreferences):
     deep_root: StringProperty(name="DeepInDoodles folder", subtype="DIR_PATH",
                               default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles"))
     kit_dir: StringProperty(name="Droid Kit folder", subtype="DIR_PATH", description="Folder with droids/<id>.json",
-                             default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles", "_droid_kit"))
+                             default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles", "_shared", "droid-kit"))
     thumbs_dir: StringProperty(name="Preview cache", subtype="DIR_PATH",
                                default=os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles", "Ship", "thumbs"))
     scans_dir: StringProperty(name="Scans / stills folder", subtype="DIR_PATH")

@@ -804,8 +804,9 @@ class SHIP_OT_ep_queue(bpy.types.Operator):
         blend = _save_blend(e)
         jobs, eta = F.queue_jobs(e, root(), blend, mode)
         save()
-        Q.start(root(), bpy.app.binary_path)
-        self.report({"INFO"}, f"{len(jobs)} shots queued, done about {eta}")
+        how = Q.start(root(), bpy.app.binary_path)
+        where = "Sushi's GPU queue" if how == "sushi" else "the queue"
+        self.report({"INFO"}, f"{len(jobs)} shots sent to {where}, done about {eta}")
         return {"FINISHED"}
 
 
@@ -1235,13 +1236,14 @@ def draw_render(L, ctx):
     rd = e.data.get("render", {})
     if rd:
         L.label(text=f"{rd.get('queued', 0)} shots queued ({rd.get('mode')}), done about {rd.get('eta_ist')}", icon="TIME")
-    L.label(text=("Queue: " + (Q.RUN["log"] or "idle")), icon="SORTTIME" if Q.busy() else "PAUSE")
+    L.label(text="Queue: " + ("Sushi's GPU queue (runs by itself)" if Q.sushi_runner(root()) else (Q.RUN["log"] or "idle")),
+            icon="SORTTIME" if Q.busy() or Q.sushi_runner(root()) else "PAUSE")
     stills = e.path("work", "stills")
     for sid, preset, state in F.queue_progress(e, root(), s.mode):
         row = L.row(align=True)
         row.template_icon(icon_value=picture(os.path.join(stills, sid + ".png"), (0.18, 0.2, 0.24)), scale=1.2)
         row.label(text=f"{sid}  {preset}")
-        row.label(text=state, icon={"done": "CHECKMARK", "queued": "TIME"}.get(state, "RADIOBUT_OFF"))
+        row.label(text=state, icon={"done": "CHECKMARK", "queued": "TIME", "rendering": "RENDER_ANIMATION", "failed": "ERROR"}.get(state, "RADIOBUT_OFF"))
 
 
 def draw_publish(L, ctx):

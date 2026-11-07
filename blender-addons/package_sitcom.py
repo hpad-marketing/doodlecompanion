@@ -8,7 +8,7 @@ and blender-toolkit/droid-kit. Writes:
     Sitcom_Suite-<date>/
         ship_builder-<v>.zip, ship_foley-<v>.zip   Blender extensions
         droid_voice/                                 plain package -> Blender's scripts/modules
-        _droid_kit/                                  -> Documents/DeepInDoodles/_droid_kit
+        _droid_kit/                                  -> Documents/DeepInDoodles/_shared/droid-kit (adds missing files only)
         install_suite.py, INSTALL.cmd                one double-click install into every Blender 4.2+
     Sitcom_Suite-<date>.zip
 """
@@ -31,8 +31,14 @@ here = os.path.dirname(os.path.abspath(__file__))
 docs = os.path.join(os.path.expanduser("~"), "Documents", "DeepInDoodles")
 mods = bpy.utils.user_resource("SCRIPTS", path="modules", create=True)
 shutil.copytree(os.path.join(here, "droid_voice"), os.path.join(mods, "droid_voice"), dirs_exist_ok=True)
-shutil.copytree(os.path.join(here, "_droid_kit"), os.path.join(docs, "_droid_kit"), dirs_exist_ok=True)
-os.makedirs(os.path.join(docs, "_queue"), exist_ok=True)
+kit = os.path.join(docs, "_shared", "droid-kit")
+src = os.path.join(here, "_droid_kit")
+for base, _dirs, files in os.walk(src):   # add what is missing; never overwrite the droid threads' own copy
+    for fn in files:
+        d = os.path.join(kit, os.path.relpath(os.path.join(base, fn), src))
+        if not os.path.exists(d):
+            os.makedirs(os.path.dirname(d), exist_ok=True)
+            shutil.copy2(os.path.join(base, fn), d)
 ok = []
 for z in sorted(glob.glob(os.path.join(here, "*.zip"))):
     try:
@@ -49,7 +55,7 @@ prefs = bpy.context.preferences.addons.get("bl_ext.user_default.ship_builder")
 if prefs and prefs.preferences:
     p = prefs.preferences
     p.deep_root = docs
-    p.kit_dir = os.path.join(docs, "_droid_kit")
+    p.kit_dir = kit
 cy = bpy.context.preferences.addons.get("cycles")
 if cy:
     try:

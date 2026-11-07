@@ -42,6 +42,9 @@ chips = F.check_chips(ep, {"intersect": []})
 assert dict((k, len(v)) for k, _l, v in chips)["voiced"] == 7   # silent guides are not real voices
 jobs, eta = F.queue_jobs(ep, root, "/x/ep.blend", "draft")
 assert len(jobs) == len(ep.data["shots"]) and eta.endswith("IST")
+job = json.load(open(jobs[0], encoding="utf-8"))
+assert set(job) >= {"blend", "script", "args", "label", "thread"} and os.path.isfile(job["script"]) and os.path.isfile(job["args"][0])
+assert {st for _i, _p, st in F.queue_progress(ep, root, "draft")} == {"queued"}
 plan = F.mix_plan(ep)
 argv = F.ffmpeg_mix(plan)
 assert "-filter_complex" in argv

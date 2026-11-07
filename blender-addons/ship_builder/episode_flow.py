@@ -337,11 +337,15 @@ MODES = {"draft": {"engine": "BLENDER_EEVEE_NEXT", "res": (1280, 720), "samples"
 SEC_PER_FRAME = {"draft": 0.6, "final": 38.0}   # Sushi RTX 5080 estimates
 
 
+def _job_name(ep, sid, mode):
+    return f"ship-{ep.name}-{sid}-{mode}"
+
+
 def queue_jobs(ep, root, blend, mode="draft", fps=24):
-    """One job per shot in <root>/_queue. A shot that already has its output is
-    skipped, so a crash resumes from the last finished shot. Returns (jobs, eta_ist)."""
-    q = os.path.join(root, "_queue")
-    os.makedirs(q, exist_ok=True)
+    """One job per shot on the shared GPU queue (<root>/_queue/jobs, see
+    queue_runner). A shot that already has its output is skipped, so a crash
+    resumes from the last finished shot. Returns (job paths, eta_ist)."""
+    from . import queue_runner as Q
     cfg = MODES[mode]
     jobs, frames = [], 0
     for s in ep.data.get("shots", []):
@@ -349,14 +353,11 @@ def queue_jobs(ep, root, blend, mode="draft", fps=24):
         out = ep.path("work", "shots", mode, s["id"] + ".mp4")
         if os.path.isfile(out):
             continue
-        job = {"episode": ep.name, "shot": s["id"], "blend": blend, "scene": s.get("scene_name") or f"Shot {s['id']}",
-               "camera": s.get("camera"), "frames": [f0, f1],
-               "mode": mode, "engine": cfg["engine"], "resolution": list(cfg["res"]), "samples": cfg["samples"],
-               "device": cfg.get("device"), "output": out, "created": time.time()}
-        p = os.path.join(q, f"{ep.name}_{s['id']}_{mode}.json")
-        with open(p, "w", encoding="utf-8") as f:
-            json.dump(job, f, indent=1)
-        jobs.append(p)
+        spec = {"episode": ep.name, "shot": s["id"], "blend": blend, "scene": s.get("scene_name") or f"Shot {s['id']}",
+                "camera": s.get("camera"), "frames": [f0, f1],
+                "mode": mode, "engine": cfg["engine"], "resolution": list(cfg["res"]), "samples": cfg["samples"],
+                "device": cfg.get("device"), "output": out, "created": time.time()}
+        jobs.append(Q.submit(root, _job_name(ep, s["id"], mode), spec))
         frames += f1 - f0 + 1
     eta = time.time() + frames * SEC_PER_FRAME[mode]
     ep.data["render"] = {"mode": mode, "queued": len(jobs), "eta": eta, "eta_ist": ist(eta)}
@@ -365,14 +366,11 @@ def queue_jobs(ep, root, blend, mode="draft", fps=24):
 
 
 def queue_progress(ep, root, mode=None):
+    """[(shot id, preset, state)], state = done | rendering | queued | failed | not queued."""
+    from . import queue_runner as Q
     mode = mode or ep.data.get("render", {}).get("mode", "draft")
-    rows = []
-    for s in ep.data.get("shots", []):
-        out = ep.path("work", "shots", mode, s["id"] + ".mp4")
-        job = os.path.join(root, "_queue", f"{ep.name}_{s['id']}_{mode}.json")
-        st = "done" if os.path.isfile(out) else ("queued" if os.path.isfile(job) else "not queued")
-        rows.append((s["id"], s["preset"], st))
-    return rows
+    return [(s["id"], s["preset"], Q.state(root, _job_name(ep, s["id"], mode), ep.path("work", "shots", mode, s["id"] + ".mp4")))
+            for s in ep.data.get("shots", [])]
 
 
 # ------------------------------------------------------------------ X3 edit + mix
