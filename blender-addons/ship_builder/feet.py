@@ -38,7 +38,7 @@ ON_CONTACT = []
 DEBUG = bool(__import__('os').environ.get('SB_FEET_DEBUG'))
 MIN_SWING = 4       # frames a lifted foot must swing before it may land again
 FADE = 10           # frames over which a foothold slide eases out after push-off
-STRETCH = 0.22      # a planted foot this far off its landing spot takes a catch-up step
+STRETCH = 0.30      # a planted foot this far off its landing spot takes a catch-up step
 FSTEP = 7           # frames of a catch-up step (lift, carry, set down)
 STEP_ARC = 0.045    # its toe clearance at the top of the arc
 MIN_STANCE = 5      # frames a landed foot stays down before it may lift again
@@ -284,6 +284,21 @@ class Foot:
                                 add(o, inv @ hit[0])
                         y += 0.01
                     x += 0.01
+                # and the outline itself every 5 mm, so a tile or plate corner can't slip in
+                # between the grid points at the very edge of the foot
+                cx, cy = sum(v.x for v in hull) / len(hull), sum(v.y for v in hull) / len(hull)
+                for a, b in zip(hull, hull[1:] + hull[:1]):
+                    n = max(1, int((b - a).length / 0.005))
+                    for i in range(n):
+                        q = a.lerp(b, i / n)
+                        q = q + (Vector((cx, cy)) - q).normalized() * 0.0015  # just inside the edge
+                        hit = tree.ray_cast(Vector((q.x, q.y, zs - 0.05)), Vector((0, 0, 1)), 0.05 + SOLE)
+                        if hit[0] is not None:
+                            w = hit[0]
+                            k = (round(w.x / 0.004), round(w.y / 0.004), "rim")
+                            if k not in seen:
+                                seen.add(k)
+                                keep.append((o, inv @ w))
             return keep
 
     def errors(self, bvh):
@@ -438,10 +453,14 @@ class Planter:
                     f.stance = MIN_STANCE
                     f.lift_from = None
                     f.forced, f.forced_k = FSTEP, 0
+            f.raw_hint = hint
             if getattr(f, "forced", 0) > 0:
                 hint = False   # mid catch-up step: the foot is in the air whatever the cycle says
             if hint is not None:
-                planted = hint and (was or f.swing >= MIN_SWING)
+                # a foot only lands once it is actually near the floor: stepping down off a dais
+                # it keeps coming down for a few frames instead of dropping 12 cm in one
+                near = low - getattr(f, "descend", 0.0) < LAND * 1.5
+                planted = hint and (was or (f.swing >= MIN_SWING and near))
                 # a foot that lands stays down for a real stance: when the walk reverses or
                 # stalls on a boundary, the cycle can flick to swing for a frame; a touch and
                 # lift in two frames is exactly the double step people notice
@@ -466,6 +485,8 @@ class Planter:
                     f.pred, f.toe_down = None, False
                     f.land_off = f.hold.copy()
                 f.stance = 0 if not was else getattr(f, "stance", 0) + 1
+                f.descend = 0.0
+                f.merge_z = None
                 f.planted, f.fade, f.swing = True, 0, 0
                 off = f.hold
                 # foot lock: the part of the sole that was on the floor last frame stays exactly
@@ -500,7 +521,15 @@ class Planter:
                 f.fade = max(0, fade - 1)
                 # coming down: find the landing spot now and blend into it before contact,
                 # so the foot never snaps sideways at heel strike
-                if travel.z < 0 and low < LAND and f.swing >= MIN_SWING:
+                if hint and f.swing >= MIN_SWING and low > LAND:
+                    # the cycle says stance but the floor is further down (a step off a dais):
+                    # carry on down at a natural foot speed
+                    f.descend = min(low - 0.0002, getattr(f, "descend", 0.0) + 0.03)
+                    off = off + Vector((0, 0, -f.descend))
+                    if getattr(f, "pred", None) is None:
+                        f.pred = self._foothold(f, [p + Vector((0, 0, -low)) for p in pts], f.last_travel if getattr(f, "last_travel", None) else fwd)
+                    off = off + f.pred * _smooth(min(1.0, f.descend / max(low, 1e-3)))
+                elif travel.z < 0 and low < LAND and f.swing >= MIN_SWING:
                     if getattr(f, "pred", None) is None:
                         f.pred = self._foothold(f, pts, f.last_travel if getattr(f, "last_travel", None) else fwd)
                     off = off + f.pred * _smooth(1.0 - max(0.0, low) / LAND)
@@ -564,17 +593,54 @@ class Planter:
                 # once the foot is coming down it eases off instead of dropping (no dip, no hop)
                 if getattr(f, "forced", 0) > 0:
                     # catch-up step (the body turned or walked off a planted foot): a real little
-                    # step with its own arc, never a slide along the floor
+                    # step drawn in the world from where the foot left the floor. It rises, is
+                    # carried until the cycle's own swing begins (and then simply becomes that
+                    # swing, so there is one arc, not a hop and a step), or sets down if the cycle
+                    # stays in stance too long.
                     k = f.forced_k
-                    lift = max(lift, -low + 0.0002 + STEP_ARC * math.sin(math.pi * (k + 1) / (FSTEP + 1)))
-                    f.forced_k, f.forced = k + 1, f.forced - 1
+                    zr0 = min(p.z for p in pts)
+                    if k == 0:
+                        f.arc_base = zr0 - low + 0.0002
+                    rise, carry, down = 4, 8, 4
+                    if k < rise:
+                        a = STEP_ARC * math.sin(0.5 * math.pi * (k + 1) / rise)
+                    elif f.raw_hint is False:
+                        f.forced, f.falling = 0, False
+                        f.merge_z = getattr(f, "zlast", None)
+                        a = None
+                    elif k < rise + carry:
+                        a = STEP_ARC
+                    else:
+                        t = (k - rise - carry + 1) / down
+                        a = STEP_ARC * max(0.0, math.cos(0.5 * math.pi * min(1.0, t)))
+                    if a is not None:
+                        lift = max(lift, -low + 0.0002 + a * 0.0, getattr(f, "arc_base", zr0) + a - zr0, -low + 0.0002)
+                        f.forced_k = k + 1
+                        f.forced = 0 if k + 1 >= rise + carry + down else FSTEP
+                mz = getattr(f, "merge_z", None)
+                if mz is not None:
+                    # carried at the little step's height until the cycle's own swing passes it
+                    zr0 = min(p.z for p in pts)
+                    if zr0 + max(0.0, lift) >= mz:
+                        f.merge_z = None
+                    else:
+                        lift = mz - zr0
                 prev_lift = getattr(f, "lift", 0.0) if f.swing > 1 else 0.0
+                # rising or falling is judged on the sole's lowest point, not its centre: at
+                # toe-off the centre tips down while the foot as a whole is still going up
                 lift = max(lift, prev_lift if travel.z >= 0 else prev_lift * 0.8)
                 # one arc in the world: once the foot has started down it never climbs again;
                 # it holds its height instead (and only rises if the floor itself comes up to it)
                 zr = min(p.z for p in pts)          # raw sole height this frame (with any slide)
                 z = zr + max(0.0, lift)
+                prog = getattr(self, "swing_progress", {}).get(f.side)
                 if f.swing <= 1:
+                    f.zlast, f.falling = z, False
+                elif prog is not None and prog < 0.5 and not getattr(f, "forced", 0):
+                    # first half of the swing (walk mode knows where in it we are): going up only
+                    if z < f.zlast:
+                        z = f.zlast
+                        lift = z - zr
                     f.zlast, f.falling = z, False
                 else:
                     if z < getattr(f, "zlast", z) - 1e-4:
@@ -583,10 +649,17 @@ class Planter:
                         z = max(f.zlast, zr - low + 0.0002)
                         lift = z - zr
                     f.zlast = z
+                # the clamp may hold the foot below the cycle's own swing height (the raw pose
+                # rising again after the foot has started down), but never closer than 2 mm
+                # to the floor before it lands
+                lift = max(lift, min(0.0, 0.002 - low))
+                f.zpeak = max(getattr(f, "zpeak", 0.0), zr + max(0.0, lift)) if f.swing > 1 else zr + max(0.0, lift)
+                if DEBUG:
+                    print("SWINGDBG", self.scene.frame_current, f.side, round(zr * 1000, 1), round(lift * 1000, 1), round(getattr(f, "zlast", 0) * 1000, 1), prog, getattr(f, "falling", None), getattr(f, "forced", 0))
                 f.lift = max(0.0, lift)
-                if lift <= 0 and not off.length:
+                if abs(lift) < 1e-6 and not off.length:
                     continue
-                move = off + Vector((0, 0, max(0.0, lift)))
+                move = off + Vector((0, 0, lift))
                 self._nudge(f, move)
             done[f.side] = move
             if DEBUG:
@@ -675,14 +748,17 @@ def steps(track, up=0.005, down=0.002, dip=0.008):
             foot lands (the arc sags and rises again), so every swing is one clean arc
     """
     downs, dips, air, peak, sag = [], [], False, 0.0, None
+    t_up, top = 0, 0.0
     for row in track:   # h: height above the floor (touchdowns); z: world height (the arc)
         fr, h, c, z = row[:4]
         body = row[4] if len(row) > 4 else c
         if not air and h > up:
             air, peak, sag = True, z, None
+            t_up, top = fr, h
         elif air:
+            top = max(top, h)
             if h < down:
-                downs.append((fr, c, body))
+                downs.append((fr, c, body, fr - t_up, top))
                 air = False
                 continue
             if z > peak:
@@ -696,7 +772,12 @@ def steps(track, up=0.005, down=0.002, dip=0.008):
     # a short step is only a double step if the body walked on meanwhile: settling or
     # turning on the spot at a stop takes small steps, the way a person shuffles to face
     moved = [(b[2] - a[2]).xy.length for a, b in zip(downs, downs[1:])]
-    double = [downs[i + 1][0] for i, d in enumerate(dist) if med > 0.05 and d < 0.35 * med and moved[i] > 0.35 * med]
+    # ... and only if that touchdown came from a hop, not a step: a short, low flick of the
+    # foot (under 6 frames in the air or under 2 cm up). A full arc that turns the droid on the
+    # spot is a real step even when it lands close by.
+    double = [downs[i + 1][0] for i, d in enumerate(dist)
+              if med > 0.05 and d < 0.35 * med and moved[i] > 0.35 * med
+              and (downs[i + 1][3] < 6 or downs[i + 1][4] < 0.02)]
     return {"steps": len(downs), "double": double, "dips": dips}
 
 

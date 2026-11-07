@@ -304,10 +304,20 @@ class Gait:
             if moving:
                 sgn = 1 if dist > 0 else -1
                 at_rest = not self.rest or any(min(abs(self.phase - r), 1 - abs(self.phase - r)) < 0.011 for r in self.rest)
-                if sgn != getattr(self, "dir", 1) and not at_rest:
+                d0 = getattr(self, "dir", 1)
+                if sgn != d0 and not at_rest:
                     # a swinging leg can't reverse in the air: finish this step the way it was
-                    # going (a short braking step), and walk the other way from both feet down
-                    dist = abs(dist) * getattr(self, "dir", 1)
+                    # going (a short braking step) only as far as the next moment both feet are
+                    # down, then walk the other way from there
+                    step = abs(dist) / self.stride
+                    ahead = [((r - self.phase) * d0) % 1.0 for r in self.rest] if self.rest else []
+                    to_rest = min(ahead) if ahead else 0.0
+                    if to_rest <= step:
+                        self.phase = (self.phase + d0 * to_rest) % 1.0
+                        self.dir = sgn
+                        dist = sgn * (step - to_rest) * self.stride
+                    else:
+                        dist = abs(dist) * d0
                 else:
                     self.dir = sgn
                 self.phase = (self.phase + dist / self.stride) % 1.0
@@ -334,6 +344,20 @@ class Gait:
             n = len(next(iter(self.stance.values())))
             i = int(round(self.phase * n)) % n
             contact = {side: v[i] for side, v in self.stance.items()}
+            # how far through its swing each lifted foot is (0 at lift-off, 1 at touchdown), so
+            # the planter can keep one clean arc: up in the first half, down in the second
+            prog = {}
+            for side, v in self.stance.items():
+                if v[i]:
+                    continue
+                a = i
+                while not v[(a - 1) % n] and (i - a) < n:
+                    a -= 1
+                b = i
+                while not v[(b + 1) % n] and (b - i) < n:
+                    b += 1
+                prog[side] = (i - a + 0.5) / max(1, b - a + 1)
+            self.planter.swing_progress = prog
             if not moving and self.rest and any(min(abs(self.phase - r), 1 - abs(self.phase - r)) < 0.011 for r in self.rest):
                 # standing still: both feet are down, whatever a sampled cycle frame says
                 contact = {side: True for side in contact}
