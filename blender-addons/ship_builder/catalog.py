@@ -111,13 +111,24 @@ def _room_key(sc):
         return []
 
 
+def _snap_pic(name, folder):
+    p = os.path.join(folder, name + ".jpg")
+    return p if os.path.isfile(p) else None
+
+
 def scene_items(prefs):
     """Everything in the open file and scene, each with the best picture we have."""
+    from . import snaps as SN
     out = []
     sc = bpy.context.scene
+    dd = _diagram_dir(prefs)
     for s in bpy.data.scenes:
         keys = _room_key(s)
         th = next((find(prefs, f"room_{k}") for k in keys if find(prefs, f"room_{k}")), None)
+        if th is None:
+            th = _snap_pic(SN.scene_key(s), dd)
+            if th is None and s.camera is not None:
+                SN.want("scene", s.name, None, dd)
         here = " (open)" if s == sc else ""
         out.append(Item("SCENE", f"scene:{s.name}", s.name + here, "Scene: click Use to switch to it", th, None,
                         dict(kind="scene", name=s.name)))
@@ -125,8 +136,8 @@ def scene_items(prefs):
         if o.type == "ARMATURE" and (o.get("sb_droid") or o.get("sb_cast")):
             did = str(o.get("sb_droid") or o.get("sb_cast"))
             name = next((c.name[6:].split(" (")[0] for c in o.users_collection if c.name.startswith("Droid ")), o.name)
-            out.append(Item("SCENE", f"obj:{o.name}", name, "Droid", find(prefs, f"droid_{did}"), find(prefs, f"droid_{did}", movie=True),
-                            dict(kind="droid", name=o.name)))
+            out.append(Item("SCENE", f"obj:{o.name}", name, "Droid", find(prefs, f"droid_{did}", f"pose_{did}_neutral"),
+                            find(prefs, f"droid_{did}", movie=True), dict(kind="droid", name=o.name)))
     seen = set()
     for o in sc.objects:
         pid = o.get("sb_prop")
@@ -136,8 +147,11 @@ def scene_items(prefs):
             out.append(Item("SCENE", f"obj:{o.name}", lab, "Prop", find(prefs, f"prop_{pid}"), None, dict(kind="object", name=o.name)))
     for o in sc.objects:
         if o.type == "CAMERA":
+            th = _snap_pic(SN.cam_key(o), dd)
+            if SN.stale(o, th):
+                SN.want("cam", sc.name, o.name, dd)
             out.append(Item("SCENE", f"obj:{o.name}", o.name, "Camera: Use looks through it",
-                            find(prefs, f"cam_{_safe(o.name)}"), None, dict(kind="camera", name=o.name)))
+                            th, None, dict(kind="camera", name=o.name)))
     return out
 
 

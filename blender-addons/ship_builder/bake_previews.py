@@ -267,12 +267,15 @@ if want("POSES") and KIT:
         pts = [o.matrix_world @ Vector(c) for o in fam if o.type == "MESH" for c in o.bound_box]
         lo = Vector([min(p[i] for p in pts) for i in range(3)])
         hi = Vector([max(p[i] for p in pts) for i in range(3)])
-        c, size = (lo + hi) / 2, (hi - lo).length
+        c, ext = (lo + hi) / 2, hi - lo
         cd = bpy.data.cameras.new("SB Pose Cam")
         cd.lens = 50
         cam = bpy.data.objects.new("SB Pose Cam", cd)
         sc.collection.objects.link(cam)
-        cam.location = c + Vector((0.55, -1.6, 0.3)).normalized() * size * 1.9
+        # fill the frame: the 320x400 picture's height takes the 36 mm sensor (39.6 deg),
+        # its width 0.8 of that; a little room so raised hands stay in shot
+        dist = max(0.62 * ext.z / 0.36, 0.62 * max(ext.x, ext.y) / 0.288)
+        cam.location = c + Vector((0.35, -1.6, 0.25)).normalized() * dist
         cam.rotation_euler = (c - cam.location).to_track_quat("-Z", "Y").to_euler()
         sc.camera = cam
         Li.render_setup(sc, preview=True)

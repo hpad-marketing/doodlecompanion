@@ -152,6 +152,75 @@ def snap_handles():
 
 
 @guard
+def probe():
+    """What fills each part of the view (to find anything that blocks it)."""
+    from bpy_extras import view3d_utils
+    w, a = main_view()
+    reg = next(r for r in a.regions if r.type == "WINDOW")
+    r3 = a.spaces.active.region_3d
+    sc = bpy.context.scene
+    dg = bpy.context.evaluated_depsgraph_get()
+    out = {}
+    for fx, fy in ((0.8, 0.8), (0.7, 0.7), (0.9, 0.6), (0.6, 0.85), (0.3, 0.5)):
+        co = (reg.width * fx, reg.height * fy)
+        o = view3d_utils.region_2d_to_origin_3d(reg, r3, co)
+        d = view3d_utils.region_2d_to_vector_3d(reg, r3, co)
+        hits = []
+        p = o
+        for _ in range(6):
+            hit, loc, n, i, ob, m = sc.ray_cast(dg, p, d)
+            if not hit:
+                break
+            hits.append((ob.name, round((loc - o).length, 2), ob.hide_get(), ob.hide_viewport, ob.get("sb_cut")))
+            p = loc + d * 0.002
+        out[f"{fx},{fy}"] = hits
+    log("probe", hits=out, clip=[a.spaces.active.clip_start, a.spaces.active.clip_end])
+
+
+def _ov(**kw):
+    w, a = main_view()
+    ov = a.spaces.active.overlay
+    for k, v in kw.items():
+        setattr(ov, k, v)
+
+
+@guard
+def probe_near():
+    """Non-mesh things close to the eye, drawn as overlays (the dark wedge hunt)."""
+    w, a = main_view()
+    r3 = a.spaces.active.region_3d
+    eye = r3.view_matrix.inverted().translation
+    near = []
+    for o in bpy.context.scene.objects:
+        if o.type in {"MESH", "CURVE"} or not o.visible_get():
+            continue
+        dd = (o.matrix_world.translation - eye).length
+        if dd < 4.0:
+            near.append((o.name, o.type, round(dd, 2), getattr(o.data, "type", None) if o.data else None,
+                         round(getattr(o.data, "display_size", 0) or getattr(o, "empty_display_size", 0), 2)))
+    log("near the eye", eye=list(eye), near=sorted(near, key=lambda t: t[2])[:30])
+    _ov(show_overlays=False)
+
+
+@guard
+def snap_no_overlays():
+    shot("1b_no_overlays")
+    _ov(show_overlays=True, show_extras=False)
+
+
+@guard
+def snap_no_extras():
+    shot("1c_no_extras")
+    _ov(show_extras=True, show_bones=False)
+
+
+@guard
+def snap_no_bones():
+    shot("1d_no_bones")
+    _ov(show_bones=True)
+
+
+@guard
 def step_move():
     sc = bpy.context.scene
     cam = next((o for o in sc.objects if o.type == "CAMERA" and "Wide" in o.name), None) or sc.camera
@@ -182,7 +251,7 @@ def tab(cat, name):
     def snap():
         shot(name, studio=True)
     set_.__name__, snap.__name__ = "tab_" + cat, "snap_" + cat
-    return [guard(set_), guard(lambda: log("wait")), guard(snap)]
+    return [guard(set_)] + [guard(lambda: log("wait"))] * 4 + [guard(snap)]
 
 
 @guard
@@ -190,7 +259,7 @@ def snap_poses():
     shot("2_poses_tab", studio=True)
 
 
-STEPS = [step_build, step_droids, step_pose, warm_up, warm_up, warm_up, snap_handles, step_move, open_studio, warm_up, warm_up,
+STEPS = [step_build, step_droids, step_pose, warm_up, warm_up, warm_up, snap_handles, probe, probe_near, snap_no_overlays, snap_no_extras, snap_no_bones, step_move, open_studio, warm_up, warm_up,
          snap_poses] + tab("MOVES", "3_camera_moves_tab") + tab("SCENE", "4_in_this_scene_tab") + tab("DROIDS", "5_droids_tab_controls")
 
 

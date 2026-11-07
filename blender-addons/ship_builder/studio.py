@@ -42,6 +42,24 @@ def _builtin(name):
     return bpy.types.UILayout.bl_rna.functions["prop"].parameters["icon"].enum_items[name].value
 
 
+_NUDGE = {"left": 0}
+
+
+def _nudge():
+    """Pictures load in the background: redraw a few times so they replace the spinners."""
+    if _NUDGE["left"] <= 0:
+        bpy.app.timers.register(_redraw_all, first_interval=0.4)
+    _NUDGE["left"] = 6
+
+
+def _redraw_all():
+    for w in bpy.context.window_manager.windows:
+        for a in w.screen.areas:
+            a.tag_redraw()
+    _NUDGE["left"] -= 1
+    return 0.7 if _NUDGE["left"] > 0 else None
+
+
 def icon_for(item):
     pc = _PCOLL["main"]
     if pc is None:
@@ -54,6 +72,7 @@ def icon_for(item):
                     pc.load(key, path, kind)
                 except (RuntimeError, KeyError):
                     continue
+                _nudge()
             return pc[key].icon_id
     return _builtin(dict((c, i) for c, _l, i in Cat.CATEGORIES)[item.cat])
 
