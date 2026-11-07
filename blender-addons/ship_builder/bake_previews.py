@@ -264,19 +264,26 @@ if want("POSES") and KIT:
             ad.action = None
         ok = {k for k, _l in PK.poses_for(rig)}
         fam = [rig] + list(rig.children_recursive)
-        pts = [o.matrix_world @ Vector(c) for o in fam if o.type == "MESH" for c in o.bound_box]
-        lo = Vector([min(p[i] for p in pts) for i in range(3)])
-        hi = Vector([max(p[i] for p in pts) for i in range(3)])
-        c, ext = (lo + hi) / 2, hi - lo
         cd = bpy.data.cameras.new("SB Pose Cam")
         cd.lens = 50
         cam = bpy.data.objects.new("SB Pose Cam", cd)
         sc.collection.objects.link(cam)
-        # fill the frame: the 320x400 picture's height takes the 36 mm sensor (39.6 deg),
-        # its width 0.8 of that; a little room so raised hands stay in shot
-        dist = max(0.62 * ext.z / 0.36, 0.62 * max(ext.x, ext.y) / 0.288)
-        cam.location = c + Vector((0.35, -1.6, 0.25)).normalized() * dist
-        cam.rotation_euler = (c - cam.location).to_track_quat("-Z", "Y").to_euler()
+        back = Vector((0.35, -1.6, 0.25)).normalized()
+        right = Vector((0, 0, 1)).cross(back).normalized()
+        up = back.cross(right).normalized()
+
+        def frame_pose():
+            """Fit the whole posed droid, hands included, with a small margin on every side."""
+            bpy.context.view_layer.update()
+            pts = [o.matrix_world @ Vector(c) for o in fam if o.type == "MESH" and o.visible_get() for c in o.bound_box]
+            lo = Vector([min(p[i] for p in pts) for i in range(3)])
+            hi = Vector([max(p[i] for p in pts) for i in range(3)])
+            c = (lo + hi) / 2
+            # 320x400: height takes the 36 mm sensor at 50 mm (tan 0.36), width 0.8 of it
+            tan_h, tan_w = 0.36 * 0.88, 0.288 * 0.88
+            dist = max(max(abs((p - c).dot(up)) / tan_h, abs((p - c).dot(right)) / tan_w) + (p - c).dot(back) for p in pts)
+            cam.location = c + back * dist
+            cam.rotation_euler = (c - cam.location).to_track_quat("-Z", "Y").to_euler()
         sc.camera = cam
         Li.render_setup(sc, preview=True)
         eevee(sc)
@@ -287,6 +294,7 @@ if want("POSES") and KIT:
             if k not in ok:
                 continue
             PK.apply(rig, k, keyframe=False)
+            frame_pose()
             sc.render.filepath = os.path.join(OUT, f"pose_{d['id']}_{k}.jpg")
             t = time.time()
             bpy.ops.render.render(write_still=True)
