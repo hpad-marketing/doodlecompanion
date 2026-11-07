@@ -229,7 +229,7 @@ def snap_studio():
 
 
 STEPS = [step_build, step_droids, view_outside_on, warm_up, warm_up, warm_up, snap_outside_on, view_outside_off, snap_outside_off,
-         view_above, snap_above, pose_rx, snap_pose, open_studio, warm_up, pose_from_studio, snap_studio]
+         view_above, snap_above, pose_rx, snap_pose, open_studio, warm_up, warm_up, pose_from_studio, warm_up, snap_studio]
 
 
 def tick():

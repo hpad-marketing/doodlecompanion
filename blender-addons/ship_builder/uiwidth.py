@@ -42,12 +42,13 @@ def set_width(area, px, kind="UI"):
             return False
         px = int(min(px, max(120, area.width / max(bpy.context.preferences.system.ui_scale, 0.5) - 160)))
         ctypes.c_short.from_address(reg.as_pointer() + w + 14).value = px
-        # hide and show once so the area lays out again with the new width
-        win = next(wi for wi in bpy.context.window_manager.windows for a in wi.screen.areas if a == area)
-        # a window opened by the studio has a temporary screen, which can't be overridden
-        with bpy.context.temp_override(window=win, area=area, region=reg):
-            bpy.ops.screen.region_toggle(region_type=kind)
-            bpy.ops.screen.region_toggle(region_type=kind)
+        # hide and show once so the area lays out again with the new width (the space's own
+        # switch: no operator, no context override, works in any window)
+        sp = area.spaces.active
+        flag = "show_region_ui" if kind == "UI" else "show_region_toolbar"
+        if hasattr(sp, flag):
+            setattr(sp, flag, False)
+            setattr(sp, flag, True)
         area.tag_redraw()
         return True
     except Exception as e:   # never break the studio over a width
