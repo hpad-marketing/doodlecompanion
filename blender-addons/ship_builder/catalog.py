@@ -192,6 +192,23 @@ def hero_manifest(prefs):
     return d, (m.get("presets", m) if isinstance(m, dict) else m)
 
 
+def _hero_file(d, rel):
+    """Manifest paths are relative to the HeroShip folder (previews/hero_ship/...), not to the
+    previews folder itself: try the folder and the ones above it."""
+    if not rel or not d:
+        return None
+    base = d
+    for _ in range(4):
+        p = os.path.join(base, rel)
+        if os.path.isfile(p):
+            return p
+        up = os.path.dirname(base)
+        if up == base:
+            break
+        base = up
+    return None
+
+
 # ------------------------------------------------------------------ items
 def items(cat, prefs=None, droid=None):
     out = []
@@ -261,8 +278,7 @@ def items(cat, prefs=None, droid=None):
         d, pres = hero_manifest(prefs)
         for p in pres:
             pid = p.get("id")
-            th = os.path.join(d, p["thumb"]) if p.get("thumb") else None
-            mv = os.path.join(d, p["mp4"]) if p.get("mp4") else None
+            th, mv = _hero_file(d, p.get("thumb")), _hero_file(d, p.get("mp4"))
             out.append(Item(cat, pid, p.get("label", pid), f"{p.get('frames', '')} frames", th if th and os.path.isfile(th) else None,
                             mv if mv and os.path.isfile(mv) else None, p))
     return out

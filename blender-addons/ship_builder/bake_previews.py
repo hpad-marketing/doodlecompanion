@@ -176,7 +176,7 @@ if (want("DROIDS") or want("MOTIONS")) and KIT:
             say("missing droid file", d["blend"])
             continue
         acts = Cat.motions(d["blend"]) if (want("MOTIONS") or CATS == "ALL") else []
-        todo = [x for x in acts if not os.path.isfile(os.path.join(OUT, f"motion_{d['id']}_{safe(x)}.mp4"))]
+        todo = [x for x in acts if not all(os.path.isfile(os.path.join(OUT, f"motion_{d['id']}_{safe(x)}{e}")) for e in (".mp4", ".jpg"))]
         if have(f"droid_{d['id']}") and not todo:
             continue
         bpy.ops.wm.open_mainfile(filepath=d["blend"])
