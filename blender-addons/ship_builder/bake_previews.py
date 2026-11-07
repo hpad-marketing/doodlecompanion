@@ -30,7 +30,7 @@ os.makedirs(OUT, exist_ok=True)
 
 
 def want(cat):
-    return CATS in ("ALL", cat)
+    return CATS == "ALL" or cat in CATS.split(",")
 
 
 def have(name):
@@ -103,6 +103,25 @@ if want("ROOMS"):
         cam = next((bpy.data.objects[c["name"]] for c in info["cameras"] if c["label"] != "Ship wide"), None)
         if cam:
             still(sc, cam, f"room_{k}", 432, 540)
+
+# ------------------------------------------------------------------ window views, seen through the lounge window
+if want("VIEWS"):
+    V = importlib.import_module(pkg + ".views")
+    todo = [k for k in V.VIEWS if not have(f"view_{k}")]
+    if todo:
+        sc = fresh()
+        Li.render_setup(sc, preview=True)
+        Li.space_world()
+        info = S.build(["lounge"])
+        Li.camera_finish(sc)
+        if not (sc.world and sc.world.name == V.WORLD):
+            V.build(sc)
+        cam = next((bpy.data.objects[c["name"]] for c in info["cameras"] if c["label"] == "Wide master"), None)
+        for k in todo:
+            if cam is None:
+                break
+            V.set_view(k, sc)
+            still(sc, cam, f"view_{k}", 432, 540)
 
 # ------------------------------------------------------------------ props on a little stage
 if want("PROPS"):

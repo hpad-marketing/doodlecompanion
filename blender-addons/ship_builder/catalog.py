@@ -10,6 +10,7 @@ droid motions are read from the droid's .blend without opening it.
 """
 import json
 import os
+import re
 
 import bpy
 
@@ -156,6 +157,8 @@ def scene_items(prefs):
 
 
 _MOTION_CACHE = {}
+# helper actions saved in droid files (camera moves, dust puffs, object actions): not droid motions
+_JUNK = re.compile(r"(?i)^(camera|dust|.*action(\.\d+)?$)")
 
 
 def motions(blend):
@@ -167,7 +170,7 @@ def motions(blend):
     if hit and hit[0] == mt:
         return hit[1]
     with bpy.data.libraries.load(blend, link=False) as (src, _dst):
-        names = sorted(n for n in src.actions)
+        names = sorted(n for n in src.actions if not _JUNK.match(n))
     _MOTION_CACHE[blend] = (mt, names)
     return names
 
@@ -175,6 +178,9 @@ def motions(blend):
 # ------------------------------------------------------------------ hero ship
 def hero_manifest(prefs):
     d = bpy.path.abspath(getattr(prefs, "hero_dir", "") or "")
+    if not d:   # the hero ship previews live beside the ship builder on the PC
+        root = bpy.path.abspath(getattr(prefs, "deep_root", "") or "")
+        d = os.path.join(root, "Ship", "HeroShip", "previews", "hero_ship") if root else ""
     p = os.path.join(d, "manifest.json")
     if not os.path.isfile(p):
         return d, []
@@ -232,7 +238,10 @@ def items(cat, prefs=None, droid=None):
         ds = droids(prefs)
         d = next((x for x in ds if x["id"] == droid), ds[0] if ds else None)
         did = d["id"] if d else "droid"
+        baked = [k for k in PK.POSES if find(prefs, f"pose_{did}_{k}")]
         for k, (lab, _o, _l) in PK.POSES.items():
+            if baked and k not in baked:     # a pose this droid can't do (no arms, no head) was never baked
+                continue
             out.append(Item(cat, k, lab, f"{d['name'] if d else 'Droid'}: click Use to pose the droid in the scene",
                             find(prefs, f"pose_{did}_{k}") or find(prefs, f"droid_{did}"), None, dict(droid=did)))
     elif cat == "MOVES":
