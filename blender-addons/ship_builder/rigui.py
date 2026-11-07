@@ -101,6 +101,26 @@ def find(rig, keys):
     return None
 
 
+def _select_bone(rig, name):
+    """Select one bone (Blender 5 keeps selection on the pose bone, 4.x on the bone)."""
+    for b in rig.data.bones:
+        pb = rig.pose.bones.get(b.name)
+        for it in (b, pb):
+            if it is not None and hasattr(it, "select"):
+                it.select = False
+        for k in ("select_head", "select_tail"):
+            if hasattr(b, k):
+                setattr(b, k, False)
+    b = rig.data.bones.get(name)
+    if b is None:
+        return
+    pb = rig.pose.bones.get(name)
+    for it in (b, pb):
+        if it is not None and hasattr(it, "select"):
+            it.select = True
+    rig.data.bones.active = b
+
+
 def _view3d(ctx):
     win = ctx.window
     if win is None:
@@ -134,12 +154,7 @@ class SHIP_OT_pose(bpy.types.Operator):
             if self.bone and self.bone != "*":
                 if rig.mode != "POSE":
                     bpy.ops.object.mode_set(mode="POSE")
-                for b in rig.data.bones:
-                    b.select = b.select_head = b.select_tail = False
-                b = rig.data.bones.get(self.bone)
-                if b:
-                    b.select = True
-                    rig.data.bones.active = b
+                _select_bone(rig, self.bone)
             elif self.bone == "*":
                 if rig.mode != "OBJECT":
                     bpy.ops.object.mode_set(mode="OBJECT")

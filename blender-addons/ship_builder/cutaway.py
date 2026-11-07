@@ -14,6 +14,7 @@ from mathutils import Vector
 
 MOUNT = 0.35        # parts within this of a wall plane belong to that wall
 CEIL = 0.6          # parts this close under the ceiling belong to the ceiling
+TAG_V = 2           # sets tagged by an older build are tagged again on first view
 _STATE = {"on": False, "eye": None, "hidden": set()}
 
 
@@ -46,6 +47,11 @@ def tag(scene=None):
             if ob.get("sb_fourth_wall"):
                 ob.hide_viewport = True     # the open front of the set, always
                 continue
+            if ob.get("sb_haze") or ob.get("sb_view_only") or ob.name.startswith("Planet"):
+                ob["sb_cut"] = "open"       # room fog and window scenery: only through the camera
+                ob["sb_room"] = r["name"]
+                n += 1
+                continue
             if ob.type not in {"MESH", "CURVE", "FONT", "LIGHT"} or ob.get("sb_droid") or ob.get("sb_door"):
                 continue
             bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box] if ob.type != "LIGHT" else [ob.matrix_world.translation]
@@ -71,11 +77,18 @@ def tag(scene=None):
                 ob["sb_cut"] = ",".join(sides)
                 ob["sb_room"] = r["name"]
                 n += 1
+    sc["sb_cut_v"] = TAG_V
     return n
 
 
 def _eye():
     """Eye of the biggest 3D view (the camera when it looks through one)."""
+    e = _view()
+    return e[0], e[1]
+
+
+def _view():
+    """(eye, scene, through_camera) of the biggest 3D view."""
     best = None
     for win in bpy.context.window_manager.windows:
         for a in win.screen.areas:
@@ -84,24 +97,27 @@ def _eye():
             r3 = a.spaces.active.region_3d
             if r3 is None:
                 continue
-            if r3.view_perspective == "CAMERA" and win.scene.camera:
+            cam = r3.view_perspective == "CAMERA" and win.scene.camera is not None
+            if cam:
                 eye = win.scene.camera.matrix_world.translation.copy()
             else:
                 eye = r3.view_matrix.inverted().translation.copy()
             if best is None or a.width * a.height > best[0]:
-                best = (a.width * a.height, eye, win.scene)
-    return (best[1], best[2]) if best else (None, None)
+                best = (a.width * a.height, eye, win.scene, cam)
+    return (best[1], best[2], best[3]) if best else (None, None, False)
 
 
-def update(scene=None, eye=None):
+def update(scene=None, eye=None, camera=None):
     from . import ship as S
     if eye is None:
-        eye, scene = _eye()
+        eye, scene, camera = _view()
     if eye is None or scene is None:
         return
     info = S.info(scene)
     if not info:
         return
+    if scene.get("sb_cut_v") != TAG_V:
+        tag(scene)
     on = scene.get("sb_set_view", 1)
     rooms = {r["name"]: r for r in info["rooms"]}
     want = set()
@@ -117,6 +133,8 @@ def update(scene=None, eye=None):
                 cut.add("back")
             if eye.z > r["H"]:
                 cut.add("ceiling")
+            if not camera:
+                cut.add("open")
             r["_cut"] = cut
     vl = bpy.context.view_layer
     for ob in scene.objects:
@@ -138,11 +156,11 @@ def update(scene=None, eye=None):
 def _tick():
     if not _STATE["on"]:
         return None
-    eye, sc = _eye()
-    if eye is not None and (_STATE["eye"] is None or (eye - _STATE["eye"]).length > 0.05):
-        _STATE["eye"] = eye
+    eye, sc, cam = _view()
+    if eye is not None and (_STATE["eye"] is None or (eye - _STATE["eye"]).length > 0.05 or cam != _STATE.get("cam")):
+        _STATE["eye"], _STATE["cam"] = eye, cam
         try:
-            update(sc, eye)
+            update(sc, eye, cam)
         except Exception as e:   # a view helper must never break the studio
             print("Ship Studio set view:", e)
     return 0.15

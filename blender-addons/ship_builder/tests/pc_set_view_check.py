@@ -63,7 +63,8 @@ def shot(name, studio=False):
     for a in w.screen.areas:
         a.tag_redraw()
     a = max(w.screen.areas, key=lambda a: a.width * a.height)
-    with bpy.context.temp_override(window=w, screen=w.screen, area=a):
+    over = dict(window=w, area=a) if studio else dict(window=w, screen=w.screen, area=a)
+    with bpy.context.temp_override(**over):
         bpy.ops.screen.screenshot(filepath=os.path.join(OUT, name + ".png"))
     log("screenshot", file=name + ".png")
 
@@ -89,6 +90,9 @@ def step_build():
     w, a = main_view()
     with bpy.context.temp_override(window=w, screen=w.screen, area=a):
         bpy.ops.screen.screen_full_area()
+    cube = bpy.data.objects.get("Cube")          # the startup file's cube, not part of the set
+    if cube is not None and tuple(cube.dimensions) == (2.0, 2.0, 2.0):
+        bpy.data.objects.remove(cube)
     S.build("deck1", settle=True)
     n = CW.tag(bpy.context.scene)
     log("built deck1", tagged=n, rooms=[r["name"] for r in S.info(bpy.context.scene)["rooms"]])
@@ -109,6 +113,7 @@ def step_droids():
         try:
             St._use_droid(bpy.context, It)
             rig = bpy.context.view_layer.objects.active
+            bpy.context.view_layer.update()
             added.append(dict(id=d["id"], height=round(CF.height(rig), 2), kg=rig.get("foley_mass_kg"),
                               scale=round(rig.get("sb_set_scale", 1), 3),
                               shapes=sum(1 for pb in rig.pose.bones if pb.custom_shape)))
@@ -135,6 +140,11 @@ def view_outside_on():
     r = room0()
     look((r["x"] - r["W"] * 0.9, r["y"] + r["D"] * 1.6, r["H"] * 2.2), (r["x"], r["y"] + r["D"] * 0.45, 0.8))
     log("set view on", hidden=len(CW._STATE["hidden"]))
+
+
+@guard
+def warm_up():
+    log("waiting for shaders")
 
 
 @guard
@@ -179,7 +189,7 @@ def pose_rx():
         bpy.ops.ship.pose(rig=rig.name, bone=RU.find(rig, dict(RU.MAIN)["Right hand"]) or "")
     r = room0()
     p = rig.matrix_world.translation
-    look((p.x + 1.6, p.y - 2.6, 1.9), (p.x, p.y, 0.8))
+    look((p.x + 1.4, p.y - 2.4, 1.7), (p.x, p.y, 0.75))
     log("posing", mode=bpy.context.mode, active=rig.data.bones.active.name if rig.data.bones.active else None)
 
 
@@ -206,7 +216,7 @@ def snap_studio():
     shot("5_studio_droid_controls", studio=True)
 
 
-STEPS = [step_build, step_droids, view_outside_on, snap_outside_on, view_outside_off, snap_outside_off,
+STEPS = [step_build, step_droids, view_outside_on, warm_up, warm_up, warm_up, snap_outside_on, view_outside_off, snap_outside_off,
          view_above, snap_above, pose_rx, snap_pose, open_studio, snap_studio]
 
 
