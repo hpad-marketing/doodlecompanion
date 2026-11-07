@@ -83,6 +83,14 @@ TEMPLATES = {
 }
 
 EMOTIONS = ("calm", "worried", "alarmed", "happy", "annoyed", "sleepy")
+EMOTION_ALIAS = {   # words writers use -> the six faces
+    "scared": "alarmed", "afraid": "alarmed", "frightened": "alarmed", "panicked": "alarmed", "shocked": "alarmed",
+    "surprised": "alarmed", "terrified": "alarmed", "angry": "annoyed", "mad": "annoyed", "grumpy": "annoyed",
+    "irritated": "annoyed", "frustrated": "annoyed", "tired": "sleepy", "bored": "sleepy", "drowsy": "sleepy",
+    "glad": "happy", "cheerful": "happy", "excited": "happy", "proud": "happy", "smug": "happy", "joyful": "happy",
+    "nervous": "worried", "anxious": "worried", "sad": "worried", "unsure": "worried", "confused": "worried",
+    "flat": "calm", "deadpan": "calm", "neutral": "calm", "dry": "calm", "relaxed": "calm",
+}
 WPS = 2.6          # spoken words per second, for the runtime estimate
 LAUGH = 0.9        # default laugh pause after a punchline (V4)
 ACTION_S = 1.6     # an [action] or a plain action line
@@ -141,7 +149,7 @@ def parse(script):
         key = cast_key(m.group(1)) if m else None
         if m and key:
             body = m.group(2)
-            emo = [e.strip().lower() for e in re.findall(r"\(([^)]*)\)", body)]
+            emo = [EMOTION_ALIAS.get(e.strip().lower(), e.strip().lower()) for e in re.findall(r"\(([^)]*)\)", body)]
             acts = [a.strip() for a in re.findall(r"\[([^\]]*)\]", body)]
             spoken = re.sub(r"\[[^\]]*\]|\([^)]*\)", "", body).strip()
             ln = {"kind": "dialogue", "who": key, "text": spoken, "emotion": next((e for e in emo if e in EMOTIONS), emo[0] if emo else "calm"),
@@ -285,7 +293,10 @@ class Episode:
         self.data["stations"][key] = state
 
     def progress(self):
-        return [(s, self.data["stations"].get(s, "todo")) for s in STATIONS]
+        """A station counts as done once a later one has started: the work moved on."""
+        raw = [(s, self.data["stations"].get(s, "todo")) for s in STATIONS]
+        last = max((i for i, (_s, st) in enumerate(raw) if st != "todo"), default=-1)
+        return [(s, "done" if st == "doing" and i < last else st) for i, (s, st) in enumerate(raw)]
 
     def next_station(self):
         return next((s for s, st in self.progress() if st != "done"), "publish")

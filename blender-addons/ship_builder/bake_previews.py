@@ -190,6 +190,8 @@ if (want("DROIDS") or want("MOTIONS")) and KIT:
             sc.frame_start, sc.frame_end, sc.frame_step = f0, max(f0 + 1, f1), 1
             sc.camera = cam
             sc.render.resolution_x = sc.render.resolution_y = 320
+            if hasattr(sc.render.image_settings, "media_type"):   # Blender 5.x
+                sc.render.image_settings.media_type = "VIDEO"
             sc.render.image_settings.file_format = "FFMPEG"
             sc.render.ffmpeg.format = "MPEG4"
             sc.render.ffmpeg.codec = "H264"

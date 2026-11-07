@@ -66,16 +66,18 @@ def st(ctx=None):
 
 
 # ------------------------------------------------------------------ picture chips (generated images)
-def chip(name, rgb, size=64):
-    """A flat colour picture used where a library has no thumbnail yet (cast, emotions, events)."""
-    key = f"SB Chip {name}"
-    im = bpy.data.images.get(key)
-    if im is None:
-        im = bpy.data.images.new(key, size, size)
-        im.generated_color = (*rgb[:3], 1)
-        im.use_fake_user = True
-    im.preview_ensure()
-    return im.preview.icon_id
+def chip(name, rgb, size=32):
+    """A flat colour picture used where a library has no thumbnail yet (cast, emotions,
+    events). A preview, not an image datablock, so it can be made while the panel draws."""
+    pc = _studio()._PCOLL["main"]
+    if pc is None:
+        return 0
+    key = f"chip|{name}|{tuple(round(c, 3) for c in rgb[:3])}"
+    if key not in pc:
+        pv = pc.new(key)
+        pv.image_size = (size, size)
+        pv.image_pixels_float = [*rgb[:3], 1.0] * (size * size)
+    return pc[key].icon_id
 
 
 def picture(path, fallback_rgb=(0.3, 0.3, 0.32)):
@@ -200,6 +202,9 @@ def droid_voice():
     for name, mod in list(sys.modules.items()):
         if name.endswith("droid_voice.voice") and hasattr(mod, "speak"):
             return mod
+    mods = bpy.utils.user_resource("SCRIPTS", path="modules")
+    if os.path.isdir(os.path.join(mods, "droid_voice")) and mods not in sys.path:
+        sys.path.append(mods)   # installed after Blender started: not on the path until a restart
     try:
         import droid_voice.voice as v   # noqa
         return v
@@ -223,6 +228,11 @@ class SHIP_OT_station(bpy.types.Operator):
             _show_script(ctx)
         else:
             _show_preview(ctx)
+        e = ep()
+        if e and self.station in ("STAGE", "PERFORM", "CHECK") and ctx.window:
+            sh = _shot_at(e, ctx.scene.frame_current)
+            if sh:   # show the set itself, through the shot's camera
+                bpy.ops.ship.ep_jump(shot=sh["id"])
         sync_layers(ctx)
         return {"FINISHED"}
 
@@ -254,15 +264,38 @@ def _show_script(ctx):
     sp.show_line_numbers = True
     sp.show_word_wrap = True
     sp.font_size = 16
+    from . import uiwidth
+    uiwidth.later(a, _studio().SIDEBAR_PX)
+
+
+def _show_still(area):
+    """The preview shows the still of the shot under the playhead, once stills exist."""
+    e = ep()
+    if not e or area.type != "IMAGE_EDITOR":
+        return
+    sh = _shot_at(e, bpy.context.scene.frame_current)
+    p = e.path("work", "stills", sh["id"] + ".png") if sh else None
+    if p and os.path.isfile(p):
+        im = bpy.data.images.load(p, check_existing=True)
+        im.reload()
+        im["sb_preview"] = 1
+        area.spaces.active.image = im
+        _studio()._fit_later(area)
 
 
 def _show_preview(ctx):
     a = _preview_area(ctx)
+    if a and a.type == "IMAGE_EDITOR":
+        _show_still(a)
     if a and a.type == "TEXT_EDITOR":
         a.ui_type = "IMAGE_EDITOR"
         sp = a.spaces.active
         sp.image = _studio()._placeholder()
         sp.show_region_ui = True
+        _show_still(a)
+        from . import uiwidth
+        uiwidth.later(a, _studio().SIDEBAR_PX)
+        _studio()._fit_later(a)
 
 
 class SHIP_OT_ep_new(bpy.types.Operator):
@@ -580,8 +613,18 @@ class SHIP_OT_ep_jump(bpy.types.Operator):
             cam = bpy.data.objects.get(s.get("camera") or "")
             if cam:
                 sc.camera = cam
-        ctx.scene.frame_set(int(round(s["start"] * 24)) + 1)
+            for a in ctx.window.screen.areas:   # the live view looks through the shot's camera
+                if a.type == "VIEW_3D":
+                    a.spaces.active.region_3d.view_perspective = "CAMERA"
+                    a.tag_redraw()
+        (sc or ctx.scene).frame_set(int(round(s["start"] * 24)) + 1)
         return {"FINISHED"}
+
+
+def _shot_at(e, frame, fps=24):
+    t = (frame - 1) / fps
+    shots = [x for x in e.data.get("shots", []) if bpy.data.scenes.get(x.get("scene_name") or "")]
+    return next((x for x in shots if x["start"] <= t < x["end"]), shots[0] if shots else None)
 
 
 class SHIP_OT_ep_exterior(bpy.types.Operator):
@@ -636,6 +679,8 @@ class SHIP_OT_ep_animatic(bpy.types.Operator):
         ctx.window.scene = ed
         r = ed.render
         r.resolution_x, r.resolution_y, r.resolution_percentage = 960, 540, 100
+        if hasattr(r.image_settings, "media_type"):   # Blender 5.x
+            r.image_settings.media_type = "VIDEO"
         r.image_settings.file_format = "FFMPEG"
         r.ffmpeg.format, r.ffmpeg.codec, r.ffmpeg.audio_codec = "MPEG4", "H264", "AAC"
         r.filepath = e.path("work", e.name + "_animatic.mp4")
@@ -980,20 +1025,27 @@ def draw_bar(L, ctx):
     s = st(ctx)
     e = ep()
     row = L.row(align=True)
-    row.scale_y = 1.45
+    row.scale_y = 1.3
     for key, lab, ic in (("LIBRARY", "Library", "ASSET_MANAGER"), ("BOARD", "Episodes", "SEQ_STRIP_DUPLICATE")):
         row.operator("ship.station", text=lab, icon=ic, depress=s.station == key).station = key
-    row.separator()
-    prog = dict(e.progress()) if e else {}
-    for n, sk in enumerate(E.STATIONS):
-        icon = RING[prog.get(sk, "todo")] if e else STATION_ICON[sk.upper()]
-        sub = row.row(align=True)
-        sub.enabled = e is not None
-        sub.operator("ship.station", text=f"{n + 1} {E.STATION_LABEL[sk]}", icon=icon, depress=s.station == sk.upper()).station = sk.upper()
     if e:
-        r = L.row()
-        r.label(text=f"{e.name.replace('_', ' ')}  ·  next: {E.STATION_LABEL[e.next_station()]}", icon="FILE_MOVIE")
-        r.operator("ship.ep_rough", icon="PLAY")
+        row.operator("ship.ep_rough", text="Rough cut", icon="PLAY")
+    # the seven stations in two even rows, so every name reads in full
+    prog = dict(e.progress()) if e else {}
+    rows = (E.STATIONS[:4], E.STATIONS[4:])
+    n = 0
+    for part in rows:
+        row = L.row(align=True)
+        row.scale_y = 1.45
+        row.enabled = e is not None
+        for sk in part:
+            n += 1
+            icon = RING[prog.get(sk, "todo")] if e else STATION_ICON[sk.upper()]
+            row.operator("ship.station", text=f"{n} {E.STATION_LABEL[sk]}", icon=icon, depress=s.station == sk.upper()).station = sk.upper()
+        if len(part) < 4:
+            row.label(text="")
+    if e:
+        L.label(text=f"{e.name.replace('_', ' ')}  ·  next: {E.STATION_LABEL[e.next_station()]}", icon="FILE_MOVIE")
     if busy() or _JOBS["log"]:
         L.label(text=_JOBS["label"] + "..." if busy() else _JOBS["log"], icon="SORTTIME" if busy() else "INFO")
 
@@ -1002,7 +1054,7 @@ def draw_board(L, ctx):
     s = st(ctx)
     L.label(text="New episode: pick a template card", icon="ADD")
     L.prop(s, "new_title")
-    g = L.grid_flow(row_major=True, columns=5, even_columns=True, align=False)
+    g = L.grid_flow(row_major=True, columns=3, even_columns=True, align=False)
     for k, t in E.TEMPLATES.items():
         c = g.column(align=True)
         c.template_icon(icon_value=room_icon(t["rooms"][0]) if t["rooms"] else chip("blank", (0.12, 0.12, 0.13)), scale=4.0)
@@ -1199,18 +1251,22 @@ def draw_check(L, ctx):
     r.operator("ship.ep_stills", icon="RENDER_STILL")
     r.operator("ship.ep_approve", icon="CHECKMARK")
     chk = e.data.get("check", {})
-    g = L.grid_flow(row_major=True, columns=6, even_columns=True, align=True)
+    g = L.grid_flow(row_major=True, columns=3, even_columns=True, align=True)
     for k, lab in F.CHIPS:
         issues = chk.get(k)
-        c = g.column(align=True)
-        c.label(text=lab, icon="QUESTION" if issues is None else ("CHECKMARK" if not issues else "ERROR"))
-        if issues:
-            c.label(text=f"{len(issues)}")
-            for sid, note in issues[:3]:
-                if sid:
-                    c.operator("ship.ep_jump", text=sid).shot = sid
-                else:
-                    c.label(text=note[:30])
+        g.label(text=lab + (f" ({len(issues)})" if issues else ""),
+                icon="QUESTION" if issues is None else ("CHECKMARK" if not issues else "ERROR"))
+    # what to look at, one row each, with a jump to the shot
+    shown = 0
+    for k, lab in F.CHIPS:
+        for sid, note in (chk.get(k) or [])[:4]:
+            r = L.row(align=True)
+            if sid:
+                r.operator("ship.ep_jump", text=sid, icon="VIEW_CAMERA").shot = sid
+            r.label(text=str(note))
+            shown += 1
+    if shown:
+        L.separator()
     L.label(text="Stills: click to pin a note, tick to approve", icon="IMAGE")
     g = L.grid_flow(row_major=True, columns=4, even_columns=True)
     stills = e.path("work", "stills")

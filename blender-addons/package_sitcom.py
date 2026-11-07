@@ -62,7 +62,7 @@ if cy:
         cy.preferences.compute_device_type = "OPTIX"
         cy.preferences.get_devices()
         for d in cy.preferences.devices:
-            d.use = True
+            d.use = d.type == "OPTIX"
     except Exception as e:
         print("optix", e)
 bpy.ops.wm.save_userpref()

@@ -122,12 +122,34 @@ def cast_object(sc, key, prefs=None):
     return _stand_in(sc, key)
 
 
+NOD_BONES = ("chest", "spine", "torso", "neck", "head")
+
+
+def _nod(ob, fr, strength):
+    """A beat on a stressed word: the upper body nods a few degrees and settles.
+    Only bones move; the droid's feet and base stay where they stand (a whole
+    droid dipping would push it into the floor). Stand-ins have no upper body,
+    so they keep still."""
+    if ob.type != "ARMATURE" or ob.pose is None:
+        return
+    pb = next((b for key in NOD_BONES for b in ob.pose.bones if key in b.name.lower()), None)
+    if pb is None:
+        return
+    pb.rotation_mode = "XYZ"
+    x0 = pb.rotation_euler.x
+    pb.keyframe_insert("rotation_euler", index=0, frame=fr - 2)
+    pb.rotation_euler.x = x0 + math.radians(4.0) * strength
+    pb.keyframe_insert("rotation_euler", index=0, frame=fr + 1)
+    pb.rotation_euler.x = x0
+    pb.keyframe_insert("rotation_euler", index=0, frame=fr + 5)
+
+
 # ------------------------------------------------------------------ marks
 def marks(info, n, seed=1):
     """n floor marks in the room's open floor, spread across the middle third,
     clear of the furniture (pathing grid), in a gentle arc facing the camera side."""
     r = info["rooms"][0]
-    grid = PA.Grid.from_scene(bpy.context.scene, radius=0.35, step_max=0.012, head=2.4)
+    grid = PA.Grid.from_scene(bpy.context.scene, radius=0.35, step_max=0.012, head=2.4, walkable=())
     out = []
     span = min(r["W"] * 0.5, 0.9 * max(1, n))
     for k in range(n):
@@ -437,11 +459,7 @@ def apply_acting(ep):
             if layers["gestures"]["on"] and ls:
                 for a in ls.get("accents", [])[:6]:
                     fr = f0 + int(a * FPS / max(1, ls.get("fps", FPS)))
-                    z0 = spk.location.z
-                    spk.location.z = z0 - 0.012 * layers["gestures"]["strength"]
-                    spk.keyframe_insert("location", index=2, frame=fr)
-                    spk.location.z = z0
-                    spk.keyframe_insert("location", index=2, frame=fr + 4)
+                    _nod(spk, fr, layers["gestures"]["strength"])
             emo = F.line_emotion(ep, ln)
             spk["sb_emotion"] = emo
             spk["sb_pose_set"] = F.emotion_look(emo)["pose_set"]

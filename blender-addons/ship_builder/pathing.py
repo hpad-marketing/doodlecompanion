@@ -4,8 +4,9 @@
     pts = g.path((x0, y0), (x1, y1))          -> [Vector, ...] corner points, or [] if no way
 
 The grid is a top-down occupancy map of the set (10 cm cells). Anything that
-stands between ankle and head height is an obstacle; low things a droid steps
-onto (charge pads, the repair dais, the viewing step, floor paint) are not.
+stands between ankle and head height is an obstacle, debris and machine bases
+included; things made to be stepped onto (charge pads, the repair dais, the
+viewing step, walkway tiles, floor paint) are not.
 Obstacles are grown by the droid's radius so a path keeps its body clear.
 Door leaves never block: walk mode opens doors as a droid reaches them.
 
@@ -19,6 +20,11 @@ from mathutils import Vector
 CELL = 0.1
 STEP_MAX = 0.15     # tops at or below this are stepped onto, not walked around
 HEAD = 1.6          # things wholly above this are overhead
+LOW = 0.012         # walking: anything taller than this is stepped over or around ...
+WALKABLE = ("Charge Pad", "Dais", "Viewing Step", "Walkway Tile", "Door Bottom", "Sill", "Rug", "Floor Mat", "Grate")
+# ... unless it is made to be stood on (pads, the dais, the viewing step, tiles, sills, rugs).
+# Debris, machine bases, casters and pallet runners are walked around, the way a careful
+# droid would, so no foot lands on the edge of a drill base or a crumpled can.
 
 
 def _is_door_leaf(ob):
@@ -38,9 +44,10 @@ class Grid:
         self.block = bytearray(self.nx * self.ny)
 
     @classmethod
-    def from_scene(cls, scene=None, radius=0.28, skip=(), step_max=STEP_MAX, head=HEAD):
-        """step_max/head: the band that blocks. Standing marks use a lower step (stand on flat floor)
-        and a taller head (the tallest droid)."""
+    def from_scene(cls, scene=None, radius=0.28, skip=(), step_max=LOW, head=HEAD, walkable=WALKABLE):
+        """step_max/head: the band that blocks. Things named in `walkable` never block up to
+        STEP_MAX (they are made to be stepped onto). Standing marks pass walkable=() so a droid
+        stands on flat floor, and a taller head (the tallest droid)."""
         scene = scene or bpy.context.scene
         boxes = []
         for ob in scene.objects:
@@ -53,6 +60,8 @@ class Grid:
             bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
             zs = [v.z for v in bb]
             if max(zs) <= step_max or min(zs) >= head:
+                continue
+            if max(zs) <= STEP_MAX and ob.name.startswith(tuple(walkable)):
                 continue
             xs, ys = [v.x for v in bb], [v.y for v in bb]
             if max(xs) - min(xs) > 30 or max(ys) - min(ys) > 30:  # sky domes, planets

@@ -636,8 +636,11 @@ class Planter:
                 prog = getattr(self, "swing_progress", {}).get(f.side)
                 if f.swing <= 1:
                     f.zlast, f.falling = z, False
-                elif prog is not None and prog < 0.5 and not getattr(f, "forced", 0):
-                    # first half of the swing (walk mode knows where in it we are): going up only
+                elif prog is not None and prog < 0.5 and not getattr(f, "forced", 0) and not getattr(f, "falling", False):
+                    # first half of the swing (walk mode knows where in it we are): going up only.
+                    # A foot already on its way down stays on the way down even if the cycle
+                    # restarts the swing (the walk reverses or the droid backs off a use point):
+                    # it holds, then lands, instead of dipping and rising again.
                     if z < f.zlast:
                         z = f.zlast
                         lift = z - zr

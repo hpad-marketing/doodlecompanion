@@ -461,7 +461,31 @@ class SHIP_OT_open(bpy.types.Operator):
             except RuntimeError:
                 pass
         state(ctx).cat = state(ctx).cat or "SETS"
+        from . import uiwidth
+        uiwidth.later(left, SIDEBAR_PX)
+        _fit_later(left)
         return {"FINISHED"}
+
+
+SIDEBAR_PX = 460
+
+
+def _fit_later(area):
+    ptr = area.as_pointer()
+
+    def go():
+        for win in bpy.context.window_manager.windows:
+            for a in win.screen.areas:
+                if a.as_pointer() == ptr and a.type == "IMAGE_EDITOR":
+                    reg = next((r for r in a.regions if r.type == "WINDOW"), None)
+                    if reg is not None and reg.width > 1:
+                        with bpy.context.temp_override(window=win, screen=win.screen, area=a, region=reg):
+                            try:
+                                bpy.ops.image.view_all(fit_view=True)
+                            except RuntimeError:
+                                pass
+        return None
+    bpy.app.timers.register(go, first_interval=0.6)
 
 
 # ------------------------------------------------------------------ library panel
