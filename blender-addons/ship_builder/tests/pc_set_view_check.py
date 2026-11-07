@@ -212,12 +212,24 @@ def open_studio():
 
 
 @guard
+def pose_from_studio():
+    w = G["studio"]
+    a = max((a for a in w.screen.areas if a.type == "VIEW_3D"), key=lambda a: a.width * a.height)
+    tr = next((r for r in RU.droids(bpy.context.scene) if r is not G["rx"]), G["rx"])
+    with bpy.context.temp_override(window=w, area=a):
+        bpy.ops.ship.pose(rig=tr.name, bone=RU.find(tr, dict(RU.MAIN)["Head"]) or RU.find(tr, dict(RU.MAIN)["Body"]) or "")
+    side = next((r for r in w.screen.areas if r.type == "IMAGE_EDITOR"), None)
+    ui = next((g for g in side.regions if g.type == "UI"), None) if side else None
+    log("posed from studio", rig=RU.label(tr), mode=bpy.context.mode, sidebar=ui.width if ui else None)
+
+
+@guard
 def snap_studio():
     shot("5_studio_droid_controls", studio=True)
 
 
 STEPS = [step_build, step_droids, view_outside_on, warm_up, warm_up, warm_up, snap_outside_on, view_outside_off, snap_outside_off,
-         view_above, snap_above, pose_rx, snap_pose, open_studio, snap_studio]
+         view_above, snap_above, pose_rx, snap_pose, open_studio, warm_up, pose_from_studio, snap_studio]
 
 
 def tick():

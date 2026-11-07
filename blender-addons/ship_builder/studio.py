@@ -144,7 +144,7 @@ def show_preview(item):
         reg = next((r for r in a.regions if r.type == "WINDOW"), None)
         if win and reg:  # fill the preview area with the picture
             try:
-                with bpy.context.temp_override(window=win, screen=win.screen, area=a, region=reg):
+                with bpy.context.temp_override(window=win, area=a, region=reg):
                     bpy.ops.image.view_all(fit_view=True)
             except RuntimeError:
                 pass
@@ -483,7 +483,7 @@ def _fit_later(area):
                 if a.as_pointer() == ptr and a.type == "IMAGE_EDITOR":
                     reg = next((r for r in a.regions if r.type == "WINDOW"), None)
                     if reg is not None and reg.width > 1:
-                        with bpy.context.temp_override(window=win, screen=win.screen, area=a, region=reg):
+                        with bpy.context.temp_override(window=win, area=a, region=reg):
                             try:
                                 bpy.ops.image.view_all(fit_view=True)
                             except RuntimeError:

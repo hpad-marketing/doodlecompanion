@@ -93,6 +93,14 @@ def droids(scene):
     return [o for o in scene.objects if o.type == "ARMATURE" and (o.get("sb_droid") or o.get("sb_cast"))]
 
 
+def label(rig):
+    """The droid's own name (RX-07), not its rig object's (RobotRig)."""
+    for c in rig.users_collection:
+        if c.name.startswith("Droid "):
+            return c.name[6:].split(".")[0]
+    return rig.get("sb_cast") or rig.name.split(".")[0]
+
+
 def find(rig, keys):
     names = {b.name.lower(): b.name for b in rig.data.bones}
     for k in keys:
@@ -149,7 +157,7 @@ class SHIP_OT_pose(bpy.types.Operator):
             o.select_set(False)
         rig.select_set(True)
         vl.objects.active = rig
-        over = dict(window=win, screen=win.screen, area=area, region=next(r for r in area.regions if r.type == "WINDOW")) if area else {}
+        over = dict(window=win, area=area, region=next(r for r in area.regions if r.type == "WINDOW")) if area else {}
         with ctx.temp_override(**over):
             if self.bone and self.bone != "*":
                 if rig.mode != "POSE":
@@ -228,7 +236,7 @@ def draw_controls(L, ctx):
         col = box.column(align=True)
         r = col.row(align=True)
         r.scale_y = 1.3
-        r.operator("ship.pose", text=f"Pose {rig.name.split('.')[0]}", icon="POSE_HLT", depress=rig.mode == "POSE").rig = rig.name
+        r.operator("ship.pose", text=f"Pose {label(rig)}", icon="POSE_HLT", depress=rig.mode == "POSE").rig = rig.name
         o = r.operator("ship.pose", text="Move whole", icon="OBJECT_ORIGIN")
         o.rig, o.bone = rig.name, "*"
         r.operator("ship.pose_reset", text="", icon="LOOP_BACK").rig = rig.name

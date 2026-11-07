@@ -44,7 +44,8 @@ def set_width(area, px, kind="UI"):
         ctypes.c_short.from_address(reg.as_pointer() + w + 14).value = px
         # hide and show once so the area lays out again with the new width
         win = next(wi for wi in bpy.context.window_manager.windows for a in wi.screen.areas if a == area)
-        with bpy.context.temp_override(window=win, screen=win.screen, area=area, region=reg):
+        # a window opened by the studio has a temporary screen, which can't be overridden
+        with bpy.context.temp_override(window=win, area=area, region=reg):
             bpy.ops.screen.region_toggle(region_type=kind)
             bpy.ops.screen.region_toggle(region_type=kind)
         area.tag_redraw()
