@@ -1,0 +1,9 @@
+﻿{
+    "dia2 cuda":  "2.9.1+cu128 12.8 True NVIDIA GeForce RTX 5080",
+    "dia2":  "ok",
+    "zonos cuda":  "2.11.0+cu128 12.8 True NVIDIA GeForce RTX 5080",
+    "zonos":  "ok",
+    "orpheus cuda":  "2.11.0+cu128 12.8 True NVIDIA GeForce RTX 5080",
+    "orpheus":  "ok",
+    "openvoice":  "FAILED: exit 1 from: uv pip install --python \"$d\\venv\\Scripts\\python.exe\" -e \"$d\\repo\" \"git+https://github.com/myshell-ai/MeloTTS.git\""
+}

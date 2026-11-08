@@ -24,6 +24,8 @@ if ($DataRoot) {
   if ($e -and -not $e.LinkType) { if (@(Get-ChildItem $e.FullName -Force).Count) { throw "$Home_\engines already has files; move them to $DataRoot\engines first" }; Remove-Item $e.FullName }
   if (-not (Test-Path "$Home_\engines")) { New-Item -ItemType Junction -Path "$Home_\engines" -Target "$DataRoot\engines" | Out-Null }
   $env:UV_CACHE_DIR = "$DataRoot\uv-cache"; $env:PIP_CACHE_DIR = "$DataRoot\pip-cache"
+  # uv-managed Pythons too (a half-written 3.10 under %APPDATA%\uv broke "uv venv")
+  $env:UV_PYTHON_INSTALL_DIR = "$DataRoot\uv-python"
 }
 New-Item -ItemType Directory -Force -Path "$Home_\engines" | Out-Null
 # Engine model downloads (Hugging Face) stay inside the engines folder, per runner env only.
@@ -41,7 +43,17 @@ function Step($name, [scriptblock]$body) {
 }
 function Need-Uv { if (-not (Get-Command uv -ErrorAction SilentlyContinue)) { powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"; $env:Path = "$env:USERPROFILE\.local\bin;$env:Path" } }
 # Run a native command and fail the step on a non-zero exit code.
-function N([scriptblock]$cmd) { $global:LASTEXITCODE = 0; & $cmd; if ($LASTEXITCODE) { throw "exit $LASTEXITCODE from: $($cmd.ToString().Trim())" } }
+# Retries: PyPI downloads on Sushi drop now and then.
+$env:UV_HTTP_TIMEOUT = "300"; $env:UV_HTTP_RETRIES = "10"
+function N([scriptblock]$cmd, [int]$tries = 3) {
+  for ($i = 1; $i -le $tries; $i++) {
+    $global:LASTEXITCODE = 0; & $cmd
+    if (-not $LASTEXITCODE) { return }
+    Write-Host "attempt $i/$tries failed (exit $LASTEXITCODE): $($cmd.ToString().Trim())" -ForegroundColor DarkYellow
+    Start-Sleep -Seconds (10 * $i)
+  }
+  throw "exit $LASTEXITCODE from: $($cmd.ToString().Trim())"
+}
 function Need-Git { if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "git not found" } }
 # RTX 5080 (Blackwell, sm_120) needs CUDA 12.8 PyTorch wheels.
 $TorchIdx = "https://download.pytorch.org/whl/cu128"
