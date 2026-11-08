@@ -1,0 +1,121 @@
+{
+  "status": {
+    "kokoro": [
+      true,
+      "ready"
+    ],
+    "espeak": [
+      true,
+      "ready"
+    ],
+    "voicebox": [
+      false,
+      "Voicebox isn't running (open the app on this PC)"
+    ],
+    "dia2": [
+      true,
+      "ready (GPU)"
+    ],
+    "zonos": [
+      true,
+      "ready (GPU)"
+    ],
+    "orpheus": [
+      true,
+      "ready (GPU)"
+    ],
+    "openvoice": [
+      false,
+      "OpenVoice V2 (MyShell) isn't installed on this PC"
+    ]
+  },
+  "vram_baseline_mb": 1747,
+  "lines": [
+    {
+      "engine": "kokoro",
+      "droid": "hazard",
+      "ok": true,
+      "secs": 1.5,
+      "secs_second_line": 0.6,
+      "vram_start_mb": 1747,
+      "vram_peak_mb": 1747,
+      "vram_delta_mb": 0,
+      "robot": "C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\lines\\hazard\\e1b836bb214b0821_robot.wav",
+      "duration": 3.43
+    },
+    {
+      "engine": "espeak",
+      "droid": "rx07",
+      "ok": true,
+      "secs": 1.1,
+      "secs_second_line": 0.1,
+      "vram_start_mb": 1746,
+      "vram_peak_mb": 1746,
+      "vram_delta_mb": 0,
+      "robot": "C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\lines\\rx07\\1b247becd735550e_robot.wav",
+      "duration": 3.22
+    },
+    {
+      "engine": "voicebox:qwen_voice_design",
+      "droid": "hazard",
+      "ok": false,
+      "secs": 2.1,
+      "vram_start_mb": 1746,
+      "vram_peak_mb": 1746,
+      "error": "No voice engine available. voicebox:qwen_voice_design: Voicebox isn't running (open the app on this PC)",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 57, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. voicebox:qwen_voice_design: Voicebox isn't running (open the app on this PC)\n"
+    },
+    {
+      "engine": "voicebox:chatterbox_turbo",
+      "droid": "drone",
+      "ok": false,
+      "secs": 2.0,
+      "vram_start_mb": 1744,
+      "vram_peak_mb": 1744,
+      "error": "No voice engine available. voicebox:chatterbox_turbo: Voicebox isn't running (open the app on this PC)",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 57, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. voicebox:chatterbox_turbo: Voicebox isn't running (open the app on this PC)\n"
+    },
+    {
+      "engine": "dia2",
+      "droid": "hazard",
+      "ok": true,
+      "secs": 725.6,
+      "secs_second_line": 17.9,
+      "vram_start_mb": 1744,
+      "vram_peak_mb": 11294,
+      "vram_delta_mb": 9550,
+      "robot": "C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\lines\\hazard\\4de9306acb99dd87_robot.wav",
+      "duration": 4.48
+    },
+    {
+      "engine": "zonos",
+      "droid": "computer",
+      "ok": false,
+      "secs": 327.2,
+      "vram_start_mb": 2311,
+      "vram_peak_mb": 6071,
+      "error": "ler_exist_windows\n    raise RuntimeError(f\"Compiler: {compiler} is not found.\") from exc\ntorch._inductor.exc.InductorError: RuntimeError: Compiler: cl is not found.\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n\n\nGenerating:   0%|          | 0/2588 [00:05<?, ?it/s]\n",
+      "trace": "\\_voice\\src\\blender-addons\\droid_voice\\engines\\runner.py\", line 58, in synth\n    raise RuntimeError(f\"{self.LABEL} failed: {(p.stderr or p.stdout)[-600:]}\")\nRuntimeError: Zonos v0.1 (Zyphra) failed: mpiler\n    check_compiler_exist_windows(compiler)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\engines\\zonos\\venv\\Lib\\site-packages\\torch\\_inductor\\cpp_builder.py\", line 142, in check_compiler_exist_windows\n    raise RuntimeError(f\"Compiler: {compiler} is not found.\") from exc\ntorch._inductor.exc.InductorError: RuntimeError: Compiler: cl is not found.\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n\n\nGenerating:   0%|          | 0/2588 [00:05<?, ?it/s]\n\n"
+    },
+    {
+      "engine": "orpheus",
+      "droid": "drone",
+      "ok": false,
+      "secs": 23.1,
+      "vram_start_mb": 2004,
+      "vram_peak_mb": 2004,
+      "error": "-ft.\n401 Client Error. (Request ID: Root=1-6aefc33d-0deaf2a045dfafa17445b09e;e41903ab-eb47-499f-b22b-ec0ee44a03ec)\n\nCannot access gated repo for url https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/resolve/4206a56e5a68cf6cf96900a8a78acd3370c02eb6/config.json.\nAccess to model canopylabs/orpheus-3b-0.1-ft is restricted. You must have access to it and be authenticated to access it. Please log in.\n",
+      "trace": "ce\\src\\blender-addons\\droid_voice\\engines\\runner.py\", line 58, in synth\n    raise RuntimeError(f\"{self.LABEL} failed: {(p.stderr or p.stdout)[-600:]}\")\nRuntimeError: Orpheus 3B (Canopy Labs) failed: nsformers\\utils\\hub.py\", line 610, in cached_files\n    raise OSError(\nOSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/canopylabs/orpheus-3b-0.1-ft.\n401 Client Error. (Request ID: Root=1-6aefc33d-0deaf2a045dfafa17445b09e;e41903ab-eb47-499f-b22b-ec0ee44a03ec)\n\nCannot access gated repo for url https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/resolve/4206a56e5a68cf6cf96900a8a78acd3370c02eb6/config.json.\nAccess to model canopylabs/orpheus-3b-0.1-ft is restricted. You must have access to it and be authenticated to access it. Please log in.\n\n"
+    },
+    {
+      "engine": "openvoice",
+      "droid": "computer",
+      "ok": false,
+      "secs": 0.0,
+      "vram_start_mb": 2004,
+      "vram_peak_mb": 2004,
+      "error": "No voice engine available. openvoice: OpenVoice V2 (MyShell) isn't installed on this PC",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\install\\check_sushi.py\", line 57, in <module>\n    c = voice.speak(droid, LINE, engine=eng, refresh=True)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 100, in speak\n    pref = pick_engine(entry, engine)\n  File \"C:\\Users\\Sushant\\Documents\\DeepInDoodles\\_voice\\src\\blender-addons\\droid_voice\\voice.py\", line 36, in pick_engine\n    raise RuntimeError(\"No voice engine available. \" + \"; \".join(why))\nRuntimeError: No voice engine available. openvoice: OpenVoice V2 (MyShell) isn't installed on this PC\n"
+    }
+  ]
+}
