@@ -48,11 +48,17 @@ const ok = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; }
   await p.evaluate(f => ds3d.importAudio(f), wav);
   await p.waitForSelector('#tracks .trow.audio canvas.wave', { timeout: 8000 });
   await p.evaluate(() => { ds3d.setValues({ armL: 10 }, 0, true); ds3d.setValues({ armL: 60 }, 80, true); ds3d.addMarker(84, 'after'); });
+  await p.locator('#tracks .voice-lane').first().scrollIntoViewIfNeeded().catch(() => {});
   const st0 = await p.evaluate(() => ds3d.state());
   const len0 = st0.shots[st0.shots.findIndex(s => s.active)].length;
   // drag across 1.5 s .. 2.5 s on the Voice row
   const lane = p.locator('#tracks .trow.audio .voice-lane').first();
-  const box = await lane.boundingBox(), ppf = (await lane.evaluate(el => el.querySelector('canvas.wave').width)) / len0;
+  // the timeline redraws once the voice has loaded: measure the lane after it settles
+  await p.waitForTimeout(800);
+  let box = null;
+  for (let i = 0; i < 40 && !box; i++) { box = await lane.boundingBox().catch(() => null); if (!box) await p.waitForTimeout(250); }
+  if (!box) { console.log('FAIL the Voice row never showed:', await p.evaluate(() => { const l = document.querySelector('#tracks .voice-lane'); if (!l) return 'no lane'; const r = l.getBoundingClientRect(); return JSON.stringify([r.x, r.y, r.width, r.height, getComputedStyle(l).display, document.querySelector('#tracks')?.getBoundingClientRect().height]); })); throw Error('no Voice row'); }
+  const ppf = (await lane.evaluate(el => el.querySelector('canvas.wave').width)) / len0;
   await p.mouse.move(box.x + 36 * ppf + 0.5, box.y + 20); await p.mouse.down(); await p.mouse.move(box.x + 50 * ppf, box.y + 20, { steps: 4 }); await p.mouse.move(box.x + 60 * ppf + 0.5, box.y + 20, { steps: 4 }); await p.mouse.up();
   ok(await p.locator('#tracks .audio-sel').count() === 1, 'dragging across the voice shows a selection');
   await p.keyboard.press('Delete');
