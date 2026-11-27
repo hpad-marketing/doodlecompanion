@@ -37,6 +37,7 @@ import { inkBar, makeLighting } from './lightpanel.js';
 import * as MUS from './music/ui.js';
 import * as MUSE from './music/engine.js';
 import * as MUSS from './music/song.js';
+import * as RP from './ripple.js';
 import { musicTool } from './music/tool.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, lightPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
 
@@ -1949,6 +1950,70 @@ function autosavePanel() {
 }
 
 // ---------------------------------------------------------------- audio.js: scene audio, waveform, audio-driven controls
+// ---------------------------------------------------------------- ripple.js: cut part of the voice out of the timeline
+// Drag across the Voice row to select a stretch (shot frames). Delete removes it and closes the
+// gap: the voice after it, keys, captions, Babble lines and markers all slide left together and
+// the shot gets shorter, so everything stays in sync. Shift+Delete (or Leave silence) mutes the
+// stretch and moves nothing. Ctrl+Z brings it back.
+let audioSel = null;   // { uid, f0, f1 } in frames of that shot
+const selNow = () => (audioSel && audioSel.uid === project.uid && audioSel.f1 > audioSel.f0 ? audioSel : null);
+function voiceLane(ln, ppf) {
+  ln.classList.add('voice-lane');
+  const s = selNow();
+  if (s) ln.append(h('div', { class: 'audio-sel', style: `left:${s.f0 * ppf}px;width:${Math.max(2, (s.f1 - s.f0) * ppf)}px`, title: `${((s.f1 - s.f0) / project.fps).toFixed(2)} s selected. Delete cuts it out and closes the gap; Shift+Delete leaves silence.` }));
+  ln.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const r = ln.getBoundingClientRect(), w = DOCK.winOf(ln), at = ev => Math.max(0, Math.min(project.length, Math.round((ev.clientX - r.left) / ppf)));
+    const a = at(e);
+    audioSel = { uid: project.uid, f0: a, f1: a };
+    const mv = ev => { if (!ev.buttons) return up(); const b = at(ev); audioSel = { uid: project.uid, f0: Math.min(a, b), f1: Math.max(a, b) }; drawTracks(); };
+    const up = () => {
+      w.removeEventListener('pointermove', mv); w.removeEventListener('pointerup', up); w.removeEventListener('pointercancel', up);
+      if (!selNow()) { audioSel = null; goto(Math.min(project.length - 1, a)); if (!playing) scrubAudio(sceneStart() / scene.fps + frame / project.fps); }
+      else toast(`${((audioSel.f1 - audioSel.f0) / project.fps).toFixed(2)} s of voice selected: Delete cuts it out and closes the gap, Shift+Delete leaves silence`, 3500);
+      drawTracks();
+    };
+    w.addEventListener('pointermove', mv); w.addEventListener('pointerup', up); w.addEventListener('pointercancel', up);
+  });
+  ln.addEventListener('contextmenu', e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!selNow()) return toast('Drag across the voice first to select the part to cut');
+    ctxMenu(e, [['Ripple delete (cut it out, close the gap)', () => audioCutRun({ ripple: true })], ['Delete and leave silence', () => audioCutRun({ ripple: false })], '-', ['Clear the selection', () => { audioSel = null; drawTracks(); }]]);
+  });
+  return ln;
+}
+// the recording the voice is built from: Babble mixes over a.base, voice effects process a.dry
+const voiceSource = () => { const A = scene.audio; return A ? (A.babble ? A.base || null : A.dry || A.path) : null; };
+async function audioCut(a = {}) {
+  const shotIdx = a.shot ?? scene.active;
+  if (shotIdx !== scene.active) selectShot(shotIdx);
+  const s = a.from != null && a.to != null ? { f0: Math.min(a.from, a.to), f1: Math.max(a.from, a.to) } : selNow();
+  if (!s || !(Math.min(s.f1, project.length) > s.f0)) throw Error('Select part of the voice first: drag across the Voice row (or pass from and to, in frames of the shot)');
+  const ripple = a.ripple !== false, src = voiceSource();
+  if (!src && !BB.linesOf(scene).length) throw Error('There is no voice in this scene to cut');
+  const start = sceneStart(), t0 = (start + s.f0) / scene.fps, t1 = (start + Math.min(s.f1, project.length)) / scene.fps;
+  pushUndo(ripple ? 'Ripple delete' : 'Silence part of the voice');
+  let made = null;
+  if (src) {
+    const d = await decodeChannels(api, src), out = RP.cutSamples(d.channels, d.sr, t0, t1, ripple);
+    const root = (await api('settings', {})).rendersRoot, nm = safeName(scene.name);
+    made = (await api('write-file', { path: `${root}/${nm}/work/audio/${nm.replace(/ /g, '_')}_edit_${bbHash(JSON.stringify([src, t0, t1, ripple]))}.wav`, data: BB.wavChannelsBase64(out, d.sr) })).path;
+  }
+  let r = { from: s.f0, to: s.f1, seconds: +((t1 - t0)).toFixed(2), shot: project.code };
+  if (ripple) { r = RP.rippleShot(scene, scene.active, s.f0, s.f1); project = bindShot(scene, scene.shots[scene.active]); frame = Math.min(frame, project.length - 1); }
+  if (made) {
+    const A = scene.audio || {}, { stem, dry, ...rest } = A;   // a separated stem no longer lines up: lip sync reads the voice itself until a new one is set
+    scene.audio = A.babble ? { ...rest, base: made } : { path: made };
+  }
+  audioSel = null;
+  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true });
+  else { await loadAudio(api, null); await loadAudio(api, scene.audio?.path || null); await buildVoiceFx(); }
+  dirty = true; refreshAll(); audioPanelRefresh();
+  toast(ripple ? `Cut ${r.seconds} s out of ${r.shot}: everything after it moved up. Ctrl+Z brings it back.` : `${r.seconds} s of the voice is silent now. Ctrl+Z brings it back.`, 4500);
+  return { ...r, ripple, audio: scene.audio?.path || null };
+}
+async function audioCutRun(a) { try { return await audioCut(a); } catch (e) { toast(e.message, 5000); return null; } }
 const sceneStart = () => scene.shots.slice(0, scene.active).reduce((n, s) => n + s.length, 0);
 async function importAudio(pick) {
   const p = pick === null ? null : pick ?? (await api('pick-audio', {})).path;
@@ -2748,7 +2813,7 @@ function drawTracks() {
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   const fileName = p => String(p).split(/[\\/]/).pop();
-  if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))])));
+  if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path + '\nDrag across the voice to select part of it, then Delete cuts it out and closes the gap (ripple delete). Shift+Delete leaves silence instead. Right-click for both.' }, 'Voice'), voiceLane(lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))]), ppf)));
   const wantMusic = scene.music?.fromSong ? null : scene.music?.path || null;
   if (wantMusic !== (musicInfo()?.path || null)) loadMusic(api, wantMusic, scene.music?.volume).then(() => drawTracks()).catch(() => {});
   const bed = musicInfo() && waveform(scene.fps, sceneStart(), project.length, ppf, true);
@@ -3289,7 +3354,9 @@ function keyHandler(e) {
     if (c && (k === '=' || k === '+' || k === '-') && inTl) { e.preventDefault(); setZoom(tlZoom * (k === '-' ? 1 / 1.5 : 1.5)); return; }
     if (!c && !e.shiftKey && !e.altKey && /^[1-9]$/.test(k) && TABS[Number(k) - 1]) { setTab(TABS[Number(k) - 1][0]); return; }
     if (!c && !e.shiftKey && !e.altKey && ['q', 'w', 'e', 'r'].includes(lk)) { setTool({ q: 'select', w: 'move', e: 'rotate', r: 'scale' }[lk]); return; }
+    if (k === 'Escape' && selNow()) { audioSel = null; drawTracks(); return; }
     if (k === 'Escape') { if (multi.length || selected) { multi = []; selected = null; drawTracks(); } clearSelection(); return; }
+    if ((k === 'Delete' || k === 'Backspace') && selNow()) { e.preventDefault(); audioCutRun({ ripple: !e.shiftKey }); return; }
     if ((k === 'Delete' || k === 'Backspace') && !multi.length && !selected && stage?.selected?.type === 'item') { const i = stage.selected.index; stage.select(null); removeItem(libCtx(), i); apply(); drawTracks(); buildPanel(); toast('Item removed (Ctrl+Z brings it back)'); return; }
     // Keydial keys, same as Doodle Studio: Shift+arrows 10 frames, [ ] dial steps, = - dolly, L loop
     if (e.shiftKey && !c && (k === 'ArrowLeft' || k === 'ArrowRight')) { e.preventDefault(); goto(frame + (k === 'ArrowLeft' ? -10 : 10)); return; }
@@ -3509,6 +3576,7 @@ function loop() {
     babble: (a = {}) => babbleAct(a),
     blocks: (a = {}) => blocksAct(a),
     voiceFx: (a = {}) => voiceFxAct(a),
+    audioCut: (a = {}) => audioCut(a),
     transcribe: (a = {}) => (a.action === 'captions' ? transcriptCaptions() : a.action === 'get' ? scene.transcript || null : transcribeAct(a)),
     reels: (a = {}) => reelsAct(a),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
