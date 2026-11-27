@@ -21,7 +21,7 @@ import bpy
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
-from . import index
+from . import index, truescale
 
 HOLD_TAG = 'DSL hold'
 D = math.radians
@@ -228,7 +228,7 @@ def _handle_span(ob, A):
 
 
 # ---------------------------------------------------------------- attach / release
-def release(ob):
+def release(ob, resize=True):
     """Let go: the prop stays where it is in the world; IK pins and limits go away."""
     mw = ob.matrix_world.copy()
     sock = ob.parent if ob.parent and ob.parent.get('dsl_socket') else None
@@ -246,6 +246,8 @@ def release(ob):
     for k in ('dsl_held_side', 'dsl_grip_kind', 'dsl_holder', 'dsl_contact'):
         if k in ob:
             del ob[k]
+    if resize:   # back to room size (a re-grip keeps the held size)
+        truescale.set_use(ob, False, bool(_pack_grip(ob.get('dsl_id', ''))) and not str(ob.get('dsl_id', '')).startswith('prop-'))
 
 
 def _socket(name, arm, bone, matrix_world):
@@ -511,6 +513,8 @@ def attach(ob, side=None, pose=True, frame=None, check=True, force_kind=None):
     """Hold `ob`, then look again from the pose the arm ended in: moving the arm moves his
     sleeve, so a spot that was clear before the arm moved can be blocked after. Up to three
     looks; the cleanest one is kept."""
+    if ob.get('dsl_use') != 'held':   # held props: cartoon size (stage.place may have fitted it already)
+        truescale.set_use(ob, True, bool(_pack_grip(ob.get('dsl_id', ''))) and not str(ob.get('dsl_id', '')).startswith('prop-'))
     arm = rig()
     if arm is None:
         return _attach_once(ob, side, pose, frame, check, force_kind)
@@ -578,7 +582,7 @@ def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=No
     his head overhangs his body, so the side is the only place a prop stays visible and clear).
     The prop's turn and outward lean are searched so nothing cuts into his head or body.
     A palm hold that can't clear his head becomes a cupped (fist) hold."""
-    release(ob)
+    release(ob, resize=False)
     sp = spec(ob)
     item = index.get(ob.get('dsl_id', '')) or {}
     hold = (item.get('data') or {}).get('hold') or {}
@@ -679,7 +683,7 @@ def _attach_once(ob, side=None, pose=True, frame=None, check=True, force_kind=No
 def wear(ob, side='R'):
     """Gloves and mittens go OVER the hand: fitted to the mitten (8% bigger all round),
     centred on it and following it. Worn items may enclose the hand; nothing else may."""
-    release(ob)
+    release(ob, resize=False)
     arm = rig()
     hf = hand_frame(side)
     B = arm.matrix_world @ arm.pose.bones[hf['bone']].matrix

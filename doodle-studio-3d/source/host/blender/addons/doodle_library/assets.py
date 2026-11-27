@@ -42,6 +42,9 @@ def insert_object(item, location=None, collection=None, style_it=True):
     if ob.get('dsl_pack') or ob.get('dsl_parts'):
         from . import packs
         packs.dress(ob)  # lids, wheels, typed labels, lights, seats ...
+    if item.get('category') == 'prop' or (item.get('data') or {}).get('grip'):
+        from . import truescale   # placed in the room: true scale (attach switches to held size)
+        truescale.set_use(ob, False, bool((item.get('data') or {}).get('grip')) and not str(item['id']).startswith('prop-'))
     index.mark_used(item['id'])
     return ob
 

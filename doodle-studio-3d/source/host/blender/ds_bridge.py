@@ -86,9 +86,11 @@ sc.frame_start = 1
 sc.frame_end = n
 sc.render.resolution_x = int(shot.get('width', 1080))
 sc.render.resolution_y = int(shot.get('height', 1920))
+if '--scale' in opts:   # set now: the ink line pass sizes its strokes from the real output size
+    sc.render.resolution_percentage = int(opts[opts.index('--scale') + 1])
 sc.render.film_transparent = flag('--transparent')
 for k, v in (shot.get('settings') or {}).items():
-    if k in settings.keys():
+    if k in settings.keys() or k == 'line_noise':   # line_noise: hand-drawn wobble 0..1 (lib/inklines.py)
         settings[k] = v
 for k, v in (shot.get('ik') or {}).items():
     limb, side = k.split('.')
@@ -97,9 +99,22 @@ for k, v in (shot.get('ik') or {}).items():
 PIVOT_Z = 4.145 * S
 BASE_ORTHO = 17.07 * S
 INK_BASE = float(settings['ink_px']) if 'ink_px' in settings.keys() else 12.73
-# one stroke weight at every distance and angle (user, 2026-11-03); ink_follow: 1 brings back
-# the 2D studio's drawing-style ink that grows as the camera moves in
-INK_FOLLOW = bool((shot.get('settings') or {}).get('ink_follow', 0))
+# how lines respond to the camera (ink_follow):
+#   2 (default) thin out as the camera pulls back so wide shots don't clog with ink, never
+#     thicker than the set line size up close (user, 2026-11-03: "let the thickness alter the
+#     density according to camera movement")
+#   0 one stroke weight at every distance and angle
+#   1 the 2D studio's drawing-style ink that also grows as the camera moves in
+INK_FOLLOW = int((shot.get('settings') or {}).get('ink_follow', 2))
+THIN_MIN = 0.5   # wide shots keep at least this much of the line size, so lines never vanish
+
+
+def ink_scale(zoom):
+    if INK_FOLLOW == 1:
+        return max(0.4, min(3.5, zoom))
+    if INK_FOLLOW == 2:
+        return max(THIN_MIN, min(1.0, zoom))
+    return 1.0
 
 
 def ink_for_camera():
@@ -110,7 +125,7 @@ def ink_for_camera():
     P = arm.matrix_world @ arm.pose.bones['root'].head + Vector((0, 0, PIVOT_Z))
     depth = max(0.05, (P - cam.matrix_world.translation).dot(fwd))
     zoom = BASE_ORTHO / (depth * 36.0 / max(1.0, cam.data.lens))
-    return INK_BASE * max(0.4, min(3.5, zoom))
+    return INK_BASE * ink_scale(zoom)
 persp = any(float(f.get('camFov', 0)) > 0 for f in frames)
 park = [o for o in bpy.data.objects if o.users_collection and any(c.name == 'Park' for c in o.users_collection)]
 
@@ -195,7 +210,9 @@ for i, vals in enumerate(frames):
             o.hide_render = not vals['cam'].get('props', 0)
             o.keyframe_insert('hide_render', frame=f)
     else:
-        ds_map.apply_camera(cam, vals, S, PIVOT_Z, base_ortho=BASE_ORTHO)
+        z = ds_map.apply_camera(cam, vals, S, PIVOT_Z, base_ortho=BASE_ORTHO)
+        if INK_FOLLOW and 'ink_px' in settings.keys():
+            settings['ink_px'] = INK_BASE * ink_scale(float(z or 1.0))
     if persp and 'cam' not in vals:
         fov = float(vals.get('camFov', 0)) or 8.0
         cam.data.type = 'PERSP'
@@ -288,7 +305,8 @@ if stage_items is not None and not LIVE:
     try:
         sc.frame_set(1)
         _scenery, _ = rules_scene.classify(arm, cast, objs.values())
-        constraints.props_on_floor([o for o in _scenery if o.dimensions.z >= 0.08], arm.matrix_world.translation.z, log)
+        # small props the user placed (a 7 cm apple on a table) rest too; tiny set dressing is left alone
+        constraints.props_on_floor([o for o in _scenery if o.dimensions.z >= 0.08 or o.get('ds_item') is not None], arm.matrix_world.translation.z, log)
     except Exception as e:
         print('rules: props on floor skipped:', e, flush=True)
 
@@ -464,7 +482,7 @@ if LIVE:
                   'frame': int(opts[opts.index('--frame') + 1]) if '--frame' in opts else None,
                   'arm': arm, 'cam': cam, 'settings': settings, 'meta': meta, 'S': S, 'pose_bones': pose_bones,
                   'apply': lambda v: apply(constraints.prepare(v, arm)), 'camera_3d': camera_3d,
-                  'ink_follow': INK_FOLLOW, 'ink_base': INK_BASE, 'pivot_z': PIVOT_Z, 'base_ortho': BASE_ORTHO})
+                  'ink_follow': INK_FOLLOW, 'thin_min': THIN_MIN, 'ink_base': INK_BASE, 'pivot_z': PIVOT_Z, 'base_ortho': BASE_ORTHO})
 elif still:
     sc.frame_set(still)
     sc.render.filepath = os.path.join(out_dir, 'still.png')

@@ -78,6 +78,10 @@ function lumps(all) {
 }
 const rnd = s => { let x = Math.sin(s * 127.1) * 43758.5453; return x - Math.floor(x); };
 
+// Mix by use (user, 2026-11-03): a library prop's model carries ds_room_scale, the size it takes
+// when placed in the room (true scale). Held, it keeps the size it was modelled at.
+const roomScale = o => { let k = 1; o.traverse(c => { const r = c.userData?.ds_room_scale; if (r) k = r; }); return k; };
+
 export class Stage {
   constructor(view, ctx) {
     this.view = view; this.ctx = ctx;
@@ -436,7 +440,8 @@ export class Stage {
     const at = it.at || [0, 0, 0], rot = it.rot || [0, 0, 0], sc = it.scale || [1, 1, 1];
     o.position.set(at[0], at[1], at[2]);
     o.rotation.set(rot[0] * D2R, rot[1] * D2R, rot[2] * D2R, 'XYZ');
-    o.scale.set(sc[0], sc[1], sc[2]);
+    const k = roomScale(o);   // props placed in the room show at true scale; held ones keep the cartoon size
+    o.scale.set(sc[0] * k, sc[1] * k, sc[2] * k);
   }
 
   // ---------------------------------------------------------------- drawn pieces
@@ -559,7 +564,7 @@ export class Stage {
     if (!sel || !o) return;
     const r3 = v => +v.toFixed(3);
     if (sel.type === 'item') {
-      this.ctx.editItem(sel.index, { at: o.position.toArray().map(r3), rot: [o.rotation.x, o.rotation.y, o.rotation.z].map(a => Math.round(a / D2R)), scale: o.scale.toArray().map(r3) }, null);
+      this.ctx.editItem(sel.index, { at: o.position.toArray().map(r3), rot: [o.rotation.x, o.rotation.y, o.rotation.z].map(a => Math.round(a / D2R)), scale: o.scale.toArray().map(c => r3(c / roomScale(o))) }, null);
     } else if (sel.type === 'piece') {
       const b = o.userData.base;
       this.ctx.editPiece(sel.id, { at: o.position.clone().sub(b.p).toArray().map(r3), rot: Math.round((o.rotation.z - b.r.z) / D2R), scale: r3(o.scale.x / b.s.x) });

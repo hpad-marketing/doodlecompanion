@@ -4,7 +4,7 @@ import { Viewport } from './viewport.js';
 import { cameraPresetsPanel, bindCameraPresets } from './camera-presets.js';
 import { carouselPanel, bindOverlay, finishCarousel, carouselOf, exportCarousel, SIZES, KINDS, TAILS } from './carousel.js';
 import { TRACK_IDS } from './rig.js';
-import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
+import { newScene, newShotData, migrate, nextCode, bindShot, valueAt, frameValues, setKey, deleteKey, hasKey, toBridgeShot, idleFor, stageOf, materialsOf, inkModeOf, CAM_DEFAULT, EASES, DISCRETE, defaults } from './project.js';
 import { autosaveSettings, setAutosave, startAutosave, autosaveNow, offerRecovery, saveVersion, versionsDialog, commandSearch, addMarker, markerEls, chime, diskOk, toggleFps, fpsTick, fpsText } from './polish.js';
 import { breakdown, overlap, simplify, loopCheck, makeLoop, retime, view3, drawOnion, setSilhouette, setMirror, FILTERS, filterIds, playblast } from './animtools.js';
 import { loadAudio, loadMusic, musicInfo, scrub as scrubAudio, audioInfo, play as playAudio, stop as stopAudio, waveform, audioDrive, lipsync as audioLipsync, loadStem, envelope as audioEnvelope, streamFrom as audioStreamFrom, wavBase64, processVoice, decodeChannels, playSamples } from './audio.js';
@@ -37,6 +37,7 @@ import { inkBar, makeLighting } from './lightpanel.js';
 import * as MUS from './music/ui.js';
 import * as MUSE from './music/engine.js';
 import * as MUSS from './music/song.js';
+import * as RP from './ripple.js';
 import { musicTool } from './music/tool.js';
 import { libraryBrowser, faceGrid, mouthGrid, setPanel, lightPanel, wardrobePanel, itemsPanel, libUi, glyphOf, motionPicker } from './libview.js';
 
@@ -1724,17 +1725,23 @@ function buildPanel() {
         h('div', { class: 'col' }, autosavePanel()), h('div', { class: 'col' }, ...shelves('render:blender'))));
       api('settings', {}).then(st => { const el = $('#blender-path'); if (el) el.textContent = st.blenderFound || 'Not found. Install Blender 4.5 LTS, or point to blender.exe.'; }).catch(() => {});
     } else {
-      // Line size (user, 2026-11-03): one control for every stroke in the shot, a lock that keeps it the same
-      // on screen at any camera distance or angle, and a button that copies both to every shot
+      // Line size (user, 2026-11-03): one control for every stroke in the shot, how lines respond to the
+      // camera (thin out when it pulls back, same size, or grow), and a button that copies both to every shot
       const inkRow = () => {
         const num = h('input', { type: 'number', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'width:4.5em' });
         const sl = h('input', { type: 'range', min: 40, max: 250, step: 5, value: project.ink ?? 100, style: 'flex:1' });
         const set = v => { v = Math.max(40, Math.min(250, Math.round(Number(v) || 100))); pushUndo(); project.ink = v; num.value = sl.value = v; updateHud(); };
         sl.addEventListener('input', () => { num.value = sl.value; }); sl.addEventListener('change', () => set(sl.value)); num.addEventListener('change', () => set(num.value));
-        const lock = h('input', { type: 'checkbox', checked: project.inkLock !== false, onchange: e => { pushUndo(); project.inkLock = e.target.checked ? undefined : false; updateHud(); } });
-        const all = h('button', { title: 'Copy this line size and lock to every shot in the scene', onclick: () => { pushUndo(); for (const sh of scene.shots) { sh.ink = project.ink ?? 100; sh.inkLock = project.inkLock; } all.textContent = 'Done ✓'; setTimeout(() => { all.textContent = 'Use for every shot'; }, 1500); } }, 'Use for every shot');
+        const mode = h('select', { title: 'How lines respond when the camera moves', onchange: e => { pushUndo(); project.inkMode = e.target.value === 'thin' ? undefined : e.target.value; delete project.inkLock; updateHud(); } },
+          ...[['thin', 'Thin out as the camera pulls back'], ['same', 'Same size at any distance'], ['grow', 'Grow close up, thin far away']].map(([v, t]) => h('option', { value: v, selected: inkModeOf(project) === v }, t)));
+        const all = h('button', { title: 'Copy this line size, camera setting and line noise to every shot in the scene', onclick: () => { pushUndo(); for (const sh of scene.shots) { sh.ink = project.ink ?? 100; sh.inkMode = project.inkMode; sh.inkNoise = project.inkNoise; delete sh.inkLock; } all.textContent = 'Done ✓'; setTimeout(() => { all.textContent = 'Use for every shot'; }, 1500); } }, 'Use for every shot');
+        const nNum = h('input', { type: 'number', min: 0, max: 100, step: 5, value: project.inkNoise ?? 50, style: 'width:4.5em' });
+        const nSl = h('input', { type: 'range', min: 0, max: 100, step: 5, value: project.inkNoise ?? 50, style: 'flex:1' });
+        const setN = v => { v = Math.max(0, Math.min(100, Math.round(Number(v) || 0))); pushUndo(); project.inkNoise = v === 50 ? undefined : v; nNum.value = nSl.value = v; updateHud(); };
+        nSl.addEventListener('input', () => { nNum.value = nSl.value; }); nSl.addEventListener('change', () => setN(nSl.value)); nNum.addEventListener('change', () => setN(nNum.value));
         return h('div', {}, h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Line size for every stroke in this shot, as a percent of Bunny\'s usual line (100). All lines change together, so they stay equal.' }, 'Line size (%)', h('div', { class: 'row' }, sl, num)),
-          h('div', { class: 'row', style: 'margin:4px 0' }, h('label', { class: 'row', style: 'flex:1', title: 'On: every line stays the same size on screen however close or far the camera is, at any angle. Off: lines grow as the camera moves in and shrink as it pulls back.' }, lock, ' Same size at any distance or angle'), all));
+          h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Thin out (default): lines get finer as the camera pulls back, so wide shots stay clean, and never get thicker than the line size up close. Same size: every line keeps one size on screen at any distance or angle. Grow: lines get thicker close up too, like a drawing.' }, 'Camera moves', h('div', { class: 'row' }, mode, all)),
+          h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr', title: 'Hand-drawn wobble on every line, redrawn every few frames like the 2D studio\'s boil. 0 = clean lines, 50 = normal, 100 = rough sketch. Only with the outline on.' }, 'Line noise (%)', h('div', { class: 'row' }, nSl, nNum)));
       };
       const field = (label, obj, key, attrs) => { const i = h('input', { ...attrs, value: obj[key] }); i.addEventListener('change', () => { pushUndo(); obj[key] = attrs.type === 'number' ? Number(i.value) : i.value; buildTimelineTools(); drawTracks(); updateHud(); }); return h('label', { class: 'ctl', style: 'grid-template-columns:8.5em 1fr' }, label, i); };
       c.append(cols('two', [h('h3', {}, `Shot ${project.code}`), field('Name', project, 'label', { type: 'text', placeholder: 'optional, e.g. intro' }), field('Length (frames)', project, 'length', { type: 'number', min: 1, max: 54000 }),
@@ -1949,6 +1956,70 @@ function autosavePanel() {
 }
 
 // ---------------------------------------------------------------- audio.js: scene audio, waveform, audio-driven controls
+// ---------------------------------------------------------------- ripple.js: cut part of the voice out of the timeline
+// Drag across the Voice row to select a stretch (shot frames). Delete removes it and closes the
+// gap: the voice after it, keys, captions, Babble lines and markers all slide left together and
+// the shot gets shorter, so everything stays in sync. Shift+Delete (or Leave silence) mutes the
+// stretch and moves nothing. Ctrl+Z brings it back.
+let audioSel = null;   // { uid, f0, f1 } in frames of that shot
+const selNow = () => (audioSel && audioSel.uid === project.uid && audioSel.f1 > audioSel.f0 ? audioSel : null);
+function voiceLane(ln, ppf) {
+  ln.classList.add('voice-lane');
+  const s = selNow();
+  if (s) ln.append(h('div', { class: 'audio-sel', style: `left:${s.f0 * ppf}px;width:${Math.max(2, (s.f1 - s.f0) * ppf)}px`, title: `${((s.f1 - s.f0) / project.fps).toFixed(2)} s selected. Delete cuts it out and closes the gap; Shift+Delete leaves silence.` }));
+  ln.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const r = ln.getBoundingClientRect(), w = DOCK.winOf(ln), at = ev => Math.max(0, Math.min(project.length, Math.round((ev.clientX - r.left) / ppf)));
+    const a = at(e);
+    audioSel = { uid: project.uid, f0: a, f1: a };
+    const mv = ev => { if (!ev.buttons) return up(); const b = at(ev); audioSel = { uid: project.uid, f0: Math.min(a, b), f1: Math.max(a, b) }; drawTracks(); };
+    const up = () => {
+      w.removeEventListener('pointermove', mv); w.removeEventListener('pointerup', up); w.removeEventListener('pointercancel', up);
+      if (!selNow()) { audioSel = null; goto(Math.min(project.length - 1, a)); if (!playing) scrubAudio(sceneStart() / scene.fps + frame / project.fps); }
+      else toast(`${((audioSel.f1 - audioSel.f0) / project.fps).toFixed(2)} s of voice selected: Delete cuts it out and closes the gap, Shift+Delete leaves silence`, 3500);
+      drawTracks();
+    };
+    w.addEventListener('pointermove', mv); w.addEventListener('pointerup', up); w.addEventListener('pointercancel', up);
+  });
+  ln.addEventListener('contextmenu', e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!selNow()) return toast('Drag across the voice first to select the part to cut');
+    ctxMenu(e, [['Ripple delete (cut it out, close the gap)', () => audioCutRun({ ripple: true })], ['Delete and leave silence', () => audioCutRun({ ripple: false })], '-', ['Clear the selection', () => { audioSel = null; drawTracks(); }]]);
+  });
+  return ln;
+}
+// the recording the voice is built from: Babble mixes over a.base, voice effects process a.dry
+const voiceSource = () => { const A = scene.audio; return A ? (A.babble ? A.base || null : A.dry || A.path) : null; };
+async function audioCut(a = {}) {
+  const shotIdx = a.shot ?? scene.active;
+  if (shotIdx !== scene.active) selectShot(shotIdx);
+  const s = a.from != null && a.to != null ? { f0: Math.min(a.from, a.to), f1: Math.max(a.from, a.to) } : selNow();
+  if (!s || !(Math.min(s.f1, project.length) > s.f0)) throw Error('Select part of the voice first: drag across the Voice row (or pass from and to, in frames of the shot)');
+  const ripple = a.ripple !== false, src = voiceSource();
+  if (!src && !BB.linesOf(scene).length) throw Error('There is no voice in this scene to cut');
+  const start = sceneStart(), t0 = (start + s.f0) / scene.fps, t1 = (start + Math.min(s.f1, project.length)) / scene.fps;
+  pushUndo(ripple ? 'Ripple delete' : 'Silence part of the voice');
+  let made = null;
+  if (src) {
+    const d = await decodeChannels(api, src), out = RP.cutSamples(d.channels, d.sr, t0, t1, ripple);
+    const root = (await api('settings', {})).rendersRoot, nm = safeName(scene.name);
+    made = (await api('write-file', { path: `${root}/${nm}/work/audio/${nm.replace(/ /g, '_')}_edit_${bbHash(JSON.stringify([src, t0, t1, ripple]))}.wav`, data: BB.wavChannelsBase64(out, d.sr) })).path;
+  }
+  let r = { from: s.f0, to: s.f1, seconds: +((t1 - t0)).toFixed(2), shot: project.code };
+  if (ripple) { r = RP.rippleShot(scene, scene.active, s.f0, s.f1); project = bindShot(scene, scene.shots[scene.active]); frame = Math.min(frame, project.length - 1); }
+  if (made) {
+    const A = scene.audio || {}, { stem, dry, ...rest } = A;   // a separated stem no longer lines up: lip sync reads the voice itself until a new one is set
+    scene.audio = A.babble ? { ...rest, base: made } : { path: made };
+  }
+  audioSel = null;
+  if (BB.linesOf(scene).length) await rebuildBabble({ quiet: true });
+  else { await loadAudio(api, null); await loadAudio(api, scene.audio?.path || null); await buildVoiceFx(); }
+  dirty = true; refreshAll(); audioPanelRefresh();
+  toast(ripple ? `Cut ${r.seconds} s out of ${r.shot}: everything after it moved up. Ctrl+Z brings it back.` : `${r.seconds} s of the voice is silent now. Ctrl+Z brings it back.`, 4500);
+  return { ...r, ripple, audio: scene.audio?.path || null };
+}
+async function audioCutRun(a) { try { return await audioCut(a); } catch (e) { toast(e.message, 5000); return null; } }
 const sceneStart = () => scene.shots.slice(0, scene.active).reduce((n, s) => n + s.length, 0);
 async function importAudio(pick) {
   const p = pick === null ? null : pick ?? (await api('pick-audio', {})).path;
@@ -2748,7 +2819,7 @@ function drawTracks() {
   const rows = [h('div', { class: 'ruler' }, h('div', { class: 'tname' }, 'TIME'), ruler)];
   const wave = audioInfo() && waveform(scene.fps, sceneStart(), project.length, ppf);
   const fileName = p => String(p).split(/[\\/]/).pop();
-  if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path }, 'Voice'), lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))])));
+  if (wave) rows.push(h('div', { class: 'trow audio' }, h('div', { class: 'tname', title: audioInfo().path + '\nDrag across the voice to select part of it, then Delete cuts it out and closes the gap (ripple delete). Shift+Delete leaves silence instead. Right-click for both.' }, 'Voice'), voiceLane(lane([wave, h('span', { class: 'wave-name' }, fileName(audioInfo().path))]), ppf)));
   const wantMusic = scene.music?.fromSong ? null : scene.music?.path || null;
   if (wantMusic !== (musicInfo()?.path || null)) loadMusic(api, wantMusic, scene.music?.volume).then(() => drawTracks()).catch(() => {});
   const bed = musicInfo() && waveform(scene.fps, sceneStart(), project.length, ppf, true);
@@ -3289,7 +3360,9 @@ function keyHandler(e) {
     if (c && (k === '=' || k === '+' || k === '-') && inTl) { e.preventDefault(); setZoom(tlZoom * (k === '-' ? 1 / 1.5 : 1.5)); return; }
     if (!c && !e.shiftKey && !e.altKey && /^[1-9]$/.test(k) && TABS[Number(k) - 1]) { setTab(TABS[Number(k) - 1][0]); return; }
     if (!c && !e.shiftKey && !e.altKey && ['q', 'w', 'e', 'r'].includes(lk)) { setTool({ q: 'select', w: 'move', e: 'rotate', r: 'scale' }[lk]); return; }
+    if (k === 'Escape' && selNow()) { audioSel = null; drawTracks(); return; }
     if (k === 'Escape') { if (multi.length || selected) { multi = []; selected = null; drawTracks(); } clearSelection(); return; }
+    if ((k === 'Delete' || k === 'Backspace') && selNow()) { e.preventDefault(); audioCutRun({ ripple: !e.shiftKey }); return; }
     if ((k === 'Delete' || k === 'Backspace') && !multi.length && !selected && stage?.selected?.type === 'item') { const i = stage.selected.index; stage.select(null); removeItem(libCtx(), i); apply(); drawTracks(); buildPanel(); toast('Item removed (Ctrl+Z brings it back)'); return; }
     // Keydial keys, same as Doodle Studio: Shift+arrows 10 frames, [ ] dial steps, = - dolly, L loop
     if (e.shiftKey && !c && (k === 'ArrowLeft' || k === 'ArrowRight')) { e.preventDefault(); goto(frame + (k === 'ArrowLeft' ? -10 : 10)); return; }
@@ -3509,6 +3582,7 @@ function loop() {
     babble: (a = {}) => babbleAct(a),
     blocks: (a = {}) => blocksAct(a),
     voiceFx: (a = {}) => voiceFxAct(a),
+    audioCut: (a = {}) => audioCut(a),
     transcribe: (a = {}) => (a.action === 'captions' ? transcriptCaptions() : a.action === 'get' ? scene.transcript || null : transcribeAct(a)),
     reels: (a = {}) => reelsAct(a),
     turntable() { pushUndo(); const y = current('cam.yaw'); setKey(project, 'cam.yaw', 0, y, 'linear'); setKey(project, 'cam.yaw', project.length - 1, y + 360, 'linear'); apply(); drawTracks(); return this.state(); },
@@ -3547,11 +3621,11 @@ function loop() {
     // Materials tab (materials.js): list looks and palettes, apply a look to a target, clear it, set the light
     materials(a) { return MAT.mcp(matCtx(), a || {}); },
     setShotLook(p) {
-      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); if (p.inkLock != null) project.inkLock = p.inkLock ? undefined : false;
+      pushUndo(); if (p.horizonLock != null) project.horizonLock = !!p.horizonLock; if (p.ink != null) project.ink = Math.max(40, Math.min(250, Number(p.ink))); if (p.inkLock != null) { project.inkMode = p.inkLock ? 'same' : 'grow'; delete project.inkLock; } if (p.noise != null) { const v = Math.max(0, Math.min(100, Math.round(Number(p.noise) || 0))); project.inkNoise = v === 50 ? undefined : v; } if (p.inkMode != null && ['thin', 'same', 'grow'].includes(p.inkMode)) { project.inkMode = p.inkMode === 'thin' ? undefined : p.inkMode; delete project.inkLock; }
       for (const [k, v] of Object.entries(p.rules || {})) if (RULES.some(r => r[0] === k)) { project.rules ||= {}; if (v === false) project.rules[k] = false; else delete project.rules[k]; }
       if (p.captionSnap != null) { P.captionsOf(scene).snap = p.captionSnap ? undefined : false; drawPost(); }
       apply(); buildPanel();
-      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, inkLock: project.inkLock !== false, rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
+      return { shot: project.code, horizonLock: !!project.horizonLock, ink: project.ink ?? 100, inkMode: inkModeOf(project), noise: project.inkNoise ?? 50, inkLock: inkModeOf(project) === 'same', rules: Object.fromEntries(RULES.map(([k]) => [k, project.rules?.[k] !== false])), captionSnap: scene.captions?.snap !== false };
     },
     removeItem(i) { const r = removeItem(libCtx(), i); if (tab === 'library') buildPanel(); return r; },
     stage: () => ({ character: character(), stage: stageOf(scene, project), sceneStage: scene.stage || {}, shotStage: project.stage || {}, items: project.items || [] }),
